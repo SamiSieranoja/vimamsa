@@ -137,6 +137,8 @@ VALUE method_scan_indexes(VALUE self,VALUE str,VALUE pat) {
             prev = start;
             //rb_ary_push(ary, result);
             //rb_ary_push(ary, INT2NUM(start));
+            //TODO: if result != Qnil
+            //TODO: start gives end of pattern+1? Currently compensating in ruby.
             rb_ary_push(ary, INT2NUM(rb_str_sublen(str,start)));// TODO:optimize str_sublen
         }
         if (last >= 0) rb_reg_search(pat, str, last, 0);
@@ -151,7 +153,6 @@ VALUE method_render_text(VALUE self,VALUE text, VALUE _pos, VALUE _selection_sta
 
     reset_buffer = NUM2INT(_reset);
     textbuf = text;
-    //cpp_render_text();
     cursor_pos = NUM2INT(_pos);
     selection_start = NUM2INT(_selection_start);
 
@@ -197,6 +198,9 @@ int render_text() {
     //qDebug() << "render_text thread:" <<QThread::currentThreadId();
     VALUE minibuf;
     minibuf = rb_eval_string("$minibuffer.to_s");
+    //VALUE is_command_mode;
+    VALUE icmtmp = rb_eval_string("$at.is_command_mode()");
+    c_te->is_command_mode = NUM2INT(icmtmp);
     QString *minibufstr = new QString(StringValueCStr(minibuf));
     miniEditor->setPlainText(*minibufstr);
     delete minibufstr;
@@ -247,22 +251,9 @@ int render_text() {
       tc.setPosition(cursor_pos);
   }
   c_te->setTextCursor(tc);
+  c_te->drawTextCursor();
 
-  QList<QTextEdit::ExtraSelection> extraSelections;
-
-  QTextEdit::ExtraSelection selection;
-
-  QColor lineColor = QColor("#073642");
-
-  selection.format.setBackground(lineColor);
-  selection.format.setProperty(QTextFormat::FullWidthSelection, true);
-  selection.cursor = c_te->textCursor();
-  selection.cursor.clearSelection();
-  extraSelections.append(selection);
-
-  c_te->setExtraSelections(extraSelections);
-
-  // handle now to avoid cursorPositionChanged event
+ // TODO: needed?
   app->processEvents();
 }
 

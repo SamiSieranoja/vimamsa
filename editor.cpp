@@ -26,12 +26,10 @@
 #include <QPrintPreviewDialog>
 #endif
 
-
 #include <ruby.h>
 #include <ruby/encoding.h>
 
 #include "editor.h"
-
 
 SEditor *c_te;
 SEditor *miniEditor;
@@ -86,17 +84,44 @@ const QString rsrcPath = ":/images/mac";
 const QString rsrcPath = ":/images/win";
 #endif
 
+void    Overlay::paintEvent(QPaintEvent * e) {
+
+    int draw_width = c_te->cursor_x+c_te->cursor_width;
+    int draw_height = c_te->cursor_y+c_te->cursor_height;
+    QPainter p(this);
+    p.eraseRect(0,0,draw_width,draw_height);
+    resize(draw_width, draw_height); //TODO: resize to parent widget when change
+
+    if(c_te->overlay_paint_cursor) {
+        //printf("Overlay:paintEvent x=%d y=%d w=%d h=%d\n",c_te->cursor_x, c_te->cursor_y, c_te->cursor_width,c_te->cursor_height);
+        QColor cursor_color = new QColor("#839496");
+        p.fillRect(c_te->cursor_x, c_te->cursor_y,
+                c_te->cursor_width,c_te->cursor_height, QColor("#839496"));
+    }
+    else {
+        //printf("Overlay:paintEvent. overlay_paint_cursor=false\n");
+    }
+
+
+}
+
+
 
 SEditor::SEditor(QWidget *parent)
     //: QEditor(parent)
 {
 
     cursorpos = 0;
-    setFont (QFont ("Ubuntu Mono", 12));
+    at_line_end = 0;
+    overlay_paint_cursor = 0;
+    fnt = QFont ("Ubuntu Mono", 12);
+    setFont(fnt);
     QPalette p = palette();
     p.setColor(QPalette::Base, QColor("#002b36"));
     p.setColor(QPalette::Text, QColor("#839496"));
     setPalette(p);
+
+    setFrameStyle(QFrame::NoFrame);
 
 // base03    #002b36  8/4 brblack  234 #1c1c1c
 // base02    #073642  0/4 black    235 #262626
@@ -118,9 +143,68 @@ SEditor::SEditor(QWidget *parent)
 
 }
 
+
+// Use QTextEdit standard functionality to draw cursor when possible.
+// Use Overlay class when not.
+void SEditor::drawTextCursor() {
+
+
+  QList<QTextEdit::ExtraSelection> extraSelections;
+  QTextEdit::ExtraSelection selection;
+
+  //Draw line highlight
+  QColor lineColor = QColor("#073642");
+  selection.format.setBackground(lineColor);
+  selection.format.setProperty(QTextFormat::FullWidthSelection, true);
+  selection.cursor = textCursor();
+  extraSelections.append(selection);
+  setExtraSelections(extraSelections);
+
+  if(selection.cursor.atBlockEnd()) {
+      at_line_end = 1;
+  }
+  else {
+      at_line_end = 0;
+  }
+
+  setCursorWidth(0);
+  overlay_paint_cursor = 0;
+
+  //  Not at line end and Command mode
+  if(!at_line_end && is_command_mode > 0) {
+      qDebug() << "Draw cursor";
+      selection.cursor.clearSelection();
+      selection.format.setBackground(QColor("#839496"));
+      selection.format.setForeground(QColor("#002b36"));
+
+      selection.cursor.setPosition(cursor_pos);
+      selection.cursor.setPosition(cursor_pos + 1,QTextCursor::KeepAnchor);
+      extraSelections.append(selection);
+      setExtraSelections(extraSelections);
+  }
+  // Command mode at line end
+  else if(is_command_mode > 0) {
+      overlay_paint_cursor = 1;
+      cursor_width = 7;
+      //setCursorWidth(10);
+  }
+  else { // Insert (or visual) mode
+      overlay_paint_cursor = 1;
+      cursor_width = 1;
+  }
+
+  QRect r = cursorRect();
+  cursor_x = r.x();
+  cursor_y = r.y();
+  cursor_height = r.height();
+}
+
+
+
 Editor::Editor(QWidget *parent)
     : QMainWindow(parent)
 {
+
 
 
     setToolButtonStyle(Qt::ToolButtonFollowStyle);
@@ -137,6 +221,8 @@ Editor::Editor(QWidget *parent)
     textEdit = new SEditor(this);
     c_te = textEdit;
     c_te->setFont (QFont ("Ubuntu Mono", 12));
+    c_te->overlay = new Overlay(c_te);
+
 
     QFrame *frame = new QFrame;
     QVBoxLayout *layout = new QVBoxLayout(frame);
@@ -147,7 +233,6 @@ Editor::Editor(QWidget *parent)
     layout->addWidget(textEdit);
     layout->addWidget(miniEditor);
     setCentralWidget(frame);
-
 
     connect(textEdit->document(), SIGNAL(modificationChanged(bool)),
             actionSave, SLOT(setEnabled(bool)));
@@ -182,6 +267,20 @@ void SEditor::mouseReleaseEvent(QMouseEvent *event)
 
         cursor_pos = cursor.position();
         rb_funcall(NULL,rb_intern("set_cursor_pos"),1,INT2NUM(cursor_pos));
+        drawTextCursor();
+        update(); //TODO: needed?
+}
+
+void SEditor::paintEvent(QPaintEvent * e)
+{
+
+    //Q_D(QTextEdit);
+    //QPainter p(d->viewport);
+    //d->paint(&p, e);
+    //return;
+    QTextEdit::paintEvent(e);
+    //TODO: gives error if trying to draw after calling superclass paintEvent
+
 }
 
 void SEditor::handleKeyEvent(QKeyEvent *e) {
@@ -464,17 +563,18 @@ void Editor::filePrintPdf()
 
 void Editor::textFamily(const QString &f)
 {
-    c_te->setFont (QFont (f, 12));
+    qDebug() << "Font family:" << f << endl;
+    c_te->fnt.setFamily(f);
+    c_te->setFont (c_te->fnt);
 }
 
 void Editor::textSize(const QString &p)
 {
-    //TODO: size of whole buffer
+    qDebug() << "Font size:" << p << endl;
     qreal pointSize = p.toFloat();
     if (p.toFloat() > 0) {
-        QTextCharFormat fmt;
-        fmt.setFontPointSize(pointSize);
-        mergeFormatOnWordOrSelection(fmt);
+        c_te->fnt.setPointSize(pointSize);
+        c_te->setFont (c_te->fnt);
     }
 }
 

@@ -73,6 +73,7 @@ $cnf['key_bindigs'] = {
 
     'C o' => '$buffer.jump(END_OF_LINE);$buffer.insert_char("\n");$at.set_mode(INSERT)',
     'C A' => '$buffer.jump(END_OF_LINE);$at.set_mode(INSERT)',
+    'C I' => '$buffer.jump(FIRST_NON_WHITESPACE);$at.set_mode(INSERT)',
     'C a' => '$buffer.move(FORWARD_CHAR);$at.set_mode(INSERT)',
     'C J' => '$buffer.join_lines()',
 
@@ -85,6 +86,7 @@ $cnf['key_bindigs'] = {
    'C v'=> '$buffer.start_visual_mode', 
    'C p'=> '$buffer.paste', #TODO: implement as replace for visual mode
    'C space <char>' => '$buffer.insert_char(<char>)',
+    'C y y'=> '$buffer.copy_line', 
     #### Deleting
     'C x' =>'$buffer.delete(CURRENT_CHAR_FORWARD)',
     'C d k'=> 'delete_line(BACKWARD)', #TODO
@@ -98,8 +100,8 @@ $cnf['key_bindigs'] = {
 
     # Visual mode only:
     'V esc'=> '$buffer.end_visual_mode', 
-    'V y'=> '$buffer.copy_active_selection', #TODO: s/C/V/
-    'V d'=> '$buffer.delete(SELECTION)', #TODO: s/C/V/
+    'V y'=> '$buffer.copy_active_selection',
+    'V d'=> '$buffer.delete(SELECTION)',
 
     'CI ctrl-v'=> '$buffer.paste', 
     'CI backspace' =>'$buffer.delete(BACKWARD_CHAR)',
@@ -134,7 +136,6 @@ $cnf['key_bindigs'] = {
     'C .' => 'repeat_last_action',
     'CV Q' => '_quit',
     'CV , R' => 'restart_application',
-    'I C^{last_down_key=C}'=> 'change_mode(COMMAND)',
     'I ctrl!'=> '$at.set_mode(COMMAND)',
     'I shift!'=> '$at.set_mode(COMMAND)',
     'I <char>'=> '$buffer.insert_char(<char>)',
@@ -185,7 +186,7 @@ class State
 end
 
 class AutomataTree
-    attr_accessor :C, :I, :cur_state, :root, :match_state
+    attr_accessor :C, :I, :cur_state, :root, :match_state 
     def initialize()
         @root = State.new("ROOT")
         @C = State.new("C")
@@ -242,6 +243,25 @@ class AutomataTree
         @mode_root_state = @V if mode == VISUAL
 
     end
+
+def is_command_mode()
+    #if @mode_root_state.to_s() == "C"
+    #debug $at.mode_root_state.inspect
+    if @mode_root_state.to_s() == "C"
+    #if false
+        debug "IS COMMAND MODE"
+        return 1
+    else
+        debug "IS NOT COMMAND MODE"
+        return 0
+    end
+    #return 1 if $context[:mode] == "C"
+    #return 0
+end
+
+
+
+
     def set_state(key_name,eval_rule="")
         new_state = find_state(key_name,eval_rule)
         if new_state != nil
@@ -498,10 +518,11 @@ def match_key_conf(c,translated_c,event_type)
 
 
 def handle_key_bindigs_action(action,c)
+    $method_handles_repeat = false
     n = 1
     if $next_command_count and !action.include?("set_next_command_count")
         n = $next_command_count
-        $next_command_count = nil
+        #$next_command_count = nil
         debug("COUNT command #{n} times")
     end
 
@@ -513,6 +534,11 @@ def handle_key_bindigs_action(action,c)
             else #TODO: try catch eval errors?
                 eval(action)
             end
+            break if $method_handles_repeat
+            # Some methods have specific implementation for repeat,
+            #   like '5yy' => copy next five lines. (copy_line())
+            # By default the same command is just repeated n times
+            #   like '20j' => go to next line 20 times.
         end
 
     rescue SyntaxError
@@ -523,6 +549,9 @@ def handle_key_bindigs_action(action,c)
         #raise
     end
 
+    if !action.include?("set_next_command_count")
+        $next_command_count = nil
+    end
 end
 
 # When pressing for example alt-tab, the program receives key press
@@ -541,13 +570,13 @@ def focus_out
     # TODO: Clear key binding matching?
 end
 
-def change_mode(mode)
-    debug("CHANGING MODE FROM #{$context[:mode]} TO #{mode}")
-    $context[:mode] = "C" if mode == COMMAND
-    $context[:mode] = "I" if mode == INSERT
-    $context[:mode] = "B" if mode == BROWSE
-    $context[:mode] = "V" if mode == VISUAL
-end
+#def change_mode(mode)
+    #debug("CHANGING MODE FROM #{$context[:mode]} TO #{mode}")
+    #$context[:mode] = "C" if mode == COMMAND
+    #$context[:mode] = "I" if mode == INSERT
+    #$context[:mode] = "B" if mode == BROWSE
+    #$context[:mode] = "V" if mode == VISUAL
+#end
 
 
 #$active_modifiers = {ctrl: false, shift: false, 
@@ -617,4 +646,6 @@ def handle_key_event(event)
     render_buffer($buffer)
   
 end
+
+
 

@@ -68,6 +68,7 @@ class Buffer < String
         self << "\n" if self[-1] != "\n"
     end
     def line(lpos)
+        #TODO: implement using line_range()
         if lpos >= @line_ends.size
             debug("lpos too large") #TODO
             return ""
@@ -80,15 +81,36 @@ class Buffer < String
         return self[start.._end]
     end
 
+    def current_char()
+        return self[@pos]
+    end
+
+    def current_line()
+        range = line_range(@lpos,1)
+        return self[range]
+    end
+
+
+    def line_range(start_line,num_lines)
+        end_line = start_line + num_lines - 1
+        if end_line >= @line_ends.size
+            debug("lpos too large") #TODO
+            end_line = @line_ends.size - 1
+        end
+        start = @line_ends[start_line - 1] if start_line > 0
+        start = 0 if start_line == 0
+        _end = @line_ends[end_line] - 1
+        debug "line range: start=#{start}, end=#{_end}"
+        return start.._end
+    end
+
+
     def recalc_line_ends()
         t1 = Time.now
         @line_ends = scan_indexes(self,/\n/)
 
         puts "Scan line_end time: #{Time.now - t1}"
         #puts @line_ends
-    end
-    def current_char()
-        return self[@pos]
     end
 
     def at_end_of_line?()
@@ -270,21 +292,36 @@ class Buffer < String
   
     end
 
-    def jump(position)
-        if position == START_OF_BUFFER
+    def jump(target)
+        if target == START_OF_BUFFER
             set_pos(0)
         end
-        if position == END_OF_BUFFER
+        if target == END_OF_BUFFER
             set_pos(self.size - 1)
         end
-        if position == BEGINNING_OF_LINE
+        if target == BEGINNING_OF_LINE
             @cpos = 0
             calculate_pos_from_cpos_lpos
         end
-        if position == END_OF_LINE
+        if target == END_OF_LINE
             @cpos = line(@lpos).size - 1
             calculate_pos_from_cpos_lpos
         end
+
+        if target == FIRST_NON_WHITESPACE
+            l = current_line()
+            puts l.inspect
+            @cpos = line(@lpos).size - 1
+            a = scan_indexes(l,/\S/)
+            puts a.inspect
+            if a.any?
+                @cpos = a[0] - 1 
+            else
+                @cpos = 0
+            end
+            calculate_pos_from_cpos_lpos
+        end
+
 
     end
 
@@ -400,6 +437,18 @@ class Buffer < String
         $clipboard << self[get_visual_mode_range] #TODO: check if range ok
         end_visual_mode
     end
+
+    def copy_line()
+        $method_handles_repeat = true
+        num_lines = 1
+        if !$next_command_count.nil? and $next_command_count > 0
+            num_lines = $next_command_count
+            debug "copy num_lines:#{num_lines}"
+        end
+        $clipboard << self[line_range(@lpos,num_lines)] 
+    end
+
+
 
     def delete_active_selection() #TODO: remove this function
         return if !@visual_mode #TODO: this should not happen

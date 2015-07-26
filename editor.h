@@ -48,6 +48,15 @@
 #include <QTextEdit>
 #include <QThread>
 
+#include <QPainter>
+#include <QWidget>
+
+#include <QApplication>
+#include <QPushButton>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QFrame>
+
 #define RENDER_TEXT 1001
 #define COMMAND  1
 #define INSERT  2
@@ -94,7 +103,7 @@ extern "C" {
     void _init_ruby(int argc, char *argv[]);
 
 
-}
+} // END extern "C"
 
 int render_text();
 int cpp_render_text(); //TODO: ?
@@ -116,6 +125,25 @@ private:
     void run();
 };
 
+class Overlay : public
+ QFrame
+{
+   Q_OBJECT
+    public:
+    Overlay(QWidget *parent = 0): QFrame(parent)  {
+    setAttribute(Qt::WA_TransparentForMouseEvents);
+    setFrameStyle(QFrame::NoFrame);
+    // Autofill with transparent color
+    setAutoFillBackground(true);
+    setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+    //2DEBUG: setStyleSheet("background-color: rgba(255, 255, 255, 10);");
+    }
+   /*~Editor();*/
+
+ protected:
+   void paintEvent(QPaintEvent * e);
+
+};
 
 
 
@@ -125,6 +153,18 @@ class SEditor : public
    Q_OBJECT
     public:
     SEditor(QWidget *parent = 0);
+    int cursor_x;
+    int cursor_y;
+    int cursor_height;
+    int cursor_width;
+    int at_line_end;
+    int overlay_paint_cursor;
+    int is_command_mode;
+    Overlay* overlay;
+    QFont fnt;
+
+    void drawTextCursor();
+
    /*~Editor();*/
 
  protected:
@@ -133,6 +173,8 @@ class SEditor : public
     void mouseReleaseEvent(QMouseEvent *e);
     void cursorPositionChanged();
     void focusOutEvent(QFocusEvent *event);
+    void paintEvent(QPaintEvent * e);
+
 
  private:
     void handleKeyEvent(QKeyEvent *e);
@@ -181,6 +223,7 @@ private:
     void mergeFormatOnWordOrSelection(const QTextCharFormat &format);
     void fontChanged(const QFont &f);
     void colorChanged(const QColor &c);
+    Overlay overlay;
 
     QAction *actionSave;
 
