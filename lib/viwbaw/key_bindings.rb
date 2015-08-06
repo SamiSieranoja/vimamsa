@@ -25,6 +25,8 @@
 # The default keymap
 $cnf = {}#TODO
 
+$cnf['modes'] = {'M' => 'MINIBUFFER', 'C' =>'COMMAND','V' =>'VISUAL','I'=>'INSERT'} #TODO
+
 $cnf['key_bindigs'] = {
     #'C q'=> 'quit',
 
@@ -57,7 +59,6 @@ $cnf['key_bindigs'] = {
 #    'C '=> '$buffer.jump_word(BACKWARD,END)',#TODO
     'VC f <char>'=> '$buffer.jump_to_next_instance_of_char(<char>)',
     'VC F <char>'=> '$buffer.jump_to_next_instance_of_char(<char>,BACKWARD)',
-    'VC /' => 'invoke_search',
     'VC /[1-9]/'=> 'set_next_command_count(<char>)',
     'VC ^'=> '$buffer.jump(BEGINNING_OF_LINE)',
     'VC 0($next_command_count!=nil)'=> 'set_next_command_count(<char>)',
@@ -65,7 +66,21 @@ $cnf['key_bindigs'] = {
     #'C 0'=> '$buffer.jump(BEGINNING_OF_LINE)',
     'VC g g'=> '$buffer.jump(START_OF_BUFFER)',
     'VC G'=> '$buffer.jump(END_OF_BUFFER)',
-    'C , D'=> 'debug_print_buffer',#TODO:binding does not work?
+
+    # MINIBUFFER bindings
+    'VC /' => 'invoke_search',
+    #'VC :' => 'invoke_command', #TODO
+    'VC , e' => 'invoke_command', #Currently eval
+    'M enter' =>'minibuffer_end()',
+    'M return' =>'minibuffer_end()',
+    'M backspace' =>'minibuffer_delete()',
+    'M <char>' => 'minibuffer_new_char(<char>)',
+
+
+    'C n' => '$search.jump_to_next()',
+    'C N' => '$search.jump_to_previous()',
+
+    'C , D'=> 'debug_print_buffer',
     'C , d b'=> 'debug_print_buffer',
     'C , d c'=> 'debug_dump_clipboard',
     'VC O'=> '$buffer.jump(END_OF_LINE)',
@@ -134,6 +149,7 @@ $cnf['key_bindigs'] = {
     # Text transform
     #'C g U w' => 'upper_case(WORD)', #TODO
     'C .' => 'repeat_last_action',
+    'C ;' => 'repeat_last_find',
     'CV Q' => '_quit',
     'CV , R' => 'restart_application',
     'I ctrl!'=> '$at.set_mode(COMMAND)',
@@ -192,7 +208,8 @@ class AutomataTree
         @C = State.new("C")
         @I = State.new("I")
         @V = State.new("V")
-        @root.children << @C << @I << @V
+        @M = State.new("M")
+        @root.children << @C << @I << @V << @M
         @cur_state = @root #used for building the tree
         @match_state = [@C] #used for matching input
         @mode_root_state = @C
@@ -241,7 +258,7 @@ class AutomataTree
         @mode_root_state = @C if mode == COMMAND
         @mode_root_state = @I if mode == INSERT
         @mode_root_state = @V if mode == VISUAL
-
+        @mode_root_state = @M if mode == MINIBUFFER
     end
 
 def is_command_mode()
@@ -407,6 +424,8 @@ $event_keysym_translate_table = {
     Qt::Key_Down  => "down",
     Qt::Key_Left  => "left",
     Qt::Key_Right  => "right",
+    Qt::Key_Enter => "enter",
+    Qt::Key_Return => "return",
     Qt::Key_Shift  => "shift"
 };
 

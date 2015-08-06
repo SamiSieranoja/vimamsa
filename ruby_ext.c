@@ -65,13 +65,13 @@ VALUE method_main_loop(VALUE self) {
 #define STR_ENC_GET(str) rb_enc_from_index(ENCODING_GET(str))
 
 static VALUE
-scan_once(VALUE str, VALUE pat, long *start)
+scan_once(VALUE str, VALUE pat, long *start_i)
 {
     VALUE result, match;
     struct re_registers *regs;
     int i;
 
-    if (rb_reg_search(pat, str, *start, 0) >= 0) {
+    if (rb_reg_search(pat, str, *start_i, 0) >= 0) {
 	match = rb_backref_get();
 	regs = RMATCH_REGS(match);
 	if (BEG(0) == END(0)) {
@@ -80,19 +80,54 @@ scan_once(VALUE str, VALUE pat, long *start)
 	     * Always consume at least one character of the input string
 	     */
 	    if (RSTRING_LEN(str) > END(0))
-		*start = END(0)+rb_enc_fast_mbclen(RSTRING_PTR(str)+END(0),
+		*start_i = END(0)+rb_enc_fast_mbclen(RSTRING_PTR(str)+END(0),
 						   RSTRING_END(str), enc);
 	    else
-		*start = END(0)+1;
+		*start_i = END(0)+1;
 	}
 	else {
-	    *start = END(0);
+	    *start_i = END(0);
 	}
-	if (regs->num_regs == 1) {
-	    return rb_reg_nth_match(0, match);
+	if (regs->num_regs == 1
+            //TODO multiple matches (regexp groups) not implemented yet
+            || regs->num_regs > 1 ) {
+
+        // START From ruby re.c:rb_reg_nth_match
+        long start, end, len;
+        struct re_registers *regs;
+        int nth = 0;
+
+        if (NIL_P(match)) return Qnil;
+        //match_check(match);
+        // ruby_ext.c:100:22: error: ‘match_check’ was not declared in this scope
+        // Seems to work fine without
+
+        regs = RMATCH_REGS(match);
+        if (nth >= regs->num_regs) {
+            return Qnil;
+        }
+        if (nth < 0) {
+            nth += regs->num_regs;
+            if (nth <= 0) return Qnil;
+        }
+        start = BEG(nth);
+        if (start == -1) return Qnil;
+        end = END(nth);
+        len = end - start;
+        // TODO:optimize str_sublen??
+        result = INT2NUM(rb_str_sublen(str,start));
+        return result;
+        //str = rb_str_subseq(RMATCH(match)->str, start, len);
+        //OBJ_INFECT(str, match);
+        // END FROM ruby re.c:rb_reg_nth_match
+
+
+	    //return rb_reg_nth_match(0, match);
 	}
 	result = rb_ary_new2(regs->num_regs);
 	for (i=1; i < regs->num_regs; i++) {
+
+        //TODO multiple matches (groups) not implemented yet
 	    rb_ary_push(result, rb_reg_nth_match(i, match));
 	}
 
@@ -118,7 +153,6 @@ scan_once(VALUE str, VALUE pat, long *start)
  *             @line_ends << i
  *         end
  *
- * Implementing this in C makes it roughly 40 times faster.
 ***/
 VALUE method_scan_indexes(VALUE self,VALUE str,VALUE pat) {
 
@@ -139,7 +173,8 @@ VALUE method_scan_indexes(VALUE self,VALUE str,VALUE pat) {
             //rb_ary_push(ary, INT2NUM(start));
             //TODO: if result != Qnil
             //TODO: start gives end of pattern+1? Currently compensating in ruby.
-            rb_ary_push(ary, INT2NUM(rb_str_sublen(str,start)));// TODO:optimize str_sublen
+            //rb_ary_push(ary, INT2NUM(rb_str_sublen(str,start)));// TODO:optimize str_sublen
+            rb_ary_push(ary, result);
         }
         if (last >= 0) rb_reg_search(pat, str, last, 0);
         return ary;

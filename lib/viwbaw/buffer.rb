@@ -45,7 +45,8 @@ class Buffer < String
 
     #attr_reader (:pos, :cpos, :lpos)
 
-    attr_reader :pos, :lpos, :cpos, :deltas, :fname
+    attr_reader :pos, :lpos, :cpos, :deltas, :fname, :call_func
+    attr_writer :call_func
 
     def initialize(str,fname)
         if(str[-1] != "\n")
@@ -60,8 +61,10 @@ class Buffer < String
         @pos = 0 # Position in whole string
         @cpos = 0 # Column position on current line
         @lpos = 0 # Number of current line
+        @edit_version = 0 # +1 for every buffer modification
         @larger_cpos = 0 
         @need_redraw = 1
+        @call_func = nil
         @deltas = []
         puts Time.now - t1
         # TODO: add \n when chars are added after last \n
@@ -74,11 +77,16 @@ class Buffer < String
             return ""
         elsif lpos == @line_ends.size
         end
-        start = @line_ends[lpos - 1] if lpos > 0
+        start = @line_ends[lpos - 1] + 1 if lpos > 0
         start = 0 if lpos == 0
-        _end = @line_ends[lpos] - 1
+        _end = @line_ends[lpos] 
         debug "start: _#{start}, end: #{_end}"
         return self[start.._end]
+    end
+
+    def add_delta(delta)
+        @deltas << delta
+        @edit_version += 1
     end
 
     def current_char()
@@ -97,9 +105,9 @@ class Buffer < String
             debug("lpos too large") #TODO
             end_line = @line_ends.size - 1
         end
-        start = @line_ends[start_line - 1] if start_line > 0
+        start = @line_ends[start_line - 1] + 1 if start_line > 0
         start = 0 if start_line == 0
-        _end = @line_ends[end_line] - 1
+        _end = @line_ends[end_line] 
         debug "line range: start=#{start}, end=#{_end}"
         return start.._end
     end
@@ -121,7 +129,11 @@ class Buffer < String
     end
 
     def set_pos(new_pos)
-        @pos = new_pos
+        if new_pos >= self.size
+            @pos = self.size # right side of last char
+        else
+            @pos = new_pos
+        end
         calculate_line_and_column_pos
     end
 
@@ -132,25 +144,25 @@ class Buffer < String
         @pos = self.size if @pos > self.size
         @pos = 0 if @pos < 0
         #puts @line_ends
-        next_line_end = @line_ends.bsearch {|x| x - 1 >= @pos  } #=> 4
+        next_line_end = @line_ends.bsearch {|x| x  >= @pos  } #=> 4
         #puts @line_ends
         #puts "nle: #{next_line_end}"
         @lpos = @line_ends.index(next_line_end)
         if @lpos == nil
-            @lpos = @line_ends.size 
+            @lpos = @line_ends.size
         else
             #@lpos += 1
         end
         @cpos = @pos
         if @lpos > 0
-            @cpos -= @line_ends[@lpos - 1]
+            @cpos -= @line_ends[@lpos - 1] #TODO??
         end
     end
 
     # Calculate the one dimensional array index based on column and line positions
     def calculate_pos_from_cpos_lpos()
         if @lpos > 0
-            new_pos = @line_ends[@lpos - 1]
+            new_pos = @line_ends[@lpos - 1] + 1
         else
             new_pos = 0
         end
@@ -172,30 +184,30 @@ class Buffer < String
       # Delete selection
       if op== SELECTION && visual_mode?
           (start,_end) = get_visual_mode_range2
-          @deltas << [start,DELETE,(_end - start + 1)]
+          add_delta([start,DELETE,(_end - start + 1)])
           self.slice!(start.._end) 
           @pos = [@pos,@selection_start].min
           end_visual_mode
 
           # Delete current char
       elsif op == CURRENT_CHAR_FORWARD
-          @deltas << [@pos,DELETE,1]
+          add_delta([@pos,DELETE,1])
           self.slice!(@pos) 
 
           # Delete current char and then move backward
       elsif op == CURRENT_CHAR_BACKWARD
-          @deltas << [@pos,DELETE,1]
+          add_delta([@pos,DELETE,1])
           self.slice!(@pos) 
           @pos -= 1
 
           # Delete the char before current char and move backward
       elsif op == BACKWARD_CHAR
-          @deltas << [@pos - 1,DELETE,1]
+          add_delta([@pos - 1,DELETE,1])
           self.slice!(@pos - 1) #TODO: check
           @pos -= 1
 
       elsif op == FORWARD_CHAR #TODO: ok?
-          @deltas << [@pos+1,DELETE,1]
+          add_delta([@pos+1,DELETE,1])
           self.slice!(@pos + 1) 
       end
 
@@ -235,7 +247,7 @@ class Buffer < String
 
         if direction == BACKWARD_LINE or direction == FORWARD_LINE
             if @lpos > 0
-                new_pos = @line_ends[@lpos - 1]
+                new_pos = @line_ends[@lpos - 1] - 1
             else
                 new_pos = 0
             end
@@ -258,40 +270,52 @@ class Buffer < String
     end
 
     def jump_word(direction,wordpos)
+        offset = 0
         if direction == FORWARD
             debug "POS: #{@pos},"
-            if wordpos == WORD_START # 'w'
+            search_str = self[(@pos)..(@pos + 150)]
+            return if search_str == nil
+            if wordpos == WORD_START # vim 'w'
                 
-                #wsmarks = scan_indexes(self[@pos..(@pos + 150)],/((\W)\w)|\n\n|\Z/) # \Z = end of string, just before last newline.
-                # http://ruby-doc.org/core-2.1.1/Regexp.html
-                wsmarks = scan_indexes(self[@pos..(@pos + 150)],/(([^\p{Word}])\p{Word})|\n\n|\Z/) # \Z = end of string, just before last newline.
+                wsmarks = scan_indexes(search_str,/(?<=[^\p{Word}])\p{Word}|\Z/) # \Z = end of string, just before last newline.
+                wsmarks2 = scan_indexes(search_str,/\n[ \t]*\n/) # "empty" lines that have whitespace
+                wsmarks2 = wsmarks2.collect{|x| x+1}
+                wsmarks = (wsmarks2 + wsmarks).sort.uniq
+            offset = 0
 
             elsif wordpos == WORD_END
                 #wsmarks = scan_indexes(self[@pos..(@pos + 150)],/(\w(\W)|\n\n)/) # include empty lines?
                 #wsmarks = scan_indexes(self[@pos..(@pos + 150)],/(\w(\W))/)
-                wsmarks = scan_indexes(self[@pos..(@pos + 150)],/\p{Word}[^\p{Word}]/)
+                wsmarks = scan_indexes(search_str,/(?<=\p{Word})[^\p{Word}]/)
+            offset = 0
 
             end
             if wsmarks.any?
-                next_pos = @pos + wsmarks[0] - 1
+                #puts wsmarks.inspect
+                next_pos = @pos + wsmarks[0] + offset
                 set_pos(next_pos)
             end
         end
-         if direction == BACKWARD
-             start_search = @pos - 150
+         if direction == BACKWARD #  vim 'b'
+             start_search = @pos - 150 #TODO 150 length limit
              start_search = 0 if start_search < 0
-            wsmarks = scan_indexes(self[start_search..(@pos - 1)],
+            search_str = self[start_search..(@pos - 1)]
+            return if search_str == nil
+            wsmarks = scan_indexes(search_str,
                                    #/(^|(\W)\w|\n)/) #TODO 150 length limit
-                                   /(^|[^\p{Word}]\p{Word}|\n)/) #TODO 150 length limit
+                                   #/^|(?<=[^\p{Word}])\p{Word}|(?<=\n)\n/) #include empty lines?
+                                   /\A|(?<=[^\p{Word}])\p{Word}/) # Start of string or nonword,word.
+
+            offset = 0
 
             if wsmarks.any?
-                next_pos = start_search + wsmarks.last - 1
+                next_pos = start_search + wsmarks.last + offset
                 set_pos(next_pos)
             end
         end
   
     end
-
+       
     def jump(target)
         if target == START_OF_BUFFER
             set_pos(0)
@@ -315,7 +339,7 @@ class Buffer < String
             a = scan_indexes(l,/\S/)
             puts a.inspect
             if a.any?
-                @cpos = a[0] - 1 
+                @cpos = a[0]
             else
                 @cpos = 0
             end
@@ -357,6 +381,7 @@ class Buffer < String
         end
         m = method("jump_to_next_instance_of_char")
         set_last_command({method: m, params: [char,direction]})
+        $last_find_command = {char: char,direction:direction}
         calculate_line_and_column_pos
     end
 
@@ -373,7 +398,7 @@ class Buffer < String
         end
         
         self.insert(insert_pos,c)
-        @deltas << [insert_pos,INSERT,0,c]
+        add_delta([insert_pos,INSERT,0,c])
         puts("encoding: #{c.encoding}")
         puts "c.size: #{c.size}"
         recalc_line_ends #TODO: optimize?
@@ -407,11 +432,11 @@ class Buffer < String
     end
 
     def delete_cur_line()
-        start = @line_ends[@lpos - 1] if @lpos > 0
+        start = @line_ends[@lpos - 1] + 1 if @lpos > 0
         start = 0 if @lpos == 0
-        _end = @line_ends[@lpos] - 1
+        _end = @line_ends[@lpos]
 
-        @deltas << [start,DELETE,_end - start + 1]
+        add_delta([start,DELETE,_end - start + 1])
         $clipboard << self.slice!(start.._end)
         recalc_line_ends #TODO: optimize?
         calculate_pos_from_cpos_lpos

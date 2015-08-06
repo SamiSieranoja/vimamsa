@@ -15,18 +15,22 @@ $lpos = 0
 $larger_cpos = 0
 $cur_line = nil
 $check_modifiers = false
+$search_indexes = []
 
 
 require 'viwbaw/macro'
 require 'viwbaw/buffer'
+require 'viwbaw/search'
 require 'viwbaw/key_bindings'
 
 $macro = Macro.new
+$search = Search.new
 
 COMMAND = 1
 INSERT = 2
 BROWSE = 3
 VISUAL = 4
+MINIBUFFER = 5
 
 NEXT_MARK = 1001
 PREVIOUS_MARK = 1002
@@ -102,6 +106,16 @@ def repeat_last_action()
     cmd = $command_history.last
     cmd[:method].call *cmd[:params] if cmd != nil
 end
+
+def repeat_last_find()
+    return if !defined? $last_find_command
+    $buffer.jump_to_next_instance_of_char($last_find_command[:char],
+                                          $last_find_command[:direction])
+
+end
+
+
+
 def set_next_command_count(num)
     if $next_command_count != nil
         $next_command_count = $next_command_count*10 + num.to_i
@@ -110,10 +124,60 @@ def set_next_command_count(num)
     end
     debug("NEXT COMMAND COUNT: #{$next_command_count}")
 end
+
 def invoke_search()
-    $minibuffer = Buffer.new("/","")
-    $buffer = $minibuffer
+    $at.set_mode(MINIBUFFER)
+    $minibuffer = Buffer.new("","")
+    $minibuffer.call_func = method(:execute_search)
+    #lambda { |input_str| $minibuffer }
+    #$minibuffer = Buffer.new("/","")
 end
+
+def invoke_command()
+    $at.set_mode(MINIBUFFER)
+    $minibuffer = Buffer.new("","")
+    $minibuffer.call_func = method(:execute_command)
+    #TODO
+end
+
+def execute_search(input_str)
+    $search = Search.new
+    $search.set(input_str,'simple',$buffer)
+end
+
+def execute_command(input_str)
+    begin
+        out_str = eval(input_str)
+        $minibuffer.clear
+        $minibuffer << out_str.to_s
+    rescue SyntaxError
+        debug("SYNTAX ERROR with eval cmd #{action}: " + $!.to_s)
+    end
+end
+
+
+def minibuffer_end()
+    puts "MINIBUFFER END2"
+    $at.set_mode(COMMAND)
+    minibuffer_input = $minibuffer.to_s[0..-2]
+    $minibuffer.call_func.call(minibuffer_input)
+
+end
+
+def minibuffer_new_char(c)
+    if c == "\r"
+        raise "Should not come here"
+        puts "MINIBUFFER END"
+    else
+        $minibuffer.insert_char(c)
+        puts "MINIBUFFER: #{c}"
+    end
+    #$buffer = $minibuffer
+end
+def minibuffer_delete()
+    $minibuffer.delete(BACKWARD_CHAR)
+end
+
 
 def message(s)
     $minibuffer = Buffer.new(s,"")
