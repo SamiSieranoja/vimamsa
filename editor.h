@@ -138,6 +138,7 @@ class Overlay : public
     setStyleSheet("background-color: rgba(255, 255, 255, 0);");
     //2DEBUG: setStyleSheet("background-color: rgba(255, 255, 255, 10);");
     }
+    int draw_text(int x, int y, char* text);
    /*~Editor();*/
 
  protected:

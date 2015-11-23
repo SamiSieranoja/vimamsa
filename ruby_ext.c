@@ -1,4 +1,10 @@
 
+
+//TODO: put to ruby_ext.h
+VALUE pos_to_viewport_coordinates(VALUE args);
+VALUE draw_text(VALUE args);
+
+
 extern "C" {
 
 #include <stdio.h>
@@ -196,6 +202,43 @@ VALUE method_render_text(VALUE self,VALUE text, VALUE _pos, VALUE _selection_sta
 	return INT2NUM(1);
 }
 
+int get_visible_area(int& start_pos, int& end_pos) {
+    QTextCursor cursor = c_te->cursorForPosition(QPoint(0, 0));
+    QPoint bottom_right(c_te->viewport()->width() - 1, c_te->viewport()->height() - 1);
+    start_pos = cursor.position();
+    end_pos = c_te->cursorForPosition(bottom_right).position();
+    cursor.setPosition(end_pos, QTextCursor::KeepAnchor);
+    qDebug() << cursor.selectedText();
+    printf("Visible range: %d - %d\n", start_pos,end_pos);
+    return 0;
+}
+
+VALUE rb_get_visible_area() {
+    int start_pos; int end_pos;
+    VALUE range = rb_ary_new();
+    get_visible_area(start_pos,end_pos);
+    rb_ary_push(range, INT2NUM(start_pos));
+    rb_ary_push(range, INT2NUM(end_pos));
+    return range;
+}
+
+
+
+
+VALUE ruby_cpp_function_wrapper(VALUE self,VALUE method_name, VALUE args) {
+    VALUE ret;
+    switch(NUM2INT(method_name)) {
+        case 0:
+            ret = pos_to_viewport_coordinates(args); break;
+        case 1:
+            ret = draw_text(args); break;
+        case 2:
+            ret = rb_get_visible_area(); break;
+    }
+	return ret;
+}
+
+
 
 void _init_ruby(int argc, char *argv[]) {
     ruby_sysinit(&argc,&argv);
@@ -211,6 +254,7 @@ void _init_ruby(int argc, char *argv[]) {
     rb_define_global_function("qt_quit",method_qt_quit,0);
     rb_define_global_function("open_file_dialog",method_open_file_dialog,0);
     rb_define_global_function("restart_application",method_restart,0);
+    rb_define_global_function("cpp_function_wrapper",ruby_cpp_function_wrapper,2);
 
     rb_define_global_function("set_window_title",method_set_window_title,1);
 
@@ -227,6 +271,48 @@ void _init_ruby(int argc, char *argv[]) {
 }
 
 } // END of extern "C"
+
+
+
+VALUE cursor_to_viewport_pos(int cursorpos) {
+    //printf("cursorpos:%d ",cursorpos);
+    QTextCursor cursor = c_te->textCursor();
+    cursor.setPosition(cursorpos);
+    QRect r = c_te->cursorRect(cursor);
+    VALUE point = rb_ary_new();
+    rb_ary_push(point, INT2NUM(r.x()));
+    rb_ary_push(point, INT2NUM(r.y()));
+    return point;
+
+
+    //jm_x = r.x()-6;
+    //jm_y = r.y()-7;
+}
+
+
+VALUE pos_to_viewport_coordinates(VALUE args)
+{
+    VALUE vpcrd;
+    printf("pos_to_viewport_coordinates\n");
+    vpcrd = rb_ary_new();
+
+    VALUE point;
+    VALUE cursorpos;
+    VALUE a_cursorpos = rb_ary_entry(args,0);
+
+    for (int i = 0; i < RARRAY_LEN(a_cursorpos); ++i) {
+        cursorpos = rb_ary_entry(a_cursorpos,i);
+        point = cursor_to_viewport_pos(NUM2INT(cursorpos));
+        rb_ary_push(vpcrd, point);
+    }
+    return vpcrd;
+}
+
+
+VALUE draw_text(VALUE args) {
+    c_te->overlay->draw_text("AX",40,40);
+}
+
 
 int render_text() {
     qDebug() << "c:RENDER_TEXT\n";
@@ -288,7 +374,14 @@ int render_text() {
   c_te->setTextCursor(tc);
   c_te->drawTextCursor();
 
- // TODO: needed?
+  //c_te->repaint(c_te->contentsRect());
+
+  // Without this draw area is not always updated although
+  // Overlay::paintEvent is called
+  c_te->overlay->repaint(c_te->overlay->contentsRect());
+
+  //get_visible_area();
+
   app->processEvents();
 }
 

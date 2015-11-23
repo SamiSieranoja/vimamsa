@@ -131,7 +131,7 @@ class Buffer < String
     def set_pos(new_pos)
         if new_pos >= self.size
             @pos = self.size # right side of last char
-        else
+        elsif new_pos >= 0
             @pos = new_pos
         end
         calculate_line_and_column_pos

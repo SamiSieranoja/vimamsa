@@ -85,14 +85,34 @@ const QString rsrcPath = ":/images/win";
 #endif
 
 void    Overlay::paintEvent(QPaintEvent * e) {
+int jm_x = 0;
+int jm_y = 0;
+
+
+
+QTextCursor cursor = c_te->textCursor();
+cursor.setPosition(67);
+QRect r = c_te->cursorRect(cursor);
+  jm_x = r.x()-6;
+  jm_y = r.y()-7;
+  //int cursor_height = r.height();
+
+
+    if(c_te->cursor_y < 0) return;
+    //TODO: when outside of viewport
+
+    QSize parentsize = c_te->frameSize();
 
     int draw_width = c_te->cursor_x+c_te->cursor_width;
     int draw_height = c_te->cursor_y+c_te->cursor_height;
+    resize(parentsize); //TODO: resize to parent widget when change
     QPainter p(this);
-    p.eraseRect(0,0,draw_width,draw_height);
-    resize(draw_width, draw_height); //TODO: resize to parent widget when change
+    //resize(draw_width, draw_height); //TODO: resize to parent widget when change
 
-    if(c_te->overlay_paint_cursor) {
+    p.eraseRect(0,0,parentsize.rwidth(),parentsize.rheight());
+    //p.eraseRect(0,0,draw_width,draw_height);
+
+    if(c_te->overlay_paint_cursor ) {
         //printf("Overlay:paintEvent x=%d y=%d w=%d h=%d\n",c_te->cursor_x, c_te->cursor_y, c_te->cursor_width,c_te->cursor_height);
         QColor cursor_color = new QColor("#839496");
         p.fillRect(c_te->cursor_x, c_te->cursor_y,
@@ -103,17 +123,54 @@ void    Overlay::paintEvent(QPaintEvent * e) {
     }
 
 
+
+//printf("Overlay:paintEvent. %dx%d\n",parentsize.rwidth(),parentsize.rheight());
+
+
+    VALUE paint_stack = rb_eval_string("$paint_stack");
+    while(RARRAY_LEN(paint_stack) > 0) {
+        VALUE p = rb_ary_shift(paint_stack);
+        int draw_type = NUM2INT(rb_ary_entry(p,0));
+        int x_coord = NUM2INT(rb_ary_entry(p,1));
+        int y_coord = NUM2INT(rb_ary_entry(p,2));
+        VALUE c = rb_ary_entry(p,3);
+        //qDebug() << "Paint item: " << " " << NUM2INT(rb_ary_entry(p,0)) << " " << NUM2INT(rb_ary_entry(p,1)) << " " << NUM2INT(rb_ary_entry(p,2)) << "\n";
+        draw_text(x_coord,y_coord, StringValueCStr( c ));
+    }
+
+
 }
 
+int Overlay::draw_text(int x, int y, char* text)
+{
+
+    QPainter p(this);
+    p.setPen(QColor("#ff2222"));
+    QFont font=p.font() ;
+    //font.setPointSize (10);
+    font.setPointSize (9);
+    font.setWeight(QFont::DemiBold);
+    p.setFont(font);
+    p.fillRect(x+2, y+2,
+            //20,c_te->cursor_height, QColor("#bbbbbbdd"));
+            7*strlen(text) ,c_te->cursor_height-2, QColor("#88000000"));
+    //p.drawText(x+3, y+c_te->cursor_height-3, text);
+    p.drawText(x+3, y+c_te->cursor_height-3, text);
+    //printf("x: %d y: %d\n",x,y);
+    //qDebug() << "Overaly::draw_text " << "\n";
+
+}
 
 
 SEditor::SEditor(QWidget *parent)
     //: QEditor(parent)
 {
 
+
     cursorpos = 0;
     at_line_end = 0;
     overlay_paint_cursor = 0;
+    overlay = 0;
     fnt = QFont ("Ubuntu Mono", 12);
     setFont(fnt);
     QPalette p = palette();
@@ -269,6 +326,7 @@ void SEditor::mouseReleaseEvent(QMouseEvent *event)
         rb_funcall(NULL,rb_intern("set_cursor_pos"),1,INT2NUM(cursor_pos));
         drawTextCursor();
         update(); //TODO: needed?
+
 }
 
 void SEditor::paintEvent(QPaintEvent * e)
@@ -277,9 +335,13 @@ void SEditor::paintEvent(QPaintEvent * e)
     //Q_D(QTextEdit);
     //QPainter p(d->viewport);
     //d->paint(&p, e);
+    //TODO: gives error if trying to draw after calling superclass paintEvent
     //return;
     QTextEdit::paintEvent(e);
-    //TODO: gives error if trying to draw after calling superclass paintEvent
+    QRect r = cursorRect();
+    cursor_x = r.x();
+    cursor_y = r.y();
+    cursor_height = r.height();
 
 }
 

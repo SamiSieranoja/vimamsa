@@ -14,10 +14,14 @@ $cpos = 0
 $lpos = 0
 $larger_cpos = 0
 $cur_line = nil
+$input_char_call_func = nil
 $check_modifiers = false
 $search_indexes = []
 
+$paint_stack = []
+$jump_sequence = []
 
+require 'fileutils'
 require 'viwbaw/macro'
 require 'viwbaw/buffer'
 require 'viwbaw/search'
@@ -31,6 +35,7 @@ INSERT = 2
 BROWSE = 3
 VISUAL = 4
 MINIBUFFER = 5
+READCHAR = 6
 
 NEXT_MARK = 1001
 PREVIOUS_MARK = 1002
@@ -174,6 +179,11 @@ def minibuffer_new_char(c)
     end
     #$buffer = $minibuffer
 end
+
+def readchar_new_char(c)
+    $input_char_call_func.call(c)
+end
+
 def minibuffer_delete()
     $minibuffer.delete(BACKWARD_CHAR)
 end
@@ -213,6 +223,12 @@ GUESS_ENCODING_ORDER = [
 
 def read_file(text, path)
     path = Pathname(path.to_s).expand_path
+    FileUtils.touch(path) unless File.exist?(path)
+    if !File.exist?(path)
+        #TODO: fail gracefully
+        return
+    end
+
     encoding = text.encoding
     content = path.open("r:#{encoding.name}"){|io| io.read }
 
@@ -224,7 +240,8 @@ def read_file(text, path)
         content.encode!(Encoding::UTF_8)
     end
 
-    return content.chomp
+    return content
+    #return content.chomp #TODO:? chomp needed?
 end
 
 def new_file_opened(filename,file_contents)
@@ -262,6 +279,168 @@ def save_file()
     $buffer.save()
 end
 
+
+def scan_word_start_marks(search_str)
+    wsmarks = scan_indexes(search_str,/(?<=[^\p{Word}])\p{Word}|\Z/) # \Z = end of string, just before last newline.
+    wsmarks2 = scan_indexes(search_str,/\n[ \t]*\n/) # "empty" lines that have whitespace
+    wsmarks2 = wsmarks2.collect{|x| x+1}
+    wsmarks = (wsmarks2 + wsmarks).sort.uniq
+    return wsmarks
+end
+
+def draw_text(str,x,y)
+    $paint_stack << [4,x,y,str]
+    #cpp_function_wrapper(1,[str,x,y]);
+end
+
+def get_visible_area()
+    return cpp_function_wrapper(2,[]);
+end
+
+def make_jump_sequence(num_items)
+    left_hand = "asdfvgbqwertzxc123".upcase.split("")
+    right_hand = "jklhnnmyuiop890".upcase.split("")
+
+    sequence = []
+    left_hand_fast = "asdf".upcase.split("")
+    right_hand_fast = "jkl;".upcase.split("")
+
+    left_hand_slow = "wergc".upcase.split("") # v
+    right_hand_slow = "uiophnm,".upcase.split("")
+
+    left_hand_slow2 = "tzx23".upcase.split("")
+    right_hand_slow2 = "yb9'".upcase.split("")
+
+    # Rmoved characters that can be mixed: O0Q, 8B, I1, VY
+
+   left_fast_slow = Array.new(left_hand_fast).concat(left_hand_slow)
+   right_fast_slow = Array.new(right_hand_fast).concat(right_hand_slow)
+
+   left_hand_all = Array.new(left_hand_fast).concat(left_hand_slow).concat(left_hand_slow2)
+   right_hand_all = Array.new(right_hand_fast).concat(right_hand_slow).concat(right_hand_slow2)
+
+    left_hand_fast.each{|x|
+       left_hand_fast.each{|y|
+       sequence << "#{x}#{y}"
+       }
+    }
+
+    right_hand_fast.each{|x|
+       right_hand_fast.each{|y|
+       sequence << "#{x}#{y}"
+       }
+    }
+
+   right_hand_fast.each{|x|
+       left_hand_fast.each{|y|
+       sequence << "#{x}#{y}"
+       }
+    }
+
+   left_hand_fast.each{|x|
+       right_hand_fast.each{|y|
+       sequence << "#{x}#{y}"
+       }
+    }
+
+   left_hand_slow.each{|x|
+       right_fast_slow.each{|y|
+       sequence << "#{x}#{y}"
+       }
+    }
+
+   right_hand_slow.each{|x|
+       left_fast_slow.each{|y|
+           sequence << "#{x}#{y}"
+       }
+    }
+
+   left_hand_slow2.each{|x|
+       right_hand_all.each{|y|
+           left_hand_all.each{|z|
+               sequence << "#{x}#{y}#{z}"
+           }
+       }
+   }
+
+   right_hand_slow2.each{|x|
+       left_hand_all.each{|y|
+           right_hand_all.each{|z|
+               sequence << "#{x}#{y}#{z}"
+           }
+       }
+   }
+
+   #printf("Size of sequence: %d\n",sequence.size)
+   #puts sequence.inspect
+    return sequence
+
+end
+
+
+def easy_jump(direction)
+    puts "EASY JUMP"
+    $easy_jump_wsmarks = scan_word_start_marks($buffer)
+    visible_range = get_visible_area()
+    $easy_jump_wsmarks = $easy_jump_wsmarks.select{|x|
+        x >= visible_range[0] && x <= visible_range[1] }
+
+
+    $easy_jump_wsmarks.sort_by!{|x| (x-$buffer.pos).abs }
+
+    printf("VISIBLE RANGE: #{visible_range.inspect}\n")
+    printf("vsmarks: #{$easy_jump_wsmarks.inspect}\n")
+    $jump_sequence = make_jump_sequence($easy_jump_wsmarks.size)
+    #puts $jump_sequence.inspect
+    $input_char_call_func = method(:easy_jump_input_char)
+    $at.set_mode(READCHAR)
+    $easy_jump_input = ""
+    puts "========="
+end
+
+def easy_jump_input_char(c)
+    puts "EASY JUMP: easy_jump_input_char [#{c}]"
+    $easy_jump_input << c.upcase
+    if $jump_sequence.include?($easy_jump_input)
+        jshash = Hash[$jump_sequence.map.with_index.to_a]
+        nthword = jshash[$easy_jump_input]+1
+        puts "nthword:#{nthword} #{$easy_jump_wsmarks[nthword]}"
+        $buffer.set_pos($easy_jump_wsmarks[nthword])
+        $at.set_mode(COMMAND)
+        $input_char_call_func = nil
+        $jump_sequence = []
+    end
+    if $easy_jump_input.size > 2
+        $at.set_mode(COMMAND)
+        $input_char_call_func = nil
+        $jump_sequence = []
+    end
+end
+
+
+
+def easy_jump_draw()
+    return if $jump_sequence.empty?
+    puts "EASY JUMP DRAW"
+    #wsmarks = scan_word_start_marks($buffer)
+    screen_cord = cpp_function_wrapper(0,[$easy_jump_wsmarks]);
+    screen_cord = screen_cord[1..$jump_sequence.size]
+    #puts $jump_sequence
+    #puts screen_cord.inspect
+    screen_cord.each_with_index {|point,i|
+        mark_str = $jump_sequence[i]
+        #puts "draw #{point[0]}x#{point[1]}"
+        draw_text(mark_str,point[0] -2,point[1]-8)
+        #break if m > $cpos
+    }
+end
+
+def hook_draw()
+    puts "========= hook draw ======="
+    easy_jump_draw()
+    puts "==========================="
+end
+
 def render_buffer(buffer=0,reset=0)
     tmpbuf = $buffer.to_s
     puts "lpos:#{$lpos} cpos:[#{$cpos}]"
@@ -270,6 +449,11 @@ def render_buffer(buffer=0,reset=0)
     selection_start = $buffer.selection_start
     reset = 1 if $buffer.need_redraw?
     t1 = Time.now
+    puts "ZZZZZZZZZZZZZZZZZZZZ"
+    hook_draw()
+    #draw_text("Z",100,200)
+    puts "ZZZZZZZZZZZZZZZZZZZZ"
+
     render_text(tmpbuf,pos,selection_start,reset)
     puts "Render time: #{Time.now - t1}" if Time.now - t1 > 1/50.0
     $buffer.set_redrawed if reset == 1
@@ -293,6 +477,30 @@ def debug(message)
     puts message
     $stdout.flush
 end
+
+def run_tests()
+    run_test("01")
+    run_test("02")
+end
+
+def run_test(test_id)
+    target_results = read_file("", "tests/test_#{test_id}_output.txt")
+    old_buffer = $buffer
+    $buffer = Buffer.new("","")
+    load "tests/test_#{test_id}.rb"
+    test_ok = $buffer.to_s.strip == target_results.strip
+    puts "##################"
+    puts target_results
+    puts "##################"
+    puts $buffer.to_s
+    puts "##################"
+    puts "TEST OK" if test_ok
+    puts "TEST FAILED" if !test_ok
+    puts "##################"
+    $buffer = old_buffer
+
+end
+
 
 
 

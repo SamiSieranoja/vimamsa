@@ -25,7 +25,7 @@
 # The default keymap
 $cnf = {}#TODO
 
-$cnf['modes'] = {'M' => 'MINIBUFFER', 'C' =>'COMMAND','V' =>'VISUAL','I'=>'INSERT'} #TODO
+$cnf['modes'] = {'R' => 'READCHAR','M' => 'MINIBUFFER', 'C' =>'COMMAND','V' =>'VISUAL','I'=>'INSERT'} #TODO
 
 $cnf['key_bindigs'] = {
     #'C q'=> 'quit',
@@ -77,6 +77,11 @@ $cnf['key_bindigs'] = {
     'M <char>' => 'minibuffer_new_char(<char>)',
 
 
+    # READCHAR bindings
+
+    'R <char>' => 'readchar_new_char(<char>)',
+
+
     'C n' => '$search.jump_to_next()',
     'C N' => '$search.jump_to_previous()',
 
@@ -111,6 +116,8 @@ $cnf['key_bindigs'] = {
     'C d e'=> 'delete_next_word', 
     'C d <num> e'=> 'delete_next_word', 
 
+    'C s'=> 'easy_jump(:visible_area)',
+
     #'C 0($next_command_count==nil)'=> 'jump_to_beginning_of_line',
 
     # Visual mode only:
@@ -144,6 +151,9 @@ $cnf['key_bindigs'] = {
     'C q v'=> '$macro.end_recording',
     #'C v'=> '$macro.end_recording',
     'C R'=> '$macro.run_macro("a")',
+    'C , m s'=> '$macro.save_macro("a")',
+    'C , t r'=> 'run_tests()',
+
     #'C <number>'=> 'repeat_next(<number>)',
 
     # Text transform
@@ -209,7 +219,8 @@ class AutomataTree
         @I = State.new("I")
         @V = State.new("V")
         @M = State.new("M")
-        @root.children << @C << @I << @V << @M
+        @R = State.new("R")
+        @root.children << @C << @I << @V << @M << @R
         @cur_state = @root #used for building the tree
         @match_state = [@C] #used for matching input
         @mode_root_state = @C
@@ -259,6 +270,7 @@ class AutomataTree
         @mode_root_state = @I if mode == INSERT
         @mode_root_state = @V if mode == VISUAL
         @mode_root_state = @M if mode == MINIBUFFER
+        @mode_root_state = @R if mode == READCHAR
     end
 
 def is_command_mode()

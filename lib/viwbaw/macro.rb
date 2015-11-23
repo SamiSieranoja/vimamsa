@@ -40,5 +40,39 @@ class Macro < Struct.new(:recording, :recorded_evals)
           eval(eval_str)
       end
   end
+
+
+  def save_macro(name)
+      m = @recorded_evals[name]
+      return if !(m.kind_of?(Array) and m.any?)
+      contents = m.join(";")
+      dot_dir = File.expand_path('~/.viwbaw')
+      Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
+      save_fn = "#{dot_dir}/macro_#{name}.rb"
+      
+
+        Thread.new {
+        File.open(save_fn, 'w+') do |io|
+            #io.set_encoding(self.encoding)
+
+            begin
+                io.write(contents)
+            rescue Encoding::UndefinedConversionError => ex
+                # this might happen when trying to save UTF-8 as US-ASCII
+                # so just warn, try to save as UTF-8 instead.
+                warn("Saving as UTF-8 because of: #{ex.class}: #{ex}")
+                io.rewind
+
+                io.set_encoding(Encoding::UTF_8)
+                io.write(contents)
+                #self.encoding = Encoding::UTF_8
+            end
+        end
+            sleep 3#TODO:remove
+        }
+
+        end
+
+
 end
 
