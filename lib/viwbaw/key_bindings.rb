@@ -88,6 +88,7 @@ $cnf['key_bindigs'] = {
     'C , D'=> 'debug_print_buffer',
     'C , d b'=> 'debug_print_buffer',
     'C , d c'=> 'debug_dump_clipboard',
+    'C , d d'=> 'debug_dump_deltas',
     'VC O'=> '$buffer.jump(END_OF_LINE)',
     'VC $'=> '$buffer.jump(END_OF_LINE)',
 
@@ -96,13 +97,14 @@ $cnf['key_bindigs'] = {
     'C I' => '$buffer.jump(FIRST_NON_WHITESPACE);$at.set_mode(INSERT)',
     'C a' => '$buffer.move(FORWARD_CHAR);$at.set_mode(INSERT)',
     'C J' => '$buffer.join_lines()',
-
+    'C u' => '$buffer.undo()',
 
     'C ^'=> '$buffer.jump(BEGINNING_OF_LINE)',
     'C /[1-9]/'=> 'set_next_command_count(<char>)',
 
     # Command mode only:
-   'C r <char>'=> 'replace_char(<char>)',
+   #'C r <char>'=> 'replace_char(<char>)',
+    'C ctrl-r' => '$buffer.redo()', #TODO:???
    'C v'=> '$buffer.start_visual_mode', 
    'C p'=> '$buffer.paste', #TODO: implement as replace for visual mode
    'C space <char>' => '$buffer.insert_char(<char>)',
@@ -113,7 +115,7 @@ $cnf['key_bindigs'] = {
     'C d j'=> 'delete_line(FORWARD)', #TODO
     'C d d'=> '$buffer.delete_cur_line',
     'C d w'=> 'delete_next_word', 
-    'C d e'=> 'delete_next_word', 
+    'C d e'=> '$buffer.delete_to_next_word_end', 
     'C d <num> e'=> 'delete_next_word', 
 
     'C s'=> 'easy_jump(:visible_area)',

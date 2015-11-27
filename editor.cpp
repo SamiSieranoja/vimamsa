@@ -122,11 +122,6 @@ QRect r = c_te->cursorRect(cursor);
         //printf("Overlay:paintEvent. overlay_paint_cursor=false\n");
     }
 
-
-
-//printf("Overlay:paintEvent. %dx%d\n",parentsize.rwidth(),parentsize.rheight());
-
-
     VALUE paint_stack = rb_eval_string("$paint_stack");
     while(RARRAY_LEN(paint_stack) > 0) {
         VALUE p = rb_ary_shift(paint_stack);
@@ -145,25 +140,35 @@ int Overlay::draw_text(int x, int y, char* text)
 {
 
     QPainter p(this);
-    p.setPen(QColor("#ff2222"));
+    p.setPen(QColor("#ffff2222"));
     QFont font=p.font() ;
     //font.setPointSize (10);
-    font.setPointSize (9);
+    font.setPointSize (10);
     font.setWeight(QFont::DemiBold);
+    QFontMetrics fm(font);
     p.setFont(font);
-    p.fillRect(x+2, y+2,
-            //20,c_te->cursor_height, QColor("#bbbbbbdd"));
-            7*strlen(text) ,c_te->cursor_height-2, QColor("#88000000"));
-    //p.drawText(x+3, y+c_te->cursor_height-3, text);
-    p.drawText(x+3, y+c_te->cursor_height-3, text);
-    //printf("x: %d y: %d\n",x,y);
-    //qDebug() << "Overaly::draw_text " << "\n";
+    //QRect qr =  fm.tightBoundingRect(text);
+    //QRect qr =  fm.tightBoundingRect("X");
+    QRect qr =  fm.tightBoundingRect(text);
+    int padding = 2;
+    int y_align = -0;
+    int x_align = -2;
+    //int font_height = fm.xHeight();
+    int font_height = qr.height();
+    p.fillRect(x+x_align-padding, y+y_align-padding,
+            qr.width()+2*padding ,font_height+2*padding, QColor("#77000000"));
+    p.drawText(x+x_align, y+y_align+ font_height, text);
 
+    //QPen myPen(Qt::red);
+    //myPen.setWidth(3);
+    //p.setPen(myPen);
+    //p.setBrush(Qt::NoBrush); // should not be necessary, but doesn't hurt
+    //p.drawPoint(x,y);
 }
 
 
 SEditor::SEditor(QWidget *parent)
-    //: QEditor(parent)
+//: QEditor(parent)
 {
 
 

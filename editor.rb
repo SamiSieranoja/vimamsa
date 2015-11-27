@@ -64,7 +64,7 @@ FIRST_NON_WHITESPACE = 2014
 DELETE = 3001
 REPLACE = 3002
 
-KEY_PRESS = 6   
+KEY_PRESS = 6
 KEY_RELEASE = 7 # QEvent::KeyRelease   
 
 
@@ -274,6 +274,12 @@ def debug_dump_clipboard()
     puts $clipboard.inspect
 end
 
+def debug_dump_deltas()
+    puts $buffer.edit_history.inspect
+end
+
+
+
 
 def save_file()
     $buffer.save()
@@ -430,7 +436,7 @@ def easy_jump_draw()
     screen_cord.each_with_index {|point,i|
         mark_str = $jump_sequence[i]
         #puts "draw #{point[0]}x#{point[1]}"
-        draw_text(mark_str,point[0] -2,point[1]-8)
+        draw_text(mark_str,point[0],point[1])
         #break if m > $cpos
     }
 end
@@ -501,21 +507,6 @@ def run_test(test_id)
 
 end
 
-
-
-
-# TODO: implement in buffer.rb
-#def delete_next_word()
-    #l = Line.new($buffer[$lpos])
-    #next_pos = 0
-    #l.wemarks.each {|m| next_pos = m
-        #break if m > $cpos
-    #}
-
-    #if $buffer[$lpos][$cpos] != "\n" and next_pos >= $cpos
-        #$buffer[$lpos].slice!($cpos..next_pos)
-    #end
-#end
 
 def encrypt(text,pass_phrase)
     salt = 'uvgixEtU'
