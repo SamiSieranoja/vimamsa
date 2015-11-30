@@ -12,7 +12,8 @@
 #
 # Change mode from insert into COMMAND when shift key is released immediately
 # after it has been pressed (there are no other key events between key press and key release).
-#    'I shift!'=> 'change_mode(COMMAND)',
+#        'I shift!'=> '$at.set_mode(COMMAND)',
+
 #
 # In command mode: press keys "," "r" "v" and "b" sequentially.
 # 'C , r v b'=> 'revert_buffer',
@@ -66,6 +67,9 @@ $cnf['key_bindigs'] = {
     #'C 0'=> '$buffer.jump(BEGINNING_OF_LINE)',
     'VC g g'=> '$buffer.jump(START_OF_BUFFER)',
     'VC G'=> '$buffer.jump(END_OF_BUFFER)',
+    'VC z z'=> 'center_on_current_line',
+    'VC *'=>'$buffer.jump_to_next_instance_of_word',
+
 
     # MINIBUFFER bindings
     'VC /' => 'invoke_search',
@@ -103,8 +107,8 @@ $cnf['key_bindigs'] = {
     'C /[1-9]/'=> 'set_next_command_count(<char>)',
 
     # Command mode only:
-   #'C r <char>'=> 'replace_char(<char>)',
     'C ctrl-r' => '$buffer.redo()', #TODO:???
+    'C R' => '$buffer.redo()', 
    'C v'=> '$buffer.start_visual_mode', 
    'C p'=> '$buffer.paste', #TODO: implement as replace for visual mode
    'C space <char>' => '$buffer.insert_char(<char>)',
@@ -117,6 +121,7 @@ $cnf['key_bindigs'] = {
     'C d w'=> 'delete_next_word', 
     'C d e'=> '$buffer.delete_to_next_word_end', 
     'C d <num> e'=> 'delete_next_word', 
+    'C r <char>'=> '$buffer.replace_with_char(<char>)', #TODO
 
     'C s'=> 'easy_jump(:visible_area)',
 
@@ -126,6 +131,8 @@ $cnf['key_bindigs'] = {
     'V esc'=> '$buffer.end_visual_mode', 
     'V y'=> '$buffer.copy_active_selection',
     'V d'=> '$buffer.delete(SELECTION)',
+    'V x'=> '$buffer.delete(SELECTION)',
+
 
     'CI ctrl-v'=> '$buffer.paste', 
     'CI backspace' =>'$buffer.delete(BACKWARD_CHAR)',
@@ -152,7 +159,7 @@ $cnf['key_bindigs'] = {
     #'C q'=> '$macro.end_recording', #TODO
     'C q v'=> '$macro.end_recording',
     #'C v'=> '$macro.end_recording',
-    'C R'=> '$macro.run_macro("a")',
+    'C M'=> '$macro.run_macro("a")',
     'C , m s'=> '$macro.save_macro("a")',
     'C , t r'=> 'run_tests()',
 
@@ -166,6 +173,7 @@ $cnf['key_bindigs'] = {
     'CV , R' => 'restart_application',
     'I ctrl!'=> '$at.set_mode(COMMAND)',
     'I shift!'=> '$at.set_mode(COMMAND)',
+    'C shift!'=> '$at.set_mode(INSERT)',
     'I <char>'=> '$buffer.insert_char(<char>)',
     'I esc'=> '$at.set_mode(COMMAND)',
     
@@ -453,9 +461,9 @@ def match_key_conf(c,translated_c,event_type)
 
     #found_match =
     eval_s = nil
-    new_state = $at.match(c)
-    if new_state == nil
-        new_state = $at.match(translated_c)
+    new_state = $at.match(translated_c)
+    if new_state == nil and translated_c.index('shift') == 0
+        new_state = $at.match(c)
     end
     #if new_state == nil
         #new_state = $at.match(translated_c)
@@ -579,6 +587,7 @@ def handle_key_bindigs_action(action,c)
     rescue NoMethodError
         debug("NoMethodError with eval cmd #{action}: " + $!.to_s)
     rescue NameError
+        debug("NameError with eval cmd #{action}: " + $!.to_s)
         #raise
     end
 

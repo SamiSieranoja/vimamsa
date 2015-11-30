@@ -20,6 +20,7 @@
 #include <QMimeData>
 #include <QThread>
 #include <QVBoxLayout>
+#include <QScrollBar>
 #ifndef QT_NO_PRINTER
 #include <QPrintDialog>
 #include <QPrinter>

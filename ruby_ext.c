@@ -222,7 +222,11 @@ VALUE rb_get_visible_area() {
     return range;
 }
 
-
+int center_where_cursor() {
+    int cursorY = c_te->cursorRect().bottom();
+    int offset_y = c_te->verticalScrollBar()->value() + cursorY - c_te->size().height()/2; 
+    c_te->verticalScrollBar()->setValue(offset_y);
+}
 
 
 VALUE ruby_cpp_function_wrapper(VALUE self,VALUE method_name, VALUE args) {
@@ -234,8 +238,10 @@ VALUE ruby_cpp_function_wrapper(VALUE self,VALUE method_name, VALUE args) {
             ret = draw_text(args); break;
         case 2:
             ret = rb_get_visible_area(); break;
+        case 3:
+            center_where_cursor(); break;
     }
-	return ret;
+    return ret;
 }
 
 

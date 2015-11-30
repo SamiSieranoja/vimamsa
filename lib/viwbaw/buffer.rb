@@ -86,12 +86,29 @@ class Buffer < String
         return self[start.._end]
     end
 
-    def add_delta(delta)
-        @deltas << delta
-        @edit_history << delta
+    def add_delta(delta,apply=false)
         @edit_version += 1
         @redo_stack = []
+        if apply
+            delta = run_delta(delta)
+        else
+            @deltas << delta
+        end
+        @edit_history << delta
     end
+
+   def run_delta(delta)
+       if delta[1] == DELETE
+            delta[3] = self.slice!(delta[0],delta[2])
+            @deltas << delta
+            #@edit_history << delta
+       elsif delta[1] == INSERT
+            self.insert(delta[0],delta[3])
+            @deltas << delta
+            #@edit_history << delta
+       end
+       return delta
+   end
 
     def undo()
         puts @edit_history.inspect
@@ -113,17 +130,6 @@ class Buffer < String
         calculate_line_and_column_pos
     end
 
-   def run_delta(delta)
-       if delta[1] == DELETE
-            self.slice!(delta[0],delta[2])
-            @deltas << delta
-            #@edit_history << delta
-       elsif delta[1] == INSERT
-            self.insert(delta[0],delta[3])
-            @deltas << delta
-            #@edit_history << delta
-       end
-   end
    def redo()
         return if !@redo_stack.any?
         #last_delta = @edit_history[-1].pop
@@ -240,6 +246,7 @@ class Buffer < String
 
           # Delete current char
       elsif op == CURRENT_CHAR_FORWARD
+          return if @pos >= self.size - 1 # May not delete last '\n'
           c = self.slice!(@pos) 
           add_delta([@pos,DELETE,1,c])
 
@@ -349,6 +356,34 @@ class Buffer < String
         wsmarks = scan_indexes(search_str,/(?<=\p{Word})[^\p{Word}]/)
         wsmarks = wsmarks.collect{|x| x+startpos - 1}
         return wsmarks
+    end
+
+    def jump_to_next_instance_of_word()
+        start_search = [@pos - 150,0].max
+
+        search_str1 = self[start_search..(@pos)]
+        wsmarks = scan_indexes(search_str1,/(?<=[^\p{Word}])\p{Word}/)
+        a = wsmarks[-1]
+        a = 0 if a == nil
+
+        search_str2 = self[(@pos)..(@pos + 150)]
+        wemarks = scan_indexes(search_str2,/(?<=\p{Word})[^\p{Word}]/)
+        b = wemarks[0]
+        puts search_str1.inspect
+        word_start = (@pos - search_str1.size + a + 1)
+        word_start = 0 if !(word_start >= 0)
+        current_word = self[word_start..(@pos+b - 1)]
+        #printf("CURRENT WORD: '#{current_word}' a:#{a} b:#{b}\n")
+
+        #TODO: search for /[^\p{Word}]WORD[^\p{Word}]/
+        position_of_next_word = self.index(current_word,@pos + 1)
+        if position_of_next_word != nil
+            set_pos(position_of_next_word)
+        else #Search from beginning
+            position_of_next_word = self.index(current_word)
+            set_pos(position_of_next_word) if position_of_next_word != nil
+        end
+        center_on_current_line
     end
 
     def jump_word(direction,wordpos)
@@ -465,6 +500,12 @@ class Buffer < String
         calculate_line_and_column_pos
     end
 
+    def replace_with_char(char)
+        d1 = [@pos,DELETE,1]
+        d2 = [@pos,INSERT,1,char]
+        add_delta(d1,true)
+        add_delta(d2,true)
+    end
 
     def insert_char(c,mode = BEFORE)
         c = "\n" if c == "\r"

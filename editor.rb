@@ -302,7 +302,9 @@ end
 def get_visible_area()
     return cpp_function_wrapper(2,[]);
 end
-
+def center_on_current_line()
+    return cpp_function_wrapper(3,[]);
+end
 def make_jump_sequence(num_items)
     left_hand = "asdfvgbqwertzxc123".upcase.split("")
     right_hand = "jklhnnmyuiop890".upcase.split("")
