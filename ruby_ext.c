@@ -228,6 +228,13 @@ int center_where_cursor() {
     c_te->verticalScrollBar()->setValue(offset_y);
 }
 
+VALUE set_system_clipboard(VALUE self,VALUE text) {
+VALUE ret; 
+QClipboard *p_Clipboard = QApplication::clipboard();
+p_Clipboard->setText(StringValueCStr(text));
+ret = INT2NUM(1);
+return ret;
+}
 
 VALUE ruby_cpp_function_wrapper(VALUE self,VALUE method_name, VALUE args) {
     VALUE ret;
@@ -263,6 +270,8 @@ void _init_ruby(int argc, char *argv[]) {
     rb_define_global_function("cpp_function_wrapper",ruby_cpp_function_wrapper,2);
 
     rb_define_global_function("set_window_title",method_set_window_title,1);
+    rb_define_global_function("set_system_clipboard",set_system_clipboard,1);
+
 
     VALUE qt_module = rb_define_module("Qt");
 #include "qt_keys.h"

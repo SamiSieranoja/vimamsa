@@ -276,7 +276,7 @@ class Buffer < String
   def  delete_range(startpos,endpos)
       s = self.slice!(startpos..endpos)
       add_delta([startpos,DELETE,(endpos - startpos + 1),s])
-      $clipboard << s
+      set_clipboard(s)
       recalc_line_ends
       calculate_line_and_column_pos
   end
@@ -560,7 +560,7 @@ class Buffer < String
 
         s = self.slice!(start.._end)
         add_delta([start,DELETE,_end - start + 1,s])
-        $clipboard << s
+        set_clipboard(s)
         recalc_line_ends #TODO: optimize?
         calculate_pos_from_cpos_lpos
         #need_redraw!
@@ -582,7 +582,8 @@ class Buffer < String
         #_start,_end = get_visual_mode_range
         # TODO: Jump to start pos
         
-        $clipboard << self[get_visual_mode_range] #TODO: check if range ok
+         #TODO: check if range ok
+        set_clipboard(self[get_visual_mode_range])
         end_visual_mode
     end
 
@@ -593,7 +594,7 @@ class Buffer < String
             num_lines = $next_command_count
             debug "copy num_lines:#{num_lines}"
         end
-        $clipboard << self[line_range(@lpos,num_lines)] 
+        set_clipboard(self[line_range(@lpos,num_lines)])
     end
 
 
@@ -602,7 +603,7 @@ class Buffer < String
         return if !@visual_mode #TODO: this should not happen
 
         _start,_end = get_visual_mode_range
-        $clipboard << self[_start,_end]
+        set_clipboard(self[_start,_end])
         end_visual_mode
     end
 

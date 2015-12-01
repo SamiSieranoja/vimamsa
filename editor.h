@@ -57,6 +57,8 @@
 #include <QLabel>
 #include <QFrame>
 
+#include "highlighter.h"
+
 #define RENDER_TEXT 1001
 #define COMMAND  1
 #define INSERT  2
@@ -235,6 +237,8 @@ private:
     QToolBar *tb;
     QString fileName;
     SEditor *textEdit;
+    Highlighter *highlighter;
+
 };
 
 #endif // TEXTEDIT_H

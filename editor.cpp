@@ -285,6 +285,7 @@ Editor::Editor(QWidget *parent)
     c_te = textEdit;
     c_te->setFont (QFont ("Ubuntu Mono", 12));
     c_te->overlay = new Overlay(c_te);
+    highlighter = new Highlighter(c_te->document());
 
 
     QFrame *frame = new QFrame;

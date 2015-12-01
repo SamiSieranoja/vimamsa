@@ -534,8 +534,11 @@ def match_key_conf(c,translated_c,event_type)
             eval_s = s_act.first.action if eval_s == nil
             puts "FOUND MATCH:#{eval_s}"
             puts "CHAR: #{c}"
+            c.gsub!("\\",%q{\\\\}*4) # Escape \ -chars
             c.gsub!("'","#{'\\'*4}'") # Escape ' -chars
             eval_s.gsub!("<char>","'#{c}'")
+	  puts eval_s
+	  puts c
             handle_key_bindigs_action(eval_s,c)
             $at.set_state_to_root
         end

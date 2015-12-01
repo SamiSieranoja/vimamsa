@@ -99,6 +99,13 @@ def system_clipboard_changed(clipboard_contents)
     $clipboard = $clipboard[-([$clipboard.size,max_clipboard_items].min)..-1]
 end
 
+def set_clipboard(s)
+      $clipboard << s
+      set_system_clipboard(s)
+   puts "SET CLIPBOARD: [#{s}]"
+end
+
+
 def set_cursor_pos(new_pos)
     $buffer.set_pos(new_pos)
     #render_buffer($buffer)
@@ -154,7 +161,7 @@ def execute_command(input_str)
     begin
         out_str = eval(input_str)
         $minibuffer.clear
-        $minibuffer << out_str.to_s
+        $minibuffer << out_str.to_s #TODO: segfaults, why?
     rescue SyntaxError
         debug("SYNTAX ERROR with eval cmd #{action}: " + $!.to_s)
     end
