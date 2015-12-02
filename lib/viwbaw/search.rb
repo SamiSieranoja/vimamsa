@@ -15,8 +15,12 @@ class Search
         @search_type = search_type
         @buffer = buffer
         regex = Regexp.escape(search_str)
-        reg = Regexp.new(regex)
-        #reg = Regexp.new("#{input_regex}")
+        if /.*\p{Upper}.*/ =~ regex
+           reg = Regexp.new(regex)
+        else
+           # if does not contain uppercase characters, ignore case
+           reg = Regexp.new(regex, Regexp::IGNORECASE)
+        end
         @search_indexes = scan_indexes(buffer,reg)
         puts @search_indexes.inspect
         @cur_search_i = -1
