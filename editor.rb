@@ -26,9 +26,11 @@ require 'viwbaw/macro'
 require 'viwbaw/buffer'
 require 'viwbaw/search'
 require 'viwbaw/key_bindings'
+require 'viwbaw/hook'
 
 $macro = Macro.new
 $search = Search.new
+$hook = Hook.new
 
 COMMAND = 1
 INSERT = 2
@@ -125,8 +127,6 @@ def repeat_last_find()
                                           $last_find_command[:direction])
 
 end
-
-
 
 def set_next_command_count(num)
     if $next_command_count != nil
@@ -458,18 +458,16 @@ end
 
 def render_buffer(buffer=0,reset=0)
     tmpbuf = $buffer.to_s
-    puts "lpos:#{$lpos} cpos:[#{$cpos}]"
+    puts "pos:#{$buffer.pos} L:#{$buffer.lpos} C:#{$buffer.cpos}"
     pos = $buffer.pos
-    puts "rendbff: #{pos}lpos:#{$buffer.lpos} cpos:#{$buffer.cpos}"
     selection_start = $buffer.selection_start
     reset = 1 if $buffer.need_redraw?
     t1 = Time.now
-    puts "ZZZZZZZZZZZZZZZZZZZZ"
     hook_draw()
-    #draw_text("Z",100,200)
-    puts "ZZZZZZZZZZZZZZZZZZZZ"
 
     render_text(tmpbuf,pos,selection_start,reset)
+    #$hook.call(:buffer_changed) #TODO: actually check if changed
+
     puts "Render time: #{Time.now - t1}" if Time.now - t1 > 1/50.0
     $buffer.set_redrawed if reset == 1
 end
@@ -477,7 +475,7 @@ end
 def viwbaw_init
     puts "ARGV"
     puts ARGV.inspect
-    build_key_bindings_tree2
+    build_key_bindings_tree
     puts "START reading file"
     sleep(0.03)
     $fname = "test.txt"
@@ -485,7 +483,9 @@ def viwbaw_init
     buffer = Buffer.new(read_file("",$fname),$fname)
     $buffers << buffer
     puts $at # key map
-    render_buffer($buffer,1) 
+    dotfile = read_file("",'~/.viwbawrc')
+    eval(dotfile) if dotfile
+    render_buffer($buffer,1)
 end
 
 def debug(message)

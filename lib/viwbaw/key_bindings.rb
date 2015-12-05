@@ -5,14 +5,15 @@
 
 #TODO: override default bindings with data from ~/.viwbaw
 
-# First letter is mode (C=Command, I=Insert)
+# First letter is mode (C=Command, I=Insert, V=Visual)
 # 
 #
 # Examples:
 #
-# Change mode from insert into COMMAND when shift key is released immediately
+# Change mode from INSERT into COMMAND when shift key is released immediately
 # after it has been pressed (there are no other key events between key press and key release).
 #        'I shift!'=> '$at.set_mode(COMMAND)',
+#        'C shift!'=> '$at.set_mode(INSERT)',
 
 #
 # In command mode: press keys "," "r" "v" and "b" sequentially.
@@ -26,7 +27,9 @@
 # The default keymap
 $cnf = {}#TODO
 
-$cnf['modes'] = {'R' => 'READCHAR','M' => 'MINIBUFFER', 'C' =>'COMMAND','V' =>'VISUAL','I'=>'INSERT'} #TODO
+$cnf[:indent_based_on_last_line] = true
+
+$cnf['modes'] = {'R' => 'READCHAR','M' => 'MINIBUFFER', 'C' =>'COMMAND','V' =>'VISUAL','I'=>'INSERT'}
 
 $cnf['key_bindigs'] = {
     #'C q'=> 'quit',
@@ -37,11 +40,12 @@ $cnf['key_bindigs'] = {
     'C , s a'=> 'save_file_as', #TODO
     'C , f o' => 'open_file_dialog',
     'CI ctrl-o' => 'open_file_dialog',
-    #'C a'=> 'txt.goto_line_start',
-    #'C e'=> 'txt.goto_line_end',
 
+    # Buffer handling
     'C B'=> '$buffers.switch',
+    'C , s'=> 'gui_select_buffer',
     'C , r v b'=> 'revert_buffer',
+    'C , b d'=> '$buffers.close_current_buffer',
 
     # MOVING
     'VC h'=> '$buffer.move(BACKWARD_CHAR)',
@@ -61,15 +65,18 @@ $cnf['key_bindigs'] = {
     'VC f <char>'=> '$buffer.jump_to_next_instance_of_char(<char>)',
     'VC F <char>'=> '$buffer.jump_to_next_instance_of_char(<char>,BACKWARD)',
     'VC /[1-9]/'=> 'set_next_command_count(<char>)',
+#    'VC number=/[0-9]/+ g'=> 'jump_to_line(<number>)',
+#    'VC X=/[0-9]/+ * Y=/[0-9]/+ '=> 'x_times_y(<X>,<Y>)',
     'VC ^'=> '$buffer.jump(BEGINNING_OF_LINE)',
     'VC 0($next_command_count!=nil)'=> 'set_next_command_count(<char>)',
     'VC 0($next_command_count==nil)'=> '$buffer.jump(BEGINNING_OF_LINE)',
     #'C 0'=> '$buffer.jump(BEGINNING_OF_LINE)',
     'VC g g'=> '$buffer.jump(START_OF_BUFFER)',
+    'VC g ;'=> '$buffer.jump_to_last_edit',
     'VC G'=> '$buffer.jump(END_OF_BUFFER)',
     'VC z z'=> 'center_on_current_line',
     'VC *'=>'$buffer.jump_to_next_instance_of_word',
-
+    'C s'=> 'easy_jump(:visible_area)',
 
     # MINIBUFFER bindings
     'VC /' => 'invoke_search',
@@ -97,6 +104,7 @@ $cnf['key_bindigs'] = {
     'VC $'=> '$buffer.jump(END_OF_LINE)',
 
     'C o' => '$buffer.jump(END_OF_LINE);$buffer.insert_char("\n");$at.set_mode(INSERT)',
+    'C X' => '$buffer.jump(END_OF_LINE);$buffer.insert_char("\n");',
     'C A' => '$buffer.jump(END_OF_LINE);$at.set_mode(INSERT)',
     'C I' => '$buffer.jump(FIRST_NON_WHITESPACE);$at.set_mode(INSERT)',
     'C a' => '$buffer.move(FORWARD_CHAR);$at.set_mode(INSERT)',
@@ -113,17 +121,23 @@ $cnf['key_bindigs'] = {
    'C p'=> '$buffer.paste', #TODO: implement as replace for visual mode
    'C space <char>' => '$buffer.insert_char(<char>)',
     'C y y'=> '$buffer.copy_line', 
+    'C y O'=> '$buffer.copy(:to_line_end)',
+    'C y 0'=> '$buffer.copy(:to_line_start)',
+    'C y e'=> '$buffer.copy(:to_word_end)', #TODO
     #### Deleting
     'C x' =>'$buffer.delete(CURRENT_CHAR_FORWARD)',
-    'C d k'=> 'delete_line(BACKWARD)', #TODO
-    'C d j'=> 'delete_line(FORWARD)', #TODO
+    #'C d k'=> 'delete_line(BACKWARD)', #TODO
+    #'C d j'=> 'delete_line(FORWARD)', #TODO
     'C d d'=> '$buffer.delete_cur_line',
-    'C d w'=> 'delete_next_word', 
-    'C d e'=> '$buffer.delete_to_next_word_end', 
+    'C d w'=> '$buffer.delete2(:to_word_end)', 
+    'C d e'=> '$buffer.delete2(:to_word_end)', 
+    'C d O'=> '$buffer.delete2(:to_line_end)', 
+    'C d $'=> '$buffer.delete2(:to_line_end)', 
+    'C d 0'=> '$buffer.delete2(:to_line_start)', 
+#    'C d e'=> '$buffer.delete_to_next_word_end', 
     'C d <num> e'=> 'delete_next_word', 
     'C r <char>'=> '$buffer.replace_with_char(<char>)', #TODO
 
-    'C s'=> 'easy_jump(:visible_area)',
 
     #'C 0($next_command_count==nil)'=> 'jump_to_beginning_of_line',
 
@@ -151,9 +165,10 @@ $cnf['key_bindigs'] = {
     "CV ''" =>'jump_to_mark(NEXT_MARK)', #TODO
 
     
-    # Macros
-    'C i'=> '$at.set_mode(INSERT)', #TODO: implement for visual mode?
+    'C i'=> '$at.set_mode(INSERT)',
     'C ctrl!'=> '$at.set_mode(INSERT)',
+
+    # Macros
     'C q a'=> '$macro.start_recording("a")',
     'C q($macro.is_recording==true) '=> '$macro.end_recording', #TODO
     #'C q'=> '$macro.end_recording', #TODO
@@ -196,14 +211,6 @@ $cnf['key_bindigs'] = {
    #'I Ctrl(j l)' # Press and hold control, press J, press l
     #'I Ctrl(j(l))'# Press and hold control, press and hold J, press and hold L
 
-    #'C w'=> ('txt.move',sje.FORWARD,sje.WORD),
-    #'C b'=> 'txt.move_backward_word',
-
-    #'C o'=> ('txt.insert_new_line',sje.BELOW),
-    #'C O'=> ('txt.insert_new_line',sje.ABOVE),
-    #'C d h'=> ('txt.delete',sje.BACKWARD),
-    #'C d l'=> ('txt.delete',sje.FORWARD),
-    #'C d j'=> ('txt.delete',sje.BELOW),
 }
 
 class State
@@ -340,93 +347,56 @@ end
     end
 end
 
-def build_key_bindings_tree2
+def build_key_bindings_tree
     #$context = {mode:'C',last_down_key:nil,input:{}}
     $at = AutomataTree.new()
     #$key_bind_dict = {}
     #$cur_key_dict = {}
     $cnf['key_bindigs'].each {|key, value|
-        #dict_i = $key_bind_dict
-        k_arr = key.split
-        modes = k_arr.shift # modes = "C" or "I" or "CI"
-        modes.each_char{|m|
-            $at.set_state(m,"") #TODO: check is ok?
+        bindkey(key,value)
+    }
+end
+
+def bindkey(key,action)
+    #dict_i = $key_bind_dict
+    k_arr = key.split
+    modes = k_arr.shift # modes = "C" or "I" or "CI"
+    modes.each_char{|m|
+        $at.set_state(m,"") #TODO: check is ok?
 
 
-            k_arr.each { |i|
-                #check if key has rules for context like q has in
-                # "C q(cntx.recording_macro==true)"
-                match = /(.+)\((.*)\)/.match(i)
-                eval_rule = ""
-                if match
-                    key_name = match[1]
-                    eval_rule = match[2]
-                else
-                    key_name = i
-                end
+        k_arr.each { |i|
+            #check if key has rules for context like q has in
+            # "C q(cntx.recording_macro==true)"
+            match = /(.+)\((.*)\)/.match(i)
+            eval_rule = ""
+            if match
+                key_name = match[1]
+                eval_rule = match[2]
+            else
+                key_name = i
+            end
 
-                # Create a new state for key if it doesn't exist
-                s1 = $at.find_state(key_name,eval_rule)
-                #if key_name == "0"
-                    #puts "KEY0"
-                    #puts s1
-                #end
-                if s1 == nil
-                    new_state = State.new(key_name,eval_rule)
-                    $at.cur_state.children << new_state
-                end
+            # Create a new state for key if it doesn't exist
+            s1 = $at.find_state(key_name,eval_rule)
+            if s1 == nil
+                new_state = State.new(key_name,eval_rule)
+                $at.cur_state.children << new_state
+            end
 
-                $at.set_state(key_name,eval_rule) #TODO: check is ok?
-            }
-            $at.cur_state.action = value
-            $at.cur_state = $at.root
+            $at.set_state(key_name,eval_rule) #TODO: check is ok?
         }
-
+        $at.cur_state.action = action
+        $at.cur_state = $at.root
     }
 end
 
 
 if __FILE__ == $PROGRAM_NAME
 
-    build_key_bindings_tree2
+    build_key_bindings_tree
     puts $at
     exit
-    
-
-    #b.foo
-    #puts b.line(2)
-end
-
-
-
-
-
-# Build tree shaped automata that matches key event inputs to actions
-def build_key_bindings_tree
-    $context = {mode:'C',last_down_key:nil,input:{}}
-    $key_bind_dict = {}
-    $cur_key_dict = {}
-    $cnf['key_bindigs'].each {|key, value|
-        #dict_i = $key_bind_dict
-        k_arr = key.split
-        modes = k_arr.shift # modes = "C" or "I" or "CI"
-        modes.each_char{|m| 
-            dict_i = $key_bind_dict
-            dict_i[m] = {} if !dict_i.include?(m)
-            dict_i = dict_i[m]
-            k_arr.each { |i|
-                dict_i[i] = {} if !dict_i.include?(i)
-                #m = method("foo"); m.call(*params)
-                #match /(\w)-(\w)/ context: 
-                dict_i = dict_i[i]
-            }
-            dict_i['action'] = value
-        }
-
-    }
-    puts $key_bind_dict.inspect
-
-$cur_key_dict = $key_bind_dict['C']
 end
 
 
@@ -587,10 +557,10 @@ def handle_key_bindigs_action(action,c)
 
     rescue SyntaxError
         debug("SYNTAX ERROR with eval cmd #{action}: " + $!.to_s)
-    rescue NoMethodError
-        debug("NoMethodError with eval cmd #{action}: " + $!.to_s)
-    rescue NameError
-        debug("NameError with eval cmd #{action}: " + $!.to_s)
+    #rescue NoMethodError
+        #debug("NoMethodError with eval cmd #{action}: " + $!.to_s)
+    #rescue NameError
+        #debug("NameError with eval cmd #{action}: " + $!.to_s)
         #raise
     end
 
@@ -610,7 +580,7 @@ end
 def focus_out
     # Clear ctrl, alt etc. modifers when widget loses focus.
     debug "RB Clear modifiers"
-    #$keys_pressed = [] 
+    $keys_pressed = [] 
     $check_modifiers = true
     # TODO: Clear key binding matching?
 end
