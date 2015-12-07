@@ -1,5 +1,6 @@
-Viwbaw - Vi(m) and Emacs inspired experimental text editor being written in Ruby embedded in C/C++ QT5 app. Currently in pre-alpha level.
+Viwbaw - Vi(m) and Emacs inspired experimental text editor being written in Ruby embedded in C/C++ QT5 app. Currently in alpha level.
 
+![viwbaw_demo](https://cloud.githubusercontent.com/assets/141219/11630479/89a5ee52-9d06-11e5-8430-529a2221a935.gif)
 
 ## Install & Use
 
