@@ -22,7 +22,7 @@ class SelectWindow : public QWidget
 
 public:
     SelectWindow(QWidget *parent = 0);
-    setItems(VALUE item_list);
+    setItems(VALUE item_list, VALUE jump_keys);
     VALUE callback;
 
 private:

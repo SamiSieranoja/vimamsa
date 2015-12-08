@@ -37,13 +37,13 @@ $cnf['key_bindigs'] = {
     # File handling
     'C ctrl-s'=> 'save_file',
     'C W'=> 'save_file',
-    'C , s a'=> 'save_file_as', #TODO
+#    'C , s a'=> 'save_file_as', #TODO
     'C , f o' => 'open_file_dialog',
     'CI ctrl-o' => 'open_file_dialog',
 
     # Buffer handling
     'C B'=> '$buffers.switch',
-    'C , s'=> 'gui_select_buffer',
+#    'C , s'=> 'gui_select_buffer',
     'C , r v b'=> 'revert_buffer',
     'C , b d'=> '$buffers.close_current_buffer',
 
@@ -241,7 +241,12 @@ class AutomataTree
         @cur_state = @root #used for building the tree
         @match_state = [@C] #used for matching input
         @mode_root_state = @C
+        @mode_history = []
 
+    end
+    def add_mode(id)
+        @mode = State.new(id)
+        @root.children << @mode
     end
     def find_state(key_name,eval_rule)
         @cur_state.children.each{|s|
@@ -256,7 +261,8 @@ class AutomataTree
         new_state = []
         @match_state.each{|parent|
             parent.children.each{|c|
-                #puts [c.key_name, key_name].inspect
+                #printf(" KEY MATCH: ")
+                puts [c.key_name, key_name].inspect
                 if c.key_name == key_name and c.eval_rule == ""
                     new_state << c
                 elsif c.key_name == key_name and c.eval_rule != ""
@@ -282,12 +288,18 @@ class AutomataTree
         end
 
     end
-    def set_mode(mode)
-        @mode_root_state = @C if mode == COMMAND
-        @mode_root_state = @I if mode == INSERT
-        @mode_root_state = @V if mode == VISUAL
-        @mode_root_state = @M if mode == MINIBUFFER
-        @mode_root_state = @R if mode == READCHAR
+    def set_mode(mode_s)
+        @mode_history << @mode_root_state
+        @mode_root_state = @C if mode_s == COMMAND
+        @mode_root_state = @I if mode_s == INSERT
+        @mode_root_state = @V if mode_s == VISUAL
+        @mode_root_state = @M if mode_s == MINIBUFFER
+        @mode_root_state = @R if mode_s == READCHAR
+        for mode in @root.children
+            if mode.key_name == mode_s
+                @mode_root_state = mode
+            end
+        end
     end
 
 def is_command_mode()
@@ -618,6 +630,9 @@ def handle_key_event(event)
     $keys_pressed << event[0] if event[1] == KEY_PRESS \
         and !$keys_pressed.include?(event[0])
     $keys_pressed.delete(event[0]) if event[1] == KEY_RELEASE
+
+    $keys_pressed.delete(Qt::Key_Enter) #TODO: Delete after timeout?
+    $keys_pressed.delete(Qt::Key_Return)
 
     #$keys_pressed[event[0]] = true if event[1] == "KEY_PRESS"
     #$keys_pressed[event[0]] = false if event[1] == "KEY_RELEASE"

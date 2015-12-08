@@ -256,9 +256,9 @@ g_editor->setQtStyle(NUM2INT(style_id));
 return INT2NUM(0);
 }
 
-VALUE qt_select_window(VALUE self, VALUE item_list, VALUE callback) {
+VALUE qt_select_window(VALUE self, VALUE item_list, VALUE jump_keys, VALUE callback) {
     SelectWindow* select_w = new SelectWindow(g_editor);
-    select_w->setItems(item_list);
+    select_w->setItems(item_list,jump_keys);
     select_w->callback = callback;
     //SelectWindow* select_w = new SelectWindow(parent);
     select_w->show();
@@ -300,7 +300,7 @@ void _init_ruby(int argc, char *argv[]) {
     rb_define_global_function("set_window_title",method_set_window_title,1);
     rb_define_global_function("set_system_clipboard",set_system_clipboard,1);
     rb_define_global_function("set_qt_style",set_qt_style,1);
-    rb_define_global_function("qt_select_window",qt_select_window,2);
+    rb_define_global_function("qt_select_window",qt_select_window,3);
     rb_define_global_function("qt_open_url",qt_open_url,1);
     rb_define_global_function("qt_get_buffer",qt_get_buffer,0);
 

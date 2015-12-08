@@ -55,23 +55,6 @@ class BufferList < Array
 
 end
 
-def gui_select_buffer()
-    buffer_list = []
-    for buffer in $buffers
-       list_item =[buffer.pathname.basename.to_s,
-                   buffer.pathname.dirname.realpath.to_s,""]
-       buffer_list << list_item
-    end
-    puts buffer_list.inspect
-    qt_select_window(buffer_list,method(:gui_select_buffer_callback))
-end
-
-def gui_select_buffer_callback(buffer_id)
-    puts "BUFFER ID: #{buffer_id}"
-    $buffers.set_current_buffer(buffer_id)
-    render_buffer($buffer)
-end
-
 
 class Buffer < String
 
@@ -613,6 +596,9 @@ class Buffer < String
     end
 
     def insert_char(c,mode = BEFORE)
+        #Sometimes we get ASCII-8BIT although actually UTF-8  "incompatible character encodings: UTF-8 and ASCII-8BIT (Encoding::CompatibilityError)"
+        c=c.force_encoding("UTF-8"); #TODO:correct?
+
         c = "\n" if c == "\r"
         if  $cnf[:indent_based_on_last_line] and c == "\n" and @lpos > 0
             # Indent start of new line based on last line
