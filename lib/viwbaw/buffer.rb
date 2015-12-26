@@ -1,4 +1,5 @@
 require 'digest'
+require 'pathname'
 
 class BufferList < Array
 
@@ -12,12 +13,13 @@ class BufferList < Array
         debug "SWITCH BUF. bufsize:#{self.size}, curbuf: #{@current_buf}"
         @current_buf += 1
         @current_buf = 0 if @current_buf >= self.size
-        $buffer = self[@current_buf]
-        $buffer.need_redraw!
+        #$buffer = self[@current_buf]
+        #$buffer.need_redraw!
         m = method("switch")
         set_last_command({method: m, params: []})
 
-        set_window_title("VIwbaw - #{File.basename($buffer.fname)}")
+        #set_window_title("VIwbaw - #{File.basename($buffer.fname)}")
+        set_current_buffer(@current_buf)
         # TODO: set window title
     end
 
@@ -30,25 +32,55 @@ class BufferList < Array
         end
     end
 
-    def set_current_buffer(buf) 
-        i = self.index(buf)
-        @current_buf = i
-        $buffer = buf
+    def set_current_buffer(buffer_i)
+        $buffer = self[buffer_i]
+        @current_buf = buffer_i
+        #$buffer = buf
+        debug "SWITCH BUF2. bufsize:#{self.size}, curbuf: #{@current_buf}" 
+        set_window_title("VIwbaw - #{File.basename($buffer.fname)}")
         $buffer.need_redraw!
+    end
+
+    def close_buffer(buffer_i)
+        self.slice!(buffer_i)
+        @current_buf = 0 if @current_buf >= self.size
+        if self.size==0
+            self << Buffer.new("emptybuf\n","")
+        end
+    end
+
+    def close_current_buffer
+        close_buffer(@current_buf)
     end
 
 end
 
+def gui_select_buffer()
+    buffer_list = []
+    for buffer in $buffers
+       list_item =[buffer.pathname.basename.to_s,
+                   buffer.pathname.dirname.realpath.to_s,""]
+       buffer_list << list_item
+    end
+    puts buffer_list.inspect
+    qt_select_window(buffer_list,method(:gui_select_buffer_callback))
+end
+
+def gui_select_buffer_callback(buffer_id)
+    puts "BUFFER ID: #{buffer_id}"
+    $buffers.set_current_buffer(buffer_id)
+    render_buffer($buffer)
+end
 
 
 class Buffer < String
 
     #attr_reader (:pos, :cpos, :lpos)
 
-    attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func
+    attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname
     attr_writer :call_func
 
-    def initialize(str,fname)
+    def initialize(str="\n",fname=nil)
         if(str[-1] != "\n")
             str << "\n"
         end
@@ -58,6 +90,7 @@ class Buffer < String
         puts @line_ends
         puts str.inspect
         @fname = fname
+        @pathname = Pathname.new(fname) if @fname
         @pos = 0 # Position in whole string
         @cpos = 0 # Column position on current line
         @lpos = 0 # Number of current line
@@ -68,6 +101,9 @@ class Buffer < String
         @deltas = []
         @edit_history = []
         @redo_stack = []
+        @edit_pos_history = []
+        @edit_pos_history_i = 0
+
         puts Time.now - t1
         # TODO: add \n when chars are added after last \n
         self << "\n" if self[-1] != "\n"
@@ -98,16 +134,37 @@ class Buffer < String
     end
 
    def run_delta(delta)
+       pos = delta[0]
+       if @edit_pos_history.any? and (@edit_pos_history.last - pos).abs <= 2
+           @edit_pos_history.pop
+       end
+       @edit_pos_history << pos
+       @edit_pos_history_i = 0
+
        if delta[1] == DELETE
             delta[3] = self.slice!(delta[0],delta[2])
             @deltas << delta
-            #@edit_history << delta
+            update_index(pos,-delta[2])
        elsif delta[1] == INSERT
             self.insert(delta[0],delta[3])
             @deltas << delta
-            #@edit_history << delta
+            puts [pos,+delta[2]].inspect
+            update_index(pos,+delta[2])
        end
        return delta
+   end
+   
+   def update_index(pos,changeamount)
+       puts @edit_pos_history.inspect
+       @edit_pos_history.collect!{|x| return x if x <= pos; return x + changeamount if x > pos}
+   end
+   
+   def jump_to_last_edit()
+       @edit_pos_history_i += 1
+       puts @edit_pos_history.inspect
+       if @edit_pos_history.size >= @edit_pos_history_i
+          set_pos(@edit_pos_history[-@edit_pos_history_i])
+       end
    end
 
     def undo()
@@ -165,6 +222,14 @@ class Buffer < String
         _end = @line_ends[end_line] 
         debug "line range: start=#{start}, end=#{_end}"
         return start.._end
+    end
+
+    def copy(range_id)
+        puts "range_id: #{range_id}"
+        puts range_id.inspect
+        range = get_range(range_id)
+        puts range.inspect
+        set_clipboard(self[range])
     end
 
 
@@ -247,24 +312,20 @@ class Buffer < String
           # Delete current char
       elsif op == CURRENT_CHAR_FORWARD
           return if @pos >= self.size - 1 # May not delete last '\n'
-          c = self.slice!(@pos) 
-          add_delta([@pos,DELETE,1,c])
+          add_delta([@pos,DELETE,1],true)
 
           # Delete current char and then move backward
       elsif op == CURRENT_CHAR_BACKWARD
-          c = self.slice!(@pos) 
-          add_delta([@pos,DELETE,1,c])
+          add_delta([@pos,DELETE,1],true)
           @pos -= 1
 
           # Delete the char before current char and move backward
       elsif op == BACKWARD_CHAR
-          c = self.slice!(@pos - 1) #TODO: check
-          add_delta([@pos - 1,DELETE,1,c])
+          add_delta([@pos - 1,DELETE,1],true)
           @pos -= 1
 
       elsif op == FORWARD_CHAR #TODO: ok?
-          c = self.slice!(@pos + 1)
-          add_delta([@pos+1,DELETE,1,c])
+          add_delta([@pos+1,DELETE,1],true)
       end
 
       recalc_line_ends
@@ -274,27 +335,60 @@ class Buffer < String
 
 
   def  delete_range(startpos,endpos)
-      s = self.slice!(startpos..endpos)
-      add_delta([startpos,DELETE,(endpos - startpos + 1),s])
-      set_clipboard(s)
+      #s = self.slice!(startpos..endpos)
+      set_clipboard(self[startpos..endpos])
+      add_delta([startpos,DELETE,(endpos - startpos + 1)],true)
       recalc_line_ends
       calculate_line_and_column_pos
   end
 
   def get_range(range_id)
-      if range_id == :current_to_next_word_end
+      #if range_id == :current_to_next_word_end
+      if range_id == :to_word_end
           wmarks = get_word_end_marks(@pos,@pos+150)
           if wmarks.any?
-              return [@pos,wmarks[0]]
+              range =  @pos..wmarks[0]
           end
+      elsif range_id == :to_line_end
+          puts "TO LINE END"
+          range = @pos..(@line_ends[@lpos] -1)
+      elsif range_id == :to_line_start
+          puts "TO LINE START"
+          if @lpos == 0
+              startpos = 0 
+          else
+              startpos = @line_ends[@lpos - 1] + 1
+          end
+          range = startpos..(@pos - 1)
+      else
+          puts "INVALID RANGE"
+          exit
       end
+      if range.last < range.first
+          range.last = range.first
+      end
+      if range.first < 0
+          range.first = 0
+      end
+      if range.last >= self.size
+          range.last = self.size - 1
+      end
+      #TODO: sanity check
+      return range
+  end
+
+  def delete2(range_id)
+      range = get_range(range_id)
+      puts "RANGE"
+      puts range.inspect
+      puts range.inspect
+      puts "------"
+      delete_range(range.first,range.last)
+      @pos = [range.first,@pos].min
+
   end
 
 
-  def delete_to_next_word_end()
-      (startpos,endpos) = get_range(:current_to_next_word_end)
-      delete_range(startpos,endpos)
-  end
 
 
   def move(direction)
@@ -462,6 +556,15 @@ class Buffer < String
 
 
     end
+    
+    def jump_to_line(line_n=0)
+
+        if line_n >= @line_ends.size
+            debug("lpos too large") #TODO
+            return
+        end
+        set_pos(@line_ends[line_n])
+    end
 
     def join_lines()
             if @lpos >= @line_ends.size - 1  # Cursor is on last line
@@ -509,6 +612,13 @@ class Buffer < String
 
     def insert_char(c,mode = BEFORE)
         c = "\n" if c == "\r"
+        if  $cnf[:indent_based_on_last_line] and c == "\n" and @lpos > 0
+            # Indent start of new line based on last line
+            last_line = line(@lpos)
+            m = /^( +)([^ ]+|$)/.match(last_line)
+            puts m.inspect
+            c = c+" "*m[1].size if m
+        end
         if mode == BEFORE
             insert_pos = @pos
             @pos += c.size
@@ -518,10 +628,10 @@ class Buffer < String
             return
         end
         
-        self.insert(insert_pos,c)
-        add_delta([insert_pos,INSERT,0,c])
-        puts("encoding: #{c.encoding}")
-        puts "c.size: #{c.size}"
+        #self.insert(insert_pos,c)
+        add_delta([insert_pos,INSERT,0,c],true)
+        #puts("encoding: #{c.encoding}")
+        #puts "c.size: #{c.size}"
         recalc_line_ends #TODO: optimize?
         calculate_line_and_column_pos
         #need_redraw!
@@ -573,8 +683,10 @@ class Buffer < String
         $at.set_mode(VISUAL)
     end
     def copy_active_selection()
+        puts "!COPY SELECTION"
         return if !@visual_mode
 
+        puts "COPY SELECTION"
         #_start = @selection_start
         #_end = @pos
         #_start,_end = _end,_start if _start > _end
@@ -644,7 +756,10 @@ class Buffer < String
 
     #  https://github.com/manveru/ver
     def save()
-        
+        if !@fname
+            puts "TODO: SAVE AS"
+            return
+        end
         message("Saving file #{@fname}")
 
         Thread.new {

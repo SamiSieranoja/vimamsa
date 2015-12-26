@@ -1,4 +1,4 @@
-
+#include <iostream>
 #include <QtCore>
 #include <QtConcurrent>
 #include <QAction>
@@ -21,17 +21,24 @@
 #include <QThread>
 #include <QVBoxLayout>
 #include <QScrollBar>
+#include <QStyleFactory>
+#include <QDesktopServices>
+#include <QUrl>
 #ifndef QT_NO_PRINTER
 #include <QPrintDialog>
 #include <QPrinter>
 #include <QPrintPreviewDialog>
 #endif
 
+#include <QtWidgets>
+
 #include <ruby.h>
 #include <ruby/encoding.h>
 
 #include "editor.h"
+#include "selectwindow.h"
 
+using namespace std;
 SEditor *c_te;
 SEditor *miniEditor;
 
@@ -57,7 +64,7 @@ QKeyEvent *e1;
 VALUE textbuf;
 int _quit = 0;
 
-Editor *mw;
+Editor *g_editor;
 
 
 char* qstring_to_cstr(QString qstr) {
@@ -85,19 +92,15 @@ const QString rsrcPath = ":/images/mac";
 const QString rsrcPath = ":/images/win";
 #endif
 
-void    Overlay::paintEvent(QPaintEvent * e) {
-int jm_x = 0;
-int jm_y = 0;
+void Overlay::paintEvent(QPaintEvent * e) {
+    int jm_x = 0;
+    int jm_y = 0;
 
-
-
-QTextCursor cursor = c_te->textCursor();
-cursor.setPosition(67);
-QRect r = c_te->cursorRect(cursor);
-  jm_x = r.x()-6;
-  jm_y = r.y()-7;
-  //int cursor_height = r.height();
-
+    QTextCursor cursor = c_te->textCursor();
+    QRect r = c_te->cursorRect(cursor);
+    jm_x = r.x()-6;
+    jm_y = r.y()-7;
+    //int cursor_height = r.height();
 
     if(c_te->cursor_y < 0) return;
     //TODO: when outside of viewport
@@ -166,7 +169,6 @@ int Overlay::draw_text(int x, int y, char* text)
     //p.setBrush(Qt::NoBrush); // should not be necessary, but doesn't hurt
     //p.drawPoint(x,y);
 }
-
 
 SEditor::SEditor(QWidget *parent)
 //: QEditor(parent)
@@ -264,15 +266,57 @@ void SEditor::drawTextCursor() {
 
 
 
+int Editor::setQtStyle(int style_id) {
+if (style_id == 1) { //Dark fusion
+QApplication::setStyle(QStyleFactory::create("Fusion"));
+
+// From: https://gist.github.com/QuantumCD/6245215
+QPalette darkPalette;
+
+    darkPalette.setColor(QPalette::Window, QColor(53,53,53));
+    darkPalette.setColor(QPalette::WindowText, Qt::white);
+    darkPalette.setColor(QPalette::Base, QColor(25,25,25));
+    darkPalette.setColor(QPalette::AlternateBase, QColor(53,53,53));
+    darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+    darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+    darkPalette.setColor(QPalette::Text, Qt::white);
+    darkPalette.setColor(QPalette::Button, QColor(53,53,53));
+    darkPalette.setColor(QPalette::ButtonText, Qt::white);
+    darkPalette.setColor(QPalette::BrightText, Qt::red);
+    darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+
+    darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+    darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+
+    app->setPalette(darkPalette);
+
+    app->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+
+    //setToolButtonStyle(Qt::ToolButtonFollowStyle); //TODO: segfaults, why?
+}
+else if (style_id == 2) {
+QApplication::setStyle(QStyleFactory::create("GTK+"));
+}
+else if (style_id == 3) {
+QApplication::setStyle(QStyleFactory::create("Fusion"));
+}
+else if (style_id == 4) {
+QApplication::setStyle(QStyleFactory::create("Windows"));
+}
+}
+
+
 Editor::Editor(QWidget *parent)
     : QMainWindow(parent)
 {
 
 
-
-    setToolButtonStyle(Qt::ToolButtonFollowStyle);
     initActions();
 
+QStringList styles = QStyleFactory::keys();
+cout << "List of valid styles:" << endl;
+    for (int i = 0; i < styles.size(); ++i)
+         cout << styles.at(i).toLocal8Bit().constData() << endl;
 
     {
         QMenu *helpMenu = new QMenu(tr("Help"), this);
@@ -307,6 +351,7 @@ Editor::Editor(QWidget *parent)
     actionSave->setEnabled(textEdit->document()->isModified());
 
     connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(clipboardDataChanged()));
+
 
     textEdit->setFocus();
 }
@@ -352,10 +397,16 @@ void SEditor::paintEvent(QPaintEvent * e)
 
 }
 
-void SEditor::handleKeyEvent(QKeyEvent *e) {
 
-    QString str; str.sprintf("POS:%i",cursorpos);
-    QTextCursor tc = textCursor();
+void SEditor::handleKeyEvent(QKeyEvent *e) {
+    processKeyEvent(e);
+}
+
+void SEditor::processKeyEvent(QKeyEvent *e) {
+
+    qDebug() << "SET NEW KEYPRESS";
+    //QString str; str.sprintf("POS:%i",cursorpos);
+    //QTextCursor tc = textCursor();
     QByteArray ba;
     const char *c_str2;
 
@@ -363,7 +414,7 @@ void SEditor::handleKeyEvent(QKeyEvent *e) {
     VALUE handle_key_event = rb_intern("handle_key_event");
 
     //qDebug() << "keyPressEvent thread:" << thread()->currentThreadId();
-    qDebug() << "SET NEW KEYPRESS";
+    //qDebug() << "SET NEW KEYPRESS";
 
     QString event_text = e->text();
     ba = e->text().toLocal8Bit();

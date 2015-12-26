@@ -15,7 +15,7 @@ VALUE method_qt_quit(VALUE self) {
 }
 
 VALUE method_open_file_dialog(VALUE self) {
-    mw->fileOpen();
+    g_editor->fileOpen();
 }
 
 VALUE method_restart(VALUE self) {
@@ -25,9 +25,9 @@ VALUE method_restart(VALUE self) {
 
 
 VALUE method_set_window_title(VALUE self, VALUE new_title) {
-    //mw->setWindowTitle(QString(StringValueCStr(new_title)));
+    //g_editor->setWindowTitle(QString(StringValueCStr(new_title)));
 
-    // For some reason program segfaults if we call mw->setWindowTitle from here.
+    // For some reason program segfaults if we call g_editor->setWindowTitle from here.
     // But from main_loop its ok..
     window_title = new QString(StringValueCStr(new_title));
 }
@@ -45,9 +45,9 @@ VALUE method_main_loop(VALUE self) {
 
     qDebug() << "hello from GUI thread " << QThread::currentThreadId();
     //qDebug() << "main_loop thread id:" << thread()->currentThreadId();
-    Editor mw;
-    mw.resize(700, 800);
-    mw.show();
+    Editor g_editor;
+    g_editor.resize(700, 800);
+    g_editor.show();
 
 
     rb_eval_string("viwbaw_init");
@@ -58,7 +58,7 @@ VALUE method_main_loop(VALUE self) {
         a.processEvents();
         //rb_thread_schedule(); //TODO if there are plugins with threads?
 
-    mw.setWindowTitle(*window_title);// TODO only when changed
+    g_editor.setWindowTitle(*window_title);// TODO only when changed
         QThread::usleep(2000);
     }
     return INT2NUM(1);
@@ -224,12 +224,12 @@ VALUE rb_get_visible_area() {
 
 int center_where_cursor() {
     int cursorY = c_te->cursorRect().bottom();
-    int offset_y = c_te->verticalScrollBar()->value() + cursorY - c_te->size().height()/2; 
+    int offset_y = c_te->verticalScrollBar()->value() + cursorY - c_te->size().height()/2;
     c_te->verticalScrollBar()->setValue(offset_y);
 }
 
 VALUE set_system_clipboard(VALUE self,VALUE text) {
-VALUE ret; 
+VALUE ret;
 QClipboard *p_Clipboard = QApplication::clipboard();
 p_Clipboard->setText(StringValueCStr(text));
 ret = INT2NUM(1);
@@ -251,6 +251,34 @@ VALUE ruby_cpp_function_wrapper(VALUE self,VALUE method_name, VALUE args) {
     return ret;
 }
 
+VALUE set_qt_style(VALUE self, VALUE style_id) {
+g_editor->setQtStyle(NUM2INT(style_id));
+return INT2NUM(0);
+}
+
+VALUE qt_select_window(VALUE self, VALUE item_list, VALUE callback) {
+    SelectWindow* select_w = new SelectWindow(g_editor);
+    select_w->setItems(item_list);
+    select_w->callback = callback;
+    //SelectWindow* select_w = new SelectWindow(parent);
+    select_w->show();
+    return INT2NUM(0);
+}
+
+VALUE qt_open_url(VALUE self, VALUE url) {
+    char* cstr_url = StringValueCStr(url);
+    QDesktopServices::openUrl(QUrl(cstr_url));
+    return INT2NUM(0);
+}
+
+VALUE qt_get_buffer(VALUE self) {
+    //char* cstr_url = StringValueCStr(url);
+    QString qt_buf = c_te->toPlainText();
+    char* buf1 = qstring_to_cstr(qt_buf);
+    VALUE qt_buffer = rb_str_new2(buf1),
+    free(buf1);
+    return qt_buffer;
+}
 
 
 void _init_ruby(int argc, char *argv[]) {
@@ -271,6 +299,10 @@ void _init_ruby(int argc, char *argv[]) {
 
     rb_define_global_function("set_window_title",method_set_window_title,1);
     rb_define_global_function("set_system_clipboard",set_system_clipboard,1);
+    rb_define_global_function("set_qt_style",set_qt_style,1);
+    rb_define_global_function("qt_select_window",qt_select_window,2);
+    rb_define_global_function("qt_open_url",qt_open_url,1);
+    rb_define_global_function("qt_get_buffer",qt_get_buffer,0);
 
 
     VALUE qt_module = rb_define_module("Qt");
@@ -374,7 +406,7 @@ int render_text() {
             VALUE c = rb_ary_entry(d,3);
             tc.insertText(StringValueCStr( c ));
         }
-
+        rb_eval_string("$hook.call(:buffer_changed)");
     }
 
         qDebug() << "QT: END process deltas\n";
