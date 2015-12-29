@@ -593,6 +593,7 @@ class Buffer < String
         d2 = [@pos,INSERT,1,char]
         add_delta(d1,true)
         add_delta(d2,true)
+        puts "DELTAS:#{$buffer.deltas.inspect} "
     end
 
     def insert_char(c,mode = BEFORE)

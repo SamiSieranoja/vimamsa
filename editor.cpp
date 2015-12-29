@@ -37,6 +37,7 @@
 
 #include "editor.h"
 #include "selectwindow.h"
+#include "srn_dst.h"
 
 using namespace std;
 SEditor *c_te;

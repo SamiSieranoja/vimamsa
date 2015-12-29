@@ -23,6 +23,9 @@
     flags = Qt::Window;
     flags |= Qt::FramelessWindowHint;
     QWidget::setWindowFlags(flags);
+    
+    QLineEdit *lineEdit = new QLineEdit;
+
 
     proxyView = new QTreeView;
     proxyView->setAlternatingRowColors(true);
@@ -33,6 +36,8 @@
     model->setHeaderData(2, Qt::Horizontal, QObject::tr("Path"));
     //model->setHeaderData(3, Qt::Horizontal, QObject::tr("Modified"));
     proxyView->setModel(model);
+    layout->addWidget(lineEdit);
+
     layout->addWidget(proxyView);
     layout->addWidget(cancelButton);
 

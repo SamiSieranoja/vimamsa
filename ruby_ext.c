@@ -229,11 +229,11 @@ int center_where_cursor() {
 }
 
 VALUE set_system_clipboard(VALUE self,VALUE text) {
-VALUE ret;
-QClipboard *p_Clipboard = QApplication::clipboard();
-p_Clipboard->setText(StringValueCStr(text));
-ret = INT2NUM(1);
-return ret;
+    VALUE ret;
+    QClipboard *p_Clipboard = QApplication::clipboard();
+    p_Clipboard->setText(StringValueCStr(text));
+    ret = INT2NUM(1);
+    return ret;
 }
 
 VALUE ruby_cpp_function_wrapper(VALUE self,VALUE method_name, VALUE args) {
@@ -280,6 +280,14 @@ VALUE qt_get_buffer(VALUE self) {
     return qt_buffer;
 }
 
+VALUE _srn_dst(VALUE self, VALUE s1, VALUE s2) {
+    VALUE ret;
+    float d;
+
+    d = srn_dst(StringValueCStr(s1), StringValueCStr(s2));
+    ret = rb_float_new(d);
+    return ret;
+}
 
 void _init_ruby(int argc, char *argv[]) {
     ruby_sysinit(&argc,&argv);
@@ -296,6 +304,7 @@ void _init_ruby(int argc, char *argv[]) {
     rb_define_global_function("open_file_dialog",method_open_file_dialog,0);
     rb_define_global_function("restart_application",method_restart,0);
     rb_define_global_function("cpp_function_wrapper",ruby_cpp_function_wrapper,2);
+    rb_define_global_function("srn_dst",_srn_dst,2);
 
     rb_define_global_function("set_window_title",method_set_window_title,1);
     rb_define_global_function("set_system_clipboard",set_system_clipboard,1);
@@ -388,6 +397,8 @@ int render_text() {
         qDebug() << "QT:process deltas\n";
     //ID rb_intern(const char *name)
     VALUE deltas = rb_eval_string("$buffer.deltas");
+    //rb_eval_string("puts \"DELTAS2:#{$buffer.deltas.inspect} \"");
+
     while(RARRAY_LEN(deltas) > 0) {
         VALUE d = rb_ary_shift(deltas);
         qDebug() << "DELTA: " << " " << NUM2INT(rb_ary_entry(d,0)) << " " << NUM2INT(rb_ary_entry(d,1)) << " " << NUM2INT(rb_ary_entry(d,2)) << "\n";
@@ -406,7 +417,10 @@ int render_text() {
             VALUE c = rb_ary_entry(d,3);
             tc.insertText(StringValueCStr( c ));
         }
-        rb_eval_string("$hook.call(:buffer_changed)");
+
+        if (RARRAY_LEN(deltas) == 0) { //last iteration
+            rb_eval_string("$hook.call(:buffer_changed)");
+        }
     }
 
         qDebug() << "QT: END process deltas\n";
