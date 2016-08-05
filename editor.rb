@@ -28,6 +28,7 @@ require 'viwbaw/search'
 require 'viwbaw/key_bindings'
 require 'viwbaw/hook'
 require 'viwbaw/buffer_select'
+require 'viwbaw/file_finder'
 
 $macro = Macro.new
 $search = Search.new
@@ -487,7 +488,9 @@ def viwbaw_init
     dotfile = read_file("",'~/.viwbawrc')
     eval(dotfile) if dotfile
     render_buffer($buffer,1)
+
     gui_select_buffer_init
+    gui_file_finder_init
 end
 
 def debug(message)

@@ -23,17 +23,21 @@ class SelectWindow : public QWidget
 public:
     SelectWindow(QWidget *parent = 0);
     setItems(VALUE item_list, VALUE jump_keys);
-    VALUE callback;
+    ID callback;
+    ID update_callback;
+    ID select_callback;
 
 private:
     QPushButton *cancelButton;
     QTreeView *proxyView;
     QStandardItemModel *model;
+    QLineEdit* filterEdit;
     void SelectWindow::handleKeyEvent(QKeyEvent*);
     bool SelectWindow::eventFilter(QObject *object, QEvent *event);
 
 public slots:
     void selectItem(QModelIndex index);
+    void filterChanged();
 
 
 };

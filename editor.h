@@ -70,6 +70,8 @@ extern "C" {
 
 int render_text();
 int cpp_render_text(); //TODO: ?
+char* qstring_to_cstr(QString qstr);
+VALUE qstring_to_ruby(QString qstr);
 
 QT_BEGIN_NAMESPACE
 class QAction;

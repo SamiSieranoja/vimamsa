@@ -23,8 +23,10 @@
     flags = Qt::Window;
     flags |= Qt::FramelessWindowHint;
     QWidget::setWindowFlags(flags);
-    
-    QLineEdit *lineEdit = new QLineEdit;
+
+    filterEdit = new QLineEdit;
+
+    connect(filterEdit, SIGNAL(textChanged(const QString &)), this, SLOT(filterChanged()));
 
 
     proxyView = new QTreeView;
@@ -36,7 +38,7 @@
     model->setHeaderData(2, Qt::Horizontal, QObject::tr("Path"));
     //model->setHeaderData(3, Qt::Horizontal, QObject::tr("Modified"));
     proxyView->setModel(model);
-    layout->addWidget(lineEdit);
+    layout->addWidget(filterEdit);
 
     layout->addWidget(proxyView);
     layout->addWidget(cancelButton);
@@ -44,6 +46,37 @@
     proxyView->installEventFilter(this);
     //proxyView->setStyleSheet( "QTreeView::item:first{color: red; font:bold;} QTreeView::item:selected{color: red; font:bold;  background: #a8a8a8;}");
     proxyView->setStyleSheet( "QTreeView::item:first{color: red; font:bold;} QTreeView::item:selected:first{color: red; font:bold;}");
+}
+
+void SelectWindow::filterChanged() {
+    VALUE item_list;
+    qDebug() << "SelectWindow: FILTER STRING CHANGED";
+    qDebug() << filterEdit->text();
+    item_list = rb_funcall(INT2NUM(0),update_callback, 1, qstring_to_ruby(filterEdit->text()));
+
+    model->removeRows(0,model->rowCount());
+    //model->clear();
+    model->setHeaderData(0, Qt::Horizontal, QObject::tr("File"));
+
+    for(int i=0; i < RARRAY_LEN(item_list); i++) {
+        VALUE d = rb_ary_entry(item_list,i);
+            model->insertRow(i);
+            VALUE c0 = rb_ary_entry(d,0);
+            VALUE c1 = rb_ary_entry(d,1);
+            //VALUE c1 = rb_ary_entry(d,1);
+            //VALUE c2 = rb_ary_entry(d,2);
+            //VALUE key = rb_ary_entry(jump_keys,i);
+            //VALUE key = rb_ary_pop(jump_keys);
+            //char* c0str = StringValueCStr( c0 );
+            //model->setData(model->index(0, 0), StringValueCStr( key ));
+            //model->setData(model->index(0, 0), StringValueCStr( c0 ));
+            //model->setData(model->index(0, 1), StringValueCStr( c0 ));
+            model->setData(model->index(i, 0), StringValueCStr( c0 ));
+            //model->setData(model->index(0, 2), StringValueCStr( c1 ));
+            //model->setData(model->index(0, 3), StringValueCStr( c2 ));
+            //model->item(0)->setEditable(false);
+
+    }
 }
 
 

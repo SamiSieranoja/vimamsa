@@ -68,6 +68,11 @@ int _quit = 0;
 Editor *g_editor;
 
 
+
+void cpp_init_qt_thread() {
+   Q_INIT_RESOURCE(viwbaw);
+}
+
 char* qstring_to_cstr(QString qstr) {
     //Remember to free memory after use
 
@@ -80,9 +85,13 @@ char* qstring_to_cstr(QString qstr) {
     return c_str;
 }
 
-void cpp_init_qt_thread() {
-   Q_INIT_RESOURCE(viwbaw);
+VALUE qstring_to_ruby(QString qstr) {
+    char *c_str = qstring_to_cstr(qstr);
+    VALUE ret = rb_str_new2(c_str);
+    free(c_str);
+    return ret;
 }
+
 
 
 #include "ruby_ext.c"
