@@ -6,8 +6,8 @@ QMAKE_CXXFLAGS = -fpermissive
 TEMPLATE = app
 TARGET = viwbaw
 
-HEADERS = editor.h highlighter.h selectwindow.h
-SOURCES = editor.cpp main.cpp ruby_ext.c highlighter.cpp selectwindow.cpp
+HEADERS = editor.h highlighter.h selectwindow.h srn_dst.h
+SOURCES = editor.cpp main.cpp ruby_ext.c highlighter.cpp selectwindow.cpp srn_dst.cpp
 
 RESOURCES += viwbaw.qrc
 build_all:!build_pass {
