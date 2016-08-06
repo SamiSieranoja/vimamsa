@@ -66,8 +66,7 @@ VALUE textbuf;
 int _quit = 0;
 
 Editor *g_editor;
-
-
+Editor *mw;
 
 void cpp_init_qt_thread() {
    Q_INIT_RESOURCE(viwbaw);

@@ -228,6 +228,24 @@ int center_where_cursor() {
     c_te->verticalScrollBar()->setValue(offset_y);
 }
 
+VALUE top_where_cursor() {
+    int cursorY = c_te->cursorRect().bottom();
+    int offset_y = c_te->verticalScrollBar()->value() + cursorY - c_te->size().height() + c_te->size().height();
+    c_te->verticalScrollBar()->setValue(offset_y);
+    VALUE ret = rb_ary_new();
+    return ret;
+}
+
+VALUE bottom_where_cursor() {
+    int cursorY = c_te->cursorRect().bottom();
+    int offset_y = c_te->verticalScrollBar()->value() + cursorY - c_te->size().height();
+    c_te->verticalScrollBar()->setValue(offset_y);
+    VALUE ret = rb_ary_new();
+    return ret;
+}
+
+
+
 VALUE set_system_clipboard(VALUE self,VALUE text) {
     VALUE ret;
     QClipboard *p_Clipboard = QApplication::clipboard();
@@ -330,7 +348,8 @@ void _init_ruby(int argc, char *argv[]) {
     rb_define_global_function("qt_select_update_window",qt_select_update_window,4);
     rb_define_global_function("qt_open_url",qt_open_url,1);
     rb_define_global_function("qt_get_buffer",qt_get_buffer,0);
-
+    rb_define_global_function("top_where_cursor",top_where_cursor,0);
+    rb_define_global_function("bottom_where_cursor",bottom_where_cursor,0);
 
     VALUE qt_module = rb_define_module("Qt");
 #include "qt_keys.h"

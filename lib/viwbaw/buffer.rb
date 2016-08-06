@@ -1,5 +1,6 @@
 require 'digest'
 require 'pathname'
+$paste_lines = false
 
 class BufferList < Array
 
@@ -18,8 +19,8 @@ class BufferList < Array
         m = method("switch")
         set_last_command({method: m, params: []})
 
-
         set_current_buffer(@current_buf)
+        #set_window_title("VIwbaw - #{File.basename($buffer.fname)}")
         # TODO: set window title
     end
 
@@ -107,6 +108,7 @@ class Buffer < String
         return self[start.._end]
     end
 
+    #TODO: change to apply=true as default
     def add_delta(delta,apply=false)
         @edit_version += 1
         @redo_stack = []
@@ -196,6 +198,11 @@ class Buffer < String
     end
 
 
+    def current_line_range()
+        range = line_range(@lpos,1)
+        return range
+    end
+    
     def line_range(start_line,num_lines)
         end_line = start_line + num_lines - 1
         if end_line >= @line_ends.size
@@ -210,13 +217,13 @@ class Buffer < String
     end
 
     def copy(range_id)
+        $paste_lines = false
         puts "range_id: #{range_id}"
         puts range_id.inspect
         range = get_range(range_id)
         puts range.inspect
         set_clipboard(self[range])
     end
-
 
     def recalc_line_ends()
         t1 = Time.now
@@ -377,6 +384,21 @@ class Buffer < String
 
 
   def move(direction)
+
+
+      if direction == :forward_page
+          puts "FORWARD PAGE"
+          visible_range = get_visible_area()      
+          set_pos(visible_range[1])
+          top_where_cursor()
+      end
+      if direction == :backward_page
+          puts "backward PAGE"
+          visible_range = get_visible_area()      
+          set_pos(visible_range[0])
+          bottom_where_cursor()
+      end
+      
 
       if direction == FORWARD_CHAR
           return if @pos >= self.size - 1
@@ -542,13 +564,23 @@ class Buffer < String
 
     end
     
-    def jump_to_line(line_n=0)
+    def jump_to_line(line_n=1)
 
-        if line_n >= @line_ends.size
+        $method_handles_repeat = true
+        if !$next_command_count.nil? and $next_command_count > 0
+            line_n = $next_command_count
+            debug "jump to line:#{line_n}"
+        end
+
+        if line_n > @line_ends.size
             debug("lpos too large") #TODO
             return
         end
-        set_pos(@line_ends[line_n])
+        if line_n == 1 
+        set_pos(0)
+        else
+        set_pos(@line_ends[line_n-2]+1)
+        end
     end
 
     def join_lines()
@@ -639,9 +671,20 @@ class Buffer < String
 
    def paste()
        return if !$clipboard.any?
+       if $paste_lines
+          l = current_line_range()
+          puts "------------"
+          puts l.inspect
+          puts "------------"
+          #$buffer.move(FORWARD_LINE)
+          set_pos(l.end+1)
+          insert_char($clipboard[-1])
+          set_pos(l.end+1)
+          else
+       insert_char($clipboard[-1])
+       end
        #TODO: AFTER does not work
        #insert_char($clipboard[-1],AFTER)
-       insert_char($clipboard[-1])
        #recalc_line_ends #TODO: bug when run twice?
     end
 
@@ -651,7 +694,21 @@ class Buffer < String
         insert_char("\n")
     end
 
-    def delete_cur_line()
+    def delete_line()
+        $method_handles_repeat = true
+        $paste_lines = true
+        num_lines = 1
+        if !$next_command_count.nil? and $next_command_count > 0
+            num_lines = $next_command_count
+            debug "copy num_lines:#{num_lines}"
+        end
+        lrange = line_range(@lpos,num_lines)
+        s = self[lrange]
+        add_delta([lrange.begin,DELETE,lrange.end - lrange.begin + 1],true)
+        set_clipboard(s)
+    end
+
+    def delete_cur_line() #TODO: remove
         #TODO: implement using delete_range
         start = @line_ends[@lpos - 1] + 1 if @lpos > 0
         start = 0 if @lpos == 0
@@ -673,6 +730,7 @@ class Buffer < String
     end
     def copy_active_selection()
         puts "!COPY SELECTION"
+        $paste_lines = false
         return if !@visual_mode
 
         puts "COPY SELECTION"
@@ -690,6 +748,7 @@ class Buffer < String
 
     def copy_line()
         $method_handles_repeat = true
+        $paste_lines = true
         num_lines = 1
         if !$next_command_count.nil? and $next_command_count > 0
             num_lines = $next_command_count

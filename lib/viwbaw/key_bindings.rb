@@ -52,6 +52,9 @@ $cnf['key_bindigs'] = {
     'VC l'=> '$buffer.move(FORWARD_CHAR)',
     'VC j'=> '$buffer.move(FORWARD_LINE)',
     'VC k'=> '$buffer.move(BACKWARD_LINE)',
+    'VC pagedown'=> '$buffer.move(:forward_page)',
+    'VC pageup'=> '$buffer.move(:backward_page)', #TODO
+    
 
     'VC left'=> '$buffer.move(BACKWARD_CHAR)',
     'VC right'=> '$buffer.move(FORWARD_CHAR)',
@@ -67,6 +70,7 @@ $cnf['key_bindigs'] = {
     'VC /[1-9]/'=> 'set_next_command_count(<char>)',
 #    'VC number=/[0-9]/+ g'=> 'jump_to_line(<number>)',
 #    'VC X=/[0-9]/+ * Y=/[0-9]/+ '=> 'x_times_y(<X>,<Y>)',
+    'VC G($next_command_count!=nil)'=> '$buffer.jump_to_line()',
     'VC ^'=> '$buffer.jump(BEGINNING_OF_LINE)',
     'VC 0($next_command_count!=nil)'=> 'set_next_command_count(<char>)',
     'VC 0($next_command_count==nil)'=> '$buffer.jump(BEGINNING_OF_LINE)',
@@ -128,7 +132,8 @@ $cnf['key_bindigs'] = {
     'C x' =>'$buffer.delete(CURRENT_CHAR_FORWARD)',
     #'C d k'=> 'delete_line(BACKWARD)', #TODO
     #'C d j'=> 'delete_line(FORWARD)', #TODO
-    'C d d'=> '$buffer.delete_cur_line',
+   # 'C d d'=> '$buffer.delete_cur_line',
+    'C d d'=> '$buffer.delete_line',
     'C d w'=> '$buffer.delete2(:to_word_end)', 
     'C d e'=> '$buffer.delete2(:to_word_end)', 
     'C d O'=> '$buffer.delete2(:to_line_end)', 
@@ -195,7 +200,7 @@ $cnf['key_bindigs'] = {
     #'C ; Ctrl!'=> 'change_mode(COMMAND)',
 
 
-    'I ctrl-d'=> 'delete(1)', #TODO
+    'I ctrl-d'=> '$buffer.delete(CURRENT_CHAR_FORWARD)',
     
     # INSERT MODE: Moving
     'I ctrl-a'=> '$buffer.jump(BEGINNING_OF_LINE)',
@@ -426,6 +431,8 @@ $event_keysym_translate_table = {
     Qt::Key_Escape  => "esc",
     Qt::Key_Up  => "up",
     Qt::Key_Down  => "down",
+    Qt::Key_PageUp => "pageup",
+    Qt::Key_PageDown => "pagedown",
     Qt::Key_Left  => "left",
     Qt::Key_Right  => "right",
     Qt::Key_Enter => "enter",
@@ -627,6 +634,15 @@ def handle_key_event(event)
        #TODO: other modifiers
     end
 
+    $keys_pressed << Qt::Key_Alt if event[1] == KEY_PRESS \
+        and !$keys_pressed.include?(Qt::Key_Alt) \
+        and event[4] & ALTMODIFIER != 0 # Fix for alt lose focus problem.
+    puts "----D------------"
+    puts $keys_pressed.inspect
+    puts event.inspect
+    puts event[4] & ALTMODIFIER    
+    puts "-----------------"
+    
     $keys_pressed << event[0] if event[1] == KEY_PRESS \
         and !$keys_pressed.include?(event[0])
     $keys_pressed.delete(event[0]) if event[1] == KEY_RELEASE
