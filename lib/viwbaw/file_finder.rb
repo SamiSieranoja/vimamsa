@@ -42,6 +42,7 @@ def gui_file_finder_update_callback(search_str="")
     puts "FILE FINDER UPDATE CALLBACK: #{search_str}"
     if(search_str.size > 1)
         files = filter_files(search_str)
+        $file_search_list = files
         return files
         #puts files.inspect
         #return files.values
@@ -50,6 +51,11 @@ def gui_file_finder_update_callback(search_str="")
 end
 
 def gui_file_finder_select_callback(search_str)
+    selected_file = $file_search_list[0][0]
+    puts "FILE FINDER SELECT CALLBACK: #{search_str}: #{selected_file}"
+    qt_select_window_close(0)
+    new_file_opened(selected_file)
+
 end
 
 

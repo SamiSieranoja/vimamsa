@@ -4,6 +4,7 @@
 VALUE pos_to_viewport_coordinates(VALUE args);
 VALUE draw_text(VALUE args);
 
+SelectWindow* select_w;
 
 extern "C" {
 
@@ -16,6 +17,10 @@ VALUE method_qt_quit(VALUE self) {
 
 VALUE method_open_file_dialog(VALUE self) {
     g_editor->fileOpen();
+}
+
+VALUE qt_file_saveas(VALUE self) {
+    g_editor->fileSaveAs();
 }
 
 VALUE method_restart(VALUE self) {
@@ -274,8 +279,8 @@ g_editor->setQtStyle(NUM2INT(style_id));
 return INT2NUM(0);
 }
 
-VALUE qt_select_window(VALUE self, VALUE item_list, VALUE jump_keys, VALUE callback) {
-    SelectWindow* select_w = new SelectWindow(g_editor);
+VALUE qt_select_window(VALUE self, VALUE item_list, VALUE jump_keys, VALUE callback, VALUE use_filter) {
+    select_w = new SelectWindow(g_editor,NUM2INT(use_filter));
     select_w->setItems(item_list,jump_keys);
     select_w->select_callback = rb_intern_str(callback);
     //SelectWindow* select_w = new SelectWindow(parent);
@@ -283,9 +288,22 @@ VALUE qt_select_window(VALUE self, VALUE item_list, VALUE jump_keys, VALUE callb
     return INT2NUM(0);
 }
 
+VALUE qt_select_window_close(VALUE self,VALUE id) {
+    qDebug() << "close window: " ;
+    if(select_w) {
+        qDebug() << "[Y]" ;
+        select_w->close();
+    }
+    return INT2NUM(0);
+}
+
+
+
+
 VALUE qt_select_update_window(VALUE self, VALUE item_list, VALUE jump_keys,
         VALUE select_callback, VALUE update_callback) {
-    SelectWindow* select_w = new SelectWindow(g_editor);
+    //SelectWindow* select_w = new SelectWindow(g_editor,1);
+    select_w = new SelectWindow(g_editor,1);
     //select_w->setItems(item_list,jump_keys);
     select_w->select_callback = rb_intern_str(select_callback);
     select_w->update_callback = rb_intern_str(update_callback);
@@ -337,6 +355,8 @@ void _init_ruby(int argc, char *argv[]) {
     rb_define_global_function("main_loop",method_main_loop,0);
     rb_define_global_function("qt_quit",method_qt_quit,0);
     rb_define_global_function("open_file_dialog",method_open_file_dialog,0);
+    rb_define_global_function("qt_file_saveas",qt_file_saveas,0);
+    
     rb_define_global_function("restart_application",method_restart,0);
     rb_define_global_function("cpp_function_wrapper",ruby_cpp_function_wrapper,2);
     rb_define_global_function("srn_dst",_srn_dst,2);
@@ -344,7 +364,9 @@ void _init_ruby(int argc, char *argv[]) {
     rb_define_global_function("set_window_title",method_set_window_title,1);
     rb_define_global_function("set_system_clipboard",set_system_clipboard,1);
     rb_define_global_function("set_qt_style",set_qt_style,1);
-    rb_define_global_function("qt_select_window",qt_select_window,3);
+    rb_define_global_function("qt_select_window",qt_select_window,4);
+    rb_define_global_function("qt_select_window_close",qt_select_window_close,1);
+
     rb_define_global_function("qt_select_update_window",qt_select_update_window,4);
     rb_define_global_function("qt_open_url",qt_open_url,1);
     rb_define_global_function("qt_get_buffer",qt_get_buffer,0);

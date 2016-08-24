@@ -166,11 +166,11 @@ private:
     void setCurrentFileName(const QString &fileName);
 public slots:
     void fileOpen();
+    bool fileSaveAs();
 private slots:
     void fileNew();
     bool fileSave();
     bool quit();
-    bool fileSaveAs();
     void filePrint();
     void filePrintPreview();
     void filePrintPdf();

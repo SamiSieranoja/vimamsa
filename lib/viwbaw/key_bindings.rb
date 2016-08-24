@@ -44,8 +44,11 @@ $cnf['key_bindigs'] = {
     # Buffer handling
     'C B'=> '$buffers.switch',
 #    'C , s'=> 'gui_select_buffer',
-    'C , r v b'=> 'revert_buffer',
-    'C , b d'=> '$buffers.close_current_buffer',
+    'C , f f'=> 'gui_file_finder',
+    'C , r v b'=> '$buffer.revert',
+    'C , c b'=> '$buffers.close_current_buffer',
+    'C , b'=> '$at.set_mode("S");gui_select_buffer',
+    'C , n b'=> 'create_new_file()',
 
     # MOVING
     'VC h'=> '$buffer.move(BACKWARD_CHAR)',
@@ -267,7 +270,7 @@ class AutomataTree
         @match_state.each{|parent|
             parent.children.each{|c|
                 #printf(" KEY MATCH: ")
-                puts [c.key_name, key_name].inspect
+                #puts [c.key_name, key_name].inspect
                 if c.key_name == key_name and c.eval_rule == ""
                     new_state << c
                 elsif c.key_name == key_name and c.eval_rule != ""

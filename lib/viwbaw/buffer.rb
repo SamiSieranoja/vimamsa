@@ -25,12 +25,9 @@ class BufferList < Array
     end
 
     def get_buffer_by_filename(fname) 
-        bufs = self.select{|b| b.fname == fname}
-        if bufs.any?
-            return bufs.first
-        else
-            return nil
-        end
+        #TODO: check using stat/inode?  http://ruby-doc.org/core-1.9.3/File/Stat.html#method-i-ino        
+        buf_idx = self.index{|b| b.fname == fname}
+        return buf_idx
     end
 
     def set_current_buffer(buffer_i)
@@ -46,8 +43,9 @@ class BufferList < Array
         self.slice!(buffer_i)
         @current_buf = 0 if @current_buf >= self.size
         if self.size==0
-            self << Buffer.new("emptybuf\n","")
+            self << Buffer.new("emptybuf\n")
         end
+        set_current_buffer(@current_buf)
     end
 
     def close_current_buffer
@@ -94,6 +92,41 @@ class Buffer < String
         # TODO: add \n when chars are added after last \n
         self << "\n" if self[-1] != "\n"
     end
+    
+    def revert()
+      puts @fname.inspect
+      str = read_file("",@fname)
+      self.set_content(str)
+    end
+    
+    def set_content(str)
+      self.replace(str)
+        @line_ends = scan_indexes(self,/\n/)
+        #puts str.inspect
+        @fname = fname
+        @basename = ""
+        @pathname = Pathname.new(fname) if @fname
+        @basename = @pathname.basename if @fname
+        @pos = 0 # Position in whole string
+        @cpos = 0 # Column position on current line
+        @lpos = 0 # Number of current line
+        @edit_version = 0 # +1 for every buffer modification
+        @larger_cpos = 0 
+        @need_redraw = 1
+        @call_func = nil
+        @deltas = []
+        @edit_history = []
+        @redo_stack = []
+        @edit_pos_history = []
+        @edit_pos_history_i = 0
+    end
+    
+    def set_filename(filename)
+       @fname = filename
+       @pathname = Pathname.new(fname) if @fname
+       @basename = @pathname.basename if @fname
+    end
+
     def line(lpos)
         #TODO: implement using line_range()
         if lpos >= @line_ends.size
@@ -132,14 +165,19 @@ class Buffer < String
             delta[3] = self.slice!(delta[0],delta[2])
             @deltas << delta
             update_index(pos,-delta[2])
+            update_line_ends(pos,-delta[2],delta[3])
        elsif delta[1] == INSERT
             self.insert(delta[0],delta[3])
             @deltas << delta
             puts [pos,+delta[2]].inspect
             update_index(pos,+delta[2])
+            update_line_ends(pos,+delta[2],delta[3])
        end
+       sanity_check_line_ends
        return delta
    end
+   
+   
    
    def update_index(pos,changeamount)
        puts @edit_pos_history.inspect
@@ -170,7 +208,7 @@ class Buffer < String
             return #TODO: assert?
         end
         @pos = last_delta[0]
-        recalc_line_ends #TODO: optimize?
+        #recalc_line_ends #TODO: optimize?
         calculate_line_and_column_pos
     end
 
@@ -183,7 +221,7 @@ class Buffer < String
         run_delta(redo_delta)
         @edit_history << redo_delta
         @pos = redo_delta[0]
-        recalc_line_ends #TODO: optimize?
+        #recalc_line_ends #TODO: optimize?
         calculate_line_and_column_pos
     end
 
@@ -227,11 +265,53 @@ class Buffer < String
 
     def recalc_line_ends()
         t1 = Time.now
+        leo = @line_ends.clone
         @line_ends = scan_indexes(self,/\n/)
+        if @line_ends == leo
+          puts "No change to line ends"
+        else
+          puts "CHANGES to line ends"
+        end
+          
 
         puts "Scan line_end time: #{Time.now - t1}"
         #puts @line_ends
     end
+    def sanity_check_line_ends()
+        leo = @line_ends.clone
+        @line_ends = scan_indexes(self,/\n/)
+        if @line_ends == leo
+          puts "No change to line ends"
+        else
+          puts "CHANGES to line ends"
+          puts leo.inspect
+          puts @line_ends.inspect
+          exit
+        end
+    end
+    
+   def update_line_ends(pos,changeamount,changestr)
+       puts @line_ends.inspect
+       puts pos
+       if changeamount > -1
+          changeamount=changestr.size
+          i = scan_indexes(changestr,/\n/)
+          i.collect!{|x|x+pos}
+          puts "new LINE ENDS:#{i.inspect}"
+       end
+       puts "change:#{changeamount}"
+       #@line_ends.collect!{|x| return x if x <= pos; return x + changeamount if x > pos}
+       @line_ends.collect!{|x| r=nil;
+                           r=x if x < pos;
+                           r=x + changeamount if changeamount < 0 && x +changeamount >= pos;
+                           r=x + changeamount if changeamount > 0 && x >= pos;
+                           r}.compact!
+                           
+       if changeamount > -1
+          @line_ends.concat(i)
+          @line_ends.sort!
+       end
+   end
 
     def at_end_of_line?()
         return ( self[@pos] == "\n" or at_end_of_buffer? )
@@ -320,7 +400,7 @@ class Buffer < String
           add_delta([@pos+1,DELETE,1],true)
       end
 
-      recalc_line_ends
+      #recalc_line_ends
       calculate_line_and_column_pos
       #need_redraw!
   end
@@ -330,7 +410,7 @@ class Buffer < String
       #s = self.slice!(startpos..endpos)
       set_clipboard(self[startpos..endpos])
       add_delta([startpos,DELETE,(endpos - startpos + 1)],true)
-      recalc_line_ends
+      #recalc_line_ends
       calculate_line_and_column_pos
   end
 
@@ -653,7 +733,7 @@ class Buffer < String
         add_delta([insert_pos,INSERT,0,c],true)
         #puts("encoding: #{c.encoding}")
         #puts "c.size: #{c.size}"
-        recalc_line_ends #TODO: optimize?
+        #recalc_line_ends #TODO: optimize?
         calculate_line_and_column_pos
         #need_redraw!
         #@pos += c.size
@@ -706,6 +786,7 @@ class Buffer < String
         s = self[lrange]
         add_delta([lrange.begin,DELETE,lrange.end - lrange.begin + 1],true)
         set_clipboard(s)
+        #recalc_line_ends
     end
 
     def delete_cur_line() #TODO: remove
@@ -717,7 +798,7 @@ class Buffer < String
         s = self.slice!(start.._end)
         add_delta([start,DELETE,_end - start + 1,s])
         set_clipboard(s)
-        recalc_line_ends #TODO: optimize?
+        #recalc_line_ends #TODO: optimize?
         calculate_pos_from_cpos_lpos
         #need_redraw!
 
@@ -806,6 +887,7 @@ class Buffer < String
     def save()
         if !@fname
             puts "TODO: SAVE AS"
+            qt_file_saveas()
             return
         end
         message("Saving file #{@fname}")

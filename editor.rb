@@ -93,6 +93,14 @@ end
 
 def qt_signal(sgnname,param)
     puts "GOT QT-SIGNAL #{sgnname}: #{param}"
+    if sgnname == "saveas"
+      file_saveas(param)
+    end
+end
+
+def file_saveas(filename)
+    $buffer.set_filename(filename)
+    $buffer.save()
 end
 
 def system_clipboard_changed(clipboard_contents)
@@ -253,7 +261,13 @@ def read_file(text, path)
     #return content.chomp #TODO:? chomp needed?
 end
 
-def new_file_opened(filename,file_contents)
+def create_new_file(filename=nil,file_contents="\n")
+        puts "NEW FILE CREATED"
+        buffer = Buffer.new(file_contents)
+        $buffers << buffer
+end
+
+def new_file_opened(filename,file_contents="")
     #TODO: expand path
     filename = File.expand_path(filename)
     b = $buffers.get_buffer_by_filename(filename)
@@ -268,12 +282,9 @@ def new_file_opened(filename,file_contents)
         $buffers << buffer
     end
     set_window_title("VIwbaw - #{File.basename(filename)}")
-    render_buffer
+    render_buffer #TODO: needed?
 end
 
-def revert_buffer()
-    $buffer = Buffer.new(read_file("",$fname),filename)
-end
 
 def debug_print_buffer()
     puts $buffer.inspect
