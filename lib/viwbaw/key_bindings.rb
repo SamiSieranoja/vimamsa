@@ -39,6 +39,7 @@ $cnf['key_bindigs'] = {
     'C W'=> 'save_file',
 #    'C , s a'=> 'save_file_as', #TODO
     'C , f o' => 'open_file_dialog',
+    'C , o' => 'open_file_dialog',
     'CI ctrl-o' => 'open_file_dialog',
 
     # Buffer handling
@@ -126,6 +127,7 @@ $cnf['key_bindigs'] = {
     'C R' => '$buffer.redo()', 
    'C v'=> '$buffer.start_visual_mode', 
    'C p'=> '$buffer.paste', #TODO: implement as replace for visual mode
+   'C P'=> '$buffer.paste', #TODO: implement as replace for visual mode
    'C space <char>' => '$buffer.insert_char(<char>)',
     'C y y'=> '$buffer.copy_line', 
     'C y O'=> '$buffer.copy(:to_line_end)',

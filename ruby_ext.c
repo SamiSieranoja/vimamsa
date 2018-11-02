@@ -37,6 +37,7 @@ VALUE method_set_window_title(VALUE self, VALUE new_title) {
     window_title = new QString(StringValueCStr(new_title));
 }
 
+int center_where_cursor();
 
 VALUE method_main_loop(VALUE self) {
 
@@ -53,6 +54,8 @@ VALUE method_main_loop(VALUE self) {
     Editor g_editor;
     g_editor.resize(700, 800);
     g_editor.show();
+    
+    VALUE do_center;
 
 
     rb_eval_string("viwbaw_init");
@@ -64,6 +67,8 @@ VALUE method_main_loop(VALUE self) {
         //rb_thread_schedule(); //TODO if there are plugins with threads?
 
     g_editor.setWindowTitle(*window_title);// TODO only when changed
+    do_center = rb_eval_string("$do_center");
+    if(NUM2INT(do_center)==1) { center_where_cursor();rb_eval_string("$do_center=0");}
         QThread::usleep(2000);
     }
     return INT2NUM(1);

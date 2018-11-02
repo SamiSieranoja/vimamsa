@@ -1,4 +1,5 @@
 require 'digest'
+require 'tempfile'
 require 'pathname'
 $paste_lines = false
 
@@ -930,6 +931,34 @@ class Buffer < String
         }
 
     end
+    
+   def identify()
+   file = Tempfile.new('out')
+   infile = Tempfile.new('in')
+   file.write($buffer.to_s)
+   file.flush
+   bufc="FOO"
+   
+   tmppos = @pos
+   
+   if false
+   #system("clang-format #{file.path} > #{infile.path}")
+   bufc = IO.read(infile.path)
+   puts bufc
+   elsif true
+   system("/usr/share/universalindentgui/indenters/ruby_formatter.rb -s 4 #{file.path}")
+   system("cp #{file.path} /tmp/foob")
+   bufc = IO.read(file.path)
+   puts bufc
+   end
+   $buffer.set_content(bufc)
+   set_pos(tmppos)
+   #top_where_cursor()
+   #center_on_current_line
+   $do_center=1
+   file.close;  file.unlink   
+   infile.close;  infile.unlink   
+   end
 
 end
 

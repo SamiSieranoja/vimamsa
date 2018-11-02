@@ -3,6 +3,8 @@
 $:.unshift File.dirname(__FILE__) + "/lib"
 require 'pathname'
 
+Encoding.default_external = Encoding::UTF_8
+Encoding.default_internal = Encoding::UTF_8
 
 # Globals
 $last_event = []
@@ -10,6 +12,7 @@ $command_history = []
 $clipboard = []
 $cnf = {}
 
+$do_center=0
 $cpos = 0
 $lpos = 0
 $larger_cpos = 0
