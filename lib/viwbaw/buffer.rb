@@ -66,6 +66,10 @@ class Buffer < String
         if(str[-1] != "\n")
             str << "\n"
         end
+        
+        @marks = Hash.new
+        
+        if 0 
         super(str)
         t1 = Time.now
         @line_ends = scan_indexes(self,/\n/)
@@ -87,6 +91,9 @@ class Buffer < String
         @redo_stack = []
         @edit_pos_history = []
         @edit_pos_history_i = 0
+        end
+        
+        set_content(str)
 
         puts Time.now - t1
         # TODO: add \n when chars are added after last \n
@@ -307,7 +314,7 @@ class Buffer < String
                            r=x + changeamount if changeamount > 0 && x >= pos;
                            r}.compact!
                            
-       if changeamount > -1
+       if changeamount > -1 && i.size > 0
           @line_ends.concat(i)
           @line_ends.sort!
        end
@@ -530,6 +537,10 @@ class Buffer < String
         end
     end
 
+    def mark_current_position(mark_char)
+        @marks[mark_char] = @pos 
+    end
+    
     # Get positions of last characters in words
     def get_word_end_marks(startpos,endpos)
         search_str = self[(startpos)..(endpos)]
@@ -609,6 +620,11 @@ class Buffer < String
             end
         end
   
+    end
+    
+    def jump_to_mark(mark_char) 
+        p = @marks[mark_char]
+        set_pos(p) if p
     end
        
     def jump(target)
