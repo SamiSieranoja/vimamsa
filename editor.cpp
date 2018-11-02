@@ -420,8 +420,13 @@ void SEditor::processKeyEvent(QKeyEvent *e) {
 
     VALUE rb_event;
     VALUE handle_key_event = rb_intern("handle_key_event");
+    
 
-    //qDebug() << "keyPressEvent thread:" << thread()->currentThreadId();
+    qDebug() << "nativeScanCode:" << e->nativeScanCode() << endl;
+    qDebug() << "nativeVirtualKey:" << e->nativeVirtualKey() << endl;
+    
+
+     //qDebug() << "keyPressEvent thread:" << thread()->currentThreadId();
     //qDebug() << "SET NEW KEYPRESS";
 
     QString event_text = e->text();
