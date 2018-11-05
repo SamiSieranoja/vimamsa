@@ -97,7 +97,9 @@ $cnf['key_bindigs'] = {
 
   'C n' => '$search.jump_to_next()',
   'C N' => '$search.jump_to_previous()',
-
+  
+  # Debug
+  'C , d r p'=> 'start_ripl',
   'C , D' => 'debug_print_buffer',
   'C , d b' => 'debug_print_buffer',
   'C , d c' => 'debug_dump_clipboard',
@@ -141,6 +143,8 @@ $cnf['key_bindigs'] = {
   #    'C d e'=> '$buffer.delete_to_next_word_end',
   'C d <num> e' => 'delete_next_word',
   'C r <char>' => '$buffer.replace_with_char(<char>)', # TODO
+  'C , l b' => 'load_buffer_list',
+  'C , l l' => 'save_buffer_list',
 
   # 'C 0($next_command_count==nil)'=> 'jump_to_beginning_of_line',
 
@@ -189,7 +193,7 @@ $cnf['key_bindigs'] = {
   'CV , R' => 'restart_application',
   'I ctrl!' => '$at.set_mode(COMMAND)',
   'I shift!' => '$at.set_mode(COMMAND)',
-  'C shift!' => '$at.set_mode(INSERT)',
+  'C shift!' => 'save_file',
   'I <char>' => '$buffer.insert_char(<char>)',
   'I esc' => '$at.set_mode(COMMAND)',
 

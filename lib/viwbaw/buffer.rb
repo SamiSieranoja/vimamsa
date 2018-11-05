@@ -1,6 +1,7 @@
 require 'digest'
 require 'tempfile'
 require 'pathname'
+#require 'ripl'
 $paste_lines = false
 
 class BufferList < Array
@@ -166,6 +167,7 @@ class Buffer < String
             @deltas << delta
         end
         @edit_history << delta
+        reset_larger_cpos #TODO: correct here?
     end
 
     def run_delta(delta)
@@ -347,7 +349,7 @@ end
 
 # Calculate the two dimensional column and line positions based on current
 # (one dimensional) position in the buffer.
-def calculate_line_and_column_pos()
+def calculate_line_and_column_pos(reset=true)
     @pos = self.size if @pos > self.size
     @pos = 0 if @pos < 0
     #puts @line_ends
@@ -362,12 +364,13 @@ def calculate_line_and_column_pos()
     end
     @cpos = @pos
     if @lpos > 0
-        @cpos -= @line_ends[@lpos - 1] #TODO??
+        @cpos -= @line_ends[@lpos - 1] + 1 #TODO??
     end
+    reset_larger_cpos if reset
 end
 
 # Calculate the one dimensional array index based on column and line positions
-def calculate_pos_from_cpos_lpos()
+def calculate_pos_from_cpos_lpos(reset=true)
     if @lpos > 0
         new_pos = @line_ends[@lpos - 1] + 1
     else
@@ -384,6 +387,7 @@ def calculate_pos_from_cpos_lpos()
     end
     new_pos += @cpos
     @pos = new_pos
+    reset_larger_cpos if reset
 end
 
 def delete(op)
@@ -475,12 +479,13 @@ def delete2(range_id)
 
 end
 
-
-
+def reset_larger_cpos()
+    @larger_cpos = @cpos
+end
 
 def move(direction)
 
-
+    puts "cpos:#{@cpos} lpos:#{@lpos} @larger_cpos:#{@larger_cpos}"
     if direction == :forward_page
         puts "FORWARD PAGE"
         visible_range = get_visible_area()
@@ -521,7 +526,13 @@ def move(direction)
         end
     end
 
+
+    if direction == FORWARD_CHAR or direction == BACKWARD_CHAR
+        reset_larger_cpos
+    end
+
     if direction == BACKWARD_LINE or direction == FORWARD_LINE
+
         if @lpos > 0
             new_pos = @line_ends[@lpos - 1] - 1
         else
@@ -538,9 +549,15 @@ def move(direction)
 
         end
 
+        if @larger_cpos > @cpos and @larger_cpos < (_line.size)
+            @cpos = @larger_cpos
+        elsif @larger_cpos > @cpos and @larger_cpos >= (_line.size)
+            @cpos = line(@lpos).size - 1
+        end
+
         #new_pos += @cpos
         #@pos = new_pos
-        calculate_pos_from_cpos_lpos
+        calculate_pos_from_cpos_lpos(false)
 
     end
 end
@@ -725,6 +742,8 @@ def jump_to_next_instance_of_char(char, direction = FORWARD)
 end
 
 def replace_with_char(char)
+    puts "self_pos:'#{self[@pos]}'"
+    return if self[@pos] == "\n"
     d1 = [@pos, DELETE, 1]
     d2 = [@pos, INSERT, 1, char]
     add_delta(d1, true)
@@ -950,7 +969,9 @@ def identify()
 
     if get_file_type()=="c"
         #C/C++/Java/JavaScript/Objective-C/Protobuf code
-        system("clang-format #{file.path} > #{infile.path}")
+        #system("clang-format #{file.path} > #{infile.path}")
+        # system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100, AllowShortBlocksOnASingleLine: true, SortIncludes: false, AllowShortIfStatementsOnASingleLine: true}' #{file.path} > #{infile.path}")         
+        system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")
         bufc = IO.read(infile.path)
         puts bufc
     elsif get_file_type()=="ruby"

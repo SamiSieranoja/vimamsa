@@ -2,7 +2,7 @@
 
 class Search
 
-    #attr_reader (:pos, :cpos, :lpos)
+ #attr_reader (:pos, :cpos, :lpos)
 
     #attr_reader :pos, :lpos, :cpos, :deltas, :fname
 
