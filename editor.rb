@@ -613,9 +613,9 @@ def is_url(s)
 end
 
 def is_path(s)
-    m = s.match(/\/.*\//)
+    m = s.match(/(~[a-z]*)?\/.*\//)
     if m != nil
-        return File.exist?(m[0])
+        return File.exist?(File.expand_path(m[0]))
     end
     return false
 end

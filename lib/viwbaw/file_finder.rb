@@ -18,20 +18,32 @@ def recursively_find_files()
     $dir_list = dlist
     return $dir_list
 end
-
+# sudo gem2.0 install celluloid-pmap http://jessewolgamott.com/blog/2013/02/07/the-one-where-i-introduce-celluloid-pmap/
+# sudo gem2.0 install parallel
+require 'parallel'
 def filter_files(search_str)
     #dir_list = Dir.glob('/home/sjs/notes/**/*').select{ |e| File.file? e }
     #puts dir_list.inspect
     dir_hash = {}
-    for file in $dir_list
+    if false
+        for file in $dir_list
 
-        #d = srn_dst(search_str, File.basename(file))
-        d = srn_dst(search_str, file)
-        if d > 0
-            dir_hash[file] = d
-            #puts "D:#{d} #{file}" 
+            #d = srn_dst(search_str, File.basename(file))
+            #d = srn_dst(search_str, file)
+            d = 0
+            if d > 0
+                dir_hash[file] = d
+                #puts "D:#{d} #{file}" 
+            end
         end
     end
+    scores = Parallel.map($dir_list, in_threads: 8) do |file|
+        [file, srn_dst(search_str, file)]
+    end
+    for s in scores
+        dir_hash[s[0]] = s[1]  if s[1] > 0
+    end
+    # puts scores
     #puts dir_hash
     dir_hash = dir_hash.sort_by{|k, v| -v}
     dir_hash = dir_hash[0..20]

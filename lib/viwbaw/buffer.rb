@@ -631,7 +631,7 @@ def get_cur_nonwhitespace_word()
         open_url(word)
     elsif is_path(word)
         message("PATH:'#{word}'")
-        open_url(word)
+        open_url(File.expand_path(word))
     end
     #puts wm
 end
