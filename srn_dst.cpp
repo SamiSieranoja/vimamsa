@@ -46,6 +46,7 @@ float calc_sub_score(unsigned char* s1, unsigned char* s2, int i1, int i2) {
     float sub_score = 1;
     float score_inc = 1;
     float score_inc_multip = 0.63212;
+    //float score_inc_multip = 0.23212;
 
 
     // From i2 to zero

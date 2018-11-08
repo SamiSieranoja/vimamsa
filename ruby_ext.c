@@ -289,6 +289,7 @@ VALUE qt_select_window(VALUE self, VALUE item_list, VALUE jump_keys, VALUE callb
     select_w->setItems(item_list,jump_keys);
     select_w->select_callback = rb_intern_str(callback);
     //SelectWindow* select_w = new SelectWindow(parent);
+    select_w->resize(500,700);
     select_w->show();
     return INT2NUM(0);
 }
@@ -319,6 +320,7 @@ VALUE qt_select_update_window(VALUE self, VALUE item_list, VALUE jump_keys,
     //rb_funcall(INT2NUM(0),select_w->update_callback, 1, INT2NUM(99));
     //SelectWindow* select_w = new SelectWindow(parent);
     select_w->show();
+    select_w->resize(500,700);
     return INT2NUM(0);
 }
 

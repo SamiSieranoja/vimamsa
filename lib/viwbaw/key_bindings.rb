@@ -47,6 +47,8 @@ $cnf['key_bindigs'] = {
   'C , c b' => '$buffers.close_current_buffer',
   'C , b' => '$at.set_mode("S");gui_select_buffer',
   'C , n b' => 'create_new_file()',
+  'C , .' => '$buffer.backup()',
+  'C , , .' => 'backup_all_buffers()',
 
   # MOVING
   'VC h' => '$buffer.move(BACKWARD_CHAR)',
@@ -122,8 +124,8 @@ $cnf['key_bindigs'] = {
   'C ctrl-r' => '$buffer.redo()', # TODO:???
   'C R' => '$buffer.redo()',
   'C v' => '$buffer.start_visual_mode',
-  'C p' => '$buffer.paste', # TODO: implement as replace for visual mode
-  'C P' => '$buffer.paste', # TODO: implement as replace for visual mode
+  'C p' => '$buffer.paste(AFTER)', # TODO: implement as replace for visual mode
+  'C P' => '$buffer.paste(BEFORE)', # TODO: implement as replace for visual mode
   'C space <char>' => '$buffer.insert_char(<char>)',
   'C y y' => '$buffer.copy_line',
   'C y O' => '$buffer.copy(:to_line_end)',
@@ -154,7 +156,7 @@ $cnf['key_bindigs'] = {
   'V d' => '$buffer.delete(SELECTION)',
   'V x' => '$buffer.delete(SELECTION)',
 
-  'CI ctrl-v' => '$buffer.paste',
+  'CI ctrl-v' => '$buffer.paste(BEFORE)',
   'CI backspace' => '$buffer.delete(BACKWARD_CHAR)',
 
   # 'C space' => '$buffer.insert_char(" ")',

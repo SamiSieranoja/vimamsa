@@ -11,6 +11,7 @@ $last_event = []
 $command_history = []
 $clipboard = []
 $cnf = {}
+$search_dirs=['.']
 
 $do_center = 0
 $cpos = 0
@@ -108,6 +109,10 @@ end
 
 def system_clipboard_changed(clipboard_contents)
     max_clipboard_items = 100
+    if clipboard_contents != $clipboard[-1]
+        #TODO: HACK
+        $paste_lines = false
+    end
     $clipboard << clipboard_contents
     puts "DEBUG"
     puts $clipboard[-1]

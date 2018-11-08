@@ -36,9 +36,16 @@ class BufferList < Array
         $buffer = self[buffer_i]
         @current_buf = buffer_i
         debug "SWITCH BUF2. bufsize:#{self.size}, curbuf: #{@current_buf}"
-        set_window_title("VIwbaw - #{$buffer.basename}")
+        fpath = $buffer.fname
+        if fpath.size > 50
+            fpath = fpath[-50..-1]
+        end
+        #set_window_title("VIwbaw - #{$buffer.basename}")
+        set_window_title("VIwbaw - #{fpath}")
         $buffer.need_redraw!
     end
+
+
 
     def close_buffer(buffer_i)
         self.slice!(buffer_i)
@@ -141,6 +148,13 @@ class Buffer < String
         @fname = filename
         @pathname = Pathname.new(fname) if @fname
         @basename = @pathname.basename if @fname
+    end
+    def get_short_path()
+        fpath = self.fname
+        if fpath.size > 50
+            fpath = fpath[-50..-1]
+        end
+        return fpath
     end
 
     def line(lpos)
@@ -349,7 +363,7 @@ end
 
 # Calculate the two dimensional column and line positions based on current
 # (one dimensional) position in the buffer.
-def calculate_line_and_column_pos(reset=true)
+def calculate_line_and_column_pos(reset = true)
     @pos = self.size if @pos > self.size
     @pos = 0 if @pos < 0
     #puts @line_ends
@@ -370,7 +384,7 @@ def calculate_line_and_column_pos(reset=true)
 end
 
 # Calculate the one dimensional array index based on column and line positions
-def calculate_pos_from_cpos_lpos(reset=true)
+def calculate_pos_from_cpos_lpos(reset = true)
     if @lpos > 0
         new_pos = @line_ends[@lpos - 1] + 1
     else
@@ -425,7 +439,7 @@ def delete(op)
 end
 
 
-def  delete_range(startpos, endpos)
+def delete_range(startpos, endpos)
     #s = self.slice!(startpos..endpos)
     set_clipboard(self[startpos..endpos])
     add_delta([startpos, DELETE,(endpos - startpos + 1)], true)
@@ -751,6 +765,13 @@ def replace_with_char(char)
     puts "DELTAS:#{$buffer.deltas.inspect} "
 end
 
+def insert_char_at(c, pos)
+    c = c.force_encoding("UTF-8"); #TODO:correct?
+    c = "\n" if c == "\r"
+    add_delta([pos, INSERT, 0, c], true)
+    calculate_line_and_column_pos
+end
+
 def insert_char(c, mode = BEFORE)
     #Sometimes we get ASCII-8BIT although actually UTF-8  "incompatible character encodings: UTF-8 and ASCII-8BIT (Encoding::CompatibilityError)"
     c = c.force_encoding("UTF-8"); #TODO:correct?
@@ -792,19 +813,28 @@ def set_redrawed
     @need_redraw = false
 end
 
-def paste()
+def paste(at = AFTER)
+    # Paste after current char. Except if at end of line, paste before end of line.
     return if !$clipboard.any?
+    text = $clipboard[-1]
+
     if $paste_lines
         l = current_line_range()
         puts "------------"
         puts l.inspect
         puts "------------"
         #$buffer.move(FORWARD_LINE)
-        set_pos(l.end+1)
-        insert_char($clipboard[-1])
+        #set_pos(l.end+1)
+        insert_char_at(text,l.end+1)
         set_pos(l.end+1)
     else
-        insert_char($clipboard[-1])
+        if at_end_of_buffer? or at_end_of_line? or at==BEFORE
+            pos = @pos
+        else
+            pos=@pos+1
+        end
+        insert_char_at(text, pos)
+        set_pos(pos+text.size)
     end
     #TODO: AFTER does not work
     #insert_char($clipboard[-1],AFTER)
@@ -829,22 +859,13 @@ def delete_line()
     s = self[lrange]
     add_delta([lrange.begin, DELETE, lrange.end - lrange.begin + 1], true)
     set_clipboard(s)
+    update_pos(lrange.begin)
     #recalc_line_ends
 end
 
-def delete_cur_line() #TODO: remove
-    #TODO: implement using delete_range
-    start = @line_ends[@lpos - 1] + 1 if @lpos > 0
-    start = 0 if @lpos == 0
-    _end = @line_ends[@lpos]
-
-    s = self.slice!(start.._end)
-    add_delta([start, DELETE, _end - start + 1, s])
-    set_clipboard(s)
-    #recalc_line_ends #TODO: optimize?
-    calculate_pos_from_cpos_lpos
-    #need_redraw!
-
+def update_pos(pos)
+    @pos = pos
+    calculate_line_and_column_pos
 end
 
 def start_visual_mode()
@@ -990,4 +1011,21 @@ def identify()
     infile.close;  infile.unlink
 end
 
+def backup()
+    fname = @fname
+    spfx = fname.gsub('=', '==').gsub('/','=:')
+    spath = File.expand_path('~/autosave')
+    datetime = DateTime.now().strftime("%d%m%Y:%H%M%S")
+    savepath = "#{spath}/#{spfx}_#{datetime}"
+    puts "BACKUP BUFFER TO: #{savepath}"
+    IO.write(savepath,$buffer.to_s)
+end
+
+end
+
+
+def backup_all_buffers()
+    for buf in $buffers
+        buf.backup
+    end
 end

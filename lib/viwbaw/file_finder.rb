@@ -1,16 +1,21 @@
 
 def gui_file_finder()
     l = []
-    $select_keys = ['h','l','f','d','s','a','g','z']
+    $select_keys = ['h', 'l', 'f', 'd', 's', 'a', 'g', 'z']
     recursively_find_files
-    qt_select_update_window(l,$select_keys.collect{|x| x.upcase},
-                     "gui_file_finder_select_callback",
-                     "gui_file_finder_update_callback")
-                     #method(:gui_file_finder_update_callback))
+    qt_select_update_window(l,$select_keys.collect {|x| x.upcase},
+    "gui_file_finder_select_callback",
+    "gui_file_finder_update_callback")
+    #method(:gui_file_finder_update_callback))
 end
 
 def recursively_find_files()
-    $dir_list = Dir.glob('./**/*').select{ |e| File.file? e }
+    dlist=[]
+    for d in $search_dirs
+        dlist = dlist + Dir.glob("#{d}/**/*").select { |e| File.file?(e) and $find_extensions.include?(File.extname(e))}
+    end
+    #$dir_list = Dir.glob('./**/*').select { |e| File.file? e }
+    $dir_list = dlist
     return $dir_list
 end
 
@@ -20,17 +25,18 @@ def filter_files(search_str)
     dir_hash = {}
     for file in $dir_list
 
-        d = srn_dst(search_str,File.basename(file))
+        #d = srn_dst(search_str, File.basename(file))
+        d = srn_dst(search_str, file)
         if d > 0
             dir_hash[file] = d
             #puts "D:#{d} #{file}" 
         end
     end
     #puts dir_hash
-    dir_hash = dir_hash.sort_by{|k,v| -v}
+    dir_hash = dir_hash.sort_by{|k, v| -v}
     dir_hash = dir_hash[0..20]
     #puts dir_hash
-    dir_hash.map  do |file,d|
+    dir_hash.map  do |file, d|
         puts "D:#{d} #{file}"
     end
     return dir_hash
@@ -38,9 +44,9 @@ end
 
 
 
-def gui_file_finder_update_callback(search_str="")
+def gui_file_finder_update_callback(search_str = "")
     puts "FILE FINDER UPDATE CALLBACK: #{search_str}"
-    if(search_str.size > 1)
+    if (search_str.size > 1)
         files = filter_files(search_str)
         $file_search_list = files
         return files
@@ -75,4 +81,3 @@ def gui_file_finder_init()
     #bindkey 'S /[hlfdsagz]/', 'gui_file_finder_handle_char(<char>)'
     #bindkey 'Z <char>', 'gui_file_finder_handle_char(<char>)'
 end
-
