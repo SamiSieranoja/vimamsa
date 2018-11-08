@@ -117,6 +117,7 @@ class Buffer < String
     end
 
     def revert()
+        message("Revert buffer #{@fname}")
         puts @fname.inspect
         str = read_file("",@fname)
         self.set_content(str)
@@ -582,11 +583,70 @@ end
 
 # Get positions of last characters in words
 def get_word_end_marks(startpos, endpos)
+    startpos = 0 if startpos < 0
+    endpos = self.size if endpos > self.size
     search_str = self[(startpos)..(endpos)]
     return if search_str == nil
     wsmarks = scan_indexes(search_str, /(?<=\p{Word})[^\p{Word}]/)
     wsmarks = wsmarks.collect {|x| x+startpos - 1}
     return wsmarks
+end
+
+# Get positions of first characters in words
+def get_word_start_marks(startpos, endpos)
+    startpos = 0 if startpos < 0
+    endpos = self.size if endpos > self.size
+    search_str = self[(startpos)..(endpos)]
+    return if search_str == nil
+    wsmarks = scan_indexes(search_str, /(?<=[^\p{Word}])\p{Word}/)
+    wsmarks = wsmarks.collect {|x| x+startpos}
+    return wsmarks
+end
+
+def scan_marks(startpos, endpos, regstr, offset = 0)
+    startpos = 0 if startpos < 0
+    endpos = self.size if endpos > self.size
+    search_str = self[(startpos)..(endpos)]
+    return if search_str == nil
+    marks = scan_indexes(search_str, regstr)
+    marks = marks.collect {|x| x+startpos+offset}
+    return marks
+end
+
+def get_cur_nonwhitespace_word()
+
+    #wem = scan_marks(@pos,@pos+200,/(?<=\p{Word})[^\p{Word}]/,-1)
+    #wsm = scan_marks(@pos-200,@pos,/(?<=[^\p{Word}])\p{Word}/)
+    wem = scan_marks(@pos,@pos+200, /(?<=\S)\s/,-1)
+    wsm = scan_marks(@pos-200,@pos, /(?<=\s)\S/)
+    word_start = wsm[-1]
+    word_end = wem[0]
+    word_start = pos if word_start == nil
+    word_end = pos if word_end == nil
+    word = self[word_start..word_end]
+    puts "'#{word}'"
+    message("'#{word}'")
+    if is_url(word)
+        message("URL:'#{word}'")
+        open_url(word)
+    elsif is_path(word)
+        message("PATH:'#{word}'")
+        open_url(word)
+    end
+    #puts wm
+end
+
+def get_cur_word()
+    wem = get_word_end_marks(@pos,@pos+200)
+    wsm = get_word_start_marks(@pos-200,@pos)
+    word_start = wsm[-1]
+    word_end = wem[0]
+    word_start = pos if word_start == nil
+    word_end = pos if word_end == nil
+    word = self[word_start..word_end]
+    puts "'#{word}'"
+    message("'#{word}'")
+    #puts wm
 end
 
 def jump_to_next_instance_of_word()
@@ -825,7 +885,7 @@ def paste(at = AFTER)
         puts "------------"
         #$buffer.move(FORWARD_LINE)
         #set_pos(l.end+1)
-        insert_char_at(text,l.end+1)
+        insert_char_at(text, l.end+1)
         set_pos(l.end+1)
     else
         if at_end_of_buffer? or at_end_of_line? or at==BEFORE
@@ -988,6 +1048,8 @@ def identify()
 
     tmppos = @pos
 
+    message("Auto format #{@fname}")
+
     if get_file_type()=="c"
         #C/C++/Java/JavaScript/Objective-C/Protobuf code
         #system("clang-format #{file.path} > #{infile.path}")
@@ -1013,6 +1075,7 @@ end
 
 def backup()
     fname = @fname
+    message("Backup buffer #{fname}")
     spfx = fname.gsub('=', '==').gsub('/','=:')
     spath = File.expand_path('~/autosave')
     datetime = DateTime.now().strftime("%d%m%Y:%H%M%S")
@@ -1028,4 +1091,5 @@ def backup_all_buffers()
     for buf in $buffers
         buf.backup
     end
+    message("Backup all buffers")
 end

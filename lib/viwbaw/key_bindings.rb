@@ -49,6 +49,9 @@ $cnf['key_bindigs'] = {
   'C , n b' => 'create_new_file()',
   'C , .' => '$buffer.backup()',
   'C , , .' => 'backup_all_buffers()',
+  'C enter' => '$buffer.get_cur_word()',
+  'C return' => '$buffer.get_cur_nonwhitespace_word()',
+  
 
   # MOVING
   'VC h' => '$buffer.move(BACKWARD_CHAR)',

@@ -215,6 +215,7 @@ end
 
 
 def message(s)
+    s = "[#{DateTime.now().strftime("%H:%M")}] #{s}"
     $minibuffer = Buffer.new(s, "")
     puts $minibuffer.to_s
 end
@@ -606,6 +607,24 @@ end
 def start_ripl
     Ripl.start :binding => binding
 end
+
+def is_url(s)
+    return s.match(/(https?|file):\/\/.*/) != nil
+end
+
+def is_path(s)
+    m = s.match(/\/.*\//)
+    if m != nil
+        return File.exist?(m[0])
+    end
+    return false
+end
+
+def open_url(url)
+    system("xdg-open", url)
+end
+
+
 
 #viwbaw_init
 
