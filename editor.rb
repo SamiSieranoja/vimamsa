@@ -2,6 +2,7 @@
 
 $:.unshift File.dirname(__FILE__) + "/lib"
 require 'pathname'
+require 'ripl'
 
 Encoding.default_external = Encoding::UTF_8
 Encoding.default_internal = Encoding::UTF_8
@@ -266,6 +267,7 @@ def read_file(text, path)
         content.encode!(Encoding::UTF_8)
     end
 
+    content = filter_buffer(content)
     return content
     #return content.chomp #TODO:? chomp needed?
 end
@@ -276,11 +278,23 @@ def create_new_file(filename = nil, file_contents = "\n")
     $buffers << buffer
 end
 
+def filter_buffer(buf)
+    i = 0
+    while i < buf.size
+        if buf[i].ord == 160
+            buf[i] = " "
+            #TODO: hack. fix properly
+        end
+        i += 1
+    end
+    return buf
+end
 def load_buffer(fname)
     return if !File.exist?(fname)
     return if $buffers.get_buffer_by_filename(fname) != nil
     puts "LOAD BUFFER: #{fname}"
     buffer = Buffer.new(read_file("", fname), fname)
+    buf = filter_buffer(buffer)
     $buffers << buffer
 end
 
@@ -585,6 +599,7 @@ def get_dot_path(sfx)
 end
 
 def save_buffer_list()
+    message("Save buffer list")
     buffn = get_dot_path('buffers.txt')
     f = File.open(buffn, 'w')
     bufstr = $buffers.collect {|buf| buf.fname}.inspect
@@ -593,6 +608,7 @@ def save_buffer_list()
 end
 
 def load_buffer_list()
+    message("Load buffer list")
     buffn = get_dot_path('buffers.txt')
     return if !File.exist?(buffn)
     bufstr = IO.read(buffn)

@@ -1,17 +1,14 @@
 # This file has everyting related to binding key (and other) events
 # into actions.
 
-# TODO: override default bindings with data from ~/.viwbaw
-
 # First letter is mode (C=Command, I=Insert, V=Visual)
-#
 #
 # Examples:
 #
-# Change mode from INSERT into COMMAND when shift key is released immediately
+# Change mode from INSERT into COMMAND when ctrl key is released immediately
 # after it has been pressed (there are no other key events between key press and key release).
-#        'I shift!'=> '$at.set_mode(COMMAND)',
-#        'C shift!'=> '$at.set_mode(INSERT)',
+#        'I ctrl!'=> '$at.set_mode(COMMAND)',
+#        'C ctrl!'=> '$at.set_mode(INSERT)',
 
 #
 # In command mode: press keys "," "r" "v" and "b" sequentially.
@@ -41,6 +38,7 @@ $cnf['key_bindigs'] = {
 
   # Buffer handling
   'C B' => '$buffers.switch',
+  'C tab' => '$buffers.switch_to_last_buf',
   #    'C , s'=> 'gui_select_buffer',
   'C , f f' => 'gui_file_finder',
   'C , r v b' => '$buffer.revert',
@@ -435,7 +433,8 @@ $event_keysym_translate_table = {
   Qt::Key_Right => "right",
   Qt::Key_Enter => "enter",
   Qt::Key_Return => "return",
-  Qt::Key_Shift => "shift"
+  Qt::Key_Shift => "shift",
+  Qt::Key_Tab => "tab"
 };
 
 $translate_table = {

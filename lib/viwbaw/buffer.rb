@@ -1,8 +1,9 @@
 require 'digest'
 require 'tempfile'
 require 'pathname'
-#require 'ripl'
+require 'ripl'
 $paste_lines = false
+$buffer_history=[0]
 
 class BufferList < Array
 
@@ -16,14 +17,16 @@ class BufferList < Array
         debug "SWITCH BUF. bufsize:#{self.size}, curbuf: #{@current_buf}"
         @current_buf += 1
         @current_buf = 0 if @current_buf >= self.size
-        #$buffer = self[@current_buf]
-        #$buffer.need_redraw!
         m = method("switch")
         set_last_command({method: m, params: []})
-
         set_current_buffer(@current_buf)
-        #set_window_title("VIwbaw - #{File.basename($buffer.fname)}")
-        # TODO: set window title
+    end
+
+    def switch_to_last_buf()
+        last_buf = $buffer_history[-1]
+        newbuf = last_buf
+        newbuf = self.size-1 if last_buf > self.size #TODO
+        set_current_buffer($buffer_history[-1])
     end
 
     def get_buffer_by_filename(fname)
@@ -33,6 +36,9 @@ class BufferList < Array
     end
 
     def set_current_buffer(buffer_i)
+        buffer_i = self.size -1 if buffer_i > self.size
+        buffer_i = 0 if buffer_i < 0
+        $buffer_history << @current_buf
         $buffer = self[buffer_i]
         @current_buf = buffer_i
         debug "SWITCH BUF2. bufsize:#{self.size}, curbuf: #{@current_buf}"
@@ -405,15 +411,28 @@ def calculate_pos_from_cpos_lpos(reset = true)
     reset_larger_cpos if reset
 end
 
-def delete(op)
+def delete2(range_id)
+    $paste_lines = false
+    range = get_range(range_id)
+    puts "RANGE"
+    puts range.inspect
+    puts range.inspect
+    puts "------"
+    delete_range(range.first, range.last)
+    pos = [range.first,@pos].min
+    set_pos(pos)
 
+end
+
+def delete(op)
+    $paste_lines = false
     # Delete selection
     if op== SELECTION && visual_mode?
         (startpos, endpos) = get_visual_mode_range2
         delete_range(startpos, endpos)
         @pos = [@pos,@selection_start].min
         end_visual_mode
-        return
+        #return
 
         # Delete current char
     elsif op == CURRENT_CHAR_FORWARD
@@ -433,7 +452,6 @@ def delete(op)
     elsif op == FORWARD_CHAR #TODO: ok?
         add_delta([@pos+1, DELETE, 1], true)
     end
-
     #recalc_line_ends
     calculate_line_and_column_pos
     #need_redraw!
@@ -483,16 +501,7 @@ end
 return range
 end
 
-def delete2(range_id)
-    range = get_range(range_id)
-    puts "RANGE"
-    puts range.inspect
-    puts range.inspect
-    puts "------"
-    delete_range(range.first, range.last)
-    @pos = [range.first,@pos].min
 
-end
 
 def reset_larger_cpos()
     @larger_cpos = @cpos

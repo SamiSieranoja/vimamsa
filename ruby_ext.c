@@ -356,6 +356,7 @@ VALUE _srn_dst(VALUE self, VALUE s1, VALUE s2) {
   rb_thread_call_without_gvl(srn_dst_wrap, ptr, NULL, NULL);
   //d = srn_dst(StringValueCStr(s1), StringValueCStr(s2));
   ret = rb_float_new(d);
+  free(ptr);
   return ret;
 }
 
