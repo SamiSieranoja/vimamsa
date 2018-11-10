@@ -30,8 +30,9 @@ end
 
 def gui_select_buffer_handle_char(c)
     puts "BUFFER SELECTOR INPUT CHAR: #{c}"
+    #Ripl.start :binding => binding
     buffer_i = $select_keys.index(c)
-    if buffer_i != nil
+    if buffer_i != nil and $buffers[buffer_i] != nil
         gui_select_buffer_callback(buffer_i)
     end
 end
@@ -40,7 +41,6 @@ def gui_select_buffer_init()
     $at.add_mode('S')
     bindkey 'S enter', '$at.set_mode(COMMAND);qt_select_window_close(0)'
     bindkey 'S return', '$at.set_mode(COMMAND);qt_select_window_close(0)'
-    #bindkey 'S j', '$at.set_mode(COMMAND)'
-    #bindkey 'S /[hlfdsagz]/', 'gui_select_buffer_handle_char(<char>)'
+    bindkey 'S esc', '$at.set_mode(COMMAND);qt_select_window_close(0)'
     bindkey 'S <char>', 'gui_select_buffer_handle_char(<char>)'
 end
