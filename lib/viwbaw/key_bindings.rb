@@ -148,6 +148,9 @@ $cnf['key_bindigs'] = {
   'C r <char>' => '$buffer.replace_with_char(<char>)', # TODO
   'C , l b' => 'load_buffer_list',
   'C , l l' => 'save_buffer_list',
+  
+  'C ctrl-c' => '$buffer.comment_line()',
+  'C ctrl-x' => '$buffer.comment_line(:uncomment)',
 
   # 'C 0($next_command_count==nil)'=> 'jump_to_beginning_of_line',
 
@@ -156,6 +159,8 @@ $cnf['key_bindigs'] = {
   'V y' => '$buffer.copy_active_selection',
   'V d' => '$buffer.delete(SELECTION)',
   'V x' => '$buffer.delete(SELECTION)',
+  'V ctrl-c' => '$buffer.comment_selection',
+  'V ctrl-x' => '$buffer.comment_selection(:uncomment)',
 
   'CI ctrl-v' => '$buffer.paste(BEFORE)',
   'CI backspace' => '$buffer.delete(BACKWARD_CHAR)',

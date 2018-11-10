@@ -273,6 +273,84 @@ class Buffer < String
         return self[range]
     end
 
+    def get_com_str()
+        com_str = nil
+        if get_file_type()=="c"
+            com_str = '//'
+        elsif get_file_type()=="ruby"
+            com_str = '#'
+        end
+        return com_str
+    end
+
+    def comment_linerange(r)
+        com_str = get_com_str()
+        #r=$buffer.line_range($buffer.lpos, 2)
+        lines = $buffer[r].split(/(\n)/).each_slice(2).map {|x|x[0]}
+        #TODO: .lines ?
+        mod = lines.collect {|x| "#{com_str}#{x}\n" }.join()
+        #Ripl.start :binding => binding
+        replace_range(r, mod)
+    end
+
+    def get_line_start(pos)
+        #Ripl.start :binding => binding
+        ls = @line_ends.select {|x| x < pos}.max+1
+        ls = 0 if ls==nil
+        return ls
+    end
+
+    def get_line_end(pos)
+        #Ripl.start :binding => binding
+        return @line_ends.select {|x| x > pos}.min
+    end
+
+    def comment_selection(op=:comment)
+        if visual_mode?
+            (startpos, endpos) = get_visual_mode_range2
+            first = get_line_start(startpos)
+            last = get_line_end(endpos)
+            if op == :comment
+                comment_linerange(first..last)
+            elsif op ==:uncomment
+                uncomment_linerange(first..last)
+            end
+            $buffer.end_visual_mode
+        end
+    end
+
+    def uncomment_linerange(r)
+        com_str = get_com_str()
+        #r=$buffer.line_range($buffer.lpos, 2)
+        lines = $buffer[r].split(/(\n)/).each_slice(2).map {|x|x[0]}
+        mod = lines.collect {|x| x.sub(/^(\s*)(#{com_str})/, '\1') +"\n"}.join()
+        replace_range(r, mod)
+    end
+
+    def get_repeat_num()
+        $method_handles_repeat = true
+        repeat_num = 1
+        if !$next_command_count.nil? and $next_command_count > 0
+            repeat_num = $next_command_count
+        end
+        return repeat_num
+    end
+
+    def comment_line(op=:comment)
+        num_lines = get_repeat_num()
+        lrange = line_range(@lpos, num_lines)
+        if op == :comment
+            comment_linerange(lrange)
+        elsif op == :uncomment
+            uncomment_linerange(lrange)
+        end
+    end
+
+
+    def replace_range(range, text)
+        delete_range(range.first, range.last)
+        insert_char_at(text, range.begin)
+    end
 
     def current_line_range()
         range = line_range(@lpos, 1)
@@ -287,218 +365,217 @@ class Buffer < String
         end
         start = @line_ends[start_line - 1] + 1 if start_line > 0
         start = 0 if start_line == 0
-        _end = @line_ends[end_line]
-        debug "line range: start=#{start}, end=#{_end}"
-    return start.._end
-end
+        _End = @line_ends[end_line]
+        debug "line range: start=#{start}, end=#{_End}"
+        return start.._End
+    end
 
-def copy(range_id)
-    $paste_lines = false
-    puts "range_id: #{range_id}"
-    puts range_id.inspect
-    range = get_range(range_id)
-    puts range.inspect
-    set_clipboard(self[range])
-end
+    def copy(range_id)
+        $paste_lines = false
+        puts "range_id: #{range_id}"
+        puts range_id.inspect
+        range = get_range(range_id)
+        puts range.inspect
+        set_clipboard(self[range])
+    end
 
-def recalc_line_ends()
-    t1 = Time.now
-    leo = @line_ends.clone
-    @line_ends = scan_indexes(self, /\n/)
-    if @line_ends == leo
-        puts "No change to line ends"
-    else
-        puts "CHANGES to line ends"
+    def recalc_line_ends()
+        t1 = Time.now
+        leo = @line_ends.clone
+        @line_ends = scan_indexes(self, /\n/)
+        if @line_ends == leo
+            puts "No change to line ends"
+        else
+            puts "CHANGES to line ends"
+        end
+
+
+        puts "Scan line_end time: #{Time.now - t1}"
+        #puts @line_ends
+    end
+    def sanity_check_line_ends()
+        leo = @line_ends.clone
+        @line_ends = scan_indexes(self, /\n/)
+        if @line_ends == leo
+            puts "No change to line ends"
+        else
+            puts "CHANGES to line ends"
+            puts leo.inspect
+            puts @line_ends.inspect
+            exit
+        end
+    end
+
+    def update_line_ends(pos, changeamount, changestr)
+        puts @line_ends.inspect
+        puts pos
+        if changeamount > -1
+            changeamount = changestr.size
+            i = scan_indexes(changestr, /\n/)
+            i.collect! {|x|x+pos}
+            puts "new LINE ENDS:#{i.inspect}"
+        end
+        puts "change:#{changeamount}"
+        #@line_ends.collect!{|x| return x if x <= pos; return x + changeamount if x > pos}
+        @line_ends.collect! {|x | r = nil;
+            r = x if x < pos;
+            r = x + changeamount if changeamount < 0 && x +changeamount >= pos;
+            r = x + changeamount if changeamount > 0 && x >= pos;
+        r}.compact!
+
+        if changeamount > -1 && i.size > 0
+            @line_ends.concat(i)
+            @line_ends.sort!
+        end
+    end
+
+    def at_end_of_line?()
+        return ( self[@pos] == "\n" or at_end_of_buffer? )
+    end
+    def at_end_of_buffer?()
+        return @pos == self.size
+    end
+
+    def set_pos(new_pos)
+        if new_pos >= self.size
+            @pos = self.size # right side of last char
+        elsif new_pos >= 0
+            @pos = new_pos
+        end
+        calculate_line_and_column_pos
     end
 
 
-    puts "Scan line_end time: #{Time.now - t1}"
-    #puts @line_ends
-end
-def sanity_check_line_ends()
-    leo = @line_ends.clone
-    @line_ends = scan_indexes(self, /\n/)
-    if @line_ends == leo
-        puts "No change to line ends"
+    # Calculate the two dimensional column and line positions based on current
+    # (one dimensional) position in the buffer.
+    def calculate_line_and_column_pos(reset = true)
+        @pos = self.size if @pos > self.size
+        @pos = 0 if @pos < 0
+        #puts @line_ends
+        next_line_end = @line_ends.bsearch {|x | x  >= @pos  } #=> 4
+        #puts @line_ends
+        #puts "nle: #{next_line_end}"
+        @lpos = @line_ends.index(next_line_end)
+        if @lpos == nil
+            @lpos = @line_ends.size
+        else
+            #@lpos += 1
+        end
+        @cpos = @pos
+        if @lpos > 0
+            @cpos -= @line_ends[@lpos - 1] + 1 #TODO??
+        end
+        reset_larger_cpos if reset
+    end
+
+    # Calculate the one dimensional array index based on column and line positions
+    def calculate_pos_from_cpos_lpos(reset = true)
+        if @lpos > 0
+            new_pos = @line_ends[@lpos - 1] + 1
+        else
+            new_pos = 0
+        end
+
+        if @cpos > (line(@lpos).size - 1)
+            debug("$cpos too large: #{@cpos} #{@lpos}")
+            if @larger_cpos < @cpos
+                @larger_cpos = @cpos
+            end
+            @cpos = line(@lpos).size - 1
+
+        end
+        new_pos += @cpos
+        @pos = new_pos
+        reset_larger_cpos if reset
+    end
+
+    def delete2(range_id)
+        $paste_lines = false
+        range = get_range(range_id)
+        puts "RANGE"
+        puts range.inspect
+        puts range.inspect
+        puts "------"
+        delete_range(range.first, range.last)
+        pos = [range.first,@pos].min
+        set_pos(pos)
+
+    end
+
+    def delete(op)
+        $paste_lines = false
+        # Delete selection
+        if op== SELECTION && visual_mode?
+            (startpos, endpos) = get_visual_mode_range2
+            delete_range(startpos, endpos)
+            @pos = [@pos,@selection_start].min
+            end_visual_mode
+            #return
+
+            # Delete current char
+        elsif op == CURRENT_CHAR_FORWARD
+            return if @pos >= self.size - 1 # May not delete last '\n'
+            add_delta([@pos, DELETE, 1], true)
+
+            # Delete current char and then move backward
+        elsif op == CURRENT_CHAR_BACKWARD
+            add_delta([@pos, DELETE, 1], true)
+            @pos -= 1
+
+            # Delete the char before current char and move backward
+        elsif op == BACKWARD_CHAR
+            add_delta([@pos - 1, DELETE, 1], true)
+            @pos -= 1
+
+        elsif op == FORWARD_CHAR #TODO: ok?
+            add_delta([@pos+1, DELETE, 1], true)
+        end
+        #recalc_line_ends
+        calculate_line_and_column_pos
+        #need_redraw!
+    end
+
+
+    def delete_range(startpos, endpos)
+        #s = self.slice!(startpos..endpos)
+        set_clipboard(self[startpos..endpos])
+        add_delta([startpos, DELETE,(endpos - startpos + 1)], true)
+        #recalc_line_ends
+        calculate_line_and_column_pos
+    end
+
+    def get_range(range_id)
+    if range_id == :to_word_end
+        wmarks = get_word_end_marks(@pos,@pos+150)
+        if wmarks.any?
+            range =  @pos..wmarks[0]
+        end
+    elsif range_id == :to_line_end
+        puts "TO LINE END"
+        range = @pos..(@line_ends[@lpos] -1)
+    elsif range_id == :to_line_start
+        puts "TO LINE START"
+        if @lpos == 0
+            startpos = 0
+        else
+            startpos = @line_ends[@lpos - 1] + 1
+        end
+        range = startpos..(@pos - 1)
     else
-        puts "CHANGES to line ends"
-        puts leo.inspect
-        puts @line_ends.inspect
+        puts "INVALID RANGE"
         exit
     end
-end
-
-def update_line_ends(pos, changeamount, changestr)
-    puts @line_ends.inspect
-    puts pos
-    if changeamount > -1
-        changeamount = changestr.size
-        i = scan_indexes(changestr, /\n/)
-        i.collect! {|x|x+pos}
-        puts "new LINE ENDS:#{i.inspect}"
+    if range.last < range.first
+        range.last = range.first
     end
-    puts "change:#{changeamount}"
-    #@line_ends.collect!{|x| return x if x <= pos; return x + changeamount if x > pos}
-    @line_ends.collect! {|x | r = nil;
-        r = x if x < pos;
-        r = x + changeamount if changeamount < 0 && x +changeamount >= pos;
-        r = x + changeamount if changeamount > 0 && x >= pos;
-    r}.compact!
-
-    if changeamount > -1 && i.size > 0
-        @line_ends.concat(i)
-        @line_ends.sort!
+    if range.first < 0
+        range.first = 0
     end
-end
-
-def at_end_of_line?()
-    return ( self[@pos] == "\n" or at_end_of_buffer? )
-end
-def at_end_of_buffer?()
-    return @pos == self.size
-end
-
-def set_pos(new_pos)
-    if new_pos >= self.size
-        @pos = self.size # right side of last char
-    elsif new_pos >= 0
-        @pos = new_pos
+    if range.last >= self.size
+        range.last = self.size - 1
     end
-    calculate_line_and_column_pos
-end
-
-
-# Calculate the two dimensional column and line positions based on current
-# (one dimensional) position in the buffer.
-def calculate_line_and_column_pos(reset = true)
-    @pos = self.size if @pos > self.size
-    @pos = 0 if @pos < 0
-    #puts @line_ends
-    next_line_end = @line_ends.bsearch {|x | x  >= @pos  } #=> 4
-    #puts @line_ends
-    #puts "nle: #{next_line_end}"
-    @lpos = @line_ends.index(next_line_end)
-    if @lpos == nil
-        @lpos = @line_ends.size
-    else
-        #@lpos += 1
-    end
-    @cpos = @pos
-    if @lpos > 0
-        @cpos -= @line_ends[@lpos - 1] + 1 #TODO??
-    end
-    reset_larger_cpos if reset
-end
-
-# Calculate the one dimensional array index based on column and line positions
-def calculate_pos_from_cpos_lpos(reset = true)
-    if @lpos > 0
-        new_pos = @line_ends[@lpos - 1] + 1
-    else
-        new_pos = 0
-    end
-
-    if @cpos > (line(@lpos).size - 1)
-        debug("$cpos too large: #{@cpos} #{@lpos}")
-        if @larger_cpos < @cpos
-            @larger_cpos = @cpos
-        end
-        @cpos = line(@lpos).size - 1
-
-    end
-    new_pos += @cpos
-    @pos = new_pos
-    reset_larger_cpos if reset
-end
-
-def delete2(range_id)
-    $paste_lines = false
-    range = get_range(range_id)
-    puts "RANGE"
-    puts range.inspect
-    puts range.inspect
-    puts "------"
-    delete_range(range.first, range.last)
-    pos = [range.first,@pos].min
-    set_pos(pos)
-
-end
-
-def delete(op)
-    $paste_lines = false
-    # Delete selection
-    if op== SELECTION && visual_mode?
-        (startpos, endpos) = get_visual_mode_range2
-        delete_range(startpos, endpos)
-        @pos = [@pos,@selection_start].min
-        end_visual_mode
-        #return
-
-        # Delete current char
-    elsif op == CURRENT_CHAR_FORWARD
-        return if @pos >= self.size - 1 # May not delete last '\n'
-        add_delta([@pos, DELETE, 1], true)
-
-        # Delete current char and then move backward
-    elsif op == CURRENT_CHAR_BACKWARD
-        add_delta([@pos, DELETE, 1], true)
-        @pos -= 1
-
-        # Delete the char before current char and move backward
-    elsif op == BACKWARD_CHAR
-        add_delta([@pos - 1, DELETE, 1], true)
-        @pos -= 1
-
-    elsif op == FORWARD_CHAR #TODO: ok?
-        add_delta([@pos+1, DELETE, 1], true)
-    end
-    #recalc_line_ends
-    calculate_line_and_column_pos
-    #need_redraw!
-end
-
-
-def delete_range(startpos, endpos)
-    #s = self.slice!(startpos..endpos)
-    set_clipboard(self[startpos..endpos])
-    add_delta([startpos, DELETE,(endpos - startpos + 1)], true)
-    #recalc_line_ends
-    calculate_line_and_column_pos
-end
-
-def get_range(range_id)
-    #if range_id == :current_to_next_word_end
-if range_id == :to_word_end
-    wmarks = get_word_end_marks(@pos,@pos+150)
-    if wmarks.any?
-        range =  @pos..wmarks[0]
-    end
-elsif range_id == :to_line_end
-    puts "TO LINE END"
-    range = @pos..(@line_ends[@lpos] -1)
-elsif range_id == :to_line_start
-    puts "TO LINE START"
-    if @lpos == 0
-        startpos = 0
-    else
-        startpos = @line_ends[@lpos - 1] + 1
-    end
-    range = startpos..(@pos - 1)
-else
-    puts "INVALID RANGE"
-    exit
-end
-if range.last < range.first
-    range.last = range.first
-end
-if range.first < 0
-    range.first = 0
-end
-if range.last >= self.size
-    range.last = self.size - 1
-end
-#TODO: sanity check
-return range
+    #TODO: sanity check
+    return range
 end
 
 
@@ -770,11 +847,12 @@ end
 
 def jump_to_line(line_n = 1)
 
-    $method_handles_repeat = true
-    if !$next_command_count.nil? and $next_command_count > 0
-        line_n = $next_command_count
-        debug "jump to line:#{line_n}"
-    end
+    #    $method_handles_repeat = true
+    #    if !$next_command_count.nil? and $next_command_count > 0
+    #        line_n = $next_command_count
+    #        debug "jump to line:#{line_n}"
+    #    end
+    line_n = get_repeat_num()
 
     if line_n > @line_ends.size
         debug("lpos too large") #TODO
@@ -1068,7 +1146,7 @@ def identify()
         puts bufc
     elsif get_file_type()=="ruby"
         #cmd = "/usr/share/universalindentgui/indenters/ruby_formatter.rb -s 4 #{file.path}" 
-        cmd = "~/source/viwbaw/ruby_formatter.rb -s 4 #{file.path}" 
+        cmd = "./ruby_formatter.rb -s 4 #{file.path}"
         # cmd = "rubocop -x -f simple #{file.path}" 
         puts cmd
         system(cmd)
