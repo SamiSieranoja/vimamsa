@@ -33,7 +33,7 @@ set_conf(:indent_based_on_last_line, true)
 $cnf[:extensions_to_open] = [".txt",".h",".c",".cpp",".hpp",".rb",".inc",".php",".sh",".m"]
 
 
-$cnf['modes'] = { 'R' => 'READCHAR', 'M' => 'MINIBUFFER', 'C' => 'COMMAND', 'V' => 'VISUAL', 'I' => 'INSERT' }
+$cnf['modes'] = { 'R' => 'READCHAR', 'M' => 'MINIBUFFER', 'C' => 'COMMAND', 'V' => 'VISUAL', 'I' => 'INSERT', 'B'=>'BROWSE' }
 
 $cnf['key_bindigs'] = {
     # 'C q'=> 'quit',
@@ -270,7 +270,8 @@ class AutomataTree
         @V = State.new("V")
         @M = State.new("M")
         @R = State.new("R")
-        @root.children << @C << @I << @V << @M << @R
+        @B = State.new("B")
+        @root.children << @C << @I << @V << @M << @R << @B
         @cur_state = @root # used for building the tree
         @match_state = [@C] # used for matching input
         @mode_root_state = @C
@@ -329,6 +330,7 @@ class AutomataTree
         @mode_root_state = @V if mode_s == VISUAL
         @mode_root_state = @M if mode_s == MINIBUFFER
         @mode_root_state = @R if mode_s == READCHAR
+        @mode_root_state = @B if mode_s == BROWSE
         for mode in @root.children
             if mode.key_name == mode_s
                 @mode_root_state = mode

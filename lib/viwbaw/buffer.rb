@@ -1225,6 +1225,7 @@ class Buffer < String
 
     def backup()
         fname = @fname
+        return if !@fname
         message("Backup buffer #{fname}")
         spfx = fname.gsub('=', '==').gsub('/','=:')
         spath = File.expand_path('~/autosave')
