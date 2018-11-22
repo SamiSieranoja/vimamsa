@@ -12,7 +12,6 @@ extern "C" {
 #include <ruby/defines.h>
 #include <ruby/thread.h>
 
-
 VALUE method_qt_quit(VALUE self) { _quit = 1; }
 
 VALUE method_open_file_dialog(VALUE self) { g_editor->fileOpen(); }
@@ -164,7 +163,7 @@ static VALUE scan_once(VALUE str, VALUE pat, long *start_i) {
  *             @line_ends << i
  *         end
  *
-***/
+ ***/
 VALUE method_scan_indexes(VALUE self, VALUE str, VALUE pat) {
 
   // VALUE pat = ""
@@ -210,12 +209,14 @@ VALUE method_render_text(VALUE self, VALUE text, VALUE _pos, VALUE _selection_st
 }
 
 int get_visible_area(int &start_pos, int &end_pos) {
-  QTextCursor cursor = c_te->cursorForPosition(QPoint(0, 0));
-  QPoint bottom_right(c_te->viewport()->width() - 1, c_te->viewport()->height() - 1);
+  //  QTextCursor cursor = c_te->cursorForPosition(QPoint(0, 0));
+  QTextCursor cursor = c_te->cursorForPosition(QPoint(0, 20));
+  //  QPoint bottom_right(c_te->viewport()->width() - 1, c_te->viewport()->height() - 1);
+  QPoint bottom_right(c_te->viewport()->width() - 1, c_te->viewport()->height() - 20);
   start_pos = cursor.position();
   end_pos = c_te->cursorForPosition(bottom_right).position();
   cursor.setPosition(end_pos, QTextCursor::KeepAnchor);
-  qDebug() << cursor.selectedText();
+  qDebug() << "cursor pos:" << cursor.selectedText() << endl;
   printf("Visible range: %d - %d\n", start_pos, end_pos);
   return 0;
 }
@@ -229,10 +230,19 @@ VALUE rb_get_visible_area() {
   rb_ary_push(range, INT2NUM(end_pos));
   return range;
 }
+// http://doc.qt.io/qt-5/qabstractslider.html#pageStep-prop
+// http://doc.qt.io/qt-5/qplaintextedit.html#cursorRect
+// cursorRect: returns a rectangle (in viewport coordinates) that includes the cursor of the text
+// edit.
 
 int center_where_cursor() {
   int cursorY = c_te->cursorRect().bottom();
-  int offset_y = c_te->verticalScrollBar()->value() + cursorY - c_te->size().height() / 2;
+  int scrollbar = c_te->verticalScrollBar()->value();
+  int offset_y = scrollbar + cursorY - c_te->size().height() / 2;
+
+  //  qDebug() << "cursorY: " << cursorY << "scrollbar:" << scrollbar << " offset_y:" << offset_y <<
+  //  "size.height:" << c_te->size().height() << endl ;
+  // Example: cursorY:  15 scrollbar: 2116  offset_y: 1766 size.height: 730
   c_te->verticalScrollBar()->setValue(offset_y);
 }
 
@@ -338,23 +348,23 @@ VALUE qt_get_buffer(VALUE self) {
 }
 
 void srn_dst_wrap(void *y) {
-  void** x = (void**) y;
-  char *a = (char *) x[0];
-  char *b = (char *) x[1];
-  float *d = (float *) x[2];
-  *d = srn_dst(a,b);
- // printf("00000 A:%s B:%s %f\n",a,b,*d);
+  void **x = (void **)y;
+  char *a = (char *)x[0];
+  char *b = (char *)x[1];
+  float *d = (float *)x[2];
+  *d = srn_dst(a, b);
+  // printf("00000 A:%s B:%s %f\n",a,b,*d);
 }
 
 VALUE _srn_dst(VALUE self, VALUE s1, VALUE s2) {
   VALUE ret;
   float d;
   void **ptr = malloc(sizeof(void *) * 3);
-  ptr[0] = (void*) StringValueCStr(s1);
-  ptr[1] = (void*) StringValueCStr(s2);
-  ptr[2] = (void*) &d;
+  ptr[0] = (void *)StringValueCStr(s1);
+  ptr[1] = (void *)StringValueCStr(s2);
+  ptr[2] = (void *)&d;
   rb_thread_call_without_gvl(srn_dst_wrap, ptr, NULL, NULL);
-  //d = srn_dst(StringValueCStr(s1), StringValueCStr(s2));
+  // d = srn_dst(StringValueCStr(s1), StringValueCStr(s2));
   ret = rb_float_new(d);
   free(ptr);
   return ret;
@@ -494,8 +504,13 @@ int render_text() {
   qDebug() << "QT: END process deltas\n";
 
   if (selection_start >= 0) {
-    tc.setPosition(selection_start);
-    tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
+    if (cursor_pos < selection_start) {
+      tc.setPosition(selection_start + 1);
+      tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
+    } else {
+      tc.setPosition(selection_start);
+      tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
+    }
   } else {
     tc.setPosition(cursor_pos);
   }

@@ -2,7 +2,10 @@
 def gui_file_finder()
     l = []
     $select_keys = ['h', 'l', 'f', 'd', 's', 'a', 'g', 'z']
-    recursively_find_files
+    #Thread.new{recursively_find_files}
+    if $dir_list==nil
+        recursively_find_files
+    end
     qt_select_update_window(l,$select_keys.collect {|x| x.upcase},
     "gui_file_finder_select_callback",
     "gui_file_finder_update_callback")
@@ -10,15 +13,16 @@ def gui_file_finder()
 end
 
 def recursively_find_files()
+    debug("START find files")
     dlist=[]
     for d in $search_dirs
         dlist = dlist + Dir.glob("#{d}/**/*").select { |e| File.file?(e) and $find_extensions.include?(File.extname(e))}
     end
     #$dir_list = Dir.glob('./**/*').select { |e| File.file? e }
     $dir_list = dlist
+    debug("END find files")
     return $dir_list
 end
-# sudo gem2.0 install celluloid-pmap http://jessewolgamott.com/blog/2013/02/07/the-one-where-i-introduce-celluloid-pmap/
 # sudo gem2.0 install parallel
 require 'parallel'
 def filter_files(search_str)

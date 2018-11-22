@@ -2,6 +2,7 @@
 
 $:.unshift File.dirname(__FILE__) + "/lib"
 require 'pathname'
+require 'date'
 require 'ripl'
 
 Encoding.default_external = Encoding::UTF_8
@@ -26,14 +27,19 @@ $search_indexes = []
 $paint_stack = []
 $jump_sequence = []
 
+def debug(message)
+    puts "[#{DateTime.now().strftime("%H:%M:%S:%L")}] #{message}"
+    $stdout.flush
+end
+
 require 'fileutils'
 require 'viwbaw/macro'
 require 'viwbaw/buffer'
 require 'viwbaw/search'
 require 'viwbaw/key_bindings'
-require 'viwbaw/hook'
 require 'viwbaw/buffer_select'
 require 'viwbaw/file_finder'
+require 'viwbaw/hook'
 
 $macro = Macro.new
 $search = Search.new
@@ -157,17 +163,40 @@ def set_next_command_count(num)
 end
 
 def invoke_search()
-    $at.set_mode(MINIBUFFER)
-    $minibuffer = Buffer.new("", "")
-    $minibuffer.call_func = method(:execute_search)
+    #    $at.set_mode(MINIBUFFER)
+    #    $minibuffer = Buffer.new("", "")
+    #    $minibuffer.call_func = method(:execute_search)
+    #    
+    start_minibuffer_cmd("", "",:execute_search)
     #lambda { |input_str| $minibuffer }
     #$minibuffer = Buffer.new("/","")
 end
 
-def invoke_command()
+def start_minibuffer_cmd(bufname, bufstr, cmd)
     $at.set_mode(MINIBUFFER)
-    $minibuffer = Buffer.new("", "")
-    $minibuffer.call_func = method(:execute_command)
+    $minibuffer = Buffer.new(bufstr, "")
+    $minibuffer.call_func = method(cmd)
+end
+
+def ack_buffer(instr)
+    instr = instr.gsub("'",".")
+    #TODO: search dir as config
+    bufstr = ""
+    for path in $file_content_search_paths
+        bufstr += run_cmd("ack -k --nohtml --nojs --nojson '#{instr}' #{path}")
+    end
+    create_new_file(nil, bufstr)
+end
+
+def invoke_ack_search()
+    start_minibuffer_cmd("", "",:ack_buffer)
+end
+
+def invoke_command()
+    start_minibuffer_cmd("", "",:execute_command)
+    #    $at.set_mode(MINIBUFFER)
+    #    $minibuffer = Buffer.new("", "")
+    #    $minibuffer.call_func = method(:execute_command)
     #TODO
 end
 
@@ -192,7 +221,13 @@ def minibuffer_end()
     $at.set_mode(COMMAND)
     minibuffer_input = $minibuffer.to_s[0..-2]
     $minibuffer.call_func.call(minibuffer_input)
+end
 
+def minibuffer_cancel()
+    puts "MINIBUFFER END2"
+    $at.set_mode(COMMAND)
+    minibuffer_input = $minibuffer.to_s[0..-2]
+    # $minibuffer.call_func.call('')
 end
 
 def minibuffer_new_char(c)
@@ -259,6 +294,7 @@ def read_file(text, path)
     encoding = text.encoding
     content = path.open("r:#{encoding.name}") {|io| io.read }
 
+    debug("GUESS ENCODING")
     unless content.valid_encoding? # take a guess
         GUESS_ENCODING_ORDER.find {|enc|
             content.force_encoding(enc)
@@ -266,10 +302,11 @@ def read_file(text, path)
         }
         content.encode!(Encoding::UTF_8)
     end
+    debug("END GUESS ENCODING")
 
-    content = filter_buffer(content)
+    #    content = filter_buffer(content)
+    debug("END FILTER")
     return content
-    #return content.chomp #TODO:? chomp needed?
 end
 
 def create_new_file(filename = nil, file_contents = "\n")
@@ -291,14 +328,30 @@ def filter_buffer(buf)
 end
 def load_buffer(fname)
     return if !File.exist?(fname)
-    return if $buffers.get_buffer_by_filename(fname) != nil
-    puts "LOAD BUFFER: #{fname}"
+    existing_buffer = $buffers.get_buffer_by_filename(fname)
+    if existing_buffer != nil
+        $buffer_history << existing_buffer
+        return
+    end
+    debug("LOAD BUFFER: #{fname}")
     buffer = Buffer.new(read_file("", fname), fname)
-    buf = filter_buffer(buffer)
+    debug("DONE LOAD: #{fname}")
+    #buf = filter_buffer(buffer)
+    #    debug("END FILTER: #{fname}")
     $buffers << buffer
+    #$buffer_history << $buffers.size - 1
 end
 
 
+
+def jump_to_file(filename, linenum)
+    new_file_opened(filename)
+    $buffer.jump_to_line(linenum) if linenum > 0
+end
+
+def open_existing_file(filename)
+    new_file_opened(filename)
+end
 
 def new_file_opened(filename, file_contents = "")
     #TODO: expand path
@@ -320,7 +373,7 @@ def new_file_opened(filename, file_contents = "")
 end
 
 
-def debug_print_buffer()
+def debug_print_buffer(c)
     puts $buffer.inspect
     puts $buffer
 end
@@ -523,10 +576,20 @@ def viwbaw_init
     puts "ARGV"
     puts ARGV.inspect
     build_key_bindings_tree
+    require 'viwbaw/default_bindings'
     puts "START reading file"
     sleep(0.03)
     $fname = "test.txt"
-    $fname = ARGV[1] if ARGV.size >= 2
+    $fname = ARGV[1] if ARGV.size >= 2 and File.file?(ARGV[1])
+    $file_content_search_paths = [Dir.pwd]
+    for fn in ARGV
+        fn = File.expand_path(fn)
+        if File.directory?(fn)
+            $file_content_search_paths << fn
+            $search_dirs << fn
+        end
+    end
+
     buffer = Buffer.new(read_file("",$fname),$fname)
     $buffers << buffer
     puts $at # key map
@@ -538,10 +601,7 @@ def viwbaw_init
     gui_file_finder_init
 end
 
-def debug(message)
-    puts message
-    $stdout.flush
-end
+
 
 def run_tests()
     run_test("01")
@@ -615,7 +675,7 @@ def load_buffer_list()
     buflist = eval(bufstr)
     puts buflist
     for buf in buflist
-        load_buffer(buf)
+        load_buffer(buf) if buf != nil and File.file?(buf)
         puts buf
     end
 end
@@ -628,12 +688,32 @@ def is_url(s)
     return s.match(/(https?|file):\/\/.*/) != nil
 end
 
+
+def is_existing_file(s)
+    if is_path(s) and File.exist?(File.expand_path(s))
+        return true
+    end
+    return false
+end
+
 def is_path(s)
     m = s.match(/(~[a-z]*)?\/.*\//)
     if m != nil
-        return File.exist?(File.expand_path(m[0]))
+        return true
     end
     return false
+end
+
+def get_file_line_pointer(s)
+    #"/code/viwbaw/lib/viwbaw/buffer_select.rb:31:def"
+    #    m = s.match(/(~[a-z]*)?\/.*\//)
+    m = s.match(/((~[a-z]*)?\/.*\/\S+):(\d+)/)
+    if m != nil
+        if File.exist?(File.expand_path(m[1]))
+            return [m[1], m[3].to_i]
+        end
+    end
+    return nil
 end
 
 def open_url(url)

@@ -11,6 +11,8 @@ class BufferList < Array
         super
         $buffer = _buf
         @current_buf = self.size - 1
+        $buffer_history << @current_buf
+        @recent_ind = 0
     end
 
     def switch()
@@ -23,10 +25,12 @@ class BufferList < Array
     end
 
     def switch_to_last_buf()
-        last_buf = $buffer_history[-1]
-        newbuf = last_buf
-        newbuf = self.size-1 if last_buf > self.size #TODO
-        set_current_buffer($buffer_history[-1])
+        puts "SWITCH TO LAST BUF:"
+        puts $buffer_history
+        last_buf = $buffer_history[-2]
+        if last_buf
+            set_current_buffer(last_buf)
+        end
     end
 
     def get_buffer_by_filename(fname)
@@ -35,20 +39,48 @@ class BufferList < Array
         return buf_idx
     end
 
-    def set_current_buffer(buffer_i)
+    def set_current_buffer(buffer_i, update_history = true)
         buffer_i = self.size -1 if buffer_i > self.size
         buffer_i = 0 if buffer_i < 0
-        $buffer_history << @current_buf
+        if update_history
+            @recent_ind = 0
+            $buffer_history << buffer_i
+        end
         $buffer = self[buffer_i]
         @current_buf = buffer_i
         debug "SWITCH BUF2. bufsize:#{self.size}, curbuf: #{@current_buf}"
         fpath = $buffer.fname
-        if fpath.size > 50
+        if fpath and fpath.size > 50
             fpath = fpath[-50..-1]
         end
         #set_window_title("VIwbaw - #{$buffer.basename}")
         set_window_title("VIwbaw - #{fpath}")
         $buffer.need_redraw!
+    end
+
+
+    def get_recent_buffers()
+        bufs=[];b={};
+        $buffer_history.reverse.each {|x|bufs<<x if !b[x] && x < self.size; b[x]=true}
+        return bufs
+    end
+
+    def history_switch_backwards()
+        recent = get_recent_buffers()
+        @recent_ind += 1
+        @recent_ind = 0 if @recent_ind >= recent.size
+        bufid = recent[@recent_ind]
+        puts "IND:#{@recent_ind} RECENT:#{recent.join(' ')}"
+        set_current_buffer(bufid, false)
+    end
+
+    def history_switch_forwards()
+        recent = get_recent_buffers()
+        @recent_ind -= 1
+        @recent_ind = self.size - 1 if @recent_ind < 0
+        bufid = recent[@recent_ind]
+        puts "IND:#{@recent_ind} RECENT:#{recent.join(' ')}"
+        set_current_buffer(bufid, false)
     end
 
 
@@ -61,6 +93,19 @@ class BufferList < Array
         end
         set_current_buffer(@current_buf)
     end
+
+    def close_scrap_buffers()
+        i = 0
+        while i < self.size
+            if !self[i].pathname
+                close_buffer(i)
+            else
+                i += 1
+            end
+
+        end
+    end
+
 
     def close_current_buffer
         close_buffer(@current_buf)
@@ -132,6 +177,7 @@ class Buffer < String
     def set_content(str)
         self.replace(str)
         @line_ends = scan_indexes(self, /\n/)
+        debug("line_ends")
         #puts str.inspect
         @fname = fname
         @basename = ""
@@ -545,631 +591,648 @@ class Buffer < String
     end
 
     def get_range(range_id)
-    if range_id == :to_word_end
-        wmarks = get_word_end_marks(@pos,@pos+150)
-        if wmarks.any?
-            range =  @pos..wmarks[0]
-        end
-    elsif range_id == :to_line_end
-        puts "TO LINE END"
-        range = @pos..(@line_ends[@lpos] -1)
-    elsif range_id == :to_line_start
-        puts "TO LINE START"
-        if @lpos == 0
-            startpos = 0
+        if range_id == :to_word_end
+            wmarks = get_word_end_marks(@pos,@pos+150)
+            if wmarks.any?
+                range =  @pos..wmarks[0]
+            end
+        elsif range_id == :to_line_end
+            puts "TO LINE END"
+            range = @pos..(@line_ends[@lpos] -1)
+        elsif range_id == :to_line_start
+            puts "TO LINE START"
+            if @lpos == 0
+                startpos = 0
+            else
+                startpos = @line_ends[@lpos - 1] + 1
+            end
+            range = startpos..(@pos - 1)
         else
-            startpos = @line_ends[@lpos - 1] + 1
+            puts "INVALID RANGE"
+            exit
         end
-        range = startpos..(@pos - 1)
-    else
-        puts "INVALID RANGE"
-        exit
-    end
-    if range.last < range.first
-        range.last = range.first
-    end
-    if range.first < 0
-        range.first = 0
-    end
-    if range.last >= self.size
-        range.last = self.size - 1
-    end
-    #TODO: sanity check
-    return range
-end
-
-
-
-def reset_larger_cpos()
-    @larger_cpos = @cpos
-end
-
-def move(direction)
-
-    puts "cpos:#{@cpos} lpos:#{@lpos} @larger_cpos:#{@larger_cpos}"
-    if direction == :forward_page
-        puts "FORWARD PAGE"
-        visible_range = get_visible_area()
-        set_pos(visible_range[1])
-        top_where_cursor()
-    end
-    if direction == :backward_page
-        puts "backward PAGE"
-        visible_range = get_visible_area()
-        set_pos(visible_range[0])
-        bottom_where_cursor()
+        if range.last < range.first
+            range.last = range.first
+        end
+        if range.first < 0
+            range.first = 0
+        end
+        if range.last >= self.size
+            range.last = self.size - 1
+        end
+        #TODO: sanity check
+        return range
     end
 
 
-    if direction == FORWARD_CHAR
-        return if @pos >= self.size - 1
-        @pos += 1
-        puts "FORWARD: #{@pos}"
-        calculate_line_and_column_pos
+
+    def reset_larger_cpos()
+        @larger_cpos = @cpos
     end
-    if direction == BACKWARD_CHAR
-        @pos -= 1
-        calculate_line_and_column_pos
+
+    def move(direction)
+
+        puts "cpos:#{@cpos} lpos:#{@lpos} @larger_cpos:#{@larger_cpos}"
+        if direction == :forward_page
+            puts "FORWARD PAGE"
+            visible_range = get_visible_area()
+            set_pos(visible_range[1])
+            top_where_cursor()
+        end
+        if direction == :backward_page
+            puts "backward PAGE"
+            visible_range = get_visible_area()
+            set_pos(visible_range[0])
+            bottom_where_cursor()
+        end
+
+
+        if direction == FORWARD_CHAR
+            return if @pos >= self.size - 1
+            @pos += 1
+            puts "FORWARD: #{@pos}"
+            calculate_line_and_column_pos
+        end
+        if direction == BACKWARD_CHAR
+            @pos -= 1
+            calculate_line_and_column_pos
+        end
+        if direction == FORWARD_LINE
+            if @lpos >= @line_ends.size - 1  # Cursor is on last line
+                debug("ON LAST LINE")
+                return
+            else
+                @lpos += 1
+            end
+        end
+        if direction == BACKWARD_LINE
+            if @lpos == 0 # Cursor is on first line
+                return
+            else
+                @lpos -= 1
+            end
+        end
+
+
+        if direction == FORWARD_CHAR or direction == BACKWARD_CHAR
+            reset_larger_cpos
+        end
+
+        if direction == BACKWARD_LINE or direction == FORWARD_LINE
+
+            if @lpos > 0
+                new_pos = @line_ends[@lpos - 1] - 1
+            else
+                new_pos = 0
+            end
+
+            _line = self.line(@lpos)
+            if @cpos > (_line.size - 1)
+                debug("$cpos too large: #{@cpos} #{@lpos}")
+                if @larger_cpos < @cpos
+                    @larger_cpos = @cpos
+                end
+                @cpos = line(@lpos).size - 1
+
+            end
+
+            if @larger_cpos > @cpos and @larger_cpos < (_line.size)
+                @cpos = @larger_cpos
+            elsif @larger_cpos > @cpos and @larger_cpos >= (_line.size)
+                @cpos = line(@lpos).size - 1
+            end
+
+            #new_pos += @cpos
+            #@pos = new_pos
+            calculate_pos_from_cpos_lpos(false)
+
+        end
     end
-    if direction == FORWARD_LINE
+
+    def mark_current_position(mark_char)
+        @marks[mark_char] = @pos
+    end
+
+    # Get positions of last characters in words
+    def get_word_end_marks(startpos, endpos)
+        startpos = 0 if startpos < 0
+        endpos = self.size if endpos > self.size
+        search_str = self[(startpos)..(endpos)]
+        return if search_str == nil
+        wsmarks = scan_indexes(search_str, /(?<=\p{Word})[^\p{Word}]/)
+        wsmarks = wsmarks.collect {|x| x+startpos - 1}
+        return wsmarks
+    end
+
+    # Get positions of first characters in words
+    def get_word_start_marks(startpos, endpos)
+        startpos = 0 if startpos < 0
+        endpos = self.size if endpos > self.size
+        search_str = self[(startpos)..(endpos)]
+        return if search_str == nil
+        wsmarks = scan_indexes(search_str, /(?<=[^\p{Word}])\p{Word}/)
+        wsmarks = wsmarks.collect {|x| x+startpos}
+        return wsmarks
+    end
+
+    def scan_marks(startpos, endpos, regstr, offset = 0)
+        startpos = 0 if startpos < 0
+        endpos = self.size if endpos > self.size
+        search_str = self[(startpos)..(endpos)]
+        return if search_str == nil
+        marks = scan_indexes(search_str, regstr)
+        marks = marks.collect {|x| x+startpos+offset}
+        return marks
+    end
+
+    def can_open_extension(filepath)
+        exts = $cnf[:extensions_to_open]
+        extname = Pathname.new(filepath).extname
+        can_open = exts.include?(extname)
+        puts "CAN OPEN?: #{can_open}"
+        return can_open
+    end
+
+    def get_cur_nonwhitespace_word()
+
+        #wem = scan_marks(@pos,@pos+200,/(?<=\p{Word})[^\p{Word}]/,-1)
+        #wsm = scan_marks(@pos-200,@pos,/(?<=[^\p{Word}])\p{Word}/)
+        wem = scan_marks(@pos,@pos+200, /(?<=\S)\s/,-1)
+        wsm = scan_marks(@pos-200,@pos, /(?<=\s)\S/)
+        word_start = wsm[-1]
+        word_end = wem[0]
+        word_start = pos if word_start == nil
+        word_end = pos if word_end == nil
+        word = self[word_start..word_end]
+        puts "'#{word}'"
+        message("'#{word}'")
+        linep = get_file_line_pointer(word)
+        puts "linep'#{linep}'"
+        path = File.expand_path(word)
+        if is_url(word)
+            message("URL:'#{word}'")
+            open_url(word)
+        elsif is_existing_file(path)
+            message("PATH:'#{word}'")
+            if can_open_extension(path)
+                open_existing_file(path)
+            else
+                open_url(path)
+            end
+        elsif linep != nil
+            puts linep
+            jump_to_file(linep[0], linep[1].to_i)
+        end
+        #puts wm
+    end
+
+    def get_cur_word()
+        wem = get_word_end_marks(@pos,@pos+200)
+        wsm = get_word_start_marks(@pos-200,@pos)
+        word_start = wsm[-1]
+        word_end = wem[0]
+        word_start = pos if word_start == nil
+        word_end = pos if word_end == nil
+        word = self[word_start..word_end]
+        puts "'#{word}'"
+        message("'#{word}'")
+        #puts wm
+    end
+
+    def jump_to_next_instance_of_word()
+        start_search = [@pos - 150, 0].max
+
+        search_str1 = self[start_search..(@pos)]
+        wsmarks = scan_indexes(search_str1, /(?<=[^\p{Word}])\p{Word}/)
+        a = wsmarks[-1]
+        a = 0 if a == nil
+
+        search_str2 = self[(@pos)..(@pos + 150)]
+        wemarks = scan_indexes(search_str2, /(?<=\p{Word})[^\p{Word}]/)
+        b = wemarks[0]
+        puts search_str1.inspect
+        word_start = (@pos - search_str1.size + a + 1)
+        word_start = 0 if !(word_start >= 0)
+        current_word = self[word_start..(@pos + b - 1)]
+        #printf("CURRENT WORD: '#{current_word}' a:#{a} b:#{b}\n")
+
+        #TODO: search for /[^\p{Word}]WORD[^\p{Word}]/
+        position_of_next_word = self.index(current_word,@pos + 1)
+        if position_of_next_word != nil
+            set_pos(position_of_next_word)
+        else #Search from beginning
+            position_of_next_word = self.index(current_word)
+            set_pos(position_of_next_word) if position_of_next_word != nil
+        end
+        center_on_current_line
+    end
+
+    def jump_word(direction, wordpos)
+        offset = 0
+        if direction == FORWARD
+            debug "POS: #{@pos},"
+            search_str = self[(@pos)..(@pos + 150)]
+            return if search_str == nil
+            if wordpos == WORD_START # vim 'w'
+
+                wsmarks = scan_indexes(search_str, /(?<=[^\p{Word}])\p{Word}|\Z/) # \Z = end of string, just before last newline.
+                wsmarks2 = scan_indexes(search_str, /\n[ \t]*\n/) # "empty" lines that have whitespace
+                wsmarks2 = wsmarks2.collect {|x| x+1}
+                wsmarks = (wsmarks2 + wsmarks).sort.uniq
+                offset = 0
+
+            elsif wordpos == WORD_END
+                wsmarks = scan_indexes(search_str, /(?<=\p{Word})[^\p{Word}]/)
+                offset = 0
+            end
+            if wsmarks.any?
+                #puts wsmarks.inspect
+                next_pos = @pos + wsmarks[0] + offset
+                set_pos(next_pos)
+            end
+        end
+        if direction == BACKWARD #  vim 'b'
+            start_search = @pos - 150 #TODO 150 length limit
+            start_search = 0 if start_search < 0
+            search_str = self[start_search..(@pos - 1)]
+            return if search_str == nil
+            wsmarks = scan_indexes(search_str,
+            #/(^|(\W)\w|\n)/) #TODO 150 length limit
+            #/^|(?<=[^\p{Word}])\p{Word}|(?<=\n)\n/) #include empty lines?
+            /\A|(?<=[^\p{Word}])\p{Word}/) # Start of string or nonword,word.
+
+            offset = 0
+
+            if wsmarks.any?
+                next_pos = start_search + wsmarks.last + offset
+                set_pos(next_pos)
+            end
+        end
+
+    end
+
+    def jump_to_mark(mark_char)
+        p = @marks[mark_char]
+        set_pos(p) if p
+    end
+
+    def jump(target)
+        if target == START_OF_BUFFER
+            set_pos(0)
+        end
+        if target == END_OF_BUFFER
+            set_pos(self.size - 1)
+        end
+        if target == BEGINNING_OF_LINE
+            @cpos = 0
+            calculate_pos_from_cpos_lpos
+        end
+        if target == END_OF_LINE
+            @cpos = line(@lpos).size - 1
+            calculate_pos_from_cpos_lpos
+        end
+
+        if target == FIRST_NON_WHITESPACE
+            l = current_line()
+            puts l.inspect
+            @cpos = line(@lpos).size - 1
+            a = scan_indexes(l, /\S/)
+            puts a.inspect
+            if a.any?
+                @cpos = a[0]
+            else
+                @cpos = 0
+            end
+            calculate_pos_from_cpos_lpos
+        end
+
+
+    end
+
+    def jump_to_line(line_n = 1)
+
+        #    $method_handles_repeat = true
+        #    if !$next_command_count.nil? and $next_command_count > 0
+        #        line_n = $next_command_count
+        #        debug "jump to line:#{line_n}"
+        #    end
+        debug "jump to line:#{line_n}"
+        line_n = get_repeat_num() if line_n == 1
+
+        if line_n > @line_ends.size
+            debug("lpos too large") #TODO
+            return
+        end
+        if line_n == 1
+            set_pos(0)
+        else
+            set_pos(@line_ends[line_n-2]+1)
+        end
+    end
+
+    def join_lines()
         if @lpos >= @line_ends.size - 1  # Cursor is on last line
             debug("ON LAST LINE")
             return
         else
-            @lpos += 1
+            # TODO: replace all whitespace between lines with ' '
+            jump(END_OF_LINE)
+            delete(CURRENT_CHAR_FORWARD)
+            #insert_char(' ',AFTER) 
+            insert_char(' ', BEFORE)
         end
     end
-    if direction == BACKWARD_LINE
-        if @lpos == 0 # Cursor is on first line
+
+
+
+    def jump_to_next_instance_of_char(char, direction = FORWARD)
+        #return if at_end_of_line?
+        if direction == FORWARD
+            position_of_next_char = self.index(char,@pos + 1)
+            if position_of_next_char != nil
+                @pos = position_of_next_char
+            end
+        elsif direction == BACKWARD
+            start_search = @pos - 250
+            start_search = 0 if start_search < 0
+            search_substr = self[start_search..(@pos - 1)]
+            _pos = search_substr.reverse.index(char)
+            if _pos != nil
+                @pos -= ( _pos + 1 )
+            end
+        end
+        m = method("jump_to_next_instance_of_char")
+        set_last_command({method: m, params: [char, direction]})
+        $last_find_command = {char: char, direction:direction}
+        calculate_line_and_column_pos
+    end
+
+    def replace_with_char(char)
+        puts "self_pos:'#{self[@pos]}'"
+        return if self[@pos] == "\n"
+        d1 = [@pos, DELETE, 1]
+        d2 = [@pos, INSERT, 1, char]
+        add_delta(d1, true)
+        add_delta(d2, true)
+        puts "DELTAS:#{$buffer.deltas.inspect} "
+    end
+
+    def insert_char_at(c, pos)
+        c = c.force_encoding("UTF-8"); #TODO:correct?
+        c = "\n" if c == "\r"
+        add_delta([pos, INSERT, 0, c], true)
+        calculate_line_and_column_pos
+    end
+
+    def insert_char(c, mode = BEFORE)
+        #Sometimes we get ASCII-8BIT although actually UTF-8  "incompatible character encodings: UTF-8 and ASCII-8BIT (Encoding::CompatibilityError)"
+        c = c.force_encoding("UTF-8"); #TODO:correct?
+
+        c = "\n" if c == "\r"
+        if  $cnf[:indent_based_on_last_line] and c == "\n" and @lpos > 0
+            # Indent start of new line based on last line
+            last_line = line(@lpos)
+            m = /^( +)([^ ]+|$)/.match(last_line)
+            puts m.inspect
+            c = c+" "*m[1].size if m
+        end
+        if mode == BEFORE
+            insert_pos = @pos
+            @pos += c.size
+        elsif mode == AFTER
+            insert_pos = @pos +1
+        else
             return
-        else
-            @lpos -= 1
-        end
-    end
-
-
-    if direction == FORWARD_CHAR or direction == BACKWARD_CHAR
-        reset_larger_cpos
-    end
-
-    if direction == BACKWARD_LINE or direction == FORWARD_LINE
-
-        if @lpos > 0
-            new_pos = @line_ends[@lpos - 1] - 1
-        else
-            new_pos = 0
         end
 
-        _line = self.line(@lpos)
-        if @cpos > (_line.size - 1)
-            debug("$cpos too large: #{@cpos} #{@lpos}")
-            if @larger_cpos < @cpos
-                @larger_cpos = @cpos
+        #self.insert(insert_pos,c)
+        add_delta([insert_pos, INSERT, 0, c], true)
+        #puts("encoding: #{c.encoding}")
+        #puts "c.size: #{c.size}"
+        #recalc_line_ends #TODO: optimize?
+        calculate_line_and_column_pos
+        #need_redraw!
+        #@pos += c.size
+    end
+
+    def need_redraw!
+        @need_redraw = true
+    end
+    def need_redraw?
+        return @need_redraw
+    end
+    def set_redrawed
+        @need_redraw = false
+    end
+
+    def paste(at = AFTER)
+        # Paste after current char. Except if at end of line, paste before end of line.
+        return if !$clipboard.any?
+        text = $clipboard[-1]
+
+        if $paste_lines
+            puts "PASTE LINES"
+            l = current_line_range()
+            puts "------------"
+            puts l.inspect
+            puts "------------"
+            #$buffer.move(FORWARD_LINE)
+            #set_pos(l.end+1)
+            insert_char_at(text, l.end+1)
+            set_pos(l.end+1)
+        else
+            if at_end_of_buffer? or at_end_of_line? or at==BEFORE
+                pos = @pos
+            else
+                pos=@pos+1
             end
-            @cpos = line(@lpos).size - 1
-
+            insert_char_at(text, pos)
+            set_pos(pos+text.size)
         end
+        #TODO: AFTER does not work
+        #insert_char($clipboard[-1],AFTER)
+        #recalc_line_ends #TODO: bug when run twice?
+    end
 
-        if @larger_cpos > @cpos and @larger_cpos < (_line.size)
-            @cpos = @larger_cpos
-        elsif @larger_cpos > @cpos and @larger_cpos >= (_line.size)
-            @cpos = line(@lpos).size - 1
+
+
+    def insert_new_line()
+        insert_char("\n")
+    end
+
+    def delete_line()
+        $method_handles_repeat = true
+        num_lines = 1
+        if !$next_command_count.nil? and $next_command_count > 0
+            num_lines = $next_command_count
+            debug "copy num_lines:#{num_lines}"
         end
-
-        #new_pos += @cpos
-        #@pos = new_pos
-        calculate_pos_from_cpos_lpos(false)
-
+        lrange = line_range(@lpos, num_lines)
+        s = self[lrange]
+        add_delta([lrange.begin, DELETE, lrange.end - lrange.begin + 1], true)
+        set_clipboard(s)
+        update_pos(lrange.begin)
+        $paste_lines = true
+        #recalc_line_ends
     end
-end
 
-def mark_current_position(mark_char)
-    @marks[mark_char] = @pos
-end
-
-# Get positions of last characters in words
-def get_word_end_marks(startpos, endpos)
-    startpos = 0 if startpos < 0
-    endpos = self.size if endpos > self.size
-    search_str = self[(startpos)..(endpos)]
-    return if search_str == nil
-    wsmarks = scan_indexes(search_str, /(?<=\p{Word})[^\p{Word}]/)
-    wsmarks = wsmarks.collect {|x| x+startpos - 1}
-    return wsmarks
-end
-
-# Get positions of first characters in words
-def get_word_start_marks(startpos, endpos)
-    startpos = 0 if startpos < 0
-    endpos = self.size if endpos > self.size
-    search_str = self[(startpos)..(endpos)]
-    return if search_str == nil
-    wsmarks = scan_indexes(search_str, /(?<=[^\p{Word}])\p{Word}/)
-    wsmarks = wsmarks.collect {|x| x+startpos}
-    return wsmarks
-end
-
-def scan_marks(startpos, endpos, regstr, offset = 0)
-    startpos = 0 if startpos < 0
-    endpos = self.size if endpos > self.size
-    search_str = self[(startpos)..(endpos)]
-    return if search_str == nil
-    marks = scan_indexes(search_str, regstr)
-    marks = marks.collect {|x| x+startpos+offset}
-    return marks
-end
-
-def get_cur_nonwhitespace_word()
-
-    #wem = scan_marks(@pos,@pos+200,/(?<=\p{Word})[^\p{Word}]/,-1)
-    #wsm = scan_marks(@pos-200,@pos,/(?<=[^\p{Word}])\p{Word}/)
-    wem = scan_marks(@pos,@pos+200, /(?<=\S)\s/,-1)
-    wsm = scan_marks(@pos-200,@pos, /(?<=\s)\S/)
-    word_start = wsm[-1]
-    word_end = wem[0]
-    word_start = pos if word_start == nil
-    word_end = pos if word_end == nil
-    word = self[word_start..word_end]
-    puts "'#{word}'"
-    message("'#{word}'")
-    if is_url(word)
-        message("URL:'#{word}'")
-        open_url(word)
-    elsif is_path(word)
-        message("PATH:'#{word}'")
-        open_url(File.expand_path(word))
+    def update_pos(pos)
+        @pos = pos
+        calculate_line_and_column_pos
     end
-    #puts wm
-end
 
-def get_cur_word()
-    wem = get_word_end_marks(@pos,@pos+200)
-    wsm = get_word_start_marks(@pos-200,@pos)
-    word_start = wsm[-1]
-    word_end = wem[0]
-    word_start = pos if word_start == nil
-    word_end = pos if word_end == nil
-    word = self[word_start..word_end]
-    puts "'#{word}'"
-    message("'#{word}'")
-    #puts wm
-end
-
-def jump_to_next_instance_of_word()
-    start_search = [@pos - 150, 0].max
-
-    search_str1 = self[start_search..(@pos)]
-    wsmarks = scan_indexes(search_str1, /(?<=[^\p{Word}])\p{Word}/)
-    a = wsmarks[-1]
-    a = 0 if a == nil
-
-    search_str2 = self[(@pos)..(@pos + 150)]
-    wemarks = scan_indexes(search_str2, /(?<=\p{Word})[^\p{Word}]/)
-    b = wemarks[0]
-    puts search_str1.inspect
-    word_start = (@pos - search_str1.size + a + 1)
-    word_start = 0 if !(word_start >= 0)
-    current_word = self[word_start..(@pos + b - 1)]
-    #printf("CURRENT WORD: '#{current_word}' a:#{a} b:#{b}\n")
-
-    #TODO: search for /[^\p{Word}]WORD[^\p{Word}]/
-    position_of_next_word = self.index(current_word,@pos + 1)
-    if position_of_next_word != nil
-        set_pos(position_of_next_word)
-    else #Search from beginning
-        position_of_next_word = self.index(current_word)
-        set_pos(position_of_next_word) if position_of_next_word != nil
+    def start_visual_mode()
+        @visual_mode = true
+        @selection_start=@pos
+        $at.set_mode(VISUAL)
     end
-    center_on_current_line
-end
+    def copy_active_selection()
+        puts "!COPY SELECTION"
+        $paste_lines = false
+        return if !@visual_mode
 
-def jump_word(direction, wordpos)
-    offset = 0
-    if direction == FORWARD
-        debug "POS: #{@pos},"
-        search_str = self[(@pos)..(@pos + 150)]
-        return if search_str == nil
-        if wordpos == WORD_START # vim 'w'
+        puts "COPY SELECTION"
+        #_start = @selection_start
+        #_end = @pos
+        #_start,_end = _end,_start if _start > _end
 
-            wsmarks = scan_indexes(search_str, /(?<=[^\p{Word}])\p{Word}|\Z/) # \Z = end of string, just before last newline.
-            wsmarks2 = scan_indexes(search_str, /\n[ \t]*\n/) # "empty" lines that have whitespace
-            wsmarks2 = wsmarks2.collect {|x| x+1}
-            wsmarks = (wsmarks2 + wsmarks).sort.uniq
-            offset = 0
+        #_start,_end = get_visual_mode_range
+        # TODO: Jump to start pos
 
-        elsif wordpos == WORD_END
-            wsmarks = scan_indexes(search_str, /(?<=\p{Word})[^\p{Word}]/)
-            offset = 0
+        #TODO: check if range ok
+        set_clipboard(self[get_visual_mode_range])
+        end_visual_mode
+    end
+
+    def copy_line()
+        $method_handles_repeat = true
+        num_lines = 1
+        if !$next_command_count.nil? and $next_command_count > 0
+            num_lines = $next_command_count
+            debug "copy num_lines:#{num_lines}"
         end
-        if wsmarks.any?
-            #puts wsmarks.inspect
-            next_pos = @pos + wsmarks[0] + offset
-            set_pos(next_pos)
+        set_clipboard(self[line_range(@lpos, num_lines)])
+        $paste_lines = true
+    end
+
+
+
+    def delete_active_selection() #TODO: remove this function
+        return if !@visual_mode #TODO: this should not happen
+
+        _start, _end = get_visual_mode_range
+        set_clipboard(self[_start, _end])
+        end_visual_mode
+    end
+
+
+    def end_visual_mode()
+        #TODO:take previous mode (insert|command) from stack? 
+        $at.set_mode(COMMAND)
+        @visual_mode = false
+    end
+
+    def get_visual_mode_range2()
+        r = get_visual_mode_range
+        return [r.begin, r.end]
+    end
+
+    def get_visual_mode_range()
+        _start = @selection_start
+        _end = @pos
+        _start, _end = _end, _start+1 if _start > _end
+        return _start..(_end - 1)
+    end
+
+    def selection_start()
+        return - 1 if !@visual_mode
+        return @selection_start if @visual_mode
+    end
+
+    def visual_mode?()
+        return @visual_mode
+    end
+
+    def value()
+        return self.to_s
+    end
+
+    #  https://github.com/manveru/ver
+    def save()
+        if !@fname
+            puts "TODO: SAVE AS"
+            qt_file_saveas()
+            return
         end
-    end
-    if direction == BACKWARD #  vim 'b'
-        start_search = @pos - 150 #TODO 150 length limit
-        start_search = 0 if start_search < 0
-        search_str = self[start_search..(@pos - 1)]
-        return if search_str == nil
-        wsmarks = scan_indexes(search_str,
-        #/(^|(\W)\w|\n)/) #TODO 150 length limit
-        #/^|(?<=[^\p{Word}])\p{Word}|(?<=\n)\n/) #include empty lines?
-        /\A|(?<=[^\p{Word}])\p{Word}/) # Start of string or nonword,word.
+        message("Saving file #{@fname}")
 
-        offset = 0
+        Thread.new {
+            contents = self.to_s
+            File.open(@fname, 'w+') do |io|
+                #io.set_encoding(self.encoding)
 
-        if wsmarks.any?
-            next_pos = start_search + wsmarks.last + offset
-            set_pos(next_pos)
-        end
-    end
+                begin
+                    io.write(contents)
+                rescue Encoding::UndefinedConversionError => ex
+                    # this might happen when trying to save UTF-8 as US-ASCII
+                    # so just warn, try to save as UTF-8 instead.
+                    warn("Saving as UTF-8 because of: #{ex.class}: #{ex}")
+                    io.rewind
 
-end
-
-def jump_to_mark(mark_char)
-    p = @marks[mark_char]
-    set_pos(p) if p
-end
-
-def jump(target)
-    if target == START_OF_BUFFER
-        set_pos(0)
-    end
-    if target == END_OF_BUFFER
-        set_pos(self.size - 1)
-    end
-    if target == BEGINNING_OF_LINE
-        @cpos = 0
-        calculate_pos_from_cpos_lpos
-    end
-    if target == END_OF_LINE
-        @cpos = line(@lpos).size - 1
-        calculate_pos_from_cpos_lpos
-    end
-
-    if target == FIRST_NON_WHITESPACE
-        l = current_line()
-        puts l.inspect
-        @cpos = line(@lpos).size - 1
-        a = scan_indexes(l, /\S/)
-        puts a.inspect
-        if a.any?
-            @cpos = a[0]
-        else
-            @cpos = 0
-        end
-        calculate_pos_from_cpos_lpos
-    end
-
-
-end
-
-def jump_to_line(line_n = 1)
-
-    #    $method_handles_repeat = true
-    #    if !$next_command_count.nil? and $next_command_count > 0
-    #        line_n = $next_command_count
-    #        debug "jump to line:#{line_n}"
-    #    end
-    line_n = get_repeat_num()
-
-    if line_n > @line_ends.size
-        debug("lpos too large") #TODO
-        return
-    end
-    if line_n == 1
-        set_pos(0)
-    else
-        set_pos(@line_ends[line_n-2]+1)
-    end
-end
-
-def join_lines()
-    if @lpos >= @line_ends.size - 1  # Cursor is on last line
-        debug("ON LAST LINE")
-        return
-    else
-        # TODO: replace all whitespace between lines with ' '
-        jump(END_OF_LINE)
-        delete(CURRENT_CHAR_FORWARD)
-        #insert_char(' ',AFTER) 
-        insert_char(' ', BEFORE)
-    end
-end
-
-
-
-def jump_to_next_instance_of_char(char, direction = FORWARD)
-    #return if at_end_of_line?
-    if direction == FORWARD
-        position_of_next_char = self.index(char,@pos + 1)
-        if position_of_next_char != nil
-            @pos = position_of_next_char
-        end
-    elsif direction == BACKWARD
-        start_search = @pos - 250
-        start_search = 0 if start_search < 0
-        search_substr = self[start_search..(@pos - 1)]
-        _pos = search_substr.reverse.index(char)
-        if _pos != nil
-            @pos -= ( _pos + 1 )
-        end
-    end
-    m = method("jump_to_next_instance_of_char")
-    set_last_command({method: m, params: [char, direction]})
-    $last_find_command = {char: char, direction:direction}
-    calculate_line_and_column_pos
-end
-
-def replace_with_char(char)
-    puts "self_pos:'#{self[@pos]}'"
-    return if self[@pos] == "\n"
-    d1 = [@pos, DELETE, 1]
-    d2 = [@pos, INSERT, 1, char]
-    add_delta(d1, true)
-    add_delta(d2, true)
-    puts "DELTAS:#{$buffer.deltas.inspect} "
-end
-
-def insert_char_at(c, pos)
-    c = c.force_encoding("UTF-8"); #TODO:correct?
-    c = "\n" if c == "\r"
-    add_delta([pos, INSERT, 0, c], true)
-    calculate_line_and_column_pos
-end
-
-def insert_char(c, mode = BEFORE)
-    #Sometimes we get ASCII-8BIT although actually UTF-8  "incompatible character encodings: UTF-8 and ASCII-8BIT (Encoding::CompatibilityError)"
-    c = c.force_encoding("UTF-8"); #TODO:correct?
-
-    c = "\n" if c == "\r"
-    if  $cnf[:indent_based_on_last_line] and c == "\n" and @lpos > 0
-        # Indent start of new line based on last line
-        last_line = line(@lpos)
-        m = /^( +)([^ ]+|$)/.match(last_line)
-        puts m.inspect
-        c = c+" "*m[1].size if m
-    end
-    if mode == BEFORE
-        insert_pos = @pos
-        @pos += c.size
-    elsif mode == AFTER
-        insert_pos = @pos +1
-    else
-        return
-    end
-
-    #self.insert(insert_pos,c)
-    add_delta([insert_pos, INSERT, 0, c], true)
-    #puts("encoding: #{c.encoding}")
-    #puts "c.size: #{c.size}"
-    #recalc_line_ends #TODO: optimize?
-    calculate_line_and_column_pos
-    #need_redraw!
-    #@pos += c.size
-end
-
-def need_redraw!
-    @need_redraw = true
-end
-def need_redraw?
-    return @need_redraw
-end
-def set_redrawed
-    @need_redraw = false
-end
-
-def paste(at = AFTER)
-    # Paste after current char. Except if at end of line, paste before end of line.
-    return if !$clipboard.any?
-    text = $clipboard[-1]
-
-    if $paste_lines
-        l = current_line_range()
-        puts "------------"
-        puts l.inspect
-        puts "------------"
-        #$buffer.move(FORWARD_LINE)
-        #set_pos(l.end+1)
-        insert_char_at(text, l.end+1)
-        set_pos(l.end+1)
-    else
-        if at_end_of_buffer? or at_end_of_line? or at==BEFORE
-            pos = @pos
-        else
-            pos=@pos+1
-        end
-        insert_char_at(text, pos)
-        set_pos(pos+text.size)
-    end
-    #TODO: AFTER does not work
-    #insert_char($clipboard[-1],AFTER)
-    #recalc_line_ends #TODO: bug when run twice?
-end
-
-
-
-def insert_new_line()
-    insert_char("\n")
-end
-
-def delete_line()
-    $method_handles_repeat = true
-    $paste_lines = true
-    num_lines = 1
-    if !$next_command_count.nil? and $next_command_count > 0
-        num_lines = $next_command_count
-        debug "copy num_lines:#{num_lines}"
-    end
-    lrange = line_range(@lpos, num_lines)
-    s = self[lrange]
-    add_delta([lrange.begin, DELETE, lrange.end - lrange.begin + 1], true)
-    set_clipboard(s)
-    update_pos(lrange.begin)
-    #recalc_line_ends
-end
-
-def update_pos(pos)
-    @pos = pos
-    calculate_line_and_column_pos
-end
-
-def start_visual_mode()
-    @visual_mode = true
-    @selection_start=@pos
-    $at.set_mode(VISUAL)
-end
-def copy_active_selection()
-    puts "!COPY SELECTION"
-    $paste_lines = false
-    return if !@visual_mode
-
-    puts "COPY SELECTION"
-    #_start = @selection_start
-    #_end = @pos
-    #_start,_end = _end,_start if _start > _end
-
-    #_start,_end = get_visual_mode_range
-    # TODO: Jump to start pos
-
-    #TODO: check if range ok
-    set_clipboard(self[get_visual_mode_range])
-    end_visual_mode
-end
-
-def copy_line()
-    $method_handles_repeat = true
-    $paste_lines = true
-    num_lines = 1
-    if !$next_command_count.nil? and $next_command_count > 0
-        num_lines = $next_command_count
-        debug "copy num_lines:#{num_lines}"
-    end
-    set_clipboard(self[line_range(@lpos, num_lines)])
-end
-
-
-
-def delete_active_selection() #TODO: remove this function
-    return if !@visual_mode #TODO: this should not happen
-
-    _start, _end = get_visual_mode_range
-    set_clipboard(self[_start, _end])
-    end_visual_mode
-end
-
-
-def end_visual_mode()
-    #TODO:take previous mode (insert|command) from stack? 
-    $at.set_mode(COMMAND)
-    @visual_mode = false
-end
-
-def get_visual_mode_range2()
-    _start = @selection_start
-    _end = @pos
-_start, _end = _end, _start if _start > _end
-return [_start, _end - 1]
-end
-
-def get_visual_mode_range()
-    _start = @selection_start
-    _end = @pos
-_start, _end = _end, _start if _start > _end
-return _start..(_end - 1)
-
-end
-
-def selection_start()
-    return - 1 if !@visual_mode
-    return @selection_start if @visual_mode
-end
-
-def visual_mode?()
-    return @visual_mode
-end
-
-def value()
-    return self.to_s
-end
-
-#  https://github.com/manveru/ver
-def save()
-    if !@fname
-        puts "TODO: SAVE AS"
-        qt_file_saveas()
-        return
-    end
-    message("Saving file #{@fname}")
-
-    Thread.new {
-        contents = self.to_s
-        File.open(@fname, 'w+') do |io|
-            #io.set_encoding(self.encoding)
-
-            begin
-                io.write(contents)
-            rescue Encoding::UndefinedConversionError => ex
-                # this might happen when trying to save UTF-8 as US-ASCII
-                # so just warn, try to save as UTF-8 instead.
-                warn("Saving as UTF-8 because of: #{ex.class}: #{ex}")
-                io.rewind
-
-                io.set_encoding(Encoding::UTF_8)
-                io.write(contents)
-                #self.encoding = Encoding::UTF_8
+                    io.set_encoding(Encoding::UTF_8)
+                    io.write(contents)
+                    #self.encoding = Encoding::UTF_8
+                end
             end
-        end
-        sleep 3
-    }
+            sleep 3
+        }
 
-end
-
-def identify()
-    file = Tempfile.new('out')
-    infile = Tempfile.new('in')
-    file.write($buffer.to_s)
-    file.flush
-    bufc = "FOO"
-
-    tmppos = @pos
-
-    message("Auto format #{@fname}")
-
-    if get_file_type()=="c"
-        #C/C++/Java/JavaScript/Objective-C/Protobuf code
-        #system("clang-format #{file.path} > #{infile.path}")
-        # system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100, AllowShortBlocksOnASingleLine: true, SortIncludes: false, AllowShortIfStatementsOnASingleLine: true}' #{file.path} > #{infile.path}")         
-        system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")
-        bufc = IO.read(infile.path)
-        puts bufc
-    elsif get_file_type()=="ruby"
-        #cmd = "/usr/share/universalindentgui/indenters/ruby_formatter.rb -s 4 #{file.path}" 
-        cmd = "./ruby_formatter.rb -s 4 #{file.path}"
-        # cmd = "rubocop -x -f simple #{file.path}" 
-        puts cmd
-        system(cmd)
-        system("cp #{file.path} /tmp/foob")
-        bufc = IO.read(file.path)
     end
-    $buffer.set_content(bufc)
-    set_pos(tmppos)
-    $do_center = 1
-    file.close;  file.unlink
-    infile.close;  infile.unlink
-end
 
-def backup()
-    fname = @fname
-    message("Backup buffer #{fname}")
-    spfx = fname.gsub('=', '==').gsub('/','=:')
-    spath = File.expand_path('~/autosave')
-    datetime = DateTime.now().strftime("%d%m%Y:%H%M%S")
-    savepath = "#{spath}/#{spfx}_#{datetime}"
-    puts "BACKUP BUFFER TO: #{savepath}"
-    IO.write(savepath,$buffer.to_s)
-end
+    def identify()
+        file = Tempfile.new('out')
+        infile = Tempfile.new('in')
+        file.write($buffer.to_s)
+        file.flush
+        bufc = "FOO"
+
+        tmppos = @pos
+
+        message("Auto format #{@fname}")
+
+        if get_file_type()=="c"
+            #C/C++/Java/JavaScript/Objective-C/Protobuf code
+            #system("clang-format #{file.path} > #{infile.path}")
+            # system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100, AllowShortBlocksOnASingleLine: true, SortIncludes: false, AllowShortIfStatementsOnASingleLine: true}' #{file.path} > #{infile.path}")         
+            system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")
+            bufc = IO.read(infile.path)
+            puts bufc
+        elsif get_file_type()=="ruby"
+            #cmd = "/usr/share/universalindentgui/indenters/ruby_formatter.rb -s 4 #{file.path}" 
+            cmd = "./ruby_formatter.rb -s 4 #{file.path}"
+            # cmd = "rubocop -x -f simple #{file.path}" 
+            puts cmd
+            system(cmd)
+            system("cp #{file.path} /tmp/foob")
+            bufc = IO.read(file.path)
+        end
+        $buffer.set_content(bufc)
+        set_pos(tmppos)
+        $do_center = 1
+        file.close;  file.unlink
+        infile.close;  infile.unlink
+    end
+
+    def backup()
+        fname = @fname
+        message("Backup buffer #{fname}")
+        spfx = fname.gsub('=', '==').gsub('/','=:')
+        spath = File.expand_path('~/autosave')
+        datetime = DateTime.now().strftime("%d%m%Y:%H%M%S")
+        savepath = "#{spath}/#{spfx}_#{datetime}"
+        puts "BACKUP BUFFER TO: #{savepath}"
+        IO.write(savepath,$buffer.to_s)
+    end
 
 end
 
