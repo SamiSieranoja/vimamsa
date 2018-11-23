@@ -211,6 +211,10 @@ class Buffer < String
     end
 
     def line(lpos)
+        if @line_ends.size == 0
+            return self
+        end
+        
         #TODO: implement using line_range()
         if lpos >= @line_ends.size
             debug("lpos too large") #TODO
@@ -224,8 +228,26 @@ class Buffer < String
         return self[start.._end]
     end
 
+    def is_delta_ok(delta)
+        ret = true
+        pos = delta[0]
+        if pos < 0
+            ret = false
+            puts "pos=#{pos} < 0"
+        elsif pos > self.size
+            puts "pos=#{pos} > self.size=#{self.size}"
+            ret = false
+        end
+        if ret == false
+            puts "FATAL ERROR: DELTA OK=#{ret}"
+            exit
+        end
+        return ret
+    end
+
     #TODO: change to apply=true as default
     def add_delta(delta, apply = false)
+        return if !is_delta_ok(delta)
         @edit_version += 1
         @redo_stack = []
         if apply
@@ -569,7 +591,7 @@ class Buffer < String
             @pos -= 1
 
             # Delete the char before current char and move backward
-        elsif op == BACKWARD_CHAR
+        elsif op == BACKWARD_CHAR and @pos > 0
             add_delta([@pos - 1, DELETE, 1], true)
             @pos -= 1
 
@@ -1140,10 +1162,10 @@ class Buffer < String
     def get_visual_mode_range()
         _start = @selection_start
         _end = @pos
-        
+
         _start, _end = _end, _start if _start > _end
         _end = _end+1 if _start < _end
-        
+
         return _start..(_end - 1)
     end
 
