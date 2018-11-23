@@ -26,7 +26,11 @@ class Search
         @cur_search_i = -1
         if @search_indexes.any?
             @cur_search_i = 0
-            @buffer.set_pos(@search_indexes[0])
+            startpos=@search_indexes.select{|x| x > @buffer.pos}.min
+            if startpos != nil
+                @cur_search_i = @search_indexes.find_index(startpos)
+            end
+            @buffer.set_pos(@search_indexes[@cur_search_i])
         end
     end
 

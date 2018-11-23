@@ -23,6 +23,10 @@ reg_act(:e_move_forward_char, 'e_move_forward_char', '')
 reg_act(:e_move_backward_char, 'e_move_backward_char', '')
 reg_act(:history_switch_backwards, 'history_switch_backwards', '')
 reg_act(:history_switch_forwards, 'history_switch_forwards', '')
+reg_act(:center_on_current_line, 'center_on_current_line', '')
+
+
+#    'VC z z' => 'center_on_current_line',
 
 bindkey 'C , , f', :file_finder
 bindkey 'VC h', :e_move_backward_char
@@ -30,6 +34,8 @@ bindkey 'VC h', :e_move_backward_char
 bindkey 'C z ', '$at.set_mode(BROWSE)'
 bindkey 'B h', :history_switch_backwards
 bindkey 'B l', :history_switch_forwards
+#bindkey 'B z', :center_on_current_line
+bindkey 'B z', 'center_on_current_line();$at.set_mode(COMMAND)'
 bindkey 'B j', '$at.set_mode(COMMAND)'
 bindkey 'B esc', '$at.set_mode(COMMAND)'
 bindkey 'B return', '$at.set_mode(COMMAND)'

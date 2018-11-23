@@ -1140,7 +1140,10 @@ class Buffer < String
     def get_visual_mode_range()
         _start = @selection_start
         _end = @pos
-        _start, _end = _end, _start+1 if _start > _end
+        
+        _start, _end = _end, _start if _start > _end
+        _end = _end+1 if _start < _end
+        
         return _start..(_end - 1)
     end
 

@@ -95,7 +95,7 @@ $cnf['key_bindigs'] = {
     'VC g g' => '$buffer.jump(START_OF_BUFFER)',
     'VC g ;' => '$buffer.jump_to_last_edit',
     'VC G' => '$buffer.jump(END_OF_BUFFER)',
-    'VC z z' => 'center_on_current_line',
+#    'VC z z' => 'center_on_current_line',
     'VC *' => '$buffer.jump_to_next_instance_of_word',
     'C s' => 'easy_jump(:visible_area)',
 
