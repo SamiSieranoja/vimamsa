@@ -43,6 +43,11 @@
 
 #include <QSyntaxHighlighter>
 #include <QTextCharFormat>
+#include <QtDebug>
+
+#include <ruby.h>
+#include <ruby/encoding.h>
+
 
 QT_BEGIN_NAMESPACE
 class QTextDocument;

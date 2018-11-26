@@ -33,6 +33,8 @@ VALUE method_set_window_title(VALUE self, VALUE new_title) {
 
 int center_where_cursor();
 
+_sleep(void *ptr) { QThread::usleep(2000); }
+
 VALUE method_main_loop(VALUE self) {
 
   printf("Start MAIN LOOP\n");
@@ -65,7 +67,11 @@ VALUE method_main_loop(VALUE self) {
       center_where_cursor();
       rb_eval_string("$do_center=0");
     }
-    QThread::usleep(2000);
+
+    // Sleep while releasing ruby interpreter lock 
+    rb_thread_call_without_gvl(_sleep, NULL, NULL, NULL);
+    // Could also just run: rb_eval_string("sleep(0.01)");
+    
   }
   return INT2NUM(1);
 }

@@ -41,6 +41,9 @@ bindkey 'B esc', '$at.set_mode(COMMAND)'
 bindkey 'B return', '$at.set_mode(COMMAND)'
 bindkey 'B enter', '$at.set_mode(COMMAND)'
 
+bindkey 'C , , h', 'toggle_highlight'
+    
+
 #bindkey 'C z h', :history_switch_backwards
 #bindkey 'C z l', :history_switch_forwards
 

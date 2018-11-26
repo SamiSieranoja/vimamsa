@@ -4,7 +4,11 @@ def gui_file_finder()
     $select_keys = ['h', 'l', 'f', 'd', 's', 'a', 'g', 'z']
     #Thread.new{recursively_find_files}
     if $dir_list==nil
-        recursively_find_files
+#        recursively_find_files
+        $dirlt=Thread.new{recursively_find_files()}
+        # t2 = Thread.new{1e6.to_i.times{|x| puts "Sleep #{x}"; 1e8.to_i.times{|y|y*3};sleep(1);$footest=1}}
+        #        t.join
+        #sleep(3.05)
     end
     qt_select_update_window(l,$select_keys.collect {|x| x.upcase},
     "gui_file_finder_select_callback",
@@ -14,11 +18,15 @@ end
 
 def recursively_find_files()
     debug("START find files")
+    puts "START find files"
     dlist=[]
     for d in $search_dirs
+        debug("FIND FILEs IN #{d}")
         dlist = dlist + Dir.glob("#{d}/**/*").select { |e| File.file?(e) and $find_extensions.include?(File.extname(e))}
+        debug("FIND FILEs IN #{d} END")
     end
     #$dir_list = Dir.glob('./**/*').select { |e| File.file? e }
+    debug("END find files2")
     $dir_list = dlist
     debug("END find files")
     return $dir_list

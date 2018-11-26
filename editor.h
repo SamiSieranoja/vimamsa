@@ -128,6 +128,7 @@ class SEditor : public
     int overlay_paint_cursor;
     int is_command_mode;
     Overlay* overlay;
+    Highlighter* hl;
     QFont fnt;
 
     void drawTextCursor();

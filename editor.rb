@@ -4,6 +4,7 @@ $:.unshift File.dirname(__FILE__) + "/lib"
 require 'pathname'
 require 'date'
 require 'ripl'
+load 'vendor/ver/lib/ver/vendor/textpow.rb'
 
 Encoding.default_external = Encoding::UTF_8
 Encoding.default_internal = Encoding::UTF_8
@@ -27,6 +28,8 @@ $search_indexes = []
 $paint_stack = []
 $jump_sequence = []
 
+$cnf[:syntax_highlight] = false
+
 def debug(message)
     puts "[#{DateTime.now().strftime("%H:%M:%S:%L")}] #{message}"
     $stdout.flush
@@ -40,6 +43,8 @@ require 'viwbaw/key_bindings'
 require 'viwbaw/buffer_select'
 require 'viwbaw/file_finder'
 require 'viwbaw/hook'
+
+
 
 $macro = Macro.new
 $search = Search.new
@@ -102,6 +107,90 @@ def _quit()
     exit
 end
 
+
+class Processor
+    def start_parsing(name)
+        puts "start_parsing"
+        @marks=[]
+        @lineno = -1
+        @tags = {}
+
+        @hltags={}
+        @hltags["storage.type.c"] = 3
+        @hltags["string.quoted.double.c"] = 2
+        @hltags["constant.other.placeholder.c"] = 1
+        @hltags["constant.numeric.c"] = 2
+        #        @hltags["support.function.C99.c"] = 4
+        @hltags["keyword.operator.sizeof.c"] = 4
+        @hltags["keyword.control.c"] = 4
+
+        $highlight ={}
+    end
+
+    def end_parsing(name)
+        #        Ripl.start :binding => binding
+        #        puts "end_parsing"
+    end
+
+    def new_line(line)
+        #        puts "new_line:#{@lineno} #{line}"
+        @lineno += 1
+    end
+
+    def open_tag(name, pos)
+        format = get_format(name)
+        #        puts "open_tag:#{name} pos:#{pos}"
+        #        if name == "string.quoted.double.c"
+        if format
+            @tags[name] = [@lineno, pos]
+        end
+    end
+
+    def close_tag(name, mark)
+        #        puts "close_tag:#{name} mark:#{mark}"
+        format = get_format(name)
+        if format
+            if @tags[name] and @tags[name][0] == @lineno
+                startpos = @tags[name][1]
+                endpos = mark
+                $highlight[@lineno] = [] if $highlight[@lineno] == nil
+                $highlight[@lineno] << [startpos, endpos, format]
+                $highlight[@lineno].sort!
+            end
+        end
+    end
+end
+
+def get_format(name)
+    format = nil
+    #format = 4 if name.match(/keyword.operator/)
+    format = 4 if name.match(/keyword.control/)
+    format = 3 if name.match(/storage.type/)
+    format = 2 if name.match(/string.quoted/)
+    format = 2 if name.match(/constant.numeric/)
+    format = 1 if name.match(/constant.other.placeholder/)
+    return format
+
+end
+
+def toggle_highlight
+    $cnf[:syntax_highlight] = !$cnf[:syntax_highlight]
+end
+
+def highlight_c()
+    return if !$cnf[:syntax_highlight]
+    if $buffer.get_file_type()=="ruby"
+        file = 'vendor/ver/config/syntax/Ruby.rb'
+    elsif $buffer.get_file_type()=="c"
+        file = 'vendor/ver/config/syntax/C.rb'
+    else
+        return
+    end
+    a = Textpow::SyntaxNode.load(file)
+    #b = a.parse("int main()\n{int a=1;\nreturn a;}")
+    b = a.parse($buffer.to_s, Processor.new)
+    #    puts $highlight
+end
 
 def qt_signal(sgnname, param)
     puts "GOT QT-SIGNAL #{sgnname}: #{param}"
@@ -569,11 +658,15 @@ def render_buffer(buffer = 0, reset = 0)
     render_text(tmpbuf, pos, selection_start, reset)
     #$hook.call(:buffer_changed) #TODO: actually check if changed
 
+    $buffer.highlight
     puts "Render time: #{Time.now - t1}" if Time.now - t1 > 1/50.0
     $buffer.set_redrawed if reset == 1
 end
 
 def viwbaw_init
+    $highlight ={}
+    
+    puts $highlights
     puts "ARGV"
     puts ARGV.inspect
     build_key_bindings_tree

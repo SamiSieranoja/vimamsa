@@ -236,7 +236,7 @@ void SEditor::drawTextCursor() {
   //  if(!at_line_end && is_command_mode > 0) {
   // TODO: visual or command mode
 
-    VALUE ivtmp = rb_eval_string("$at.is_visual_mode()");
+  VALUE ivtmp = rb_eval_string("$at.is_visual_mode()");
   if (!at_line_end && (NUM2INT(ivtmp) == 1 || is_command_mode)) {
     qDebug() << "Draw cursor";
     selection.cursor.clearSelection();
@@ -320,7 +320,7 @@ Editor::Editor(QWidget *parent) : QMainWindow(parent) {
   c_te = textEdit;
   c_te->setFont(QFont("Ubuntu Mono", 12));
   c_te->overlay = new Overlay(c_te);
-  highlighter = new Highlighter(c_te->document());
+  c_te->hl = new Highlighter(c_te->document());
 
   QFrame *frame = new QFrame;
   QVBoxLayout *layout = new QVBoxLayout(frame);
@@ -406,6 +406,16 @@ void SEditor::processKeyEvent(QKeyEvent *e) {
   );
 
   rb_funcall(NULL, handle_key_event, 1, rb_event);
+
+  QTextCharFormat charFormat;
+  QTextCharFormat defaultCharFormat;
+  charFormat.setFontWeight(QFont::Black);
+
+  if (RTEST(rb_eval_string("$update_highlight"))   && RTEST(rb_eval_string("$cnf[:syntax_highlight]")) 
+  ) {
+    c_te->hl->rehighlight();
+    rb_eval_string("$update_highlight=false");
+  }
 }
 
 void SEditor::cursorPositionChanged() { qDebug() << "Cursor pos changed"; }

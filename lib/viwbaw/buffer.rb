@@ -5,6 +5,8 @@ require 'ripl'
 $paste_lines = false
 $buffer_history=[0]
 
+$update_highlight = true
+
 class BufferList < Array
 
     def <<(_buf)
@@ -150,6 +152,8 @@ class Buffer < String
             @redo_stack = []
             @edit_pos_history = []
             @edit_pos_history_i = 0
+            @syntax_parser = nil
+            @update_highlight = true
         end
 
         set_content(str)
@@ -160,12 +164,38 @@ class Buffer < String
     end
 
     def get_file_type()
+        return "" if !@fname
         ext = File.extname(@fname)
         ext = ext[1..-1]
         puts "EXT:#{ext}"
         return "ruby" if ext=="rb"
         return "c" if ext=="c" or ext=="cpp" or ext=="h" or ext=="hpp"
     end
+
+    def highlight()
+        return if !$cnf[:syntax_highlight]
+
+        if @syntax_parser == nil
+            if self.get_file_type()=="ruby"
+                file = 'vendor/ver/config/syntax/Ruby.rb'
+            elsif self.get_file_type()=="c"
+                file = 'vendor/ver/config/syntax/C.rb'
+            else
+                return
+            end
+            @syntax_parser = Textpow::SyntaxNode.load(file)
+        end
+
+        if @update_highlight
+            Thread.new{
+                @syntax_parser.parse($buffer.to_s, Processor.new)
+                $update_highlight = true
+            }
+            @update_highlight = false
+        end
+        #    puts $highlight
+    end
+
 
     def revert()
         message("Revert buffer #{@fname}")
@@ -214,7 +244,7 @@ class Buffer < String
         if @line_ends.size == 0
             return self
         end
-        
+
         #TODO: implement using line_range()
         if lpos >= @line_ends.size
             debug("lpos too large") #TODO
@@ -280,6 +310,10 @@ class Buffer < String
             update_line_ends(pos,+delta[2], delta[3])
         end
         sanity_check_line_ends
+        #highlight_c()
+        $update_highlight = true
+        @update_highlight = true
+
         return delta
     end
 
