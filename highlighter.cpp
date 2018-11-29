@@ -96,7 +96,8 @@ Highlighter::Highlighter(QTextDocument *parent) : QSyntaxHighlighter(parent) {
 void Highlighter::highlightBlock(const QString &text) {
   // QTextBlock currentBlock()
 
-  VALUE highlight = rb_eval_string("$highlight");
+//  VALUE highlight = rb_eval_string("$highlight");
+  VALUE highlight = rb_eval_string("$buffer.highlights");
   VALUE linetags = rb_hash_lookup(highlight, INT2NUM(currentBlock().blockNumber()));
 
   if (RTEST(linetags)) {

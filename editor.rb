@@ -109,6 +109,8 @@ end
 
 
 class Processor
+    attr_reader :highlights
+    
     def start_parsing(name)
         puts "start_parsing"
         @marks=[]
@@ -125,6 +127,7 @@ class Processor
         @hltags["keyword.control.c"] = 4
 
         $highlight ={}
+        @highlights ={}
     end
 
     def end_parsing(name)
@@ -153,9 +156,9 @@ class Processor
             if @tags[name] and @tags[name][0] == @lineno
                 startpos = @tags[name][1]
                 endpos = mark
-                $highlight[@lineno] = [] if $highlight[@lineno] == nil
-                $highlight[@lineno] << [startpos, endpos, format]
-                $highlight[@lineno].sort!
+                @highlights[@lineno] = [] if @highlights[@lineno] == nil
+                @highlights[@lineno] << [startpos, endpos, format]
+                @highlights[@lineno].sort!
             end
         end
     end
@@ -177,21 +180,21 @@ def toggle_highlight
     $cnf[:syntax_highlight] = !$cnf[:syntax_highlight]
 end
 
-def highlight_c()
-    return if !$cnf[:syntax_highlight]
-    if $buffer.get_file_type()=="ruby"
-        file = 'vendor/ver/config/syntax/Ruby.rb'
-    elsif $buffer.get_file_type()=="c"
-        file = 'vendor/ver/config/syntax/C.rb'
-    else
-        return
-    end
-    a = Textpow::SyntaxNode.load(file)
-    #b = a.parse("int main()\n{int a=1;\nreturn a;}")
-    b = a.parse($buffer.to_s, Processor.new)
-    #    puts $highlight
-end
-
+#def highlight_c()
+#    return if !$cnf[:syntax_highlight]
+#    if $buffer.get_file_type()=="ruby"
+#        file = 'vendor/ver/config/syntax/Ruby.rb'
+#    elsif $buffer.get_file_type()=="c"
+#        file = 'vendor/ver/config/syntax/C.rb'
+#    else
+#        return
+#    end
+#    a = Textpow::SyntaxNode.load(file)
+#    #b = a.parse("int main()\n{int a=1;\nreturn a;}")
+#    b = a.parse($buffer.to_s, Processor.new)
+#    #    puts $highlight
+#end
+#
 def qt_signal(sgnname, param)
     puts "GOT QT-SIGNAL #{sgnname}: #{param}"
     if sgnname == "saveas"

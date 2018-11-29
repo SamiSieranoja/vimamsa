@@ -49,6 +49,7 @@ class BufferList < Array
             $buffer_history << buffer_i
         end
         $buffer = self[buffer_i]
+        return if !$buffer
         @current_buf = buffer_i
         debug "SWITCH BUF2. bufsize:#{self.size}, curbuf: #{@current_buf}"
         fpath = $buffer.fname
@@ -120,45 +121,21 @@ class Buffer < String
 
     #attr_reader (:pos, :cpos, :lpos)
 
-    attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename
-    attr_writer :call_func
+    attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :highlights, :update_highlight
+    attr_writer :call_func, :update_highlight
 
     def initialize(str = "\n", fname = nil)
         if (str[-1] != "\n")
             str << "\n"
         end
 
-        @marks = Hash.new
+        super(str)
+        @fname = fname
 
-        if 0
-            super(str)
-            t1 = Time.now
-            @line_ends = scan_indexes(self, /\n/)
-            puts @line_ends
-            puts str.inspect
-            @fname = fname
-            @basename = ""
-            @pathname = Pathname.new(fname) if @fname
-            @basename = @pathname.basename if @fname
-            @pos = 0 # Position in whole string
-            @cpos = 0 # Column position on current line
-            @lpos = 0 # Number of current line
-            @edit_version = 0 # +1 for every buffer modification
-            @larger_cpos = 0
-            @need_redraw = 1
-            @call_func = nil
-            @deltas = []
-            @edit_history = []
-            @redo_stack = []
-            @edit_pos_history = []
-            @edit_pos_history_i = 0
-            @syntax_parser = nil
-            @update_highlight = true
-        end
-
+        t1 = Time.now
         set_content(str)
+        puts "init time:#{Time.now - t1}"
 
-        puts Time.now - t1
         # TODO: add \n when chars are added after last \n
         self << "\n" if self[-1] != "\n"
     end
@@ -174,6 +151,7 @@ class Buffer < String
 
     def highlight()
         return if !$cnf[:syntax_highlight]
+        puts "START HIGHLIGHT"
 
         if @syntax_parser == nil
             if self.get_file_type()=="ruby"
@@ -181,19 +159,33 @@ class Buffer < String
             elsif self.get_file_type()=="c"
                 file = 'vendor/ver/config/syntax/C.rb'
             else
+                puts "NON-HIGHLIGHTABLE FILE: '#{get_file_type()}'"
                 return
             end
             @syntax_parser = Textpow::SyntaxNode.load(file)
         end
 
-        if @update_highlight
-            Thread.new{
-                @syntax_parser.parse($buffer.to_s, Processor.new)
+
+        puts "@update_highlight=#{@update_highlight}"
+        if @update_highlight and (Time.now - @last_update > 5)
+            puts "if @update_highlight"
+
+#            Ripl.start :binding => binding
+            t1=Thread.new{
+                sp = Processor.new
+                @syntax_parser.parse($buffer.to_s, sp)
+                #TODO
+                @highlights = sp.highlights
                 $update_highlight = true
+                @last_update = Time.now
             }
+            
+# t1=Thread.new{ sp = Processor.new;                 @syntax_parser.parse($buffer.to_s, sp);   @highlights = sp.highlights;                 $update_highlight = true;             }
+
+            
             @update_highlight = false
         end
-        #    puts $highlight
+        puts @highlight
     end
 
 
@@ -207,9 +199,10 @@ class Buffer < String
     def set_content(str)
         self.replace(str)
         @line_ends = scan_indexes(self, /\n/)
+        @last_update=Time.now - 10
         debug("line_ends")
         #puts str.inspect
-        @fname = fname
+        @marks = Hash.new
         @basename = ""
         @pathname = Pathname.new(fname) if @fname
         @basename = @pathname.basename if @fname
@@ -225,6 +218,10 @@ class Buffer < String
         @redo_stack = []
         @edit_pos_history = []
         @edit_pos_history_i = 0
+        @highlights = {}
+
+        @syntax_parser = nil
+        @update_highlight = true
     end
 
     def set_filename(filename)
@@ -325,12 +322,28 @@ class Buffer < String
     end
 
     def jump_to_last_edit()
+        return if @edit_pos_history.empty?
         @edit_pos_history_i += 1
-        puts @edit_pos_history.inspect
-        if @edit_pos_history.size >= @edit_pos_history_i
-            set_pos(@edit_pos_history[-@edit_pos_history_i])
+
+        if @edit_pos_history_i > @edit_pos_history.size
+            @edit_pos_history_i = 0
         end
+
+        #        if @edit_pos_history.size >= @edit_pos_history_i
+        set_pos(@edit_pos_history[-@edit_pos_history_i])
+        #        end
     end
+
+    def jump_to_next_edit()
+        return if @edit_pos_history.empty?
+        @edit_pos_history_i -= 1
+        @edit_pos_history_i = @edit_pos_history.size - 1 if @edit_pos_history_i < 0
+        #        Ripl.start :binding => binding
+        puts "@edit_pos_history_i=#{@edit_pos_history_i}"
+        puts @edit_pos_history.size
+        set_pos(@edit_pos_history[-@edit_pos_history_i])
+    end
+
 
     def undo()
         puts @edit_history.inspect
@@ -1159,6 +1172,21 @@ class Buffer < String
         set_clipboard(self[get_visual_mode_range])
         end_visual_mode
     end
+
+    def transform_selection(op)
+        return if !@visual_mode
+        r = get_visual_mode_range
+        txt = self[r]
+        txt.upcase! if op == :upcase
+        txt.downcase! if op == :downcase
+        txt.capitalize! if op == :capitalize
+        txt.swapcase! if op == :swapcase
+        txt.reverse! if op == :reverse
+
+        replace_range(r, txt)
+        end_visual_mode
+    end
+
 
     def copy_line()
         $method_handles_repeat = true

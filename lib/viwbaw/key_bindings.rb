@@ -175,6 +175,12 @@ $cnf['key_bindigs'] = {
     'V esc' => '$buffer.end_visual_mode',
     'V ctrl!' => '$buffer.end_visual_mode',
     'V y' => '$buffer.copy_active_selection',
+    'V g U' => '$buffer.transform_selection(:upcase)',
+    'V g u' => '$buffer.transform_selection(:downcase)',
+    'V g c' => '$buffer.transform_selection(:capitalize)',
+    'V g s' => '$buffer.transform_selection(:swapcase)',
+    'V g r' => '$buffer.transform_selection(:reverse)',
+    
     'V d' => '$buffer.delete(SELECTION)',
     'V x' => '$buffer.delete(SELECTION)',
     'V ctrl-c' => '$buffer.comment_selection',
