@@ -4,6 +4,7 @@ $:.unshift File.dirname(__FILE__) + "/lib"
 require 'pathname'
 require 'date'
 require 'ripl'
+require 'openssl'
 load 'vendor/ver/lib/ver/vendor/textpow.rb'
 
 Encoding.default_external = Encoding::UTF_8
@@ -110,7 +111,7 @@ end
 
 class Processor
     attr_reader :highlights
-    
+
     def start_parsing(name)
         puts "start_parsing"
         @marks=[]
@@ -180,21 +181,6 @@ def toggle_highlight
     $cnf[:syntax_highlight] = !$cnf[:syntax_highlight]
 end
 
-#def highlight_c()
-#    return if !$cnf[:syntax_highlight]
-#    if $buffer.get_file_type()=="ruby"
-#        file = 'vendor/ver/config/syntax/Ruby.rb'
-#    elsif $buffer.get_file_type()=="c"
-#        file = 'vendor/ver/config/syntax/C.rb'
-#    else
-#        return
-#    end
-#    a = Textpow::SyntaxNode.load(file)
-#    #b = a.parse("int main()\n{int a=1;\nreturn a;}")
-#    b = a.parse($buffer.to_s, Processor.new)
-#    #    puts $highlight
-#end
-#
 def qt_signal(sgnname, param)
     puts "GOT QT-SIGNAL #{sgnname}: #{param}"
     if sgnname == "saveas"
@@ -256,13 +242,7 @@ def set_next_command_count(num)
 end
 
 def invoke_search()
-    #    $at.set_mode(MINIBUFFER)
-    #    $minibuffer = Buffer.new("", "")
-    #    $minibuffer.call_func = method(:execute_search)
-    #    
     start_minibuffer_cmd("", "",:execute_search)
-    #lambda { |input_str| $minibuffer }
-    #$minibuffer = Buffer.new("/","")
 end
 
 def start_minibuffer_cmd(bufname, bufstr, cmd)
@@ -285,12 +265,50 @@ def invoke_ack_search()
     start_minibuffer_cmd("", "",:ack_buffer)
 end
 
+def diff_buffer()
+    puts "diff_bufferZZ"
+    bufstr = ""
+    orig_path = $buffer.fname
+    infile = Tempfile.new('out')
+    infile = Tempfile.new('in')
+    infile.write($buffer.to_s)
+    infile.flush
+    cmd = "diff -w '#{orig_path}' #{infile.path}"
+    puts cmd
+    bufstr << run_cmd(cmd)
+    puts bufstr
+    infile.close;  infile.unlink
+    create_new_file(nil, bufstr)
+end
+
+def invoke_replace()
+    start_minibuffer_cmd("", "",:buf_replace_string)
+end
+
+def buf_replace_string(instr)
+    puts "buf_replace_string(instr=#{instr})"
+
+    instr = instr.gsub("'",".")
+    a = instr.split("/")
+    if a.size == 2
+        repbuf = $buffer.to_s.clone
+        repbuf.gsub!(a[0], a[1])
+        tmppos = $buffer.pos
+        message("Replace #{a[0]} with #{a[1]}.")
+        if repbuf == $buffer.to_s.clone
+            message("Replacing #{a[0]} with #{a[1]}. NO CHANGE.")
+        else
+            $buffer.set_content(repbuf)
+            $buffer.set_pos(tmppos)
+            $do_center = 1
+            message("Replacing #{a[0]} with #{a[1]}.")
+        end
+    end
+end
+
+
 def invoke_command()
     start_minibuffer_cmd("", "",:execute_command)
-    #    $at.set_mode(MINIBUFFER)
-    #    $minibuffer = Buffer.new("", "")
-    #    $minibuffer.call_func = method(:execute_command)
-    #TODO
 end
 
 def execute_search(input_str)
@@ -458,8 +476,6 @@ def new_file_opened(filename, file_contents = "")
         puts "NEW FILE OPENED: #{filename} \n CONTENTS: #{file_contents}"
         $fname = filename
         load_buffer($fname)
-        #buffer = Buffer.new(read_file("",$fname), filename)
-        #$buffers << buffer
     end
     set_window_title("VIwbaw - #{File.basename(filename)}")
     render_buffer #TODO: needed?
@@ -477,9 +493,6 @@ end
 def debug_dump_deltas()
     puts $buffer.edit_history.inspect
 end
-
-
-
 
 def save_file()
     $buffer.save()
@@ -668,7 +681,7 @@ end
 
 def viwbaw_init
     $highlight ={}
-    
+
     puts $highlights
     puts "ARGV"
     puts ARGV.inspect
@@ -741,6 +754,8 @@ def decrypt(encrypted, pass_phrase)
     cipher.pkcs5_keyivgen pass_phrase, salt
     plain = cipher.update encrypted
     plain << cipher.final
+    # OpenSSL::Cipher::CipherError: bad decrypt
+
     return plain
 end
 
@@ -816,6 +831,17 @@ end
 def open_url(url)
     system("xdg-open", url)
 end
+
+def run_cmd(cmd)
+    tmpf = Tempfile.new('ack','/tmp').path
+    cmd = "#{cmd} > #{tmpf}"
+    puts "CMD:\n#{cmd}"
+    system("bash","-c", cmd)
+    res_str = File.read(tmpf)
+    return res_str
+end
+
+
 
 
 

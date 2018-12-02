@@ -121,7 +121,7 @@ class Buffer < String
 
     #attr_reader (:pos, :cpos, :lpos)
 
-    attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :highlights, :update_highlight
+    attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :highlights, :update_highlight, :marks
     attr_writer :call_func, :update_highlight
 
     def initialize(str = "\n", fname = nil)
@@ -170,8 +170,8 @@ class Buffer < String
         if @update_highlight and (Time.now - @last_update > 5)
             puts "if @update_highlight"
 
-#            Ripl.start :binding => binding
-            t1=Thread.new{
+            #            Ripl.start :binding => binding
+            t1 = Thread.new{
                 sp = Processor.new
                 @syntax_parser.parse($buffer.to_s, sp)
                 #TODO
@@ -179,10 +179,10 @@ class Buffer < String
                 $update_highlight = true
                 @last_update = Time.now
             }
-            
-# t1=Thread.new{ sp = Processor.new;                 @syntax_parser.parse($buffer.to_s, sp);   @highlights = sp.highlights;                 $update_highlight = true;             }
 
-            
+            # t1=Thread.new{ sp = Processor.new;                 @syntax_parser.parse($buffer.to_s, sp);   @highlights = sp.highlights;                 $update_highlight = true;             }
+
+
             @update_highlight = false
         end
         puts @highlight
@@ -199,18 +199,18 @@ class Buffer < String
     def set_content(str)
         self.replace(str)
         @line_ends = scan_indexes(self, /\n/)
-        @last_update=Time.now - 10
+        @last_update = Time.now - 10
         debug("line_ends")
         #puts str.inspect
         @marks = Hash.new
         @basename = ""
         @pathname = Pathname.new(fname) if @fname
         @basename = @pathname.basename if @fname
-        @pos = 0 # Position in whole string
+        @pos = 0 # Position in whole file
         @cpos = 0 # Column position on current line
         @lpos = 0 # Number of current line
         @edit_version = 0 # +1 for every buffer modification
-        @larger_cpos = 0
+        @larger_cpos = 0 # Store @cpos when move up/down to shorter line than @cpos
         @need_redraw = 1
         @call_func = nil
         @deltas = []
@@ -306,6 +306,7 @@ class Buffer < String
             update_index(pos,+delta[2])
             update_line_ends(pos,+delta[2], delta[3])
         end
+        puts "DELTA=#{delta.inspect}"
         sanity_check_line_ends
         #highlight_c()
         $update_highlight = true
@@ -317,8 +318,14 @@ class Buffer < String
 
 
     def update_index(pos, changeamount)
-        puts @edit_pos_history.inspect
-        @edit_pos_history.collect! {|x| return x if x <= pos; return x + changeamount if x > pos}
+
+        @edit_pos_history.collect! {|x| r = x if x <= pos; r = x + changeamount if x > pos;r}
+        for k in @marks.keys
+            #            puts "change(?): pos=#{pos}, k=#{k}, #{@marks[k]}, #{changeamount}"
+            if @marks[k] > pos
+                @marks[k] = @marks[k] + changeamount
+            end
+        end
     end
 
     def jump_to_last_edit()
@@ -531,7 +538,6 @@ class Buffer < String
             puts "new LINE ENDS:#{i.inspect}"
         end
         puts "change:#{changeamount}"
-        #@line_ends.collect!{|x| return x if x <= pos; return x + changeamount if x > pos}
         @line_ends.collect! {|x | r = nil;
             r = x if x < pos;
             r = x + changeamount if changeamount < 0 && x +changeamount >= pos;
@@ -900,7 +906,7 @@ class Buffer < String
         offset = 0
         if direction == FORWARD
             debug "POS: #{@pos},"
-            search_str = self[(@pos)..(@pos + 150)]
+            search_str = self[(@pos)..(@pos + 250)]
             return if search_str == nil
             if wordpos == WORD_START # vim 'w'
 
@@ -909,15 +915,18 @@ class Buffer < String
                 wsmarks2 = wsmarks2.collect {|x| x+1}
                 wsmarks = (wsmarks2 + wsmarks).sort.uniq
                 offset = 0
-
+                if wsmarks.any?
+                    next_pos = @pos + wsmarks[0] + offset
+                    set_pos(next_pos)
+                end
             elsif wordpos == WORD_END
+                search_str = self[(@pos+1)..(@pos + 150)]
                 wsmarks = scan_indexes(search_str, /(?<=\p{Word})[^\p{Word}]/)
-                offset = 0
-            end
-            if wsmarks.any?
-                #puts wsmarks.inspect
-                next_pos = @pos + wsmarks[0] + offset
-                set_pos(next_pos)
+                offset = -1
+                if wsmarks.any?
+                    next_pos = @pos + 1 + wsmarks[0] + offset
+                    set_pos(next_pos)
+                end
             end
         end
         if direction == BACKWARD #  vim 'b'
@@ -1049,7 +1058,7 @@ class Buffer < String
     def insert_char_at(c, pos)
         c = c.force_encoding("UTF-8"); #TODO:correct?
         c = "\n" if c == "\r"
-        add_delta([pos, INSERT, 0, c], true)
+        add_delta([pos, INSERT, c.size, c], true)
         calculate_line_and_column_pos
     end
 
@@ -1075,7 +1084,7 @@ class Buffer < String
         end
 
         #self.insert(insert_pos,c)
-        add_delta([insert_pos, INSERT, 0, c], true)
+        add_delta([insert_pos, INSERT, c.size, c], true)
         #puts("encoding: #{c.encoding}")
         #puts "c.size: #{c.size}"
         #recalc_line_ends #TODO: optimize?
@@ -1302,6 +1311,8 @@ class Buffer < String
             system(cmd)
             system("cp #{file.path} /tmp/foob")
             bufc = IO.read(file.path)
+        else
+            return
         end
         $buffer.set_content(bufc)
         set_pos(tmppos)
@@ -1318,12 +1329,32 @@ class Buffer < String
         spath = File.expand_path('~/autosave')
         datetime = DateTime.now().strftime("%d%m%Y:%H%M%S")
         savepath = "#{spath}/#{spfx}_#{datetime}"
-        puts "BACKUP BUFFER TO: #{savepath}"
-        IO.write(savepath,$buffer.to_s)
+        if is_path_writable(savepath)
+            puts "BACKUP BUFFER TO: #{savepath}"
+            IO.write(savepath,$buffer.to_s)
+        else
+            message("PATH NOT WRITABLE: #{savepath}")
+        end
     end
 
 end
 
+
+def write_to_file(savepath, s)
+    if is_path_writable(savepath)
+        IO.write(savepath,$buffer.to_s)
+    else
+        message("PATH NOT WRITABLE: #{savepath}")
+    end
+end
+
+def is_path_writable(fpath)
+    r = false
+    if fpath.class == String
+        r = true if File.writable?(Pathname.new(fpath).dirname)
+    end
+    return r
+end
 
 def backup_all_buffers()
     for buf in $buffers

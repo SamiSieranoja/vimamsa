@@ -38,6 +38,9 @@ reg_act(:center_on_current_line, 'center_on_current_line', '')
 reg_act(:jump_to_next_edit, 'jump_to_next_edit', '')
 reg_act(:jump_to_last_edit, 'jump_to_last_edit', '')
 
+reg_act(:invoke_replace, 'invoke_replace', '')
+reg_act(:diff_buffer, 'diff_buffer', '')
+
 
 #    'VC z z' => 'center_on_current_line',
 
@@ -58,6 +61,14 @@ bindkey 'B q', :jump_to_last_edit
 bindkey 'B w', :jump_to_next_edit 
 
 bindkey 'C , , h', 'toggle_highlight'
+bindkey 'C , r r', :invoke_replace
+bindkey 'C , d', :diff_buffer
+
+bindkey 'C , s', '$at.set_mode("S");gui_select_buffer'
+bindkey 'C , f', 'gui_file_finder'
+bindkey 'C , i t', 'insert_date'
+bindkey 'C , v', '$buffer.identify'
+
 
 
 #bindkey 'C z h', :history_switch_backwards

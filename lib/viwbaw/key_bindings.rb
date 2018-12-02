@@ -198,8 +198,8 @@ $cnf['key_bindigs'] = {
     # 'C o'=> 'open_new_line', #TODO
 
     # Marks
-    'CV m <char>' => '$buffer.mark_current_position(<char>)', # TODO
-    'CV \' <char>' => '$buffer.jump_to_mark(<char>)', # TODO
+    'CV m <char>' => '$buffer.mark_current_position(<char>)',
+    'CV \' <char>' => '$buffer.jump_to_mark(<char>)',
     # "CV ''" =>'jump_to_mark(NEXT_MARK)', #TODO
 
     'C i' => '$at.set_mode(INSERT)',
