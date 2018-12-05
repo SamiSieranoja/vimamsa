@@ -43,6 +43,7 @@ VALUE method_main_loop(VALUE self) {
 
   cpp_init_qt_thread();
   QApplication a(*_argc, _argv);
+  a.setWindowIcon(QIcon("./images/icon.png"));
   app = &a;
 
   qDebug() << "hello from GUI thread " << QThread::currentThreadId();

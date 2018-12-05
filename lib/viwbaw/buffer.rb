@@ -89,7 +89,10 @@ class BufferList < Array
 
 
     def close_buffer(buffer_i)
+        return if self.size <= buffer_i
         self.slice!(buffer_i)
+        $buffer_history.collect{|x| r=x; r=x-1 if x > buffer_i;r=nil if x==buffer_i;r}.compact
+
         @current_buf = 0 if @current_buf >= self.size
         if self.size==0
             self << Buffer.new("emptybuf\n")
@@ -1103,10 +1106,15 @@ class Buffer < String
         @need_redraw = false
     end
 
-    def paste(at = AFTER)
+    def paste(at = AFTER, register = nil)
         # Paste after current char. Except if at end of line, paste before end of line.
         return if !$clipboard.any?
-        text = $clipboard[-1]
+        if register == nil
+            text = $clipboard[-1]
+        else
+            text = $register[register]
+            return if text == ""
+        end
 
         if $paste_lines
             puts "PASTE LINES"

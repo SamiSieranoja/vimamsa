@@ -14,10 +14,12 @@ Encoding.default_internal = Encoding::UTF_8
 $last_event = []
 $command_history = []
 $clipboard = []
+$register=Hash.new('')
 $cnf = {}
 $search_dirs=['.']
 
 $do_center = 0
+$cur_register = "a"
 $cpos = 0
 $lpos = 0
 $larger_cpos = 0
@@ -208,7 +210,9 @@ end
 def set_clipboard(s)
     $clipboard << s
     set_system_clipboard(s)
+    $register[$cur_register] = s
     puts "SET CLIPBOARD: [#{s}]"
+    puts "REGISTER: #{$cur_register}:#{$register[$cur_register]}"
 end
 
 
@@ -833,12 +837,22 @@ def open_url(url)
 end
 
 def run_cmd(cmd)
-    tmpf = Tempfile.new('ack','/tmp').path
+    tmpf = Tempfile.new('ack', '/tmp').path
     cmd = "#{cmd} > #{tmpf}"
     puts "CMD:\n#{cmd}"
-    system("bash","-c", cmd)
+    system("bash", "-c", cmd)
     res_str = File.read(tmpf)
     return res_str
+end
+
+def set_register(char)
+    $cur_register = char
+    message("Set register #{char}")
+end
+
+def paste_register(char)
+    $c=$register[char]
+    message("Paste: #{$c}")
 end
 
 

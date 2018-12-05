@@ -165,6 +165,8 @@ $cnf['key_bindigs'] = {
     'C r <char>' => '$buffer.replace_with_char(<char>)', # TODO
     'C , l b' => 'load_buffer_list',
     'C , l l' => 'save_buffer_list',
+    'C , r <char>' => 'set_register(<char>)', # TODO
+    'C , p <char>' => '$buffer.paste(BEFORE,<char>)', # TODO
 
     'C ctrl-c' => '$buffer.comment_line()',
     'C ctrl-x' => '$buffer.comment_line(:uncomment)',

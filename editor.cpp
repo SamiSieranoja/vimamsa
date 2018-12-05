@@ -186,9 +186,22 @@ SEditor::SEditor(QWidget *parent)
   QPalette p = palette();
   p.setColor(QPalette::Base, QColor("#002b36"));
   p.setColor(QPalette::Text, QColor("#839496"));
-  setPalette(p);
 
+  setPalette(p);
   setFrameStyle(QFrame::NoFrame);
+
+
+  lineNumberArea = NULL;
+  if (0) {
+    lineNumberArea = new LineNumberArea(this);
+    lineNumberArea->setGeometry(QRect(0, 0, 40, 400));
+    connect(this, SIGNAL(textChanged()), this, SLOT(updateLineNumberArea()));
+    updateLineNumberAreaWidth(0);
+  }
+
+  //  connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
+  //  connect(this, SIGNAL(updateRequest(QRect, int)), this, SLOT(updateLineNumberArea(QRect,
+  //  int)));
 
   // base03    #002b36  8/4 brblack  234 #1c1c1c
   // base02    #073642  0/4 black    235 #262626
@@ -206,6 +219,115 @@ SEditor::SEditor(QWidget *parent)
   // blue      #268bd2  4/4 blue      33 #0087ff
   // cyan      #2aa198  6/6 cyan      37 #00afaf
   // green     #859900  2/2 green     64 #5f8700
+}
+
+int SEditor::lineNumberAreaWidth() {
+  int digits = 5;
+  //    while (max >= 10) {
+  //        max /= 10;
+  //        ++digits;
+  //    }
+  //
+  //    int space = 3 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
+
+  qDebug() << "SEditor::lineNumberAreaWidth()\n";
+  int space = 50;
+  return space;
+}
+
+// void SEditor::updateLineNumberArea(const QRect &rect, int dy) {
+void SEditor::updateLineNumberArea() {
+  //    lineNumberArea->update(0, 0, lineNumberArea->width(), 400);
+  lineNumberArea->repaint();
+  //  lineNumberAreaPaintEvent(NULL);
+  //  lineNumberArea->update(0, 0, 10, 400);
+
+  qDebug() << "SEditor::updateLineNumberArea(const QRect &rect, int dy)\n";
+  //  if (dy)
+  //    lineNumberArea->scroll(0, dy);
+  //  else
+  //    lineNumberArea->update(0, rect.y(), lineNumberArea->width(), rect.height());
+  //
+  //  if (rect.contains(viewport()->rect()))
+  //    updateLineNumberAreaWidth(0);
+}
+
+// void LineNumberArea::paintEvent(QPaintEvent *event) {
+//  qDebug() << "LineNumberArea::paintEvent" << endl;
+//
+//  QPainter p(this);
+//
+//  QString number = QString::number(55);
+//  p.setPen(Qt::white);
+//
+//  p.setPen(QColor("#ffff2222"));
+//  QFont font = p.font();
+//  font.setPointSize(10);
+//  font.setWeight(QFont::DemiBold);
+//  QFontMetrics fm(font);
+//  p.setFont(font);
+//  p.fillRect(0, 0, 50, 50, QColor("#ee0000"));
+//
+//  p.fillRect(50, 50, 10, 10, QColor("#ee0000"));
+//
+//
+//}
+//
+
+void SEditor::lineNumberAreaPaintEvent(QPaintEvent *event) {
+  //  qDebug() << "SEditor::lineNumberAreaPaintEvent(QPaintEvent *event) \n";
+  QPainter p(lineNumberArea);
+  p.fillRect(event->rect(), QColor("#000000"));
+
+  QString number = QString::number(55);
+  p.setPen(Qt::white);
+
+  //  qDebug() << "SEditor::lineNumberAreaPaintEvent " << lineNumberArea->width()
+  //           << fontMetrics().height() << endl;
+
+  int top = 20;
+  //  painter.drawText(0, top, lineNumberArea->width(), fontMetrics().height(), Qt::AlignRight,
+  //  number);
+  //  painter.drawText(0, top, lineNumberArea->width(), fontMetrics().height(), Qt::AlignLeft,
+  //  number);
+
+  //  QPainter p =;
+  p.setPen(QColor("#ffff2222"));
+  QFont font = p.font();
+  font.setPointSize(10);
+  font.setWeight(QFont::DemiBold);
+  QFontMetrics fm(font);
+  p.setFont(font);
+  //  p.fillRect(0, 0, 50, 50, QColor("#ee0000"));
+
+  //  p.fillRect(50, 50, 10, 10, QColor("#ee0000"));
+
+  //    p.drawText(x + x_align, y + y_align + font_height, text);
+  p.drawText(5, 30, number);
+  p.drawText(5, 130, number);
+
+  //    QTextBlock block = firstVisibleBlock();
+  //    int blockNumber = block.blockNumber();
+  //    int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
+  //    int bottom = top + (int) blockBoundingRect(block).height();
+  //
+  //    while (block.isValid() && top <= event->rect().bottom()) {
+  //        if (block.isVisible() && bottom >= event->rect().top()) {
+  //            QString number = QString::number(blockNumber + 1);
+  //            painter.setPen(Qt::black);
+  //            painter.drawText(0, top, lineNumberArea->width(), fontMetrics().height(),
+  //                             Qt::AlignRight, number);
+  //        }
+  //
+  //        block = block.next();
+  //        top = bottom;
+  //        bottom = top + (int) blockBoundingRect(block).height();
+  //        ++blockNumber;
+  //    }
+}
+
+void SEditor::updateLineNumberAreaWidth(int /* newBlockCount */) {
+  setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
 }
 
 // Use QTextEdit standard functionality to draw cursor when possible.
@@ -377,6 +499,11 @@ void SEditor::paintEvent(QPaintEvent *e) {
   cursor_x = r.x();
   cursor_y = r.y();
   cursor_height = r.height();
+
+  // TODO:
+  if (lineNumberArea) {
+    lineNumberArea->repaint();
+  }
 }
 
 void SEditor::handleKeyEvent(QKeyEvent *e) { processKeyEvent(e); }
@@ -411,8 +538,8 @@ void SEditor::processKeyEvent(QKeyEvent *e) {
   QTextCharFormat defaultCharFormat;
   charFormat.setFontWeight(QFont::Black);
 
-  if (RTEST(rb_eval_string("$update_highlight"))   && RTEST(rb_eval_string("$cnf[:syntax_highlight]")) 
-  ) {
+  if (RTEST(rb_eval_string("$update_highlight")) &&
+      RTEST(rb_eval_string("$cnf[:syntax_highlight]"))) {
     c_te->hl->rehighlight();
     rb_eval_string("$update_highlight=false");
   }
