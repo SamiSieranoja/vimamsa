@@ -23,17 +23,17 @@ $cnf = {} # TODO
 
 
 def conf(id)
-return $cnf[id]
+    return $cnf[id]
 end
-def set_conf(id,val)
-   $cnf[id] = val
+def set_conf(id, val)
+    $cnf[id] = val
 end
 
 set_conf(:indent_based_on_last_line, true)
-$cnf[:extensions_to_open] = [".txt",".h",".c",".cpp",".hpp",".rb",".inc",".php",".sh",".m"]
+$cnf[:extensions_to_open] = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m"]
 
 
-$cnf['modes'] = { 'R' => 'READCHAR', 'M' => 'MINIBUFFER', 'C' => 'COMMAND', 'V' => 'VISUAL', 'I' => 'INSERT', 'B'=>'BROWSE' }
+$cnf['modes'] = { 'R' => 'READCHAR', 'M' => 'MINIBUFFER', 'C' => 'COMMAND', 'V' => 'VISUAL', 'I' => 'INSERT', 'B' => 'BROWSE' }
 
 $cnf['key_bindigs'] = {
     # 'C q'=> 'quit',
@@ -58,12 +58,14 @@ $cnf['key_bindigs'] = {
     'C , .' => '$buffer.backup()',
     'C , , .' => 'backup_all_buffers()',
     'C , a' => 'invoke_ack_search()',
+    'C , , s' => 'search_actions()',
+
     'C enter' => '$buffer.get_cur_word()',
     'C return' => '$buffer.get_cur_nonwhitespace_word()',
 
 
     # MOVING
-#    'VC h' => '$buffer.move(BACKWARD_CHAR)',
+    #    'VC h' => '$buffer.move(BACKWARD_CHAR)',
     'VC l' => '$buffer.move(FORWARD_CHAR)',
     'VC j' => '$buffer.move(FORWARD_LINE)',
     'VC k' => '$buffer.move(BACKWARD_LINE)',
@@ -95,7 +97,7 @@ $cnf['key_bindigs'] = {
     'VC g g' => '$buffer.jump(START_OF_BUFFER)',
     'VC g ;' => '$buffer.jump_to_last_edit',
     'VC G' => '$buffer.jump(END_OF_BUFFER)',
-#    'VC z z' => 'center_on_current_line',
+    #    'VC z z' => 'center_on_current_line',
     'VC *' => '$buffer.jump_to_next_instance_of_word',
     'C s' => 'easy_jump(:visible_area)',
 
@@ -119,8 +121,8 @@ $cnf['key_bindigs'] = {
 
     # Debug
     'C , d r p' => 'start_ripl',
-    'C , c s' => '$buffers.close_scrap_buffers',
     'C , D' => 'debug_print_buffer',
+    'C , c s' => '$buffers.close_scrap_buffers',
     'C , d b' => 'debug_print_buffer',
     'C , d c' => 'debug_dump_clipboard',
     'C , d d' => 'debug_dump_deltas',
@@ -182,7 +184,7 @@ $cnf['key_bindigs'] = {
     'V g c' => '$buffer.transform_selection(:capitalize)',
     'V g s' => '$buffer.transform_selection(:swapcase)',
     'V g r' => '$buffer.transform_selection(:reverse)',
-    
+
     'V d' => '$buffer.delete(SELECTION)',
     'V x' => '$buffer.delete(SELECTION)',
     'V ctrl-c' => '$buffer.comment_selection',
@@ -231,8 +233,6 @@ $cnf['key_bindigs'] = {
     'I <char>' => '$buffer.insert_char(<char>)',
     'I esc' => '$at.set_mode(COMMAND)',
 
-    # 'C ; Ctrl!'=> 'change_mode(COMMAND)',
-
     'I ctrl-d' => '$buffer.delete(CURRENT_CHAR_FORWARD)',
 
     # INSERT MODE: Moving
@@ -245,10 +245,10 @@ $cnf['key_bindigs'] = {
     'I alt-f' => '$buffer.jump_word(FORWARD,WORD_START)',
     'I alt-b' => '$buffer.jump_word(BACKWARD,WORD_START)',
     # 'I l{S,C}'=> 'jump_line_end', #context: mode:I, buttons down: {C}
-    
-    
+
+
     'I tab' => '$buffer.insert_char("    ")',
-    
+
 
     # 'I Ctrl(j l)' # Press and hold control, press J, press l
     # 'I Ctrl(j(l))'# Press and hold control, press and hold J, press and hold L
@@ -356,11 +356,11 @@ class AutomataTree
             return 0
         end
     end
-    
-     def is_visual_mode()
+
+    def is_visual_mode()
         return 1 if @mode_root_state.to_s() == "V"
         return 0
-    end   
+    end
 
     def set_state(key_name, eval_rule = "")
         new_state = find_state(key_name, eval_rule)
@@ -412,7 +412,12 @@ def build_key_bindings_tree
     }
 end
 
+$action_list=[]
 def bindkey(key, action)
+#    $action_list << [action, key]
+    $action_list << {:action=>action,:key=>key}
+
+
     # dict_i = $key_bind_dict
     k_arr = key.split
     modes = k_arr.shift # modes = "C" or "I" or "CI"
@@ -585,7 +590,7 @@ def match_key_conf(c, translated_c, event_type)
             puts "CHAR: #{c}"
             c.gsub!("\\", %q{\\\\} * 4) # Escape \ -chars
             c.gsub!("'", "#{'\\' * 4}'") # Escape ' -chars
-            
+
             eval_s.gsub!("<char>", "'#{c}'") if eval_s.class==String
             puts eval_s
             puts c

@@ -114,7 +114,8 @@ float srn_dst(char * s1_sgn, char * s2_sgn) {
     }
 
     //dump_list(t);
-    score = score/(len_s1*len_s1);
+    float p =0.01;
+    score = (1-p)*score/(len_s1*len_s1) +p*score/(len_s1*len_s2);
 
     // Free memory
     for(int i=0;i<256;i++) {

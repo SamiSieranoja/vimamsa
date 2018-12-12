@@ -91,7 +91,7 @@ class BufferList < Array
     def close_buffer(buffer_i)
         return if self.size <= buffer_i
         self.slice!(buffer_i)
-        $buffer_history.collect{|x| r=x; r=x-1 if x > buffer_i;r=nil if x==buffer_i;r}.compact
+        $buffer_history.collect {|x| r = x; r = x-1 if x > buffer_i;r = nil if x==buffer_i;r}.compact
 
         @current_buf = 0 if @current_buf >= self.size
         if self.size==0
@@ -567,6 +567,11 @@ class Buffer < String
             @pos = new_pos
         end
         calculate_line_and_column_pos
+
+        Thread.new{ #TODO:Hackish solution
+            sleep(0.2)
+            center_on_current_line
+        }
     end
 
 

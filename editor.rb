@@ -45,6 +45,7 @@ require 'viwbaw/search'
 require 'viwbaw/key_bindings'
 require 'viwbaw/buffer_select'
 require 'viwbaw/file_finder'
+require 'viwbaw/actions'
 require 'viwbaw/hook'
 
 

@@ -63,6 +63,7 @@ def filter_files(search_str)
     dir_hash.map  do |file, d|
         puts "D:#{d} #{file}"
     end
+#    Ripl.start :binding => binding
     return dir_hash
 end
 
