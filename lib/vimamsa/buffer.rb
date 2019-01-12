@@ -518,6 +518,7 @@ class Buffer < String
         puts "Scan line_end time: #{Time.now - t1}"
         #puts @line_ends
     end
+    
     def sanity_check_line_ends()
         leo = @line_ends.clone
         @line_ends = scan_indexes(self, /\n/)
@@ -1201,7 +1202,7 @@ class Buffer < String
         txt = self[r]
         txt.upcase! if op == :upcase
         txt.downcase! if op == :downcase
-        txt.capitalize! if op == :capitalize
+        txt.gsub!(/\w+/, &:capitalize) if op == :capitalize
         txt.swapcase! if op == :swapcase
         txt.reverse! if op == :reverse
 
@@ -1298,7 +1299,8 @@ class Buffer < String
 
     end
 
-    def identify()
+    # Indents whole buffer using external program
+    def indent()
         file = Tempfile.new('out')
         infile = Tempfile.new('in')
         file.write($buffer.to_s)
@@ -1311,15 +1313,12 @@ class Buffer < String
 
         if get_file_type()=="c"
             #C/C++/Java/JavaScript/Objective-C/Protobuf code
-            #system("clang-format #{file.path} > #{infile.path}")
-            # system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100, AllowShortBlocksOnASingleLine: true, SortIncludes: false, AllowShortIfStatementsOnASingleLine: true}' #{file.path} > #{infile.path}")         
             system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")
             bufc = IO.read(infile.path)
             puts bufc
         elsif get_file_type()=="ruby"
-            #cmd = "/usr/share/universalindentgui/indenters/ruby_formatter.rb -s 4 #{file.path}" 
+            #TODO:
             cmd = "./ruby_formatter.rb -s 4 #{file.path}"
-            # cmd = "rubocop -x -f simple #{file.path}" 
             puts cmd
             system(cmd)
             system("cp #{file.path} /tmp/foob")

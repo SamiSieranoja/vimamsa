@@ -39,16 +39,14 @@ def debug(message)
 end
 
 require 'fileutils'
-require 'viwbaw/macro'
-require 'viwbaw/buffer'
-require 'viwbaw/search'
-require 'viwbaw/key_bindings'
-require 'viwbaw/buffer_select'
-require 'viwbaw/file_finder'
-require 'viwbaw/actions'
-require 'viwbaw/hook'
-
-
+require 'vimamsa/macro'
+require 'vimamsa/buffer'
+require 'vimamsa/search'
+require 'vimamsa/key_bindings'
+require 'vimamsa/buffer_select'
+require 'vimamsa/file_finder'
+require 'vimamsa/actions'
+require 'vimamsa/hook'
 
 $macro = Macro.new
 $search = Search.new
@@ -261,7 +259,7 @@ def ack_buffer(instr)
     #TODO: search dir as config
     bufstr = ""
     for path in $file_content_search_paths
-        bufstr += run_cmd("ack -k --nohtml --nojs --nojson '#{instr}' #{path}")
+        bufstr += run_cmd("ack --type-add=gd=.gd -k --nohtml --nojs --nojson '#{instr}' #{path}")
     end
     create_new_file(nil, bufstr)
 end
@@ -684,14 +682,14 @@ def render_buffer(buffer = 0, reset = 0)
     $buffer.set_redrawed if reset == 1
 end
 
-def viwbaw_init
+def vimamsa_init
     $highlight ={}
 
     puts $highlights
     puts "ARGV"
     puts ARGV.inspect
     build_key_bindings_tree
-    require 'viwbaw/default_bindings'
+    require 'vimamsa/default_bindings'
     puts "START reading file"
     sleep(0.03)
     $fname = "test.txt"
@@ -708,7 +706,7 @@ def viwbaw_init
     buffer = Buffer.new(read_file("",$fname),$fname)
     $buffers << buffer
     puts $at # key map
-    dotfile = read_file("", '~/.viwbawrc')
+    dotfile = read_file("", '~/.vimamsarc')
     eval(dotfile) if dotfile
     render_buffer($buffer, 1)
 
@@ -769,7 +767,7 @@ def start_ripl
 end
 
 def get_dot_path(sfx)
-    dot_dir = File.expand_path('~/.viwbaw')
+    dot_dir = File.expand_path('~/.vimamsa')
     Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
     dpath = "#{dot_dir}/#{sfx}"
     return dpath
@@ -822,7 +820,7 @@ def is_path(s)
 end
 
 def get_file_line_pointer(s)
-    #"/code/viwbaw/lib/viwbaw/buffer_select.rb:31:def"
+    #"/code/vimamsa/lib/vimamsa/buffer_select.rb:31:def"
     #    m = s.match(/(~[a-z]*)?\/.*\//)
     m = s.match(/((~[a-z]*)?\/.*\/\S+):(\d+)/)
     if m != nil
@@ -860,7 +858,7 @@ end
 
 
 
-#viwbaw_init
+#vimamsa_init
 
 
 t1 = Thread.new{main_loop}

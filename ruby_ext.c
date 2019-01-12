@@ -54,7 +54,7 @@ VALUE method_main_loop(VALUE self) {
 
   VALUE do_center;
 
-  rb_eval_string("viwbaw_init");
+  rb_eval_string("vimamsa_init");
   window_title = new QString("VIwbaw");
   VALUE rb_event;
   VALUE handle_key_event = rb_intern("handle_key_event");
@@ -415,7 +415,7 @@ void _init_ruby(int argc, char *argv[]) {
   // sed -e "s/'/\"/g" > ../qt_keys.h
   // rb_define_const(qt_module, "Key_Backspace",INT2NUM(Qt::Key_Context1));
 
-  ruby_script("viwbaw.rb");
+  ruby_script("vimamsa.rb");
   ruby_run_node(ruby_options(argc, argv));
   return;
 }

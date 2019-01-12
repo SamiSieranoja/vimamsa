@@ -46,7 +46,7 @@ class Macro < Struct.new(:recording, :recorded_evals)
       m = @recorded_evals[name]
       return if !(m.kind_of?(Array) and m.any?)
       contents = m.join(";")
-      dot_dir = File.expand_path('~/.viwbaw')
+      dot_dir = File.expand_path('~/.vimamsa')
       Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
       save_fn = "#{dot_dir}/macro_#{name}.rb"
       

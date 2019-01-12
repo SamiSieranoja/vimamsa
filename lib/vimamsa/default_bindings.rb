@@ -67,7 +67,7 @@ bindkey 'C , d', :diff_buffer
 bindkey 'C , s', '$at.set_mode("S");gui_select_buffer'
 bindkey 'C , f', 'gui_file_finder'
 bindkey 'C , i t', 'insert_date'
-bindkey 'C , v', '$buffer.identify'
+bindkey 'C , v', '$buffer.indent'
 
 
 

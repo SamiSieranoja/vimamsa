@@ -37,7 +37,7 @@
 
 #include "editor.h"
 #include "selectwindow.h"
-#include "srn_dst.h"
+#include "fuzzy_string_dist.h"
 
 using namespace std;
 SEditor *c_te;
@@ -67,7 +67,7 @@ int _quit = 0;
 Editor *g_editor;
 Editor *mw;
 
-void cpp_init_qt_thread() { Q_INIT_RESOURCE(viwbaw); }
+void cpp_init_qt_thread() { Q_INIT_RESOURCE(vimamsa); }
 
 char *qstring_to_cstr(QString qstr) {
   // Remember to free memory after use

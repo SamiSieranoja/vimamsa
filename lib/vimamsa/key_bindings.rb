@@ -30,7 +30,7 @@ def set_conf(id, val)
 end
 
 set_conf(:indent_based_on_last_line, true)
-$cnf[:extensions_to_open] = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m"]
+$cnf[:extensions_to_open] = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m",".gd"]
 
 
 $cnf['modes'] = { 'R' => 'READCHAR', 'M' => 'MINIBUFFER', 'C' => 'COMMAND', 'V' => 'VISUAL', 'I' => 'INSERT', 'B' => 'BROWSE' }
