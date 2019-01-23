@@ -24,6 +24,8 @@ end
 
 
 
+reg_act(:savedebug, 'savedebug', 'Save debug info')
+
 reg_act(:file_finder, 'gui_file_finder', 'Fuzzy file finder')
 reg_act(:open_file_dialog, 'open_file_dialog', 'Open file')
 reg_act(:create_new_file, 'create_new_file', 'Create new file')
@@ -68,6 +70,7 @@ bindkey 'C , s', '$at.set_mode("S");gui_select_buffer'
 bindkey 'C , f', 'gui_file_finder'
 bindkey 'C , i t', 'insert_date'
 bindkey 'C , v', '$buffer.indent'
+bindkey 'C , , d', :savedebug
 
 
 

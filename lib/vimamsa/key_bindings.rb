@@ -684,6 +684,7 @@ $keys_pressed = [] # TODO: create a queue
 def handle_key_event(event)
     # puts "GOT KEY EVENT: #{key.inspect}"
     debug "GOT KEY EVENT:: #{event} #{event[2]}"
+    $debuginfo["cur_event"] = event
 
     t1 = Time.now
     event[3] = event[2]

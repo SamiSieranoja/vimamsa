@@ -269,8 +269,7 @@ class Buffer < String
             ret = false
         end
         if ret == false
-            puts "FATAL ERROR: DELTA OK=#{ret}"
-            exit
+            crash("DELTA OK=#{ret}")
         end
         return ret
     end
@@ -518,7 +517,7 @@ class Buffer < String
         puts "Scan line_end time: #{Time.now - t1}"
         #puts @line_ends
     end
-    
+
     def sanity_check_line_ends()
         leo = @line_ends.clone
         @line_ends = scan_indexes(self, /\n/)
@@ -528,7 +527,7 @@ class Buffer < String
             puts "CHANGES to line ends"
             puts leo.inspect
             puts @line_ends.inspect
-            exit
+            crash("CHANGES to line ends")
         end
     end
 
@@ -692,8 +691,7 @@ class Buffer < String
             end
             range = startpos..(@pos - 1)
         else
-            puts "INVALID RANGE"
-            exit
+            crash("INVALID RANGE")
         end
         if range.last < range.first
             range.last = range.first
@@ -1119,8 +1117,8 @@ class Buffer < String
             text = $clipboard[-1]
         else
             text = $register[register]
-            return if text == ""
         end
+        return if text == ""
 
         if $paste_lines
             puts "PASTE LINES"

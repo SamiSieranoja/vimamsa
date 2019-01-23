@@ -5,6 +5,7 @@ require 'pathname'
 require 'date'
 require 'ripl'
 require 'openssl'
+require 'json'
 load 'vendor/ver/lib/ver/vendor/textpow.rb'
 
 Encoding.default_external = Encoding::UTF_8
@@ -14,19 +15,21 @@ Encoding.default_internal = Encoding::UTF_8
 $last_event = []
 $command_history = []
 $clipboard = []
-$register=Hash.new('')
+$register = Hash.new('')
 $cnf = {}
 $search_dirs=['.']
+$errors =[]
 
 $do_center = 0
 $cur_register = "a"
-$cpos = 0
-$lpos = 0
-$larger_cpos = 0
-$cur_line = nil
+#$cpos = 0
+#$lpos = 0
+#$larger_cpos = 0
+#$cur_line = nil
 $input_char_call_func = nil
 $check_modifiers = false
 $search_indexes = []
+$debuginfo = {}
 
 $paint_stack = []
 $jump_sequence = []
@@ -47,6 +50,7 @@ require 'vimamsa/buffer_select'
 require 'vimamsa/file_finder'
 require 'vimamsa/actions'
 require 'vimamsa/hook'
+require 'vimamsa/error_handling'
 
 $macro = Macro.new
 $search = Search.new
@@ -108,7 +112,6 @@ def _quit()
     qt_quit
     exit
 end
-
 
 class Processor
     attr_reader :highlights
@@ -207,6 +210,10 @@ def system_clipboard_changed(clipboard_contents)
 end
 
 def set_clipboard(s)
+    if s.class != String or s.size == 0
+        log_error("s.class != String or s.size == 0")
+        return
+    end
     $clipboard << s
     set_system_clipboard(s)
     $register[$cur_register] = s
