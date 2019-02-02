@@ -3,6 +3,7 @@
 #include <QThread>
 #include <QtCore>
 #include <QtConcurrent>
+#include <QCoreApplication>
 
 int *_argc;
 char **_argv;
@@ -13,10 +14,9 @@ extern "C" {
 #include <stdio.h>
 }
 
-HelloThread thread;
+VThread thread;
 
-void HelloThread::run() {
-  // qDebug() << "hello from worker thread " << thread()->currentThreadId();
+void VThread::run() {
   char **argv2 = malloc((*_argc + 2) * sizeof(char *));
   char const *script_name = "editor.rb";
   argv2[0] = script_name;
@@ -30,6 +30,7 @@ void HelloThread::run() {
 int main(int argc, char *argv[]) {
   _argc = &argc;
   _argv = argv;
+  
 
   thread.start();
   thread.wait();

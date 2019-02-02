@@ -1,9 +1,9 @@
 
-
+#scriptdir=File.expand_path(File.dirname(__FILE__))
 $:.unshift File.dirname(__FILE__) + "/lib"
 require 'pathname'
 require 'date'
-require 'ripl'
+require 'ripl/multi_line'
 require 'openssl'
 require 'json'
 load 'vendor/ver/lib/ver/vendor/textpow.rb'
@@ -210,8 +210,12 @@ def system_clipboard_changed(clipboard_contents)
 end
 
 def set_clipboard(s)
-    if s.class != String or s.size == 0
+
+    if !(s.class <= String) or s.size == 0
+        puts s.inspect
+        puts [s, s.class, s.size]
         log_error("s.class != String or s.size == 0")
+        Ripl.start :binding => binding
         return
     end
     $clipboard << s
@@ -262,8 +266,7 @@ def start_minibuffer_cmd(bufname, bufstr, cmd)
 end
 
 def ack_buffer(instr)
-    instr = instr.gsub("'",".")
-    #TODO: search dir as config
+    instr = instr.gsub("'",".") # TODO
     bufstr = ""
     for path in $file_content_search_paths
         bufstr += run_cmd("ack --type-add=gd=.gd -k --nohtml --nojs --nojson '#{instr}' #{path}")
@@ -274,6 +277,27 @@ end
 def invoke_ack_search()
     start_minibuffer_cmd("", "",:ack_buffer)
 end
+
+def grep_cur_buffer(search_str)
+
+    puts "grep_cur_buffer(search_str)"
+    lines = $buffer.split("\n")
+    r = Regexp.new(Regexp.escape(search_str), Regexp::IGNORECASE)
+    fpath = $buffer.pathname.expand_path.to_s
+#    Ripl.start :binding => binding
+    res_str = ""
+    lines.each_with_index{|l, i|
+        if r.match(l)
+            res_str << "#{fpath}:#{i+1}:#{l}\n"
+        end
+    }
+    create_new_file(nil, res_str)
+end
+
+def invoke_grep_search()
+    start_minibuffer_cmd("", "",:grep_cur_buffer)
+end
+
 
 def diff_buffer()
     puts "diff_bufferZZ"
@@ -487,7 +511,7 @@ def new_file_opened(filename, file_contents = "")
         $fname = filename
         load_buffer($fname)
     end
-    set_window_title("VIwbaw - #{File.basename(filename)}")
+    set_window_title("Vimamsa - #{File.basename(filename)}")
     render_buffer #TODO: needed?
 end
 
@@ -870,4 +894,4 @@ end
 
 t1 = Thread.new{main_loop}
 t1.join
-debug("VIwbaw END")
+debug("END")

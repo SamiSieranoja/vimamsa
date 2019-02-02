@@ -84,7 +84,7 @@ class QMenu;
 class QPrinter;
 QT_END_NAMESPACE
 
-class HelloThread : public QThread {
+class VThread : public QThread {
   Q_OBJECT
 private:
   void run();
@@ -125,6 +125,7 @@ public:
 
   void drawTextCursor();
   void processKeyEvent(QKeyEvent *e);
+  void contextMenuEvent(QContextMenuEvent *event);
 
 public:
   void lineNumberAreaPaintEvent(QPaintEvent *event);
@@ -161,6 +162,8 @@ class Editor : public QMainWindow {
 public:
   Editor(QWidget *parent = 0);
   int setQtStyle(int style_id);
+  
+  QAction *actionSave;
 
 protected:
   virtual void closeEvent(QCloseEvent *e);
@@ -198,7 +201,6 @@ private:
   void colorChanged(const QColor &c);
   Overlay overlay;
 
-  QAction *actionSave;
 
   QComboBox *comboStyle;
   QFontComboBox *comboFont;

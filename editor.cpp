@@ -190,7 +190,6 @@ SEditor::SEditor(QWidget *parent)
   setPalette(p);
   setFrameStyle(QFrame::NoFrame);
 
-
   lineNumberArea = NULL;
   if (0) {
     lineNumberArea = new LineNumberArea(this);
@@ -273,6 +272,16 @@ void SEditor::updateLineNumberArea() {
 //
 //}
 //
+
+void SEditor::contextMenuEvent(QContextMenuEvent *event) {
+  //    QMenu *menu = createStandardContextMenu();
+  QMenu *menu = new QMenu(this);
+
+  menu->addAction(tr("TODO"));
+//  menu->addAction(g_editor->actionSave);
+  menu->exec(event->globalPos());
+  delete menu;
+}
 
 void SEditor::lineNumberAreaPaintEvent(QPaintEvent *event) {
   //  qDebug() << "SEditor::lineNumberAreaPaintEvent(QPaintEvent *event) \n";

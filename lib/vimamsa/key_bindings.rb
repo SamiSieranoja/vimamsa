@@ -647,6 +647,8 @@ def handle_key_bindigs_action(action, c)
         # rescue NameError
         # debug("NameError with eval cmd #{action}: " + $!.to_s)
         # raise
+    rescue Exception
+        crash("Error with action: #{action}: ")
     end
 
     if action.class==String and !action.include?("set_next_command_count")

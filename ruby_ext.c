@@ -55,7 +55,7 @@ VALUE method_main_loop(VALUE self) {
   VALUE do_center;
 
   rb_eval_string("vimamsa_init");
-  window_title = new QString("VIwbaw");
+  window_title = new QString("Vimamsa");
   VALUE rb_event;
   VALUE handle_key_event = rb_intern("handle_key_event");
   while (1) {

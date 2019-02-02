@@ -43,6 +43,8 @@ reg_act(:jump_to_last_edit, 'jump_to_last_edit', '')
 reg_act(:invoke_replace, 'invoke_replace', '')
 reg_act(:diff_buffer, 'diff_buffer', '')
 
+reg_act(:invoke_grep_search, 'invoke_grep_search', '')
+
 
 #    'VC z z' => 'center_on_current_line',
 
@@ -65,6 +67,7 @@ bindkey 'B w', :jump_to_next_edit
 bindkey 'C , , h', 'toggle_highlight'
 bindkey 'C , r r', :invoke_replace
 bindkey 'C , d', :diff_buffer
+bindkey 'C , g', :invoke_grep_search
 
 bindkey 'C , s', '$at.set_mode("S");gui_select_buffer'
 bindkey 'C , f', 'gui_file_finder'

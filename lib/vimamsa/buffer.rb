@@ -1,7 +1,8 @@
 require 'digest'
 require 'tempfile'
 require 'pathname'
-require 'ripl'
+require 'ripl/multi_line'
+
 $paste_lines = false
 $buffer_history=[0]
 
@@ -56,8 +57,7 @@ class BufferList < Array
         if fpath and fpath.size > 50
             fpath = fpath[-50..-1]
         end
-        #set_window_title("VIwbaw - #{$buffer.basename}")
-        set_window_title("VIwbaw - #{fpath}")
+        set_window_title("Vimamsa - #{fpath}")
         $buffer.need_redraw!
     end
 
