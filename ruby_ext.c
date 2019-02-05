@@ -253,6 +253,47 @@ int center_where_cursor() {
   c_te->verticalScrollBar()->setValue(offset_y);
 }
 
+VALUE page_up() {
+    
+  QTextCursor cursor = c_te->cursorForPosition(QPoint(0, 20));
+  int offset_y =  c_te->verticalScrollBar()->value()  - ((int)c_te->size().height()*0.9);
+  if(offset_y < 0 ) { offset_y = 0; }
+  
+  c_te->verticalScrollBar()->setValue(offset_y);
+
+  cursor = c_te->cursorForPosition(QPoint(0, ((int)(c_te->size().height()*0.8)) ));
+  int new_cursor_pos = cursor.position()+1;
+
+  QString evalcmd = QString("$buffer.set_pos(%1);$buffer.jump(BEGINNING_OF_LINE)").arg(QString::number(new_cursor_pos));
+  // BUG: Sometimes cursorForPosition gives position for end of line.$buffer.jump(BEGINNING_OF_LINE) used as quick hack.
+  
+  rb_eval_string(evalcmd.toLatin1().data());
+return 0;
+}
+
+
+VALUE page_down() {
+  printf("page_down()\n");
+    
+  QTextCursor cursor = c_te->cursorForPosition(QPoint(0, 20));
+  int offset_y =  c_te->verticalScrollBar()->value()  + ((int)c_te->size().height()*0.9);
+  
+//  qDebug() << "scrollbar val:" << c_te->verticalScrollBar()->value() << " height:" <<  c_te->size().height() << "offset:" << offset_y << endl;
+  
+  
+  c_te->verticalScrollBar()->setValue(offset_y);
+
+  cursor = c_te->cursorForPosition(QPoint(0, ((int)(c_te->size().height()*0.2)) ));
+  int new_cursor_pos = cursor.position();
+
+  QString evalcmd = QString("$buffer.set_pos(%1);$buffer.jump(BEGINNING_OF_LINE)").arg(QString::number(new_cursor_pos));
+  rb_eval_string(evalcmd.toLatin1().data());
+  
+return 0;
+}
+
+
+
 VALUE top_where_cursor() {
   int cursorY = c_te->cursorRect().bottom();
   int offset_y =
@@ -407,6 +448,9 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("qt_get_buffer", qt_get_buffer, 0);
   rb_define_global_function("top_where_cursor", top_where_cursor, 0);
   rb_define_global_function("bottom_where_cursor", bottom_where_cursor, 0);
+  rb_define_global_function("page_down", page_down, 0);
+  rb_define_global_function("page_up", page_up, 0);
+
 
   VALUE qt_module = rb_define_module("Qt");
 #include "qt_keys.h"

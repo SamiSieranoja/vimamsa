@@ -69,11 +69,9 @@ $cnf['key_bindigs'] = {
     'VC l' => '$buffer.move(FORWARD_CHAR)',
     'VC j' => '$buffer.move(FORWARD_LINE)',
     'VC k' => '$buffer.move(BACKWARD_LINE)',
-    'VC pagedown' => '$buffer.move(:forward_page)',
-    'VC pagedown!' => 'top_where_cursor()',
-
-    'VC pageup' => '$buffer.move(:backward_page)', # TODO
-    'VC pageup!' => 'bottom_where_cursor()', # TODO
+    
+    'VC pagedown' => 'page_down',
+    'VC pageup' => 'page_up',
 
     'VC left' => '$buffer.move(BACKWARD_CHAR)',
     'VC right' => '$buffer.move(FORWARD_CHAR)',

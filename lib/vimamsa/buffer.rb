@@ -570,7 +570,7 @@ class Buffer < String
 
         Thread.new{ #TODO:Hackish solution
             sleep(0.2)
-            center_on_current_line
+#            center_on_current_line
         }
     end
 
