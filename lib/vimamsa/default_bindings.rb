@@ -44,6 +44,7 @@ reg_act(:invoke_replace, 'invoke_replace', '')
 reg_act(:diff_buffer, 'diff_buffer', '')
 
 reg_act(:invoke_grep_search, 'invoke_grep_search', '')
+reg_act(:update_file_index, 'update_file_index', '')
 
 
 #    'VC z z' => 'center_on_current_line',
@@ -56,10 +57,13 @@ bindkey 'B h', :history_switch_backwards
 bindkey 'B l', :history_switch_forwards
 #bindkey 'B z', :center_on_current_line
 bindkey 'B z', 'center_on_current_line();$at.set_mode(COMMAND)'
-bindkey 'B j', '$at.set_mode(COMMAND)'
-bindkey 'B esc', '$at.set_mode(COMMAND)'
-bindkey 'B return', '$at.set_mode(COMMAND)'
-bindkey 'B enter', '$at.set_mode(COMMAND)'
+bindkey 'B j', '$buffers.add_current_buf_to_history();$at.set_mode(COMMAND)'
+bindkey 'B esc', '$buffers.add_current_buf_to_history();$at.set_mode(COMMAND)'
+bindkey 'B return', '$buffers.add_current_buf_to_history();$at.set_mode(COMMAND)'
+bindkey 'B enter', '$buffers.add_current_buf_to_history();$at.set_mode(COMMAND)'
+
+
+
 bindkey 'B ;', '$buffer.jump_to_last_edit'
 bindkey 'B q', :jump_to_last_edit 
 bindkey 'B w', :jump_to_next_edit 
@@ -74,6 +78,8 @@ bindkey 'C , f', 'gui_file_finder'
 bindkey 'C , i t', 'insert_date'
 bindkey 'C , v', '$buffer.indent'
 bindkey 'C , , d', :savedebug
+bindkey 'C , , u', :update_file_index
+
 
 
 

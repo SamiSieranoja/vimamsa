@@ -10,6 +10,9 @@ $update_highlight = true
 
 class BufferList < Array
 
+
+    attr_reader :current_buf
+
     def <<(_buf)
         super
         $buffer = _buf
@@ -42,13 +45,15 @@ class BufferList < Array
         return buf_idx
     end
 
+    def add_current_buf_to_history()
+        @recent_ind = 0
+        $buffer_history << @current_buf
+        compact_buf_history()
+    end
+
     def set_current_buffer(buffer_i, update_history = true)
         buffer_i = self.size -1 if buffer_i > self.size
         buffer_i = 0 if buffer_i < 0
-        if update_history
-            @recent_ind = 0
-            $buffer_history << buffer_i
-        end
         $buffer = self[buffer_i]
         return if !$buffer
         @current_buf = buffer_i
@@ -57,6 +62,11 @@ class BufferList < Array
         if fpath and fpath.size > 50
             fpath = fpath[-50..-1]
         end
+
+        if update_history
+            add_current_buf_to_history
+        end
+
         set_window_title("Vimamsa - #{fpath}")
         $buffer.need_redraw!
     end
@@ -87,12 +97,19 @@ class BufferList < Array
     end
 
 
+    def compact_buf_history()
+        h={}
+        # Keep only first occurence in history
+        bh=$buffer_history.reverse.select {|x| r = h[x]==nil;h[x]=true;r}
+        $buffer_history = bh.reverse
+    end
 
     def close_buffer(buffer_i)
         return if self.size <= buffer_i
         self.slice!(buffer_i)
-        $buffer_history.collect {|x| r = x; r = x-1 if x > buffer_i;r = nil if x==buffer_i;r}.compact
+        $buffer_history = $buffer_history.collect {|x| r = x; r = x-1 if x > buffer_i;r = nil if x==buffer_i;r}.compact
 
+        #        Ripl.start :binding => binding
         @current_buf = 0 if @current_buf >= self.size
         if self.size==0
             self << Buffer.new("emptybuf\n")
@@ -570,7 +587,7 @@ class Buffer < String
 
         Thread.new{ #TODO:Hackish solution
             sleep(0.2)
-#            center_on_current_line
+            #            center_on_current_line
         }
     end
 

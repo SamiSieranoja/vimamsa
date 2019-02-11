@@ -4,8 +4,8 @@ def gui_file_finder()
     $select_keys = ['h', 'l', 'f', 'd', 's', 'a', 'g', 'z']
     #Thread.new{recursively_find_files}
     if $dir_list==nil
-#        recursively_find_files
-        $dirlt=Thread.new{recursively_find_files()}
+        #        recursively_find_files
+        $dirlt = Thread.new{recursively_find_files()}
         # t2 = Thread.new{1e6.to_i.times{|x| puts "Sleep #{x}"; 1e8.to_i.times{|y|y*3};sleep(1);$footest=1}}
         #        t.join
         #sleep(3.05)
@@ -14,6 +14,14 @@ def gui_file_finder()
     "gui_file_finder_select_callback",
     "gui_file_finder_update_callback")
     #method(:gui_file_finder_update_callback))
+end
+
+def update_file_index()
+    message("Start updating file index")
+    Thread.new{
+        recursively_find_files()
+        message("Finnish updating file index")
+    }
 end
 
 def recursively_find_files()
@@ -63,7 +71,7 @@ def filter_files(search_str)
     dir_hash.map  do |file, d|
         puts "D:#{d} #{file}"
     end
-#    Ripl.start :binding => binding
+    #    Ripl.start :binding => binding
     return dir_hash
 end
 
