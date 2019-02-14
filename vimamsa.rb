@@ -16,11 +16,5 @@ for arg in ARGV
 end
 
 Dir.chdir(scriptdir)
-#puts argexp.inspect
 exec(*argexp)
 
-#puts scriptdir
-#f=IO.popen(["ls", "/", "/home/", :err=>[:child, :out]])
-#f=IO.popen(argexp)
-#f.each{|line| puts line}
-#f.close

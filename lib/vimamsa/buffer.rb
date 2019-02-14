@@ -1333,7 +1333,7 @@ class Buffer < String
             puts bufc
         elsif get_file_type()=="ruby"
             #TODO:
-            cmd = "./ruby_formatter.rb -s 4 #{file.path}"
+            cmd = "./vendor/ruby_formatter.rb -s 4 #{file.path}"
             puts cmd
             system(cmd)
             system("cp #{file.path} /tmp/foob")

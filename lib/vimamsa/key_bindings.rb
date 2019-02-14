@@ -549,7 +549,6 @@ def match_key_conf(c, translated_c, event_type)
                     m2 = Regexp.new(m[1]).match(c)
                     if m2 != nil
                         eval_s = x.action.clone
-                        # eval_s.gsub!("<char>","'#{c}'") #TODO: remove
                         new_state = [x]
                         break
                     end
@@ -658,6 +657,8 @@ def handle_key_bindigs_action(action, c)
     end
 end
 
+# Experimental, try to clear modifiers when program loses focus
+# 
 # When pressing for example alt-tab, the program receives key press
 # event, loses focus and doesn't receive the key release event for alt.
 # So we need to clear modifiers after focus out event.
@@ -674,15 +675,7 @@ def focus_out
     # TODO: Clear key binding matching?
 end
 
-# def change_mode(mode)
-# debug("CHANGING MODE FROM #{$context[:mode]} TO #{mode}")
-# $context[:mode] = "C" if mode == COMMAND
-# $context[:mode] = "I" if mode == INSERT
-# $context[:mode] = "B" if mode == BROWSE
-# $context[:mode] = "V" if mode == VISUAL
-# end
 
-# $active_modifiers = {ctrl: false, shift: false,
 $keys_pressed = [] # TODO: create a queue
 
 def handle_key_event(event)
