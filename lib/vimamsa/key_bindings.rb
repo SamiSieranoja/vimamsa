@@ -30,7 +30,7 @@ def set_conf(id, val)
 end
 
 set_conf(:indent_based_on_last_line, true)
-$cnf[:extensions_to_open] = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m",".gd"]
+$cnf[:extensions_to_open] = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd"]
 
 
 $cnf['modes'] = { 'R' => 'READCHAR', 'M' => 'MINIBUFFER', 'C' => 'COMMAND', 'V' => 'VISUAL', 'I' => 'INSERT', 'B' => 'BROWSE' }
@@ -69,7 +69,7 @@ $cnf['key_bindigs'] = {
     'VC l' => '$buffer.move(FORWARD_CHAR)',
     'VC j' => '$buffer.move(FORWARD_LINE)',
     'VC k' => '$buffer.move(BACKWARD_LINE)',
-    
+
     'VC pagedown' => 'page_down',
     'VC pageup' => 'page_up',
 
@@ -412,8 +412,8 @@ end
 
 $action_list=[]
 def bindkey(key, action)
-#    $action_list << [action, key]
-    $action_list << {:action=>action,:key=>key}
+    #    $action_list << [action, key]
+    $action_list << {:action => action,:key => key}
 
 
     # dict_i = $key_bind_dict
@@ -646,7 +646,11 @@ def handle_key_bindigs_action(action, c)
         # debug("NameError with eval cmd #{action}: " + $!.to_s)
         # raise
     rescue Exception
-        crash("Error with action: #{action}: ")
+        if $!.class == SystemExit
+            exit
+        else
+            crash("Error with action: #{action}: ")
+        end
     end
 
     if action.class==String and !action.include?("set_next_command_count")

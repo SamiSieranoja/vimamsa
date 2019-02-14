@@ -284,7 +284,7 @@ def grep_cur_buffer(search_str)
     lines = $buffer.split("\n")
     r = Regexp.new(Regexp.escape(search_str), Regexp::IGNORECASE)
     fpath = $buffer.pathname.expand_path.to_s
-#    Ripl.start :binding => binding
+    #    Ripl.start :binding => binding
     res_str = ""
     lines.each_with_index{|l, i|
         if r.match(l)
@@ -319,12 +319,23 @@ def invoke_replace()
     start_minibuffer_cmd("", "",:buf_replace_string)
 end
 
+# Requires instr in form "FROM/TO"
+# Replaces all occurences of FROM with TO
 def buf_replace_string(instr)
     puts "buf_replace_string(instr=#{instr})"
 
-    instr = instr.gsub("'",".")
     a = instr.split("/")
-    if a.size == 2
+    if a.size != 2
+        return
+    end
+
+    if $buffer.visual_mode?
+        r = $buffer.get_visual_mode_range
+        txt = $buffer[r]
+        txt.gsub!(a[0], a[1])
+        $buffer.replace_range(r, txt)
+        $buffer.end_visual_mode
+    else
         repbuf = $buffer.to_s.clone
         repbuf.gsub!(a[0], a[1])
         tmppos = $buffer.pos

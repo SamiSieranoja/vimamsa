@@ -70,6 +70,7 @@ bindkey 'B w', :jump_to_next_edit
 
 bindkey 'C , , h', 'toggle_highlight'
 bindkey 'C , r r', :invoke_replace
+bindkey 'V , r r', :invoke_replace
 bindkey 'C , d', :diff_buffer
 bindkey 'C , g', :invoke_grep_search
 
