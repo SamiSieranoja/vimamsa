@@ -208,6 +208,7 @@ $cnf['key_bindigs'] = {
     'C ctrl!' => '$at.set_mode(INSERT)',
 
     # Macros
+    # (experimental, may not work correctly)
     'C q a' => '$macro.start_recording("a")',
     'C q($macro.is_recording==true) ' => '$macro.end_recording', # TODO
     # 'C q'=> '$macro.end_recording', #TODO
@@ -217,11 +218,7 @@ $cnf['key_bindigs'] = {
     'C , m s' => '$macro.save_macro("a")',
     'C , t r' => 'run_tests()',
 
-    # 'C <number>'=> 'repeat_next(<number>)',
-
-    # Text transform
-    # 'C g U w' => 'upper_case(WORD)', #TODO
-    'C .' => 'repeat_last_action',
+    'C .' => 'repeat_last_action', # TODO
     'C ;' => 'repeat_last_find',
     'CV Q' => '_quit',
     'CV , R' => 'restart_application',
@@ -231,7 +228,7 @@ $cnf['key_bindigs'] = {
     'I <char>' => '$buffer.insert_char(<char>)',
     'I esc' => '$at.set_mode(COMMAND)',
 
-    'I ctrl-d' => '$buffer.delete(CURRENT_CHAR_FORWARD)',
+    'I ctrl-d' => '$buffer.delete2(:to_word_end)',
 
     # INSERT MODE: Moving
     'I ctrl-a' => '$buffer.jump(BEGINNING_OF_LINE)',
@@ -242,15 +239,8 @@ $cnf['key_bindigs'] = {
     'I ctrl-e' => '$buffer.jump(END_OF_LINE)', # context: mode:I, buttons down: {C}
     'I alt-f' => '$buffer.jump_word(FORWARD,WORD_START)',
     'I alt-b' => '$buffer.jump_word(BACKWARD,WORD_START)',
-    # 'I l{S,C}'=> 'jump_line_end', #context: mode:I, buttons down: {C}
-
 
     'I tab' => '$buffer.insert_char("    ")',
-
-
-    # 'I Ctrl(j l)' # Press and hold control, press J, press l
-    # 'I Ctrl(j(l))'# Press and hold control, press and hold J, press and hold L
-
 }
 
 class State
@@ -446,13 +436,6 @@ def bindkey(key, action)
         $at.cur_state.action = action
         $at.cur_state = $at.root
     }
-end
-
-if __FILE__ == $PROGRAM_NAME
-
-    build_key_bindings_tree
-    puts $at
-    exit
 end
 
 # ref: http://qt-project.org/doc/qt-5.0/qtcore/qt.html#Key-enum
