@@ -1,0 +1,14 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/">
+  <file>images/mac/exportpdf.png</file>
+  <file>images/mac/filenew.png</file>
+  <file>images/mac/fileopen.png</file>
+  <file>images/mac/fileprint.png</file>
+  <file>images/mac/filesave.png</file>
+  <file>images/default/exportpdf.png</file>
+  <file>images/default/filenew.png</file>
+  <file>images/default/fileopen.png</file>
+  <file>images/default/fileprint.png</file>
+  <file>images/default/filesave.png</file>
+</qresource>
+</RCC>

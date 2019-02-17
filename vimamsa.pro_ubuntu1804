@@ -1,0 +1,23 @@
+QT += widgets
+QT += concurrent
+qtHaveModule(printsupport): QT += printsupport
+QMAKE_CXXFLAGS = -fpermissive
+
+TEMPLATE = app
+TARGET = vimamsa
+
+HEADERS = editor.h highlighter.h selectwindow.h fuzzy_string_dist.h
+SOURCES = editor.cpp main.cpp ruby_ext.c highlighter.cpp selectwindow.cpp fuzzy_string_dist.cpp
+
+RESOURCES += vimamsa.qrc
+build_all:!build_pass {
+    CONFIG -= build_all
+    CONFIG += release
+}
+CONFIG += debug
+CONFIG -= release
+
+unix:LIBS += -lruby-2.5 -lpthread -lrt -ldl -lcrypt -lm
+unix:INCLUDEPATH += /usr/include/x86_64-linux-gnu/ruby-2.5.0/ /usr/include/ruby-2.5.0/  
+
+
