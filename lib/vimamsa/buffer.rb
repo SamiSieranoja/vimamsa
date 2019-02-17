@@ -1282,6 +1282,10 @@ class Buffer < String
         return self.to_s
     end
 
+    def save_as()
+        qt_file_saveas()
+    end
+
     #  https://github.com/manveru/ver
     def save()
         if !@fname

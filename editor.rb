@@ -748,6 +748,13 @@ def vimamsa_init
     buffer = Buffer.new(read_file("",$fname),$fname)
     $buffers << buffer
     puts $at # key map
+    set_qt_style(1)
+    $search_dirs << File.expand_path('~/Documents/')
+    
+    # Limit file search to these extensions:
+    $find_extensions =[".txt", ".h", ".c", ".cpp", ".hpp", ".rb"]
+
+
     dotfile = read_file("", '~/.vimamsarc')
     eval(dotfile) if dotfile
     render_buffer($buffer, 1)

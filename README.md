@@ -3,7 +3,7 @@ Vimamsa - Vi/Vim inspired experimental GUI-oriented text editor being written in
 
 Status: 
  - Currently in alpha level.  
- - Personally, I've managed to mostly move away from VIm to Vimamsa as my main editor, but the program still needs work to be usable for someone who doesn't know the source code.
+ - Personally, I've managed to mostly move away from using VIm to Vimamsa as my main editor, but the program still needs work to be usable for someone who doesn't know the source code.
 
 Any questions, comments or suggestions, please send email to: sami.sieranoja@gmail.com
 
@@ -36,6 +36,8 @@ RUN:
 ```
 ./vimamsa.rb
 ```
+
+For customization, edit dot_vimamsarc.rb and copy to ~/.vimamsarc
 
 ## Features
 

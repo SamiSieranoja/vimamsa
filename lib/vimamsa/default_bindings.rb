@@ -74,15 +74,12 @@ bindkey 'V , r r', :invoke_replace
 bindkey 'C , d', :diff_buffer
 bindkey 'C , g', :invoke_grep_search
 
-bindkey 'C , s', '$at.set_mode("S");gui_select_buffer'
 bindkey 'C , f', 'gui_file_finder'
-bindkey 'C , i t', 'insert_date'
 bindkey 'C , v', '$buffer.indent'
 bindkey 'C , , d', :savedebug
 bindkey 'C , , u', :update_file_index
 
-
-
+bindkey 'C , s a', '$buffer.save_as()'
 
 #bindkey 'C z h', :history_switch_backwards
 #bindkey 'C z l', :history_switch_forwards

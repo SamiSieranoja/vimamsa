@@ -1,3 +1,4 @@
+require 'parallel'
 
 def gui_file_finder()
     l = []
@@ -26,8 +27,8 @@ end
 
 def recursively_find_files()
     debug("START find files")
-    puts "START find files"
     dlist=[]
+    
     for d in $search_dirs
         debug("FIND FILEs IN #{d}")
         dlist = dlist + Dir.glob("#{d}/**/*").select { |e| File.file?(e) and $find_extensions.include?(File.extname(e))}
@@ -39,8 +40,7 @@ def recursively_find_files()
     debug("END find files")
     return $dir_list
 end
-# sudo gem2.0 install parallel
-require 'parallel'
+
 def filter_files(search_str)
     #dir_list = Dir.glob('/home/sjs/notes/**/*').select{ |e| File.file? e }
     #puts dir_list.inspect
