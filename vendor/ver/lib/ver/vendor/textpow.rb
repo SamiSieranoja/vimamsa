@@ -76,7 +76,7 @@ module Textpow
       when /^#(.+)/
         return unless @syntax.repository
         @syntax.repository[Regexp.last_match(1).to_sym]
-      when '$self', '$base'
+      when "$self", "$base"
         @syntax
       else
         @syntax.syntaxes[@proxy]
@@ -101,7 +101,7 @@ module Textpow
         when /\.rb$/i
           eval(File.read(filename))
         else
-          raise ArgumentError, 'Unknown filename extension'
+          raise ArgumentError, "Unknown filename extension"
         end
 
       SyntaxNode.new(table, nil, name_space) if table
@@ -181,10 +181,10 @@ module Textpow
 
       patterns.each do |pattern|
         @patterns << if include = pattern[:include]
-                       SyntaxProxy.new(include, syntax)
-                     else
-                       SyntaxNode.new(pattern, syntax, @name_space)
-                     end
+          SyntaxProxy.new(include, syntax)
+        else
+          SyntaxNode.new(pattern, syntax, @name_space)
+        end
       end
     end
 
@@ -200,7 +200,7 @@ module Textpow
         next if range_first == range_last
 
         all_starts << [range_first, group, match_name]
-        all_ends   << [range_last, -group, match_name]
+        all_ends << [range_last, -group, match_name]
       end
 
       starts = all_starts.sort.reverse

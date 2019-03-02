@@ -24,6 +24,7 @@ sudo gem2.5 install ripl ripl-multi_line # For debug
 
 Packages for optional features:
 ```
+sudo gem2.5 install rufo # Ruby auto indent
 sudo apt install ack-grep clang-format
 ```
 
