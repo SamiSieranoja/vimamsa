@@ -18,7 +18,7 @@ Instructions for Ubuntu 18.04:
 Install requirements:
 ```
 sudo apt install qtbase5-dev qtbase5-dev-tools qt5-qmake ruby2.5-dev ruby2.5
-sudo gem2.5 install parallel
+sudo gem2.5 install parallel differ
 sudo gem2.5 install ripl ripl-multi_line # For debug
 ```
 

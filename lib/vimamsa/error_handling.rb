@@ -1,3 +1,5 @@
+require 'fileutils'
+
 def log_error(message)
   puts "====== ERROR ====="
   puts caller[0]
@@ -7,20 +9,22 @@ def log_error(message)
   #TODO
 end
 
-def crash(message)
+def crash(message,e=nil)
   puts "FATAL ERROR:#{message}"
   puts caller().join("\n")
-  savedebug(message)
+  savedebug(message,e)
   _quit()
 end
 
-def savedebug(message)
+def savedebug(message,e)
+  FileUtils.mkdir_p('debug')
   puts "savedebug()"
   dbginfo = {}
   dbginfo["message"] = message
   dbginfo["debuginfo"] = $debuginfo
   dbginfo["trace"] = caller()
-  dbginfo["trace_str"] = caller().join("\n")
+  dbginfo["trace"] = e.backtrace() if e
+  dbginfo["trace_str"] = dbginfo["trace"].join("\n")
   dbginfo["edit_history"] = $buffer.edit_history
   dbginfo["cnf"] = $cnf
   dbginfo["register"] = $register

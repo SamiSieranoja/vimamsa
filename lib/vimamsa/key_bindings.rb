@@ -125,8 +125,8 @@ $cnf["key_bindigs"] = {
   "VC O" => "$buffer.jump(END_OF_LINE)",
   "VC $" => "$buffer.jump(END_OF_LINE)",
 
-  "C o" => '$buffer.jump(END_OF_LINE);$buffer.insert_char("\n");$at.set_mode(INSERT)',
-  "C X" => '$buffer.jump(END_OF_LINE);$buffer.insert_char("\n");',
+  "C o" => '$buffer.jump(END_OF_LINE);$buffer.insert_txt("\n");$at.set_mode(INSERT)',
+  "C X" => '$buffer.jump(END_OF_LINE);$buffer.insert_txt("\n");',
   "C A" => "$buffer.jump(END_OF_LINE);$at.set_mode(INSERT)",
   "C I" => "$buffer.jump(FIRST_NON_WHITESPACE);$at.set_mode(INSERT)",
   "C a" => "$buffer.move(FORWARD_CHAR);$at.set_mode(INSERT)",
@@ -142,7 +142,7 @@ $cnf["key_bindigs"] = {
   "C v" => "$buffer.start_visual_mode",
   "C p" => "$buffer.paste(AFTER)", # TODO: implement as replace for visual mode
   "C P" => "$buffer.paste(BEFORE)", # TODO: implement as replace for visual mode
-  "C space <char>" => "$buffer.insert_char(<char>)",
+  "C space <char>" => "$buffer.insert_txt(<char>)",
   "C y y" => "$buffer.copy_line",
   "C y O" => "$buffer.copy(:to_line_end)",
   "C y 0" => "$buffer.copy(:to_line_start)",
@@ -215,7 +215,7 @@ $cnf["key_bindigs"] = {
   "I ctrl!" => "$at.set_mode(COMMAND)",
   "I shift!" => "$at.set_mode(COMMAND)",
   "C shift!" => "save_file",
-  "I <char>" => "$buffer.insert_char(<char>)",
+  "I <char>" => "$buffer.insert_txt(<char>)",
   "I esc" => "$at.set_mode(COMMAND)",
 
   "I ctrl-d" => "$buffer.delete2(:to_word_end)",
@@ -230,7 +230,7 @@ $cnf["key_bindigs"] = {
   "I alt-f" => "$buffer.jump_word(FORWARD,WORD_START)",
   "I alt-b" => "$buffer.jump_word(BACKWARD,WORD_START)",
 
-  "I tab" => '$buffer.insert_char("  ")',
+  "I tab" => '$buffer.insert_txt("  ")',
 }
 
 class State
@@ -393,7 +393,7 @@ $action_list = []
 
 def bindkey(key, action)
   #    $action_list << [action, key]
-#  Ripl.start :binding => binding if key == "C , g"
+  #  Ripl.start :binding => binding if key == "C , g"
   $action_list << { :action => action, :key => key }
 
   # dict_i = $key_bind_dict
@@ -620,11 +620,13 @@ def handle_key_bindigs_action(action, c)
     # rescue NameError
     # debug("NameError with eval cmd #{action}: " + $!.to_s)
     # raise
-  rescue Exception
+  rescue Exception => e
+#    Ripl.start :binding => binding
+    puts e.backtrace
     if $!.class == SystemExit
       exit
     else
-      crash("Error with action: #{action}: ")
+      crash("Error with action: #{action}: ", e)
     end
   end
 

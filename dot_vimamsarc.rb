@@ -1,7 +1,7 @@
 require "date"
 
 def insert_date()
-  $buffer.insert_char("#{DateTime.now().strftime("==========\n%d.%m.%Y")}\n")
+  $buffer.insert_txt("#{DateTime.now().strftime("==========\n%d.%m.%Y")}\n")
 end
 
 # In command mode (C), sequentially press keys ", i t"

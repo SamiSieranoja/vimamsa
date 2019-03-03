@@ -8,6 +8,14 @@ $buffer_history = [0]
 
 $update_highlight = true
 
+module Differ
+  class Diff
+    def get_raw_array()
+      return @raw
+    end
+  end
+end
+
 class BufferList < Array
   attr_reader :current_buf
 
@@ -325,7 +333,22 @@ class Buffer < String
   end
 
   def update_index(pos, changeamount)
+    #            puts "pos #{pos}, changeamount #{changeamount}, @pos #{@pos}"
+    if @pos > pos + 1 && changeamount > 0
+      # @pos is after addition
+      set_pos(@pos + changeamount)
+    elsif @pos > pos && changeamount < 0 && @pos < pos - changeamount
+      # @pos is between removal
+      #      puts "@pos is between removal"
+      set_pos(pos)
+    elsif @pos > pos && changeamount < 0 && @pos >= pos - changeamount
+      # @pos is after removal
+      #      puts "@pos is after removal"
+      set_pos(@pos + changeamount)
+    end
+
     @edit_pos_history.collect! { |x| r = x if x <= pos; r = x + changeamount if x > pos; r }
+    # TODO: handle between removal case
     for k in @marks.keys
       #            puts "change(?): pos=#{pos}, k=#{k}, #{@marks[k]}, #{changeamount}"
       if @marks[k] > pos
@@ -474,7 +497,7 @@ class Buffer < String
 
   def replace_range(range, text)
     delete_range(range.first, range.last)
-    insert_char_at(text, range.begin)
+    insert_txt_at(text, range.begin)
   end
 
   def current_line_range()
@@ -532,15 +555,15 @@ class Buffer < String
   end
 
   def update_line_ends(pos, changeamount, changestr)
-    puts @line_ends.inspect
-    puts pos
+#    puts @line_ends.inspect
+#    puts pos
     if changeamount > -1
       changeamount = changestr.size
       i = scan_indexes(changestr, /\n/)
       i.collect! { |x| x + pos }
-      puts "new LINE ENDS:#{i.inspect}"
+#      puts "new LINE ENDS:#{i.inspect}"
     end
-    puts "change:#{changeamount}"
+#    puts "change:#{changeamount}"
     @line_ends.collect! { |x|
       r = nil
       r = x if x < pos
@@ -1009,8 +1032,8 @@ class Buffer < String
       # TODO: replace all whitespace between lines with ' '
       jump(END_OF_LINE)
       delete(CURRENT_CHAR_FORWARD)
-      #insert_char(' ',AFTER)
-      insert_char(" ", BEFORE)
+      #insert_txt(' ',AFTER)
+      insert_txt(" ", BEFORE)
     end
   end
 
@@ -1046,14 +1069,14 @@ class Buffer < String
     puts "DELTAS:#{$buffer.deltas.inspect} "
   end
 
-  def insert_char_at(c, pos)
+  def insert_txt_at(c, pos)
     c = c.force_encoding("UTF-8");  #TODO:correct?
     c = "\n" if c == "\r"
     add_delta([pos, INSERT, c.size, c], true)
     calculate_line_and_column_pos
   end
 
-  def insert_char(c, mode = BEFORE)
+  def insert_txt(c, mode = BEFORE)
     #Sometimes we get ASCII-8BIT although actually UTF-8  "incompatible character encodings: UTF-8 and ASCII-8BIT (Encoding::CompatibilityError)"
     c = c.force_encoding("UTF-8");  #TODO:correct?
 
@@ -1082,6 +1105,38 @@ class Buffer < String
     calculate_line_and_column_pos
     #need_redraw!
     #@pos += c.size
+  end
+
+  # Update buffer contents to newstr
+  # Change by taking diff of old/new content
+  def update_content(newstr)
+    diff = Differ.diff_by_char(newstr, self.to_s)
+
+    da = diff.get_raw_array
+
+    pos = 0
+    posA = 0
+    posB = 0
+    deltas = []
+
+    for x in da
+      if x.class == String
+        posA += x.size
+        posB += x.size
+      elsif x.class == Differ::Change
+        if x.insert?
+          deltas << [posB, INSERT, x.insert.size, x.insert.clone]
+          posB += x.insert.size
+        elsif x.delete?
+          posA += x.delete.size
+          deltas << [posB, DELETE, x.delete.size]
+        end
+      end
+    end
+    for d in deltas
+      add_delta(d, true)
+    end
+    # $buffer.update_content(IO.read('test.txt'))
   end
 
   def need_redraw!
@@ -1114,7 +1169,7 @@ class Buffer < String
       puts "------------"
       #$buffer.move(FORWARD_LINE)
       #set_pos(l.end+1)
-      insert_char_at(text, l.end + 1)
+      insert_txt_at(text, l.end + 1)
       set_pos(l.end + 1)
     else
       if at_end_of_buffer? or at_end_of_line? or at == BEFORE
@@ -1122,16 +1177,16 @@ class Buffer < String
       else
         pos = @pos + 1
       end
-      insert_char_at(text, pos)
+      insert_txt_at(text, pos)
       set_pos(pos + text.size)
     end
     #TODO: AFTER does not work
-    #insert_char($clipboard[-1],AFTER)
+    #insert_txt($clipboard[-1],AFTER)
     #recalc_line_ends #TODO: bug when run twice?
   end
 
   def insert_new_line()
-    insert_char("\n")
+    insert_txt("\n")
   end
 
   def delete_line()
@@ -1309,8 +1364,8 @@ class Buffer < String
     else
       return
     end
-    $buffer.set_content(bufc)
-    set_pos(tmppos)
+    $buffer.update_content(bufc)
+    #    set_pos(tmppos)
     $do_center = 1
     file.close; file.unlink
     infile.close; infile.unlink

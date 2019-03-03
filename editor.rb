@@ -8,6 +8,9 @@ require "openssl"
 require "json"
 load "vendor/ver/lib/ver/vendor/textpow.rb"
 
+#$LOAD_PATH.unshift("vendor/differ/lib")
+require "differ"
+
 Encoding.default_external = Encoding::UTF_8
 Encoding.default_internal = Encoding::UTF_8
 
@@ -384,7 +387,7 @@ def minibuffer_new_char(c)
     raise "Should not come here"
     puts "MINIBUFFER END"
   else
-    $minibuffer.insert_char(c)
+    $minibuffer.insert_txt(c)
     puts "MINIBUFFER: #{c}"
   end
   #$buffer = $minibuffer
