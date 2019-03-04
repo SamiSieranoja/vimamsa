@@ -8,7 +8,6 @@ require "openssl"
 require "json"
 load "vendor/ver/lib/ver/vendor/textpow.rb"
 
-#$LOAD_PATH.unshift("vendor/differ/lib")
 require "differ"
 
 Encoding.default_external = Encoding::UTF_8

@@ -290,12 +290,12 @@ class Buffer < String
   end
 
   #TODO: change to apply=true as default
-  def add_delta(delta, apply = false)
+  def add_delta(delta, apply = false, auto_update_cpos = false)
     return if !is_delta_ok(delta)
     @edit_version += 1
     @redo_stack = []
     if apply
-      delta = run_delta(delta)
+      delta = run_delta(delta, auto_update_cpos)
     else
       @deltas << delta
     end
@@ -303,7 +303,8 @@ class Buffer < String
     reset_larger_cpos #TODO: correct here?
   end
 
-  def run_delta(delta)
+  def run_delta(delta, auto_update_cpos = false)
+    # auto_update_cpos: In some cases position of cursor should be updated automatically based on change to buffer (delta). In other cases this is handled by the action that creates the delta.
     pos = delta[0]
     if @edit_pos_history.any? and (@edit_pos_history.last - pos).abs <= 2
       @edit_pos_history.pop
@@ -316,11 +317,13 @@ class Buffer < String
       @deltas << delta
       update_index(pos, -delta[2])
       update_line_ends(pos, -delta[2], delta[3])
+      update_cursor_pos(pos, -delta[2]) if auto_update_cpos
     elsif delta[1] == INSERT
       self.insert(delta[0], delta[3])
       @deltas << delta
       puts [pos, +delta[2]].inspect
       update_index(pos, +delta[2])
+      update_cursor_pos(pos, +delta[2]) if auto_update_cpos
       update_line_ends(pos, +delta[2], delta[3])
     end
     puts "DELTA=#{delta.inspect}"
@@ -332,21 +335,23 @@ class Buffer < String
     return delta
   end
 
-  def update_index(pos, changeamount)
-    #            puts "pos #{pos}, changeamount #{changeamount}, @pos #{@pos}"
+  # Update cursor position after change in buffer contents.
+  # e.g. after processing with external command like indenter
+  def update_cursor_pos(pos, changeamount)
     if @pos > pos + 1 && changeamount > 0
       # @pos is after addition
-#      set_pos(@pos + changeamount) #TODO: problematic
+      set_pos(@pos + changeamount)
     elsif @pos > pos && changeamount < 0 && @pos < pos - changeamount
       # @pos is between removal
-      #      puts "@pos is between removal"
-#      set_pos(pos)
+      set_pos(pos)
     elsif @pos > pos && changeamount < 0 && @pos >= pos - changeamount
       # @pos is after removal
-      #      puts "@pos is after removal"
-#      set_pos(@pos + changeamount)
+      set_pos(@pos + changeamount)
     end
+  end
 
+  def update_index(pos, changeamount)
+    # puts "pos #{pos}, changeamount #{changeamount}, @pos #{@pos}"
     @edit_pos_history.collect! { |x| r = x if x <= pos; r = x + changeamount if x > pos; r }
     # TODO: handle between removal case
     for k in @marks.keys
@@ -434,11 +439,18 @@ class Buffer < String
 
   def comment_linerange(r)
     com_str = get_com_str()
-    #r=$buffer.line_range($buffer.lpos, 2)
-    lines = $buffer[r].split(/(\n)/).each_slice(2).map { |x| x[0] }
-    #TODO: .lines ?
-    mod = lines.collect { |x| "#{com_str}#{x}\n" }.join()
-    #Ripl.start :binding => binding
+    #lines = $buffer[r].split(/(\n)/).each_slice(2).map { |x| x[0] }
+    lines = $buffer[r].lines
+    mod = ""
+    lines.each { |line|
+      m = line.match(/^(\s*)(\S.*)/)
+      if m == nil or m[2].size == 0
+        ret = line
+      elsif m[2].size > 0
+        ret = "#{m[1]}#{com_str} #{m[2]}\n"
+      end
+      mod << ret
+    }
     replace_range(r, mod)
   end
 
@@ -458,7 +470,8 @@ class Buffer < String
     if visual_mode?
       (startpos, endpos) = get_visual_mode_range2
       first = get_line_start(startpos)
-      last = get_line_end(endpos)
+      #      last = get_line_end(endpos)
+      last = get_line_end(endpos - 1)
       if op == :comment
         comment_linerange(first..last)
       elsif op == :uncomment
@@ -555,15 +568,15 @@ class Buffer < String
   end
 
   def update_line_ends(pos, changeamount, changestr)
-#    puts @line_ends.inspect
-#    puts pos
+    #    puts @line_ends.inspect
+    #    puts pos
     if changeamount > -1
       changeamount = changestr.size
       i = scan_indexes(changestr, /\n/)
       i.collect! { |x| x + pos }
-#      puts "new LINE ENDS:#{i.inspect}"
+      #      puts "new LINE ENDS:#{i.inspect}"
     end
-#    puts "change:#{changeamount}"
+    #    puts "change:#{changeamount}"
     @line_ends.collect! { |x|
       r = nil
       r = x if x < pos
@@ -1134,7 +1147,7 @@ class Buffer < String
       end
     end
     for d in deltas
-      add_delta(d, true)
+      add_delta(d, true, true)
     end
     # $buffer.update_content(IO.read('test.txt'))
   end
