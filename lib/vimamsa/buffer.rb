@@ -336,15 +336,15 @@ class Buffer < String
     #            puts "pos #{pos}, changeamount #{changeamount}, @pos #{@pos}"
     if @pos > pos + 1 && changeamount > 0
       # @pos is after addition
-      set_pos(@pos + changeamount)
+#      set_pos(@pos + changeamount) #TODO: problematic
     elsif @pos > pos && changeamount < 0 && @pos < pos - changeamount
       # @pos is between removal
       #      puts "@pos is between removal"
-      set_pos(pos)
+#      set_pos(pos)
     elsif @pos > pos && changeamount < 0 && @pos >= pos - changeamount
       # @pos is after removal
       #      puts "@pos is after removal"
-      set_pos(@pos + changeamount)
+#      set_pos(@pos + changeamount)
     end
 
     @edit_pos_history.collect! { |x| r = x if x <= pos; r = x + changeamount if x > pos; r }
