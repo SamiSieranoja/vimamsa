@@ -10,7 +10,7 @@ end
 
 $actions = {}
 
-def reg_act(id, callfunc, name)
+def reg_act(id, callfunc, name = "")
   if callfunc.class == Proc
     a = Action.new(id, name, callfunc)
   else
@@ -41,7 +41,12 @@ def search_actions_update_callback(search_str = "")
   #    item_list = $actions.collect {|x| x[1].id.to_s}
   return [] if search_str == ""
   item_list = $action_list.collect { |x|
-    r = { :str => x[:action].to_s, :key => x[:key], :action => x[:action] }
+    actname = x[:action].to_s
+    if x[:action].class == Symbol
+      mn = $actions[x[:action]].method_name
+      actname = mn if mn.size > 0
+    end
+    r = { :str => actname, :key => x[:key], :action => x[:action] }
   }
 
   a = filter_items(item_list, 0, search_str)
@@ -56,12 +61,10 @@ def search_actions_update_callback(search_str = "")
 end
 
 def search_actions_select_callback(search_str)
-  #    Ripl.start :binding => binding
   #    acc = $item_list[0][0].to_s
   item = $item_list[0][2]
-  acc = item[0][1]
+  acc = item[0][:action]
 
-  #    acc1 = $item_list[0][1]
   puts "Selected:" + acc.to_s
   if acc.class == String
     eval(acc)
@@ -79,7 +82,6 @@ def filter_items(item_list, item_key, search_str)
     [item, srn_dst(search_str, item[:str])]
   end
   scores.sort_by! { |x| -x[1] }
-  #    Ripl.start :binding => binding
   puts scores.inspect
   scores = scores[0..30]
 

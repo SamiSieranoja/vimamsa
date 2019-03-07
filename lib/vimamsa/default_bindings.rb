@@ -39,10 +39,18 @@ reg_act(:center_on_current_line, "center_on_current_line", "")
 reg_act(:jump_to_next_edit, "jump_to_next_edit", "")
 reg_act(:jump_to_last_edit, "jump_to_last_edit", "")
 
+
+reg_act :open_file_dialog, "open_file_dialog", "Open file"
+bindkey "C , f o"  , :open_file_dialog
+bindkey "CI ctrl-o" , :open_file_dialog
+
+reg_act :minibuffer_end, proc{minibuffer_end}
+bindkey "M return", :minibuffer_end
+
 reg_act(:invoke_replace, "invoke_replace", "")
 reg_act(:diff_buffer, "diff_buffer", "")
 
-reg_act(:invoke_grep_search, "invoke_grep_search", "")
+reg_act(:invoke_grep_search, proc{invoke_grep_search}, "")
 #reg_act(:update_file_index, 'update_file_index', '')
 
 reg_act :update_file_index, proc { update_file_index }, "Update file index"
@@ -51,6 +59,9 @@ reg_act :update_file_index, proc { update_file_index }, "Update file index"
 
 bindkey "C , , f", :file_finder
 bindkey "VC h", :e_move_backward_char
+
+
+bindkey "C , , ." , :backup_all_buffers
 
 bindkey "C z ", "$at.set_mode(BROWSE)"
 bindkey "B h", :history_switch_backwards

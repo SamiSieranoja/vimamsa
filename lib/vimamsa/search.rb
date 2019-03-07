@@ -31,6 +31,8 @@ class Search
         @cur_search_i = @search_indexes.find_index(startpos)
       end
       @buffer.set_pos(@search_indexes[@cur_search_i])
+    else
+      return false
     end
   end
 

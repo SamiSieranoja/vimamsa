@@ -485,7 +485,7 @@ class Buffer < String
     com_str = get_com_str()
     #r=$buffer.line_range($buffer.lpos, 2)
     lines = $buffer[r].split(/(\n)/).each_slice(2).map { |x| x[0] }
-    mod = lines.collect { |x| x.sub(/^(\s*)(#{com_str})/, '\1') + "\n" }.join()
+    mod = lines.collect { |x| x.sub(/^(\s*)(#{com_str}\s?)/, '\1') + "\n" }.join()
     replace_range(r, mod)
   end
 
@@ -866,7 +866,9 @@ class Buffer < String
     #wem = scan_marks(@pos,@pos+200,/(?<=\p{Word})[^\p{Word}]/,-1)
     #wsm = scan_marks(@pos-200,@pos,/(?<=[^\p{Word}])\p{Word}/)
     wem = scan_marks(@pos, @pos + 200, /(?<=\S)\s/, -1)
-    wsm = scan_marks(@pos - 200, @pos, /(?<=\s)\S/)
+    wsm = scan_marks(@pos - 200, @pos, /((?<=\s)\S)|^\S/)
+    
+    # Ripl.start :binding => binding
     word_start = wsm[-1]
     word_end = wem[0]
     word_start = pos if word_start == nil

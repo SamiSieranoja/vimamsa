@@ -281,12 +281,12 @@ def grep_cur_buffer(search_str)
   puts "grep_cur_buffer(search_str)"
   lines = $buffer.split("\n")
   r = Regexp.new(Regexp.escape(search_str), Regexp::IGNORECASE)
-  fpath = $buffer.pathname.expand_path.to_s
-  #    Ripl.start :binding => binding
+  fpath = ""
+  fpath = $buffer.pathname.expand_path.to_s+":" if $buffer.pathname
   res_str = ""
   lines.each_with_index { |l, i|
     if r.match(l)
-      res_str << "#{fpath}:#{i + 1}:#{l}\n"
+      res_str << "#{fpath}#{i + 1}:#{l}\n"
     end
   }
   create_new_file(nil, res_str)
@@ -354,7 +354,7 @@ end
 
 def execute_search(input_str)
   $search = Search.new
-  $search.set(input_str, "simple", $buffer)
+  return $search.set(input_str, "simple", $buffer)
 end
 
 def execute_command(input_str)
@@ -371,7 +371,7 @@ def minibuffer_end()
   puts "MINIBUFFER END2"
   $at.set_mode(COMMAND)
   minibuffer_input = $minibuffer.to_s[0..-2]
-  $minibuffer.call_func.call(minibuffer_input)
+  return $minibuffer.call_func.call(minibuffer_input)
 end
 
 def minibuffer_cancel()

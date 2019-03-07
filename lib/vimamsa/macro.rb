@@ -1,5 +1,7 @@
 
-class Macro < Struct.new(:recording, :recorded_evals)
+class Macro
+  attr_reader :recorded_evals, :recording
+
   def initialize()
     @recording = false
     @recorded_evals = {}
@@ -11,6 +13,10 @@ class Macro < Struct.new(:recording, :recorded_evals)
     @recording = true
     @current_name = name
     @current_recording = []
+    message("Start recording macro [#{name}]")
+
+    # Returning false prevents from putting start_recording to start of macro
+    return false
   end
 
   def end_recording()
@@ -18,6 +24,9 @@ class Macro < Struct.new(:recording, :recorded_evals)
       @recorded_evals[@current_name] = @current_recording
       @current_name = @current_recording = nil
       @recording = false
+      message("Stop recording macro")
+    else
+      message("Not recording macro")
     end
   end
 
@@ -36,12 +45,26 @@ class Macro < Struct.new(:recording, :recorded_evals)
   end
 
   def run_macro(name)
-    m = @recorded_evals[name]
-    if m.kind_of?(Array) and m.any?
+    if $macro.is_recording == true
+      message("Can't run a macro that runs a macro (recursion risk)")
+      return false
+    end
+    message("Start running macro [#{name}]")
+    acts = @recorded_evals[name]
+    if acts.kind_of?(Array) and acts.any?
       set_last_command({ method: $macro.method("run_macro"), params: [name] })
-      eval_str = m.join(";")
-      debug(eval_str)
-      eval(eval_str)
+      #
+      # Ripl.start :binding => binding
+      for a in acts
+        ret = exec_action(a)
+        if ret == false
+          message("Error while running macro")
+          break
+        end
+      end
+      # eval_str = m.join(";")
+      # debug(eval_str)
+      # eval(eval_str)
     end
   end
 

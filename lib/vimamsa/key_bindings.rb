@@ -40,10 +40,9 @@ $cnf["key_bindigs"] = {
   # File handling
   "C ctrl-s" => "save_file",
   "C W" => "save_file",
-  #    'C , s a'=> 'save_file_as', #TODO
-  "C , f o" => "open_file_dialog",
-  "C , o" => "open_file_dialog",
-  "CI ctrl-o" => "open_file_dialog",
+  # "C , f o" => "open_file_dialog",
+  # "C , o" => "open_file_dialog",
+  # "CI ctrl-o" => "open_file_dialog",
 
   # Buffer handling
   "C B" => "$buffers.switch",
@@ -55,11 +54,11 @@ $cnf["key_bindigs"] = {
   "C , b" => '$at.set_mode("S");gui_select_buffer',
   "C , n b" => "create_new_file()",
   "C , ." => "$buffer.backup()",
-  "C , , ." => "backup_all_buffers()",
+  # "C , , ." => "backup_all_buffers()",
   "C , a" => "invoke_ack_search()",
-  "C , , s" => "search_actions()",
+  "VC , , s" => "search_actions()",
 
-  "C enter" => "$buffer.get_cur_word()",
+  "C enter" => "$buffer.get_cur_nonwhitespace_word()",
   "C return" => "$buffer.get_cur_nonwhitespace_word()",
 
   # MOVING
@@ -102,7 +101,7 @@ $cnf["key_bindigs"] = {
   # 'VC :' => 'invoke_command', #TODO
   "VC , e" => "invoke_command", # Currently eval
   "M enter" => "minibuffer_end()",
-  "M return" => "minibuffer_end()",
+  # "M return" => "minibuffer_end()",
   "M esc" => "minibuffer_cancel()",
   "M backspace" => "minibuffer_delete()",
   "M <char>" => "minibuffer_new_char(<char>)",
@@ -584,11 +583,11 @@ end
 
 def exec_action(action)
   if action.class == Symbol
-    call(action)
+    return call(action)
   elsif action.class == Proc
-    action.call
+    return action.call
   else
-    eval(action)
+    return eval(action)
   end
 end
 
@@ -603,10 +602,11 @@ def handle_key_bindigs_action(action, c)
 
   begin
     n.times do
-      if $macro.is_recording
+      ret = exec_action(action)
+
+      if $macro.is_recording and ret != false
         $macro.record_action(action)
       end
-      exec_action(action)
       break if $method_handles_repeat
       # Some methods have specific implementation for repeat,
       #   like '5yy' => copy next five lines. (copy_line())
@@ -621,8 +621,10 @@ def handle_key_bindigs_action(action, c)
     # debug("NameError with eval cmd #{action}: " + $!.to_s)
     # raise
   rescue Exception => e
-#    Ripl.start :binding => binding
+    puts "BACKTRACE"
     puts e.backtrace
+    puts e.inspect
+    puts "BACKTRACE END"
     if $!.class == SystemExit
       exit
     else
