@@ -7,6 +7,8 @@ Status:
 
 Any questions, comments or suggestions, please send email to: sami.sieranoja@gmail.com
 
+![Screenshot](/screenshots/screenshot_easyjump.png?raw=true "EasyJump")
+
 ## Install & Use
 
 REQUIREMENTS:
