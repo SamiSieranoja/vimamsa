@@ -38,8 +38,8 @@ $cnf["key_bindigs"] = {
   # 'C q'=> 'quit',
 
   # File handling
-  "C ctrl-s" => "save_file",
-  "C W" => "save_file",
+  "C ctrl-s" => "$buffer.save",
+  "C W" => "$buffer.save",
   # "C , f o" => "open_file_dialog",
   # "C , o" => "open_file_dialog",
   # "CI ctrl-o" => "open_file_dialog",
@@ -213,7 +213,7 @@ $cnf["key_bindigs"] = {
   "CV , R" => "restart_application",
   "I ctrl!" => "$at.set_mode(COMMAND)",
   "I shift!" => "$at.set_mode(COMMAND)",
-  "C shift!" => "save_file",
+  "C shift!" => "$buffer.save",
   "I <char>" => "$buffer.insert_txt(<char>)",
   "I esc" => "$at.set_mode(COMMAND)",
 

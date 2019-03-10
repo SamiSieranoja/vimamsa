@@ -2,10 +2,6 @@
 
 class Search
 
-  #attr_reader (:pos, :cpos, :lpos)
-
-  #attr_reader :pos, :lpos, :cpos, :deltas, :fname
-
   def initialize()
     @cur_search_i = -1
   end
@@ -16,12 +12,12 @@ class Search
     @buffer = buffer
     regex = Regexp.escape(search_str)
     if /.*\p{Upper}.*/ =~ regex
-      reg = Regexp.new(regex)
+      @reg = Regexp.new(regex)
     else
       # if does not contain uppercase characters, ignore case
-      reg = Regexp.new(regex, Regexp::IGNORECASE)
+      @reg = Regexp.new(regex, Regexp::IGNORECASE)
     end
-    @search_indexes = scan_indexes(buffer, reg)
+    @search_indexes = scan_indexes(buffer, @reg)
     puts @search_indexes.inspect
     @cur_search_i = -1
     if @search_indexes.any?
@@ -36,25 +32,47 @@ class Search
     end
   end
 
+  def update_search()
+    @search_indexes = scan_indexes(@buffer, @reg)
+
+    @cur_search_i = 0
+    startpos = @search_indexes.select { |x| x > @buffer.pos }.min
+    if startpos != nil
+      @cur_search_i = @search_indexes.find_index(startpos)
+    end
+    # Ripl.start :binding => binding
+  end
+
   def jump_to_next()
+  
+    # TODO: optimize, update only after buffer changed
+    # or search only for the next match
+    update_search
+    
     return if @cur_search_i < 0
 
-    if @search_indexes.size > @cur_search_i + 1
-      @cur_search_i = @cur_search_i + 1
-    else
-      @cur_search_i = 0
-    end
+    # if @search_indexes.size > @cur_search_i + 1
+    # @cur_search_i = @cur_search_i + 1
+    # else
+    # @cur_search_i = 0
+    # end
     @buffer.set_pos(@search_indexes[@cur_search_i])
   end
 
   def jump_to_previous()
     return if @cur_search_i < 0
 
-    if @cur_search_i - 1 < 0
-      @cur_search_i = @search_indexes.size - 1
-    else
-      @cur_search_i = @cur_search_i - 1
-    end
+    update_search
+
+    # TODO: hack 
+    2.times {
+      if @cur_search_i - 1 < 0
+        @cur_search_i = @search_indexes.size - 1
+      else
+        @cur_search_i = @cur_search_i - 1
+      end
+      break if @buffer.pos != @search_indexes[@cur_search_i]
+    }
     @buffer.set_pos(@search_indexes[@cur_search_i])
   end
 end

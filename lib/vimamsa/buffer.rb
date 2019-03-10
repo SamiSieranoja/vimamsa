@@ -16,6 +16,28 @@ module Differ
   end
 end
 
+def save_buffer_list()
+  message("Save buffer list")
+  buffn = get_dot_path("buffers.txt")
+  f = File.open(buffn, "w")
+  bufstr = $buffers.collect { |buf| buf.fname }.inspect
+  f.write(bufstr)
+  f.close()
+end
+
+def load_buffer_list()
+  message("Load buffer list")
+  buffn = get_dot_path("buffers.txt")
+  return if !File.exist?(buffn)
+  bufstr = IO.read(buffn)
+  buflist = eval(bufstr)
+  puts buflist
+  for buf in buflist
+    load_buffer(buf) if buf != nil and File.file?(buf)
+    puts buf
+  end
+end
+
 class BufferList < Array
   attr_reader :current_buf
 

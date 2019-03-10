@@ -1,5 +1,18 @@
 require 'fileutils'
 
+def debug_print_buffer(c)
+  puts $buffer.inspect
+  puts $buffer
+end
+
+def debug_dump_clipboard()
+  puts $clipboard.inspect
+end
+
+def debug_dump_deltas()
+  puts $buffer.edit_history.inspect
+end
+
 def log_error(message)
   puts "====== ERROR ====="
   puts caller[0]
@@ -46,3 +59,31 @@ def savedebug(message,e)
   puts save_fn_dump
   puts save_fn_json
 end
+
+
+def run_tests()
+  run_test("01")
+  run_test("02")
+end
+
+def run_test(test_id)
+  target_results = read_file("", "tests/test_#{test_id}_output.txt")
+  old_buffer = $buffer
+  $buffer = Buffer.new("", "")
+  load "tests/test_#{test_id}.rb"
+  test_ok = $buffer.to_s.strip == target_results.strip
+  puts "##################"
+  puts target_results
+  puts "##################"
+  puts $buffer.to_s
+  puts "##################"
+  puts "TEST OK" if test_ok
+  puts "TEST FAILED" if !test_ok
+  puts "##################"
+  $buffer = old_buffer
+end
+
+def start_ripl
+  Ripl.start :binding => binding
+end
+

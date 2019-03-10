@@ -4,7 +4,6 @@ $:.unshift File.dirname(__FILE__) + "/lib"
 require "pathname"
 require "date"
 require "ripl/multi_line"
-require "openssl"
 require "json"
 load "vendor/ver/lib/ver/vendor/textpow.rb"
 
@@ -39,7 +38,7 @@ $jump_sequence = []
 $cnf[:syntax_highlight] = false
 
 def debug(message)
-  puts "[#{DateTime.now().strftime("%H:%M:%S:%L")}] #{message}"
+  puts "[#{DateTime.now().strftime("%H:%M:%S")}] #{message}"
   $stdout.flush
 end
 
@@ -52,7 +51,11 @@ require "vimamsa/buffer_select"
 require "vimamsa/file_finder"
 require "vimamsa/actions"
 require "vimamsa/hook"
-require "vimamsa/error_handling"
+require "vimamsa/debug"
+require "vimamsa/highlight"
+require "vimamsa/easy_jump"
+require "vimamsa/encrypt"
+
 
 $macro = Macro.new
 $search = Search.new
@@ -114,62 +117,6 @@ def _quit()
   exit
 end
 
-class Processor
-  attr_reader :highlights
-
-  def start_parsing(name)
-    puts "start_parsing"
-    @marks = []
-    @lineno = -1
-    @tags = {}
-
-    @hltags = {}
-    @hltags["storage.type.c"] = 3
-    @hltags["string.quoted.double.c"] = 2
-    @hltags["constant.other.placeholder.c"] = 1
-    @hltags["constant.numeric.c"] = 2
-    #        @hltags["support.function.C99.c"] = 4
-    @hltags["keyword.operator.sizeof.c"] = 4
-    @hltags["keyword.control.c"] = 4
-
-    $highlight = {}
-    @highlights = {}
-  end
-
-  def end_parsing(name)
-    #        Ripl.start :binding => binding
-    #        puts "end_parsing"
-  end
-
-  def new_line(line)
-    #        puts "new_line:#{@lineno} #{line}"
-    @lineno += 1
-  end
-
-  def open_tag(name, pos)
-    format = get_format(name)
-    #        puts "open_tag:#{name} pos:#{pos}"
-    #        if name == "string.quoted.double.c"
-    if format
-      @tags[name] = [@lineno, pos]
-    end
-  end
-
-  def close_tag(name, mark)
-    #        puts "close_tag:#{name} mark:#{mark}"
-    format = get_format(name)
-    if format
-      if @tags[name] and @tags[name][0] == @lineno
-        startpos = @tags[name][1]
-        endpos = mark
-        @highlights[@lineno] = [] if @highlights[@lineno] == nil
-        @highlights[@lineno] << [startpos, endpos, format]
-        @highlights[@lineno].sort!
-      end
-    end
-  end
-end
-
 def get_format(name)
   format = nil
   #format = 4 if name.match(/keyword.operator/)
@@ -181,12 +128,9 @@ def get_format(name)
   return format
 end
 
-def toggle_highlight
-  $cnf[:syntax_highlight] = !$cnf[:syntax_highlight]
-end
 
 def qt_signal(sgnname, param)
-  puts "GOT QT-SIGNAL #{sgnname}: #{param}"
+  debug "GOT QT-SIGNAL #{sgnname}: #{param}"
   if sgnname == "saveas"
     file_saveas(param)
   end
@@ -204,7 +148,6 @@ def system_clipboard_changed(clipboard_contents)
     $paste_lines = false
   end
   $clipboard << clipboard_contents
-  puts "DEBUG"
   puts $clipboard[-1]
   $clipboard = $clipboard[-([$clipboard.size, max_clipboard_items].min)..-1]
 end
@@ -220,14 +163,14 @@ def set_clipboard(s)
   $clipboard << s
   set_system_clipboard(s)
   $register[$cur_register] = s
-  puts "SET CLIPBOARD: [#{s}]"
-  puts "REGISTER: #{$cur_register}:#{$register[$cur_register]}"
+  debug "SET CLIPBOARD: [#{s}]"
+  debug "REGISTER: #{$cur_register}:#{$register[$cur_register]}"
 end
 
 def set_cursor_pos(new_pos)
   $buffer.set_pos(new_pos)
   #render_buffer($buffer)
-  puts "New pos: #{new_pos}lpos:#{$buffer.lpos} cpos:#{$buffer.cpos}"
+  debug "New pos: #{new_pos}lpos:#{$buffer.lpos} cpos:#{$buffer.cpos}"
 end
 
 def set_last_command(cmd)
@@ -278,7 +221,7 @@ def invoke_ack_search()
 end
 
 def grep_cur_buffer(search_str)
-  puts "grep_cur_buffer(search_str)"
+  debug "grep_cur_buffer(search_str)"
   lines = $buffer.split("\n")
   r = Regexp.new(Regexp.escape(search_str), Regexp::IGNORECASE)
   fpath = ""
@@ -297,7 +240,6 @@ def invoke_grep_search()
 end
 
 def diff_buffer()
-  puts "diff_bufferZZ"
   bufstr = ""
   orig_path = $buffer.fname
   infile = Tempfile.new("out")
@@ -305,9 +247,9 @@ def diff_buffer()
   infile.write($buffer.to_s)
   infile.flush
   cmd = "diff -w '#{orig_path}' #{infile.path}"
-  puts cmd
+  # puts cmd
   bufstr << run_cmd(cmd)
-  puts bufstr
+  # puts bufstr
   infile.close; infile.unlink
   create_new_file(nil, bufstr)
 end
@@ -319,7 +261,7 @@ end
 # Requires instr in form "FROM/TO"
 # Replaces all occurences of FROM with TO
 def buf_replace_string(instr)
-  puts "buf_replace_string(instr=#{instr})"
+  # puts "buf_replace_string(instr=#{instr})"
 
   a = instr.split("/")
   if a.size != 2
@@ -368,14 +310,14 @@ def execute_command(input_str)
 end
 
 def minibuffer_end()
-  puts "MINIBUFFER END2"
+  debug "minibuffer_end"
   $at.set_mode(COMMAND)
   minibuffer_input = $minibuffer.to_s[0..-2]
   return $minibuffer.call_func.call(minibuffer_input)
 end
 
 def minibuffer_cancel()
-  puts "MINIBUFFER END2"
+  debug "minibuffer_cancel"
   $at.set_mode(COMMAND)
   minibuffer_input = $minibuffer.to_s[0..-2]
   # $minibuffer.call_func.call('')
@@ -384,10 +326,10 @@ end
 def minibuffer_new_char(c)
   if c == "\r"
     raise "Should not come here"
-    puts "MINIBUFFER END"
+    debug "MINIBUFFER END"
   else
     $minibuffer.insert_txt(c)
-    puts "MINIBUFFER: #{c}"
+    debug "MINIBUFFER: #{c}"
   end
   #$buffer = $minibuffer
 end
@@ -403,7 +345,6 @@ end
 def message(s)
   s = "[#{DateTime.now().strftime("%H:%M")}] #{s}"
   $minibuffer = Buffer.new(s, "")
-  puts $minibuffer.to_s
 end
 
 GUESS_ENCODING_ORDER = [
@@ -460,7 +401,7 @@ def read_file(text, path)
 end
 
 def create_new_file(filename = nil, file_contents = "\n")
-  puts "NEW FILE CREATED"
+  debug "NEW FILE CREATED"
   buffer = Buffer.new(file_contents)
   $buffers << buffer
 end
@@ -508,32 +449,15 @@ def new_file_opened(filename, file_contents = "")
   b = $buffers.get_buffer_by_filename(filename)
   # File is already opened to existing buffer
   if b != nil
-    puts "File is already opened to existing buffer: #{filename}"
+    message "File is already opened to existing buffer: #{filename}"
     $buffers.set_current_buffer(b)
   else
-    puts "NEW FILE OPENED: #{filename} \n CONTENTS: #{file_contents}"
+    message "NEW FILE OPENED: #{filename}"
     $fname = filename
     load_buffer($fname)
   end
   set_window_title("Vimamsa - #{File.basename(filename)}")
   render_buffer #TODO: needed?
-end
-
-def debug_print_buffer(c)
-  puts $buffer.inspect
-  puts $buffer
-end
-
-def debug_dump_clipboard()
-  puts $clipboard.inspect
-end
-
-def debug_dump_deltas()
-  puts $buffer.edit_history.inspect
-end
-
-def save_file()
-  $buffer.save()
 end
 
 def scan_word_start_marks(search_str)
@@ -636,70 +560,16 @@ def make_jump_sequence(num_items)
   return sequence
 end
 
-def easy_jump(direction)
-  puts "EASY JUMP"
-  $easy_jump_wsmarks = scan_word_start_marks($buffer)
-  visible_range = get_visible_area()
-  $easy_jump_wsmarks = $easy_jump_wsmarks.select { |x|
-    x >= visible_range[0] && x <= visible_range[1]
-  }
-
-  $easy_jump_wsmarks.sort_by! { |x| (x - $buffer.pos).abs }
-
-  printf("VISIBLE RANGE: #{visible_range.inspect}\n")
-  printf("vsmarks: #{$easy_jump_wsmarks.inspect}\n")
-  $jump_sequence = make_jump_sequence($easy_jump_wsmarks.size)
-  #puts $jump_sequence.inspect
-  $input_char_call_func = method(:easy_jump_input_char)
-  $at.set_mode(READCHAR)
-  $easy_jump_input = ""
-  puts "========="
-end
-
-def easy_jump_input_char(c)
-  puts "EASY JUMP: easy_jump_input_char [#{c}]"
-  $easy_jump_input << c.upcase
-  if $jump_sequence.include?($easy_jump_input)
-    jshash = Hash[$jump_sequence.map.with_index.to_a]
-    nthword = jshash[$easy_jump_input] + 1
-    puts "nthword:#{nthword} #{$easy_jump_wsmarks[nthword]}"
-    $buffer.set_pos($easy_jump_wsmarks[nthword])
-    $at.set_mode(COMMAND)
-    $input_char_call_func = nil
-    $jump_sequence = []
-  end
-  if $easy_jump_input.size > 2
-    $at.set_mode(COMMAND)
-    $input_char_call_func = nil
-    $jump_sequence = []
-  end
-end
-
-def easy_jump_draw()
-  return if $jump_sequence.empty?
-  puts "EASY JUMP DRAW"
-  #wsmarks = scan_word_start_marks($buffer)
-  screen_cord = cpp_function_wrapper(0, [$easy_jump_wsmarks])
-  screen_cord = screen_cord[1..$jump_sequence.size]
-  #puts $jump_sequence
-  #puts screen_cord.inspect
-  screen_cord.each_with_index { |point, i|
-    mark_str = $jump_sequence[i]
-    #puts "draw #{point[0]}x#{point[1]}"
-    draw_text(mark_str, point[0], point[1])
-    #break if m > $cpos
-  }
-end
-
 def hook_draw()
   puts "========= hook draw ======="
+  # TODO: as hook.register
   easy_jump_draw()
   puts "==========================="
 end
 
 def render_buffer(buffer = 0, reset = 0)
   tmpbuf = $buffer.to_s
-  puts "pos:#{$buffer.pos} L:#{$buffer.lpos} C:#{$buffer.cpos}"
+  debug "pos:#{$buffer.pos} L:#{$buffer.lpos} C:#{$buffer.cpos}"
   pos = $buffer.pos
   selection_start = $buffer.selection_start
   reset = 1 if $buffer.need_redraw?
@@ -710,19 +580,17 @@ def render_buffer(buffer = 0, reset = 0)
   #$hook.call(:buffer_changed) #TODO: actually check if changed
 
   $buffer.highlight
-  puts "Render time: #{Time.now - t1}" if Time.now - t1 > 1 / 50.0
+  debug "Render time: #{Time.now - t1}" if Time.now - t1 > 1 / 50.0
   $buffer.set_redrawed if reset == 1
 end
 
 def vimamsa_init
   $highlight = {}
 
-  puts $highlights
-  puts "ARGV"
-  puts ARGV.inspect
+  debug "ARGV: "+ ARGV.inspect
   build_key_bindings_tree
   require "vimamsa/default_bindings"
-  puts "START reading file"
+  debug "START reading file"
   sleep(0.03)
   $fname = "test.txt"
   $fname = ARGV[1] if ARGV.size >= 2 and File.file?(ARGV[1])
@@ -752,85 +620,12 @@ def vimamsa_init
   gui_file_finder_init
 end
 
-def run_tests()
-  run_test("01")
-  run_test("02")
-end
-
-def run_test(test_id)
-  target_results = read_file("", "tests/test_#{test_id}_output.txt")
-  old_buffer = $buffer
-  $buffer = Buffer.new("", "")
-  load "tests/test_#{test_id}.rb"
-  test_ok = $buffer.to_s.strip == target_results.strip
-  puts "##################"
-  puts target_results
-  puts "##################"
-  puts $buffer.to_s
-  puts "##################"
-  puts "TEST OK" if test_ok
-  puts "TEST FAILED" if !test_ok
-  puts "##################"
-  $buffer = old_buffer
-end
-
-def encrypt(text, pass_phrase)
-  salt = "uvgixEtU"
-  cipher = OpenSSL::Cipher.new "AES-128-CBC"
-  cipher.encrypt
-  cipher.pkcs5_keyivgen pass_phrase, salt
-  encrypted = cipher.update text
-  encrypted << cipher.final
-  return encrypted
-end
-
-def decrypt(encrypted, pass_phrase)
-  salt = "uvgixEtU"
-  cipher = OpenSSL::Cipher.new "AES-128-CBC"
-  cipher.decrypt
-  cipher.pkcs5_keyivgen pass_phrase, salt
-  plain = cipher.update encrypted
-  plain << cipher.final
-  # OpenSSL::Cipher::CipherError: bad decrypt
-
-  return plain
-end
-
-def start_ripl
-  Ripl.start :binding => binding
-end
 
 def get_dot_path(sfx)
   dot_dir = File.expand_path("~/.vimamsa")
   Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
   dpath = "#{dot_dir}/#{sfx}"
   return dpath
-end
-
-def save_buffer_list()
-  message("Save buffer list")
-  buffn = get_dot_path("buffers.txt")
-  f = File.open(buffn, "w")
-  bufstr = $buffers.collect { |buf| buf.fname }.inspect
-  f.write(bufstr)
-  f.close()
-end
-
-def load_buffer_list()
-  message("Load buffer list")
-  buffn = get_dot_path("buffers.txt")
-  return if !File.exist?(buffn)
-  bufstr = IO.read(buffn)
-  buflist = eval(bufstr)
-  puts buflist
-  for buf in buflist
-    load_buffer(buf) if buf != nil and File.file?(buf)
-    puts buf
-  end
-end
-
-def start_ripl
-  Ripl.start :binding => binding
 end
 
 def is_url(s)
@@ -887,7 +682,6 @@ def paste_register(char)
   message("Paste: #{$c}")
 end
 
-#vimamsa_init
 
 t1 = Thread.new { main_loop }
 t1.join
