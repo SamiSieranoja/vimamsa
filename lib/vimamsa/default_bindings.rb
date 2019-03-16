@@ -19,9 +19,9 @@ def jump_to_next_edit
   $buffer.jump_to_next_edit
 end
 
-def jump_to_last_edit
-  $buffer.jump_to_last_edit
-end
+# def jump_to_last_edit
+  # $buffer.jump_to_last_edit
+# end
 
 reg_act(:savedebug, "savedebug", "Save debug info")
 
@@ -37,8 +37,14 @@ reg_act(:history_switch_forwards, "history_switch_forwards", "")
 reg_act(:center_on_current_line, "center_on_current_line", "")
 
 reg_act(:jump_to_next_edit, "jump_to_next_edit", "")
-reg_act(:jump_to_last_edit, "jump_to_last_edit", "")
+reg_act(:jump_to_last_edit, proc{$buffer.jump_to_last_edit}, "")
 
+
+reg_act(:delete_char_forward, proc{$buffer.delete(CURRENT_CHAR_FORWARD)}, "Delete char forward")
+bindkey "C x", :delete_char_forward
+
+reg_act(:load_theme, proc{load_theme}, "Load theme")
+bindkey "C , , l t"  , :load_theme
 
 reg_act :open_file_dialog, "open_file_dialog", "Open file"
 bindkey "C , f o"  , :open_file_dialog
@@ -85,7 +91,9 @@ bindkey "C , g", :invoke_grep_search
 #bindkey 'C , g', proc{invoke_grep_search}
 
 bindkey "C , f", "gui_file_finder"
-bindkey "C , v", "$buffer.indent"
+
+reg_act(:auto_indent_buffer, proc{$buffer.indent}, "Auto format buffer")
+bindkey "C , v", :auto_indent_buffer
 bindkey "C , , d", :savedebug
 bindkey "C , , u", :update_file_index
 

@@ -1,5 +1,47 @@
+
+load "vendor/ver/lib/ver/theme.rb"
+
 def toggle_highlight
   $cnf[:syntax_highlight] = !$cnf[:syntax_highlight]
+  
+end
+
+$theme_list = Dir.glob("vendor/ver/themes/*.rb")
+$cur_theme = 0
+
+def load_theme(name=nil)
+  $cur_theme += 1
+  $cur_theme = 0 if $cur_theme >= $theme_list.size
+  theme_path = $theme_list[$cur_theme]
+  theme_path = "vendor/ver/themes/#{name}.rb" if name != nil
+  puts "load_theme(): #{theme_path}"
+
+  $theme = Theme.load(theme_path)
+  # qt_load_theme($theme)
+  # sty = [$theme.default[:background]]
+  # qt_add_font_style(sty)
+  
+  bgcolor = $theme.default[:background]
+  fgcolor = $theme.default[:foreground]
+  puts "QTextEdit {color: #{fgcolor}; background-color: #{bgcolor}; }"
+  qt_set_stylesheet("QTextEdit {color: #{fgcolor}; background-color: #{bgcolor}; }")
+  # qt_set_stylesheet("QTextEdit {color: ##{}00ff22; background-color: #003311; }")
+
+  # $theme.default
+  # >> $theme.default[:background]
+  # Ripl.start :binding => binding
+end
+
+def get_format(name)
+  format = nil
+  #format = 4 if name.match(/keyword.operator/)
+  # format = 4 if name.match(/keyword.control/)
+  format = 4 if name.match(/keyword/)
+  format = 3 if name.match(/storage.type/)
+  format = 2 if name.match(/string.quoted/)
+  format = 2 if name.match(/constant.numeric/)
+  format = 1 if name.match(/constant.other.placeholder/)
+  return format
 end
 
 class Processor
@@ -49,7 +91,7 @@ class Processor
     if format
       if @tags[name] and @tags[name][0] == @lineno
         startpos = @tags[name][1]
-        endpos = mark
+        endpos = mark - 1
         @highlights[@lineno] = [] if @highlights[@lineno] == nil
         @highlights[@lineno] << [startpos, endpos, format]
         @highlights[@lineno].sort!

@@ -163,7 +163,7 @@ class Buffer < String
 
   #attr_reader (:pos, :cpos, :lpos)
 
-  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :highlights, :update_highlight, :marks
+  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :highlights, :update_highlight, :marks, :is_highlighted
   attr_writer :call_func, :update_highlight
 
   def initialize(str = "\n", fname = nil)
@@ -195,6 +195,13 @@ class Buffer < String
     return if !$cnf[:syntax_highlight]
     puts "START HIGHLIGHT"
 
+    if @syntax_parser != nil
+      # Not first time, calculate only for changed part
+    else
+      $update_hl_startpos = 0
+      $update_hl_endpos = self.size - 1
+    end
+
     if @syntax_parser == nil
       if self.get_file_type() == "ruby"
         file = "vendor/ver/config/syntax/Ruby.rb"
@@ -207,6 +214,7 @@ class Buffer < String
       @syntax_parser = Textpow::SyntaxNode.load(file)
     end
 
+    @is_highlighted = true
     puts "@update_highlight=#{@update_highlight}"
     if @update_highlight and (Time.now - @last_update > 5)
       puts "if @update_highlight"
@@ -260,7 +268,11 @@ class Buffer < String
     @highlights = {}
 
     @syntax_parser = nil
+    
+    @is_highlighted = false
     @update_highlight = true
+    $update_hl_startpos = 0 #TODO
+    $update_hl_endpos = self.size - 1
   end
 
   def set_filename(filename)
@@ -339,7 +351,11 @@ class Buffer < String
       @deltas << delta
       update_index(pos, -delta[2])
       update_line_ends(pos, -delta[2], delta[3])
+      update_highlights(pos, -delta[2], delta[3])
       update_cursor_pos(pos, -delta[2]) if auto_update_cpos
+
+      $update_hl_startpos = pos - delta[2]
+      $update_hl_endpos = pos
     elsif delta[1] == INSERT
       self.insert(delta[0], delta[3])
       @deltas << delta
@@ -347,10 +363,15 @@ class Buffer < String
       update_index(pos, +delta[2])
       update_cursor_pos(pos, +delta[2]) if auto_update_cpos
       update_line_ends(pos, +delta[2], delta[3])
+      update_highlights(pos, +delta[2], delta[3])
+
+      $update_hl_startpos = pos
+      $update_hl_endpos = pos + delta[2]
     end
     puts "DELTA=#{delta.inspect}"
     sanity_check_line_ends
     #highlight_c()
+
     $update_highlight = true
     @update_highlight = true
 
@@ -589,13 +610,53 @@ class Buffer < String
     end
   end
 
+  def update_bufpos_on_change(positions, xpos, changeamount)
+    # puts "xpos=#{xpos} changeamount=#{changeamount}"
+    positions.collect { |x|
+      r = nil
+      r = x if x < xpos
+      r = x + changeamount if changeamount < 0 && x + changeamount >= xpos
+      r = x + changeamount if changeamount > 0 && x >= xpos
+      r
+    }
+  end
+
+  def update_highlights(pos, changeamount, changestr)
+    return if !self.is_highlighted # $cnf[:syntax_highlight]
+    lpos, cpos = get_line_and_col_pos(pos)
+    if @highlights and @highlights[lpos]
+      hl = @highlights[lpos]
+      hls = hl.collect { |x| x[0] } # highlight range start
+      hle = hl.collect { |x| x[1] } # highlight range end
+      hls2 = update_bufpos_on_change(hls, cpos, changeamount)
+      hle2 = update_bufpos_on_change(hle, cpos, changeamount)
+      # puts hls.inspect
+      # puts hls2.inspect
+      # puts hle.inspect
+      # puts hle2.inspect
+      hlnew = []
+      # hle.size.times.collect{|i|[hls2[i], hle2[i],hl[i][2]]}
+      for i in hle.size.times
+        # puts i
+        if hls2[i] != nil and hle2[i] != nil
+          hlnew << [hls2[i], hle2[i], hl[i][2]]
+        end
+      end
+      # puts hlnew.inspect
+      @highlights[lpos] = hlnew
+      # Ripl.start :binding => binding
+      # hls
+      # hls2
+    end
+  end
+
   def update_line_ends(pos, changeamount, changestr)
     #    puts @line_ends.inspect
     #    puts pos
     if changeamount > -1
       changeamount = changestr.size
-      i = scan_indexes(changestr, /\n/)
-      i.collect! { |x| x + pos }
+      i_nl = scan_indexes(changestr, /\n/)
+      i_nl.collect! { |x| x + pos }
       #      puts "new LINE ENDS:#{i.inspect}"
     end
     #    puts "change:#{changeamount}"
@@ -607,8 +668,8 @@ class Buffer < String
       r
     }.compact!
 
-    if changeamount > -1 && i.size > 0
-      @line_ends.concat(i)
+    if changeamount > -1 && i_nl.size > 0
+      @line_ends.concat(i_nl)
       @line_ends.sort!
     end
   end
@@ -628,32 +689,25 @@ class Buffer < String
       @pos = new_pos
     end
     calculate_line_and_column_pos
-
-    Thread.new { #TODO:Hackish solution
-      sleep(0.2)
-      #            center_on_current_line
-    }
   end
 
-  # Calculate the two dimensional column and line positions based on current
+  # Calculate the two dimensional column and line positions based on
   # (one dimensional) position in the buffer.
+  def get_line_and_col_pos(pos)
+    pos = self.size if pos > self.size
+    pos = 0 if pos < 0
+
+    lpos = @line_ends.bsearch_index { |x, _| x >= pos }
+
+    lpos = @line_ends.size if lpos == nil
+    cpos = pos
+    cpos -= @line_ends[lpos - 1] + 1 if lpos > 0
+
+    return [lpos, cpos]
+  end
+
   def calculate_line_and_column_pos(reset = true)
-    @pos = self.size if @pos > self.size
-    @pos = 0 if @pos < 0
-    #puts @line_ends
-    next_line_end = @line_ends.bsearch { |x| x >= @pos } #=> 4
-    #puts @line_ends
-    #puts "nle: #{next_line_end}"
-    @lpos = @line_ends.index(next_line_end)
-    if @lpos == nil
-      @lpos = @line_ends.size
-    else
-      #@lpos += 1
-    end
-    @cpos = @pos
-    if @lpos > 0
-      @cpos -= @line_ends[@lpos - 1] + 1 #TODO??
-    end
+    @lpos, @cpos = get_line_and_col_pos(@pos)
     reset_larger_cpos if reset
   end
 
@@ -889,7 +943,7 @@ class Buffer < String
     #wsm = scan_marks(@pos-200,@pos,/(?<=[^\p{Word}])\p{Word}/)
     wem = scan_marks(@pos, @pos + 200, /(?<=\S)\s/, -1)
     wsm = scan_marks(@pos - 200, @pos, /((?<=\s)\S)|^\S/)
-    
+
     # Ripl.start :binding => binding
     word_start = wsm[-1]
     word_end = wem[0]

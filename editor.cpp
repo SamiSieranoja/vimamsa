@@ -65,7 +65,7 @@ VALUE textbuf;
 int _quit = 0;
 
 Editor *g_editor;
-Editor *mw;
+// Editor *mw;
 
 void cpp_init_qt_thread() { Q_INIT_RESOURCE(vimamsa); }
 
@@ -88,12 +88,31 @@ VALUE qstring_to_ruby(QString qstr) {
   return ret;
 }
 
+void qt_set_stylesheet_cpp(VALUE css) {
+  printf("qt_set_stylesheet_cpp:%s\n", StringValueCStr(css));
+  c_te->setStyleSheet(StringValueCStr(css));
+}
+
+void qt_add_font_style_cpp(VALUE sty) {
+  printf("qt_add_font_style_cpp\n");
+  QPalette p = c_te->palette();
+  p.setColor(QPalette::Base, QColor("#003300"));
+  c_te->setPalette(p);
+  c_te->setFrameStyle(QFrame::NoFrame);
+  // c_te->setStyleSheet(" QTextEdit {color: #00ff22; background-color: #003311; }");
+  // Changing backround color does not work via setPalette
+  // if setStyleSheet has been applied for parent widget
+  // Might be ralated to bug https://bugreports.qt.io/browse/QTBUG-71716
+
+  // c_te->update();
+}
+
 #include "ruby_ext.c"
 
 #ifdef Q_OS_MAC
 const QString rsrcPath = ":/images/mac";
 #else
-const QString rsrcPath = ":/images/win";
+const QString rsrcPath = ":/images/default";
 #endif
 
 void Overlay::paintEvent(QPaintEvent *e) {
@@ -173,9 +192,7 @@ int Overlay::draw_text(int x, int y, char *text) {
   // p.drawPoint(x,y);
 }
 
-SEditor::SEditor(QWidget *parent)
-//: QEditor(parent)
-{
+SEditor::SEditor(QWidget *parent) {
 
   cursorpos = 0;
   at_line_end = 0;
@@ -183,13 +200,7 @@ SEditor::SEditor(QWidget *parent)
   overlay = 0;
   fnt = QFont("Ubuntu Mono", 12);
   setFont(fnt);
-  QPalette p = palette();
-  p.setColor(QPalette::Base, QColor("#002b36"));
-  p.setColor(QPalette::Text, QColor("#839496"));
-
-  setPalette(p);
-  setFrameStyle(QFrame::NoFrame);
-
+  
   lineNumberArea = NULL;
   if (0) {
     lineNumberArea = new LineNumberArea(this);
@@ -202,22 +213,6 @@ SEditor::SEditor(QWidget *parent)
   //  connect(this, SIGNAL(updateRequest(QRect, int)), this, SLOT(updateLineNumberArea(QRect,
   //  int)));
 
-  // base03    #002b36  8/4 brblack  234 #1c1c1c
-  // base02    #073642  0/4 black    235 #262626
-  // base01    #586e75 10/7 brgreen  240 #4e4e4e
-  // base00    #657b83 11/7 bryellow 241 #585858
-  // base0     #839496 12/6 brblue   244 #808080
-  // base1     #93a1a1 14/4 brcyan   245 #8a8a8a
-  // base2     #eee8d5  7/7 white    254 #d7d7af
-  // base3     #fdf6e3 15/7 brwhite  230 #ffffd7
-  // yellow    #b58900  3/3 yellow   136 #af8700
-  // orange    #cb4b16  9/3 brred    166 #d75f00
-  // red       #dc322f  1/1 red      160 #d70000
-  // magenta   #d33682  5/5 magenta  125 #af005f
-  // violet    #6c71c4 13/5 brmagenta 61 #5f5faf
-  // blue      #268bd2  4/4 blue      33 #0087ff
-  // cyan      #2aa198  6/6 cyan      37 #00afaf
-  // green     #859900  2/2 green     64 #5f8700
 }
 
 int SEditor::lineNumberAreaWidth() {
@@ -278,7 +273,7 @@ void SEditor::contextMenuEvent(QContextMenuEvent *event) {
   QMenu *menu = new QMenu(this);
 
   menu->addAction(tr("TODO"));
-//  menu->addAction(g_editor->actionSave);
+  //  menu->addAction(g_editor->actionSave);
   menu->exec(event->globalPos());
   delete menu;
 }
@@ -527,8 +522,8 @@ void SEditor::processKeyEvent(QKeyEvent *e) {
   VALUE rb_event;
   VALUE handle_key_event = rb_intern("handle_key_event");
 
-  qDebug() << "nativeScanCode:" << e->nativeScanCode() << endl;
-  qDebug() << "nativeVirtualKey:" << e->nativeVirtualKey() << endl;
+  // qDebug() << "nativeScanCode:" << e->nativeScanCode() << endl;
+  // qDebug() << "nativeVirtualKey:" << e->nativeVirtualKey() << endl;
 
   // qDebug() << "keyPressEvent thread:" << thread()->currentThreadId();
   // qDebug() << "SET NEW KEYPRESS";
@@ -549,7 +544,23 @@ void SEditor::processKeyEvent(QKeyEvent *e) {
 
   if (RTEST(rb_eval_string("$update_highlight")) &&
       RTEST(rb_eval_string("$cnf[:syntax_highlight]"))) {
-    c_te->hl->rehighlight();
+
+    int startpos = NUM2INT(rb_eval_string("$update_hl_startpos"));
+    int endpos = NUM2INT(rb_eval_string("$update_hl_endpos"));
+
+    QTextBlock startblock = c_te->document()->findBlock(startpos);
+    QTextBlock endblock = c_te->document()->findBlock(endpos);
+    QTextBlock curblock = startblock;
+    c_te->hl->rehighlightBlock(startblock);
+    while (curblock != endblock && curblock.isValid()) {
+      curblock = curblock.next();
+      c_te->hl->rehighlightBlock(curblock);
+    }
+
+    printf("highlight startpos=%d endpos=%d\n", startpos, endpos);
+    // c_te->hl->rehighlight();
+    // c_te->hl->rehighlightBlock(hlblock);
+
     rb_eval_string("$update_highlight=false");
   }
 }
@@ -563,10 +574,10 @@ void SEditor::keyPressEvent(QKeyEvent *e) {
 }
 
 void SEditor::focusOutEvent(QFocusEvent *event) {
-  qDebug() << "StE:Focus OUT";
+  // qDebug() << "StE:Focus OUT";
 
   rb_funcall(NULL, rb_intern("focus_out"), 0);
-  qDebug() << "StE FOCUS OUT: END";
+  // qDebug() << "StE FOCUS OUT: END";
 }
 
 void Editor::closeEvent(QCloseEvent *e) {
@@ -784,7 +795,7 @@ void Editor::cursorPositionChanged() {
 
 void Editor::clipboardDataChanged() {
   // http://doc.qt.io/qt-5/qclipboard.html
-  printf("DEBUG: Clipboard data changed\n");
+  // printf("DEBUG: Clipboard data changed\n");
   // const QMimeData *md = QApplication::clipboard()->mimeData();
   if (const QMimeData *md = QApplication::clipboard()->mimeData()) {
     if (md->hasText()) {

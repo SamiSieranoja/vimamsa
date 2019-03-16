@@ -40,63 +40,32 @@
 
 #include "highlighter.h"
 
-//! [0]
 Highlighter::Highlighter(QTextDocument *parent) : QSyntaxHighlighter(parent) {
   HighlightingRule rule;
 
-  //    keywordFormat.setForeground(Qt::blue);
   keywordFormat.setForeground(QColor("#b58900"));
-//  keywordFormat.setForeground(QColor("#eeeeee"));
   keywordFormat.setFontWeight(QFont::Bold);
-//  keywordFormat.setFontWeight(QFont::Black);
 
-  //! [2]
   classFormat.setFontWeight(QFont::Bold);
   classFormat.setForeground(Qt::darkMagenta);
-  rule.pattern = QRegExp("\\bQ[A-Za-z]+\\b");
-  rule.format = classFormat;
-  highlightingRules.append(rule);
-  //! [2]
 
-  //! [3]
   singleLineCommentFormat.setForeground(Qt::red);
-  rule.pattern = QRegExp("//[^\n]*");
-  rule.format = singleLineCommentFormat;
-  highlightingRules.append(rule);
 
   multiLineCommentFormat.setForeground(Qt::red);
-  //! [3]
-
-  //! [4]
-  //  quotationFormat.setForeground(Qt::darkGreen);
 
   quotationFormat.setForeground(QColor("#2aa198"));
-  // Comment: quotationFormat.setForeground(QColor("#586e75"));
 
   rule.pattern = QRegExp("\".*\"");
   rule.format = quotationFormat;
   highlightingRules.append(rule);
-  //! [4]
-
-  //! [5]
-  // functionFormat.setFontItalic(true);
+  
   functionFormat.setForeground(QColor("#859900"));
-  //  rule.pattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
-  //  rule.format = functionFormat;
-  //  highlightingRules.append(rule);
-  //  //! [5]
 
-  //! [6]
-  commentStartExpression = QRegExp("/\\*");
-  commentEndExpression = QRegExp("\\*/");
 }
-//! [6]
 
-//! [7]
 void Highlighter::highlightBlock(const QString &text) {
   // QTextBlock currentBlock()
 
-//  VALUE highlight = rb_eval_string("$highlight");
   VALUE highlight = rb_eval_string("$buffer.highlights");
   VALUE linetags = rb_hash_lookup(highlight, INT2NUM(currentBlock().blockNumber()));
 
@@ -106,7 +75,7 @@ void Highlighter::highlightBlock(const QString &text) {
       int startpos = NUM2INT(rb_ary_entry(hv, 0));
       int endpos = NUM2INT(rb_ary_entry(hv, 1));
       int format = NUM2INT(rb_ary_entry(hv, 2));
-      int length = endpos - startpos;
+      int length = endpos - startpos + 1;
       if (format == 1) {
         setFormat(startpos, length, multiLineCommentFormat);
       }

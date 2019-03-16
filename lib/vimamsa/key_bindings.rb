@@ -327,10 +327,10 @@ class AutomataTree
   def is_command_mode()
     # debug $at.mode_root_state.inspect
     if @mode_root_state.to_s() == "C"
-      debug "IS COMMAND MODE"
+      # debug "IS COMMAND MODE"
       return 1
     else
-      debug "IS NOT COMMAND MODE"
+      # debug "IS NOT COMMAND MODE"
       return 0
     end
   end
@@ -594,7 +594,7 @@ end
 def handle_key_bindigs_action(action, c)
   $method_handles_repeat = false
   n = 1
-  if $next_command_count and !action.include?("set_next_command_count")
+  if $next_command_count and !(action.class == String and action.include?("set_next_command_count"))
     n = $next_command_count
     # $next_command_count = nil
     debug("COUNT command #{n} times")
@@ -679,11 +679,11 @@ def handle_key_event(event)
   $keys_pressed << Qt::Key_Alt if event[1] == KEY_PRESS \
     and !$keys_pressed.include?(Qt::Key_Alt) \
     and event[4] & ALTMODIFIER != 0 # Fix for alt lose focus problem.
-  puts "----D------------"
-  puts $keys_pressed.inspect
-  puts event.inspect
-  puts event[4] & ALTMODIFIER
-  puts "-----------------"
+  # puts "----D------------"
+  # puts $keys_pressed.inspect
+  # puts event.inspect
+  # puts event[4] & ALTMODIFIER
+  # puts "-----------------"
 
   $keys_pressed << event[0] if event[1] == KEY_PRESS \
     and !$keys_pressed.include?(event[0])
@@ -709,7 +709,7 @@ def handle_key_event(event)
   }
   if $translate_table.include?(event[0])
     event[3] = $translate_table[event[0]].downcase
-    puts "Translated to: #{event[3]}"
+    # puts "Translated to: #{event[3]}"
   end
   event[3] = key_prefix + event[3]
 

@@ -387,6 +387,26 @@ VALUE qt_open_url(VALUE self, VALUE url) {
   return INT2NUM(0);
 }
 
+VALUE qt_add_font_style(VALUE self, VALUE sty) {
+  printf("qt_add_font_style\n");
+  qt_add_font_style_cpp(sty);
+
+  return INT2NUM(0);
+}
+
+
+VALUE qt_load_theme(VALUE self, VALUE theme) {
+  printf("qt_load_theme\n");
+  return INT2NUM(0);
+}
+
+VALUE qt_set_stylesheet(VALUE self, VALUE css) {
+  qt_set_stylesheet_cpp(css);
+  return INT2NUM(0);
+}
+
+
+
 VALUE qt_get_buffer(VALUE self) {
   // char* cstr_url = StringValueCStr(url);
   QString qt_buf = c_te->toPlainText();
@@ -446,6 +466,11 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("qt_select_update_window", qt_select_update_window, 4);
   rb_define_global_function("qt_open_url", qt_open_url, 1);
   rb_define_global_function("qt_get_buffer", qt_get_buffer, 0);
+  rb_define_global_function("qt_load_theme", qt_load_theme, 1);
+  rb_define_global_function("qt_add_font_style", qt_add_font_style, 1);
+  rb_define_global_function("qt_set_stylesheet", qt_set_stylesheet, 1);
+  
+
   rb_define_global_function("top_where_cursor", top_where_cursor, 0);
   rb_define_global_function("bottom_where_cursor", bottom_where_cursor, 0);
   rb_define_global_function("page_down", page_down, 0);
@@ -500,7 +525,7 @@ VALUE pos_to_viewport_coordinates(VALUE args) {
 VALUE draw_text(VALUE args) { c_te->overlay->draw_text("AX", 40, 40); }
 
 int render_text() {
-  qDebug() << "c:RENDER_TEXT\n";
+  // qDebug() << "c:RENDER_TEXT\n";
   // qDebug() << "render_text thread:" <<QThread::currentThreadId();
   VALUE minibuf;
   minibuf = rb_eval_string("$minibuffer.to_s");
@@ -522,16 +547,16 @@ int render_text() {
 
   QTextCursor tc = c_te->textCursor();
 
-  qDebug() << "QT:process deltas\n";
+  // qDebug() << "QT:process deltas\n";
   // ID rb_intern(const char *name)
   VALUE deltas = rb_eval_string("$buffer.deltas");
   // rb_eval_string("puts \"DELTAS2:#{$buffer.deltas.inspect} \"");
 
   while (RARRAY_LEN(deltas) > 0) {
     VALUE d = rb_ary_shift(deltas);
-    qDebug() << "DELTA: "
-             << " " << NUM2INT(rb_ary_entry(d, 0)) << " " << NUM2INT(rb_ary_entry(d, 1)) << " "
-             << NUM2INT(rb_ary_entry(d, 2)) << "\n";
+    // qDebug() << "DELTA: "
+             // << " " << NUM2INT(rb_ary_entry(d, 0)) << " " << NUM2INT(rb_ary_entry(d, 1)) << " "
+             // << NUM2INT(rb_ary_entry(d, 2)) << "\n";
     int _pos = NUM2INT(rb_ary_entry(d, 0));
     int op = NUM2INT(rb_ary_entry(d, 1));
     int count = NUM2INT(rb_ary_entry(d, 2));
@@ -552,7 +577,7 @@ int render_text() {
     }
   }
 
-  qDebug() << "QT: END process deltas\n";
+  // qDebug() << "QT: END process deltas\n";
 
   if (selection_start >= 0) {
     if (cursor_pos < selection_start) {

@@ -4,6 +4,7 @@ class Search
 
   def initialize()
     @cur_search_i = -1
+    @search_indexes = []
   end
 
   def set(search_str, search_type, buffer)
@@ -45,11 +46,12 @@ class Search
 
   def jump_to_next()
   
+    return if @cur_search_i < 0
     # TODO: optimize, update only after buffer changed
     # or search only for the next match
     update_search
     
-    return if @cur_search_i < 0
+    return if !@search_indexes.any?
 
     # if @search_indexes.size > @cur_search_i + 1
     # @cur_search_i = @cur_search_i + 1
@@ -63,7 +65,8 @@ class Search
     return if @cur_search_i < 0
 
     update_search
-
+    return if !@search_indexes.any?
+    
     # TODO: hack 
     2.times {
       if @cur_search_i - 1 < 0

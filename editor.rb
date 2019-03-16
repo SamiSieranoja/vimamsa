@@ -117,17 +117,6 @@ def _quit()
   exit
 end
 
-def get_format(name)
-  format = nil
-  #format = 4 if name.match(/keyword.operator/)
-  format = 4 if name.match(/keyword.control/)
-  format = 3 if name.match(/storage.type/)
-  format = 2 if name.match(/string.quoted/)
-  format = 2 if name.match(/constant.numeric/)
-  format = 1 if name.match(/constant.other.placeholder/)
-  return format
-end
-
 
 def qt_signal(sgnname, param)
   debug "GOT QT-SIGNAL #{sgnname}: #{param}"
@@ -561,10 +550,8 @@ def make_jump_sequence(num_items)
 end
 
 def hook_draw()
-  puts "========= hook draw ======="
   # TODO: as hook.register
   easy_jump_draw()
-  puts "==========================="
 end
 
 def render_buffer(buffer = 0, reset = 0)
@@ -577,7 +564,6 @@ def render_buffer(buffer = 0, reset = 0)
   hook_draw()
 
   render_text(tmpbuf, pos, selection_start, reset)
-  #$hook.call(:buffer_changed) #TODO: actually check if changed
 
   $buffer.highlight
   debug "Render time: #{Time.now - t1}" if Time.now - t1 > 1 / 50.0
