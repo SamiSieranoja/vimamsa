@@ -182,7 +182,7 @@ $cnf["key_bindigs"] = {
 
   "V d" => "$buffer.delete(SELECTION)",
   "V x" => "$buffer.delete(SELECTION)",
-  "V ctrl-c" => "$buffer.comment_selection",
+  # "V ctrl-c" => "$buffer.comment_selection",
   "V ctrl-x" => "$buffer.comment_selection(:uncomment)",
 
   "CI ctrl-v" => "$buffer.paste(BEFORE)",

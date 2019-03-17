@@ -6,9 +6,10 @@
   [{settings: 
      {background: "#002b36",
       caret: "#889AFF",
-      foreground: "#839496",
+      # foreground: "#839496",
+      foreground: "#c3d4c6",
       invisibles: "#BFBFBF",
-      lineHighlight: "#3A312C",
+      lineHighlight: "#073642",
       selection: "#C3DCFF"}},
    {name: "Comment",
     scope: "comment",

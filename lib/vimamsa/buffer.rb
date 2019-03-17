@@ -268,7 +268,7 @@ class Buffer < String
     @highlights = {}
 
     @syntax_parser = nil
-    
+
     @is_highlighted = false
     @update_highlight = true
     $update_hl_startpos = 0 #TODO
@@ -498,9 +498,12 @@ class Buffer < String
   end
 
   def get_line_start(pos)
-    #Ripl.start :binding => binding
-    ls = @line_ends.select { |x| x < pos }.max + 1
-    ls = 0 if ls == nil
+    ls = @line_ends.select { |x| x < pos }.max
+    if ls == nil
+      ls = 0
+    else
+      ls = ls + 1
+    end
     return ls
   end
 

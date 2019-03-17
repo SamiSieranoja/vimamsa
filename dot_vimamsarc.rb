@@ -13,5 +13,10 @@ $search_dirs << File.expand_path("~/Documents/")
 # Limit file search to these extensions:
 $find_extensions = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".md"]
 
+# load_theme("SovietCockpit")
+load_theme("Pastels on Dark")
+
+
 # After edit, copy this file to:
 # cp dot_vimamsarc.rb  ~/.vimamsarc
+

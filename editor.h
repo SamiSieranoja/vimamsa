@@ -17,43 +17,21 @@
 #include <QLabel>
 #include <QFrame>
 
+#ifdef Q_OS_MAC
+const QString rsrcPath = ":/images/mac";
+#else
+const QString rsrcPath = ":/images/default";
+#endif
+
 class LineNumberArea;
 class SEditor;
 class QPaintEvent;
 
 #include "highlighter.h"
 #include "selectwindow.h"
+#include "buf_overlay.h"
+#include "constants.h"
 
-#define RENDER_TEXT 1001
-#define COMMAND 1
-#define INSERT 2
-#define BROWSE 3
-
-#define NEXT_MARK 1001
-#define PREVIOUS_MARK 1002
-#define BACKWARD 1003
-#define FORWARD 1004
-#define BEFORE 1005
-#define AFTER 1006
-
-#define FORWARD_CHAR 2001
-#define BACKWARD_CHAR 2002
-#define FORWARD_LINE 2003
-#define BACKWARD_LINE 2004
-#define CURRENT_CHAR_FORWARD 2005
-#define CURRENT_CHAR_BACKWARD 2006
-#define START_OF_BUFFER 2007
-#define END_OF_BUFFER 2008
-
-#define DELETE 3001
-#define REPLACE 3002
-
-// Event types
-#define CURSOR_POS_CHANGED 9001
-#define KEY_PRESS 9002
-#define KEY_RELEASE 9003
-#define FILE_OPENED 9004
-#define FOCUS_OUT 9005
 
 extern "C" {
 #include <ruby.h>
@@ -90,23 +68,6 @@ private:
   void run();
 };
 
-class Overlay : public QFrame {
-  Q_OBJECT
-public:
-  Overlay(QWidget *parent = 0) : QFrame(parent) {
-    setAttribute(Qt::WA_TransparentForMouseEvents);
-    setFrameStyle(QFrame::NoFrame);
-    // Autofill with transparent color
-    setAutoFillBackground(true);
-    setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-    // 2DEBUG: setStyleSheet("background-color: rgba(255, 255, 255, 10);");
-  }
-  int draw_text(int x, int y, char *text);
-  /*~Editor();*/
-
-protected:
-  void paintEvent(QPaintEvent *e);
-};
 
 class SEditor : public QTextEdit {
   Q_OBJECT
@@ -156,6 +117,7 @@ private:
   QWidget *lineNumberArea;
 };
 
+#ifdef DISABLED
 class Editor : public QMainWindow {
   Q_OBJECT
 
@@ -227,6 +189,7 @@ protected:
 private:
   SEditor *codeEditor;
 };
+#endif
 
 
 

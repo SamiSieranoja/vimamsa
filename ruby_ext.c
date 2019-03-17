@@ -48,9 +48,10 @@ VALUE method_main_loop(VALUE self) {
 
   qDebug() << "hello from GUI thread " << QThread::currentThreadId();
   // qDebug() << "main_loop thread id:" << thread()->currentThreadId();
-  Editor g_editor;
-  g_editor.resize(700, 800);
-  g_editor.show();
+  // Editor g_editor;
+  g_editor = new Editor();
+  g_editor->resize(700, 800);
+  g_editor->show();
 
   VALUE do_center;
 
@@ -62,7 +63,7 @@ VALUE method_main_loop(VALUE self) {
     a.processEvents();
     // rb_thread_schedule(); //TODO if there are plugins with threads?
 
-    g_editor.setWindowTitle(*window_title); // TODO only when changed
+    g_editor->setWindowTitle(*window_title); // TODO only when changed
     do_center = rb_eval_string("$do_center");
     if (NUM2INT(do_center) == 1) {
       center_where_cursor();

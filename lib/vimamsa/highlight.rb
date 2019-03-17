@@ -28,7 +28,7 @@ def load_theme(name=nil)
   # qt_set_stylesheet("QTextEdit {color: ##{}00ff22; background-color: #003311; }")
 
   # $theme.default
-  # >> $theme.default[:background]
+  # >> $theme.default[:background] $theme.default[:lineHighlight]
   # Ripl.start :binding => binding
 end
 

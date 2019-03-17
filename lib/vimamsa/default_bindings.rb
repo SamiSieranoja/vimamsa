@@ -40,6 +40,9 @@ reg_act(:jump_to_next_edit, "jump_to_next_edit", "")
 reg_act(:jump_to_last_edit, proc{$buffer.jump_to_last_edit}, "")
 
 
+reg_act(:comment_selection, proc{$buffer.comment_selection}, "")
+bindkey "V ctrl-c", :comment_selection
+
 reg_act(:delete_char_forward, proc{$buffer.delete(CURRENT_CHAR_FORWARD)}, "Delete char forward")
 bindkey "C x", :delete_char_forward
 
