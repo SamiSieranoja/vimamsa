@@ -8,12 +8,12 @@
 #include "main_window.h"
 #include "buf_overlay.h"
 #include "highlighter.h"
+#include "config_window.h"
 
 extern SEditor *c_te;
 extern SEditor *miniEditor;
 extern QApplication *app;
 extern int cursor_pos;
-
 
 int Editor::setQtStyle(int style_id) {
   if (style_id == 1) { // Dark fusion
@@ -65,6 +65,7 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
     QMenu *helpMenu = new QMenu(tr("Help"), this);
     menuBar()->addMenu(helpMenu);
     helpMenu->addAction(tr("About"), this, SLOT(about()));
+    helpMenu->addAction(tr("Settings"), this, SLOT(config()));
   }
 
   textEdit = new SEditor(this);
@@ -226,6 +227,7 @@ void Editor::initActions() {
   connect(a, SIGNAL(triggered()), this, SLOT(fileNew()));
   tb->addAction(a);
   menu->addAction(a);
+  
 
   a = new QAction(QIcon::fromTheme("document-open", QIcon(rsrcPath + "/fileopen.png")),
                   tr("&Open..."), this);
@@ -272,6 +274,8 @@ void Editor::initActions() {
   a = new QAction(tr("&Quit"), this);
   connect(a, SIGNAL(triggered()), this, SLOT(quit()));
   menu->addAction(a);
+  
+  menu->addAction(tr("Settings"), this, SLOT(config()));
 
   comboFont = new QFontComboBox(tb);
   tb->addWidget(comboFont);
@@ -437,6 +441,11 @@ void Editor::clipboardDataChanged() {
 
 void Editor::about() { QMessageBox::about(this, tr("About"), tr("TODO:about")); }
 
+void Editor::config() {
+  ConfigWindow *config_w = new ConfigWindow(this, 1);
+  config_w->show();
+}
+
 void Editor::mergeFormatOnWordOrSelection(const QTextCharFormat &format) {
   QTextCursor cursor = textEdit->textCursor();
   if (!cursor.hasSelection())
@@ -451,5 +460,3 @@ void Editor::fontChanged(const QFont &f) {
 }
 
 void Editor::colorChanged(const QColor &c) { return; }
-
-

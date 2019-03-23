@@ -56,7 +56,6 @@ require "vimamsa/highlight"
 require "vimamsa/easy_jump"
 require "vimamsa/encrypt"
 
-
 $macro = Macro.new
 $search = Search.new
 $hook = Hook.new
@@ -116,7 +115,6 @@ def _quit()
   qt_quit
   exit
 end
-
 
 def qt_signal(sgnname, param)
   debug "GOT QT-SIGNAL #{sgnname}: #{param}"
@@ -214,7 +212,7 @@ def grep_cur_buffer(search_str)
   lines = $buffer.split("\n")
   r = Regexp.new(Regexp.escape(search_str), Regexp::IGNORECASE)
   fpath = ""
-  fpath = $buffer.pathname.expand_path.to_s+":" if $buffer.pathname
+  fpath = $buffer.pathname.expand_path.to_s + ":" if $buffer.pathname
   res_str = ""
   lines.each_with_index { |l, i|
     if r.match(l)
@@ -573,7 +571,7 @@ end
 def vimamsa_init
   $highlight = {}
 
-  debug "ARGV: "+ ARGV.inspect
+  debug "ARGV: " + ARGV.inspect
   build_key_bindings_tree
   require "vimamsa/default_bindings"
   debug "START reading file"
@@ -589,23 +587,36 @@ def vimamsa_init
     end
   end
 
+  dot_dir = File.expand_path("~/.vimamsa")
+  Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
+
+  $cnf[:theme] = "Pastels on Dark"
+  settings_path = get_dot_path("settings.rb")
+  if File.exist?(settings_path)
+    $cnf = eval(IO.read(settings_path))
+  end
+
   buffer = Buffer.new(read_file("", $fname), $fname)
   $buffers << buffer
   set_qt_style(1)
-  load_theme("Pastels on Dark")
+  # load_theme("Amy")
+  # load_theme("Espresso Libre")
+  # load_theme("SovietCockpit")
 
   # Limit file search to these extensions:
   $find_extensions = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb"]
 
   dotfile = read_file("", "~/.vimamsarc")
   eval(dotfile) if dotfile
-  render_buffer($buffer, 1)
 
+  build_options
+  load_theme($cnf[:theme])
+
+  render_buffer($buffer, 1)
 
   gui_select_buffer_init
   gui_file_finder_init
 end
-
 
 def get_dot_path(sfx)
   dot_dir = File.expand_path("~/.vimamsa")
@@ -667,7 +678,6 @@ def paste_register(char)
   $c = $register[char]
   message("Paste: #{$c}")
 end
-
 
 t1 = Thread.new { main_loop }
 t1.join

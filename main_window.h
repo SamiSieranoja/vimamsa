@@ -75,6 +75,7 @@ private slots:
 
   void clipboardDataChanged();
   void about();
+  void config();
   void printPreview(QPrinter *);
 
 protected:

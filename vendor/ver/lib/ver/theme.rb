@@ -32,8 +32,13 @@ class Theme < Struct.new(:name, :uuid, :default, :colors)
         scope_names.split(/\s*,\s*/).each do |scope_name|
           instance.set(scope_name, settings)
         end
+      elsif setting.has_key?(:name)
+      # TODO: ?
       elsif !settings.empty?
         # general settings
+        # puts settings.inspect
+        # puts setting.inspect
+        # Ripl.start :binding => binding
         instance.default = settings
       end
     end

@@ -3,24 +3,60 @@ load "vendor/ver/lib/ver/theme.rb"
 
 def toggle_highlight
   $cnf[:syntax_highlight] = !$cnf[:syntax_highlight]
-  
 end
 
 $theme_list = Dir.glob("vendor/ver/themes/*.rb")
 $cur_theme = 0
 
-def load_theme(name=nil)
+def build_options()
+  $theme_list = Dir.glob("vendor/ver/themes/*.rb")
+  theme_names = $theme_list.collect { |x| File.basename(x, ".rb") }
+  $opt = Hash.new { |h, k| h[k] = Hash.new(&h.default_proc) }
+
+  $opt["theme"]["type"] = "list"
+  $opt["theme"]["selected"] = $cur_theme
+  $opt["theme"]["conf_key"] = :theme
+  $opt["theme"]["items"] = theme_names
+  for o in $opt.keys
+    if $opt[o].has_key?("conf_key")
+      k = $opt[o]["conf_key"]
+      if $cnf.has_key?(k)
+        default = $cnf[k]
+        ind = $opt["theme"]["items"].find_index(default)
+        if ind != nil
+          $opt[o]["selected"] = ind
+        end
+      end
+    end
+  end
+  puts $opt.inspect
+end
+
+def handle_conf_change()
+  if $opt["theme"]["selected"]
+    i = $opt["theme"]["selected"]
+    t = $opt["theme"]["items"][i]
+    k = $opt["theme"]["conf_key"]
+    $cnf[k] = t
+    load_theme(t)
+  end
+  c = $cnf.clone
+  IO.write(get_dot_path("settings.rb"),$cnf.inspect)
+end
+
+def load_theme(name = nil)
   $cur_theme += 1
   $cur_theme = 0 if $cur_theme >= $theme_list.size
+  $cur_theme = name if name.class == Integer
   theme_path = $theme_list[$cur_theme]
-  theme_path = "vendor/ver/themes/#{name}.rb" if name != nil
-  puts "load_theme(): #{theme_path}"
+  theme_path = "vendor/ver/themes/#{name}.rb" if name != nil and name.class == String
+  message "load theme #{theme_path}"
 
   $theme = Theme.load(theme_path)
   # qt_load_theme($theme)
   # sty = [$theme.default[:background]]
   # qt_add_font_style(sty)
-  
+
   bgcolor = $theme.default[:background]
   fgcolor = $theme.default[:foreground]
   puts "QTextEdit {color: #{fgcolor}; background-color: #{bgcolor}; }"
@@ -29,7 +65,6 @@ def load_theme(name=nil)
 
   # $theme.default
   # >> $theme.default[:background] $theme.default[:lineHighlight]
-  # Ripl.start :binding => binding
 end
 
 def get_format(name)
@@ -99,5 +134,3 @@ class Processor
     end
   end
 end
-
-

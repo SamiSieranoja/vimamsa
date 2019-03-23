@@ -34,7 +34,7 @@ $cnf[:extensions_to_open] = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", 
 
 $cnf["modes"] = { "R" => "READCHAR", "M" => "MINIBUFFER", "C" => "COMMAND", "V" => "VISUAL", "I" => "INSERT", "B" => "BROWSE" }
 
-$cnf["key_bindigs"] = {
+$default_keys = {
   # 'C q'=> 'quit',
 
   # File handling
@@ -383,7 +383,7 @@ def build_key_bindings_tree
   $at = AutomataTree.new()
   # $key_bind_dict = {}
   # $cur_key_dict = {}
-  $cnf["key_bindigs"].each { |key, value|
+  $default_keys.each { |key, value|
     bindkey(key, value)
   }
 end

@@ -1,5 +1,4 @@
 
-
 #include <QtWidgets>
 
 #include "selectwindow.h"

@@ -22,9 +22,7 @@
 
 
 class Overlay : public QFrame {
-  // Should Q_OBJECT be here or not? Get vtable error if included
-  // https://stackoverflow.com/questions/4321590/c-undefined-reference-to-vtable
-  // Q_OBJECT
+  Q_OBJECT
 public:
   Overlay(QWidget *parent = 0);
   int draw_text(int x, int y, char *text);

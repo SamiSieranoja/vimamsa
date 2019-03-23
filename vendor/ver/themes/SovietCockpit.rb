@@ -4,12 +4,22 @@
  name: "TODO",
  settings: 
   [{settings: 
-     {background: "#002b36",
+     {
+     background: "#002b36", # ORIG
+     # background: "#003634",
+     
       caret: "#889AFF",
-      # foreground: "#839496",
-      foreground: "#c3d4c6",
+      foreground: "#839496",  # ORIG
+      # foreground: "#9da9aa",
+      # foreground: "#bac5c6",
+      # foreground: "#899e9d",
+      
       invisibles: "#BFBFBF",
-      lineHighlight: "#073642",
+      lineHighlight: "#073642", #ORIG
+      # lineHighlight: "#003d4c", 
+      # lineHighlight: "#0a514e", 
+      
+      
       selection: "#C3DCFF"}},
    {name: "Comment",
     scope: "comment",
@@ -102,4 +112,4 @@
    {name: "Markup tag attribute",
     scope: "entity.other.attribute-name",
     settings: {fontStyle: "italic"}}],
- uuid: "6B90703E-4E4B-43C8-9D32-921BEDF6D725"}
+ uuid: "9B90703E-4E4B-43C8-9D32-A20BEDF6D725"}

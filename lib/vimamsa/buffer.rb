@@ -135,7 +135,9 @@ class BufferList < Array
     self.slice!(buffer_i)
     $buffer_history = $buffer_history.collect { |x| r = x; r = x - 1 if x > buffer_i; r = nil if x == buffer_i; r }.compact
 
-    #        Ripl.start :binding => binding
+    if @current_buf == buffer_i
+      @current_buf = $buffer_history.last
+    end
     @current_buf = 0 if @current_buf >= self.size
     if self.size == 0
       self << Buffer.new("emptybuf\n")
@@ -189,6 +191,7 @@ class Buffer < String
     puts "EXT:#{ext}"
     return "ruby" if ext == "rb"
     return "c" if ext == "c" or ext == "cpp" or ext == "h" or ext == "hpp"
+    return "js" if ext == "js"
   end
 
   def highlight()
@@ -207,6 +210,8 @@ class Buffer < String
         file = "vendor/ver/config/syntax/Ruby.rb"
       elsif self.get_file_type() == "c"
         file = "vendor/ver/config/syntax/C.rb"
+      elsif self.get_file_type() == "js"
+        file = "vendor/ver/config/syntax/JavaScript.rb"
       else
         puts "NON-HIGHLIGHTABLE FILE: '#{get_file_type()}'"
         return
@@ -472,10 +477,12 @@ class Buffer < String
 
   def get_com_str()
     com_str = nil
-    if get_file_type() == "c"
+    if get_file_type() == "c" or get_file_type() == "js"
       com_str = "//"
     elsif get_file_type() == "ruby"
       com_str = "#"
+    else
+      com_str = "//"
     end
     return com_str
   end
@@ -1437,16 +1444,22 @@ class Buffer < String
     file.write($buffer.to_s)
     file.flush
     bufc = "FOO"
+    # puts $buffer.to_s
 
     tmppos = @pos
 
     message("Auto format #{@fname}")
 
-    if get_file_type() == "c"
+    if get_file_type() == "c" 
       #C/C++/Java/JavaScript/Objective-C/Protobuf code
       system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")
       bufc = IO.read(infile.path)
-      puts bufc
+    elsif get_file_type() == "js"
+      cmd = "/home/samisi/bin/clang-format #{file.path} > #{infile.path}'"
+      puts cmd
+      system(cmd)
+      bufc = IO.read(infile.path)
+      # puts bufc
     elsif get_file_type() == "ruby"
       #TODO:
       #            cmd = "./vendor/ruby_formatter.rb -s 4 #{file.path}"
