@@ -68,6 +68,13 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
     helpMenu->addAction(tr("Settings"), this, SLOT(config()));
   }
 
+  {
+    QMenu *actionMenu = new QMenu(tr("Actions"), this);
+    menuBar()->addMenu(actionMenu);
+    actionMenu->addAction(tr("Search and Replace"), this, SLOT(SearchAndReplace()));
+    actionMenu->addAction(tr("Search Actions"), this, SLOT(SearchActions()));
+  }
+
   textEdit = new SEditor(this);
   c_te = textEdit;
   c_te->setFont(QFont("Ubuntu Mono", 12));
@@ -227,7 +234,6 @@ void Editor::initActions() {
   connect(a, SIGNAL(triggered()), this, SLOT(fileNew()));
   tb->addAction(a);
   menu->addAction(a);
-  
 
   a = new QAction(QIcon::fromTheme("document-open", QIcon(rsrcPath + "/fileopen.png")),
                   tr("&Open..."), this);
@@ -274,7 +280,7 @@ void Editor::initActions() {
   a = new QAction(tr("&Quit"), this);
   connect(a, SIGNAL(triggered()), this, SLOT(quit()));
   menu->addAction(a);
-  
+
   menu->addAction(tr("Settings"), this, SLOT(config()));
 
   comboFont = new QFontComboBox(tb);
@@ -445,6 +451,11 @@ void Editor::config() {
   ConfigWindow *config_w = new ConfigWindow(this, 1);
   config_w->show();
 }
+
+void Editor::handleActionMenu() { qDebug() << "handleActionMenu"; }
+void Editor::SearchAndReplace() { rb_eval_string("gui_search_replace"); }
+void Editor::SearchActions() { rb_eval_string("search_actions"); }
+
 
 void Editor::mergeFormatOnWordOrSelection(const QTextCharFormat &format) {
   QTextCursor cursor = textEdit->textCursor();

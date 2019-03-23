@@ -76,6 +76,10 @@ private slots:
   void clipboardDataChanged();
   void about();
   void config();
+  void handleActionMenu();
+  void SearchAndReplace();
+  void SearchActions();
+  
   void printPreview(QPrinter *);
 
 protected:

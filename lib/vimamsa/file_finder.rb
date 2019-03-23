@@ -3,18 +3,13 @@ require "parallel"
 def gui_file_finder()
   l = []
   $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
-  #Thread.new{recursively_find_files}
   if $dir_list == nil
-    #        recursively_find_files
-    $dirlt = Thread.new { recursively_find_files() }
-    # t2 = Thread.new{1e6.to_i.times{|x| puts "Sleep #{x}"; 1e8.to_i.times{|y|y*3};sleep(1);$footest=1}}
-    #        t.join
-    #sleep(3.05)
+    Thread.new { recursively_find_files() }
   end
+  
   qt_select_update_window(l, $select_keys.collect { |x| x.upcase },
                           "gui_file_finder_select_callback",
                           "gui_file_finder_update_callback")
-  #method(:gui_file_finder_update_callback))
 end
 
 def update_file_index()
@@ -42,21 +37,7 @@ def recursively_find_files()
 end
 
 def filter_files(search_str)
-  #dir_list = Dir.glob('/home/sjs/notes/**/*').select{ |e| File.file? e }
-  #puts dir_list.inspect
   dir_hash = {}
-  if false
-    for file in $dir_list
-
-      #d = srn_dst(search_str, File.basename(file))
-      #d = srn_dst(search_str, file)
-      d = 0
-      if d > 0
-        dir_hash[file] = d
-        #puts "D:#{d} #{file}"
-      end
-    end
-  end
   scores = Parallel.map($dir_list, in_threads: 8) do |file|
     [file, srn_dst(search_str, file)]
   end
@@ -64,14 +45,11 @@ def filter_files(search_str)
     dir_hash[s[0]] = s[1] if s[1] > 0
   end
   # puts scores
-  #puts dir_hash
   dir_hash = dir_hash.sort_by { |k, v| -v }
   dir_hash = dir_hash[0..20]
-  #puts dir_hash
   dir_hash.map do |file, d|
     puts "D:#{d} #{file}"
   end
-  #    Ripl.start :binding => binding
   return dir_hash
 end
 
@@ -106,7 +84,4 @@ def gui_file_finder_init()
   $at.add_mode("Z")
   bindkey "Z enter", "$at.set_mode(COMMAND)"
   bindkey "Z return", "$at.set_mode(COMMAND)"
-  #bindkey 'S j', '$at.set_mode(COMMAND)'
-  #bindkey 'S /[hlfdsagz]/', 'gui_file_finder_handle_char(<char>)'
-  #bindkey 'Z <char>', 'gui_file_finder_handle_char(<char>)'
 end

@@ -40,6 +40,11 @@ SelectWindow::SelectWindow(QWidget *parent, int use_filter) : QWidget(parent) {
   model->setHeaderData(2, Qt::Horizontal, QObject::tr("Path"));
   // model->setHeaderData(3, Qt::Horizontal, QObject::tr("Modified"));
   proxyView->setModel(model);
+
+  QLabel *action_nfo = new QLabel(this);
+  action_nfo->setText("Action");
+  layout->addWidget(action_nfo);
+
   if (use_filter) {
     layout->addWidget(filterEdit);
   }
@@ -55,6 +60,66 @@ SelectWindow::SelectWindow(QWidget *parent, int use_filter) : QWidget(parent) {
   // proxyView->setColumnWidth(0, this->width()/2); //TODO
   proxyView->setColumnWidth(1, 400); // TODO
   proxyView->setColumnWidth(0, 45);  // TODO
+}
+
+SelectWindow::SelectWindow(QWidget *parent, VALUE params) : QWidget(parent) {
+
+  cancelButton = new QPushButton(tr("&Cancel"));
+  connect(cancelButton, SIGNAL(clicked()), this, SLOT(close()));
+
+  // QVBoxLayout *layout = new QVBoxLayout;
+  QFormLayout *layout = new QFormLayout;
+
+  setLayout(layout);
+
+  Qt::WindowFlags flags = 0;
+  // flags = Qt::Popup;
+  flags = Qt::Window;
+  flags |= Qt::FramelessWindowHint;
+  QWidget::setWindowFlags(flags);
+
+  QLabel *action_nfo = new QLabel(this);
+  VALUE title = rb_hash_lookup(params, rb_str_new2("title"));
+  if (title != Qnil) {
+    action_nfo->setText(StringValueCStr(title));
+    layout->addRow(action_nfo);
+  }
+
+  VALUE input1 = rb_hash_lookup(params, rb_str_new2("input1"));
+  VALUE input1_label = rb_hash_lookup(params, rb_str_new2("input1_label"));
+  VALUE input2 = rb_hash_lookup(params, rb_str_new2("input2"));
+  VALUE input2_label = rb_hash_lookup(params, rb_str_new2("input2_label"));
+
+  VALUE button1 = rb_hash_lookup(params, rb_str_new2("button1"));
+
+  QLabel *input1_qt_label = new QLabel(this);
+  QLabel *input2_qt_label = new QLabel(this);
+  if (input1 != Qnil) {
+    input1_lineedit = new QLineEdit;
+    input1_qt_label->setText(StringValueCStr(input1_label));
+    layout->addRow(input1_qt_label, input1_lineedit);
+  }
+  if (input2 != Qnil) {
+    input2_qt_label->setText(StringValueCStr(input2_label));
+    input2_lineedit = new QLineEdit;
+    layout->addRow(input2_qt_label, input2_lineedit);
+    input2_lineedit->installEventFilter(this);
+  }
+
+  if (button1 != Qnil) {
+    qt_button1 = new QPushButton(StringValueCStr(button1));
+    layout->addRow(qt_button1);
+    qt_button1->installEventFilter(this);
+    connect(qt_button1, SIGNAL(clicked()), this, SLOT(runCallback()));
+  }
+
+  callback = Qnil;
+  VALUE r_callback = rb_hash_lookup(params, rb_str_new2("callback"));
+  if (r_callback != Qnil) {
+    callback = rb_intern_str(r_callback);
+  }
+
+  layout->addRow(cancelButton);
 }
 
 void SelectWindow::filterChanged() {
@@ -83,12 +148,18 @@ bool SelectWindow::handleReturn() { qDebug() << "SelectWindow: returnPressed"; }
 void SelectWindow::handleKeyEvent(QKeyEvent *e) { qDebug() << "SelectWindow: SET NEW KEYPRESS"; }
 
 bool SelectWindow::eventFilter(QObject *obj, QEvent *event) {
+  QKeyEvent *key;
+  if (event->type() == QEvent::KeyPress) {
+    key = static_cast<QKeyEvent *>(event);
+  }
+
   // TODO: pass events to ruby event handler
   if (obj == filterEdit && event->type() == QEvent::KeyPress) {
 
-    QKeyEvent *key = static_cast<QKeyEvent *>(event);
+    // QKeyEvent *key = static_cast<QKeyEvent *>(event);
     if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
       qDebug() << "eventFilter: got ENTER";
+      close();
       rb_funcall(INT2NUM(0), select_callback, 1, qstring_to_ruby(filterEdit->text()));
       return true;
     }
@@ -100,46 +171,63 @@ bool SelectWindow::eventFilter(QObject *obj, QEvent *event) {
 
     return false;
   }
-  if (event->type() == QEvent::KeyPress) {
-    qDebug() << "SelectWindow: Filter Key event";
-    ((SEditor *)parent())->processKeyEvent((QKeyEvent *)event);
+  if (event->type() == QEvent::KeyPress && obj == qt_button1) {
+    if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
+      qDebug() << "qt_button1: ENTER!!";
+      runCallback();
+      return true;
+    }
+    return false;
+  }
 
-    // g_editor->processKeyEvent((QKeyEvent*) event);
+  else if (event->type() == QEvent::KeyPress && obj == input2_lineedit) {
+    if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
+      qDebug() << "input2_lineedit: ENTER!!";
+      runCallback();
+      return true;
+    }
+    return false;
+  }
+
+  else if (event->type() == QEvent::KeyPress) {
+    // Process event with ruby
+    ((SEditor *)parent())->processKeyEvent((QKeyEvent *)event);
     return true;
   }
+
+  if (event->type() == QEvent::KeyPress) {
+    // qDebug() << "ZZZZZZZZZZZZZZZZZZ";
+    // if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
+    // qDebug() << "eventFilter22: got ENTER";
+    // // rb_funcall(INT2NUM(0), select_callback, 1, qstring_to_ruby(filterEdit->text()));
+    // return true;
+    // }
+  }
+
   return false;
 }
 
-SelectWindow::setItems(VALUE item_list, VALUE jump_keys) {
-  // model->insertRow(0);
-  // model->setData(model->index(0, 0), "buffer.rb");
-  // model->setData(model->index(0, 1), "~/foo/src");
-  // model->setData(model->index(0, 2), "");
+void SelectWindow::runCallback() {
+  rb_funcall(NULL, callback, 2, qstring_to_ruby(input1_lineedit->text()),
+             qstring_to_ruby(input2_lineedit->text()));
+  close();
+  rb_eval_string("render_buffer($buffer)"); // HACK
+}
 
-  // while(RARRAY_LEN(item_list) > 0) {
+SelectWindow::setItems(VALUE item_list, VALUE jump_keys) {
+
   for (int i = 0; i < RARRAY_LEN(item_list); i++) {
-    // VALUE d = rb_ary_shift(item_list);
-    // VALUE d = rb_ary_pop(item_list);
     VALUE d = rb_ary_entry(item_list, i);
     model->insertRow(0);
     VALUE c0 = rb_ary_entry(d, 0);
     VALUE c1 = rb_ary_entry(d, 1);
     VALUE c2 = rb_ary_entry(d, 2);
     VALUE key = rb_ary_entry(jump_keys, i);
-    // VALUE key = rb_ary_pop(jump_keys);
-    // char* c0str = StringValueCStr( c0 );
     model->setData(model->index(0, 0), StringValueCStr(key));
     model->setData(model->index(0, 1), StringValueCStr(c0));
     model->setData(model->index(0, 2), StringValueCStr(c1));
-    // model->setData(model->index(0, 3), StringValueCStr( c2 ));
     model->item(0)->setEditable(false);
-    //
-    // model->setData(model->index(0, 0), StringValueCStr( rb_ary_entry(d,0) ));
   }
-  // connect(proxyView, SIGNAL(itemClicked(QTreeWidgetItem *,int)), this, SLOT(close()));
-  // connect(proxyView, SIGNAL(itemClicked(QTreeWidgetItem *,int)), SLOT(close()));
-
-  // connect(proxyView, SIGNAL(clicked(const QModelIndex &)), SLOT(selectItem(QModelIndex )));
 }
 
 void SelectWindow::selectItem(QModelIndex index) {

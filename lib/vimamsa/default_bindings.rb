@@ -19,10 +19,6 @@ def jump_to_next_edit
   $buffer.jump_to_next_edit
 end
 
-# def jump_to_last_edit
-  # $buffer.jump_to_last_edit
-# end
-
 reg_act(:savedebug, "savedebug", "Save debug info")
 
 reg_act(:file_finder, "gui_file_finder", "Fuzzy file finder")
@@ -48,6 +44,13 @@ bindkey "C x", :delete_char_forward
 
 reg_act(:load_theme, proc{load_theme}, "Load theme")
 bindkey "C , , l t"  , :load_theme
+
+reg_act(:gui_file_finder, proc{gui_file_finder}, "Fuzzy file finder")
+bindkey "C , f"  , :gui_file_finder
+
+reg_act(:gui_search_replace, proc{gui_search_replace}, "Search and replace")
+bindkey "C , r r"  , :gui_search_replace
+bindkey "V , r r"  , :gui_search_replace
 
 reg_act :open_file_dialog, "open_file_dialog", "Open file"
 bindkey "C , f o"  , :open_file_dialog
@@ -87,13 +90,10 @@ bindkey "B q", :jump_to_last_edit
 bindkey "B w", :jump_to_next_edit
 
 bindkey "C , , h", "toggle_highlight"
-bindkey "C , r r", :invoke_replace
-bindkey "V , r r", :invoke_replace
 bindkey "C , d", :diff_buffer
 bindkey "C , g", :invoke_grep_search
 #bindkey 'C , g', proc{invoke_grep_search}
 
-bindkey "C , f", "gui_file_finder"
 
 reg_act(:auto_indent_buffer, proc{$buffer.indent}, "Auto format buffer")
 bindkey "C , v", :auto_indent_buffer

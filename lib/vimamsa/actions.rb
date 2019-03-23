@@ -66,13 +66,14 @@ def search_actions_select_callback(search_str)
   acc = item[0][:action]
 
   puts "Selected:" + acc.to_s
+  qt_select_window_close(0)
+  
   if acc.class == String
     eval(acc)
   elsif acc.class == Symbol
     puts "Symbol"
     call(acc)
   end
-  qt_select_window_close(0)
 end
 
 def filter_items(item_list, item_key, search_str)

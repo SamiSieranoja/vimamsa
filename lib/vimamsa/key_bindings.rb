@@ -48,7 +48,6 @@ $default_keys = {
   "C B" => "$buffers.switch",
   "C tab" => "$buffers.switch_to_last_buf",
   #    'C , s'=> 'gui_select_buffer',
-  "C , f f" => "gui_file_finder",
   "C , r v b" => "$buffer.revert",
   "C , c b" => "$buffers.close_current_buffer",
   "C , b" => '$at.set_mode("S");gui_select_buffer',

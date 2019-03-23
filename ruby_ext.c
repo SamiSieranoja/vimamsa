@@ -366,21 +366,24 @@ VALUE qt_select_window_close(VALUE self, VALUE id) {
 
 VALUE qt_select_update_window(VALUE self, VALUE item_list, VALUE jump_keys, VALUE select_callback,
                               VALUE update_callback) {
-  // SelectWindow* select_w = new SelectWindow(g_editor,1);
   select_w = new SelectWindow(g_editor, 1);
-  // select_w->setItems(item_list,jump_keys);
   select_w->select_callback = rb_intern_str(select_callback);
   select_w->update_callback = rb_intern_str(update_callback);
   // ID id = rb_to_id(update_callback);
   // ID id = rb_intern_str(update_callback);
 
-  // VALUE foobar = INT2NUM(5);
-  // rb_funcall(INT2NUM(0),select_w->update_callback, 1, INT2NUM(99));
-  // SelectWindow* select_w = new SelectWindow(parent);
   select_w->show();
   select_w->resize(500, 700);
   return INT2NUM(0);
 }
+
+VALUE qt_popup_window(VALUE self, VALUE params) {
+  select_w = new SelectWindow(g_editor, params);
+  select_w->show();
+  // select_w->resize(500, 700);
+  return INT2NUM(0);
+}
+
 
 VALUE qt_open_url(VALUE self, VALUE url) {
   char *cstr_url = StringValueCStr(url);
@@ -465,6 +468,8 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("qt_select_window_close", qt_select_window_close, 1);
 
   rb_define_global_function("qt_select_update_window", qt_select_update_window, 4);
+  rb_define_global_function("qt_popup_window", qt_popup_window, 1);
+  
   rb_define_global_function("qt_open_url", qt_open_url, 1);
   rb_define_global_function("qt_get_buffer", qt_get_buffer, 0);
   rb_define_global_function("qt_load_theme", qt_load_theme, 1);

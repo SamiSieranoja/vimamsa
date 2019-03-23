@@ -46,6 +46,7 @@ require "fileutils"
 require "vimamsa/macro"
 require "vimamsa/buffer"
 require "vimamsa/search"
+require "vimamsa/search_replace"
 require "vimamsa/key_bindings"
 require "vimamsa/buffer_select"
 require "vimamsa/file_finder"
@@ -239,42 +240,6 @@ def diff_buffer()
   # puts bufstr
   infile.close; infile.unlink
   create_new_file(nil, bufstr)
-end
-
-def invoke_replace()
-  start_minibuffer_cmd("", "", :buf_replace_string)
-end
-
-# Requires instr in form "FROM/TO"
-# Replaces all occurences of FROM with TO
-def buf_replace_string(instr)
-  # puts "buf_replace_string(instr=#{instr})"
-
-  a = instr.split("/")
-  if a.size != 2
-    return
-  end
-
-  if $buffer.visual_mode?
-    r = $buffer.get_visual_mode_range
-    txt = $buffer[r]
-    txt.gsub!(a[0], a[1])
-    $buffer.replace_range(r, txt)
-    $buffer.end_visual_mode
-  else
-    repbuf = $buffer.to_s.clone
-    repbuf.gsub!(a[0], a[1])
-    tmppos = $buffer.pos
-    message("Replace #{a[0]} with #{a[1]}.")
-    if repbuf == $buffer.to_s.clone
-      message("Replacing #{a[0]} with #{a[1]}. NO CHANGE.")
-    else
-      $buffer.set_content(repbuf)
-      $buffer.set_pos(tmppos)
-      $do_center = 1
-      message("Replacing #{a[0]} with #{a[1]}.")
-    end
-  end
 end
 
 def invoke_command()

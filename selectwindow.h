@@ -12,7 +12,6 @@ extern "C" {
 
 QT_BEGIN_NAMESPACE
 class QPushButton;
-/*class QLineEdit;*/
 class QTreeWidget;
 QT_END_NAMESPACE
 
@@ -22,6 +21,7 @@ class SelectWindow : public QWidget
 
 public:
     SelectWindow(QWidget *parent,int use_filter);
+    SelectWindow(QWidget *parent,VALUE params);
     setItems(VALUE item_list, VALUE jump_keys);
     ID callback;
     ID update_callback;
@@ -29,15 +29,20 @@ public:
 
 private:
     QPushButton *cancelButton;
+    QPushButton *qt_button1;
+    QPushButton *qt_button2;
     QTreeView *proxyView;
     QStandardItemModel *model;
     QLineEdit* filterEdit;
+    QLineEdit* input1_lineedit;
+    QLineEdit* input2_lineedit;
     int use_filter;
     void SelectWindow::handleKeyEvent(QKeyEvent*);
     bool SelectWindow::eventFilter(QObject *object, QEvent *event);
     bool SelectWindow::handleReturn();
 
 public slots:
+    void runCallback();
     void selectItem(QModelIndex index);
     void filterChanged();
 
