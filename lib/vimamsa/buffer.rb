@@ -260,6 +260,14 @@ class Buffer < String
     str = read_file("", @fname)
     self.set_content(str)
   end
+  
+  def reset_highlight()
+    @update_highlight = true
+    $update_hl_startpos = 0 #TODO
+    $update_hl_endpos = self.size - 1
+    @last_update = Time.now - 10
+    # highlight()
+  end
 
   def set_content(str)
     self.replace(str)

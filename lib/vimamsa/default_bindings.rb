@@ -93,7 +93,10 @@ bindkey "B ;", "$buffer.jump_to_last_edit"
 bindkey "B q", :jump_to_last_edit
 bindkey "B w", :jump_to_next_edit
 
+
+reg_act(:reset_highlight, proc{$buffer.reset_highlight}, "")
 bindkey "C , , h", "toggle_highlight"
+bindkey "C , r h", :reset_highlight
 bindkey "C , d", :diff_buffer
 bindkey "C , g", :invoke_grep_search
 #bindkey 'C , g', proc{invoke_grep_search}
