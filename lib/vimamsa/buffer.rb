@@ -130,19 +130,32 @@ class BufferList < Array
     $buffer_history = bh.reverse
   end
 
-  def close_buffer(buffer_i)
+  def close_buffer(buffer_i, from_recent=false)
     return if self.size <= buffer_i
+    
+    bufname = self[buffer_i].basename
+    message("Closed buffer #{bufname}")
+    recent = get_recent_buffers
+    jump_to_buf = recent[@recent_ind+1]
+    jump_to_buf = 0 if jump_to_buf==nil
+
+
     self.slice!(buffer_i)
     $buffer_history = $buffer_history.collect { |x| r = x; r = x - 1 if x > buffer_i; r = nil if x == buffer_i; r }.compact
 
     if @current_buf == buffer_i
+      if from_recent
+      @current_buf = jump_to_buf 
+      else
       @current_buf = $buffer_history.last
+      end
     end
+    # Ripl.start :binding => binding
     @current_buf = 0 if @current_buf >= self.size
     if self.size == 0
       self << Buffer.new("emptybuf\n")
     end
-    set_current_buffer(@current_buf)
+    set_current_buffer(@current_buf,false)
   end
 
   def close_scrap_buffers()
@@ -156,8 +169,8 @@ class BufferList < Array
     end
   end
 
-  def close_current_buffer
-    close_buffer(@current_buf)
+  def close_current_buffer(from_recent=false)
+    close_buffer(@current_buf,from_recent)
   end
 end
 
