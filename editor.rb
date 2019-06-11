@@ -5,6 +5,7 @@ require "pathname"
 require "date"
 require "ripl/multi_line"
 require "json"
+
 load "vendor/ver/lib/ver/vendor/textpow.rb"
 
 require "differ"
@@ -56,6 +57,7 @@ require "vimamsa/debug"
 require "vimamsa/highlight"
 require "vimamsa/easy_jump"
 require "vimamsa/encrypt"
+require "vimamsa/profiler"
 
 $macro = Macro.new
 $search = Search.new
@@ -517,7 +519,10 @@ def hook_draw()
   easy_jump_draw()
 end
 
+
+
 def render_buffer(buffer = 0, reset = 0)
+
   tmpbuf = $buffer.to_s
   debug "pos:#{$buffer.pos} L:#{$buffer.lpos} C:#{$buffer.cpos}"
   pos = $buffer.pos
@@ -528,8 +533,11 @@ def render_buffer(buffer = 0, reset = 0)
 
   render_text(tmpbuf, pos, selection_start, reset)
 
-  $buffer.highlight
-  debug "Render time: #{Time.now - t1}" if Time.now - t1 > 1 / 50.0
+  $buffer.highlight 
+  if Time.now - t1 > 1 / 100.0
+  debug "SLOW render"
+  debug "Render time: #{Time.now - t1}" 
+  end
   $buffer.set_redrawed if reset == 1
 end
 

@@ -266,6 +266,7 @@ class Buffer < String
     $update_hl_startpos = 0 #TODO
     $update_hl_endpos = self.size - 1
     @last_update = Time.now - 10
+    message("Reset highlight")
     # highlight()
   end
 
@@ -395,7 +396,7 @@ class Buffer < String
       $update_hl_endpos = pos + delta[2]
     end
     puts "DELTA=#{delta.inspect}"
-    sanity_check_line_ends
+    # sanity_check_line_ends #TODO: enable with debug mode
     #highlight_c()
 
     $update_highlight = true
@@ -691,6 +692,7 @@ class Buffer < String
       #      puts "new LINE ENDS:#{i.inspect}"
     end
     #    puts "change:#{changeamount}"
+    #TODO: this is the bottle neck in insert_txt action
     @line_ends.collect! { |x|
       r = nil
       r = x if x < pos
@@ -1199,6 +1201,7 @@ class Buffer < String
   end
 
   def insert_txt(c, mode = BEFORE)
+  # start_profiler
     #Sometimes we get ASCII-8BIT although actually UTF-8  "incompatible character encodings: UTF-8 and ASCII-8BIT (Encoding::CompatibilityError)"
     c = c.force_encoding("UTF-8");  #TODO:correct?
 
@@ -1227,6 +1230,7 @@ class Buffer < String
     calculate_line_and_column_pos
     #need_redraw!
     #@pos += c.size
+    # end_profiler
   end
 
   # Update buffer contents to newstr

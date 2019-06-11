@@ -209,6 +209,7 @@ $default_keys = {
   "C ." => "repeat_last_action", # TODO
   "C ;" => "repeat_last_find",
   "CV Q" => "_quit",
+  "CV ctrl-q" => "_quit",
   "CV , R" => "restart_application",
   "I ctrl!" => "$at.set_mode(COMMAND)",
   "I shift!" => "$at.set_mode(COMMAND)",
@@ -657,6 +658,7 @@ end
 $keys_pressed = [] # TODO: create a queue
 
 def handle_key_event(event)
+  start_profiler
   # puts "GOT KEY EVENT: #{key.inspect}"
   debug "GOT KEY EVENT:: #{event} #{event[2]}"
   $debuginfo["cur_event"] = event
@@ -735,4 +737,5 @@ def handle_key_event(event)
   event_handle_time = Time.now - t1
   debug "RB key event handle time: #{event_handle_time}" if event_handle_time > 1 / 40.0
   render_buffer($buffer)
+  end_profiler
 end
