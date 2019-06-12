@@ -346,9 +346,9 @@ bool Editor::fileSave() {
   return 1;
 }
 
-bool Editor::fileSaveAs() {
+bool Editor::fileSaveAs(QString path) {
 
-  QString fn = QFileDialog::getSaveFileName(this, tr("Save as..."), QString(), tr("All Files (*)"));
+  QString fn = QFileDialog::getSaveFileName(this, tr("Save as..."), path, tr("All Files (*)"));
 
   if (fn.isEmpty())
     return false;

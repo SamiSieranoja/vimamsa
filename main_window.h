@@ -58,7 +58,7 @@ private:
   void setCurrentFileName(const QString &fileName);
 public slots:
   void fileOpen();
-  bool fileSaveAs();
+  bool fileSaveAs(QString path);
 private slots:
   void fileNew();
   bool fileSave();

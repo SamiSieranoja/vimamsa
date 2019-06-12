@@ -1428,14 +1428,16 @@ class Buffer < String
   end
 
   def save_as()
-    qt_file_saveas()
+  
+    savepath =""
+    savepath = @fname if @fname
+    qt_file_saveas(savepath)
   end
 
-  #  https://github.com/manveru/ver
   def save()
     if !@fname
       puts "TODO: SAVE AS"
-      qt_file_saveas()
+      qt_file_saveas("")
       return
     end
     message("Saving file #{@fname}")

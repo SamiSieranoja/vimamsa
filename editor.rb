@@ -6,6 +6,8 @@ require "date"
 require "ripl/multi_line"
 require "json"
 
+# require 'benchmark/ips'
+
 load "vendor/ver/lib/ver/vendor/textpow.rb"
 
 require "differ"
@@ -201,7 +203,11 @@ def ack_buffer(instr)
   instr = instr.gsub("'", ".") # TODO
   bufstr = ""
   for path in $file_content_search_paths
-    bufstr += run_cmd("ack --type-add=gd=.gd -k --nohtml --nojs --nojson '#{instr}' #{path}")
+    bufstr += run_cmd("ack -Q --type-add=gd=.gd -k --nohtml --nojs --nojson '#{instr}' #{path}")
+  end
+  pdir = find_project_dir_of_cur_buffer()
+  if pdir
+    bufstr += run_cmd("ack -Q --type-add=gd=.gd -k --nohtml --nojs --nojson '#{instr}' #{pdir}")
   end
   create_new_file(nil, bufstr)
 end
@@ -435,94 +441,12 @@ def center_on_current_line()
   return cpp_function_wrapper(3, [])
 end
 
-def make_jump_sequence(num_items)
-  left_hand = "asdfvgbqwertzxc123".upcase.split("")
-  right_hand = "jklhnnmyuiop890".upcase.split("")
-
-  sequence = []
-  left_hand_fast = "asdf".upcase.split("")
-  right_hand_fast = "jkl;".upcase.split("")
-
-  left_hand_slow = "wergc".upcase.split("") # v
-  right_hand_slow = "uiophnm,".upcase.split("")
-
-  left_hand_slow2 = "tzx23".upcase.split("")
-  right_hand_slow2 = "yb9'".upcase.split("")
-
-  # Rmoved characters that can be mixed: O0Q, 8B, I1, VY
-
-  left_fast_slow = Array.new(left_hand_fast).concat(left_hand_slow)
-  right_fast_slow = Array.new(right_hand_fast).concat(right_hand_slow)
-
-  left_hand_all = Array.new(left_hand_fast).concat(left_hand_slow).concat(left_hand_slow2)
-  right_hand_all = Array.new(right_hand_fast).concat(right_hand_slow).concat(right_hand_slow2)
-
-  left_hand_fast.each { |x|
-    left_hand_fast.each { |y|
-      sequence << "#{x}#{y}"
-    }
-  }
-
-  right_hand_fast.each { |x|
-    right_hand_fast.each { |y|
-      sequence << "#{x}#{y}"
-    }
-  }
-
-  right_hand_fast.each { |x|
-    left_hand_fast.each { |y|
-      sequence << "#{x}#{y}"
-    }
-  }
-
-  left_hand_fast.each { |x|
-    right_hand_fast.each { |y|
-      sequence << "#{x}#{y}"
-    }
-  }
-
-  left_hand_slow.each { |x|
-    right_fast_slow.each { |y|
-      sequence << "#{x}#{y}"
-    }
-  }
-
-  right_hand_slow.each { |x|
-    left_fast_slow.each { |y|
-      sequence << "#{x}#{y}"
-    }
-  }
-
-  left_hand_slow2.each { |x|
-    right_hand_all.each { |y|
-      left_hand_all.each { |z|
-        sequence << "#{x}#{y}#{z}"
-      }
-    }
-  }
-
-  right_hand_slow2.each { |x|
-    left_hand_all.each { |y|
-      right_hand_all.each { |z|
-        sequence << "#{x}#{y}#{z}"
-      }
-    }
-  }
-
-  #printf("Size of sequence: %d\n",sequence.size)
-  #puts sequence.inspect
-  return sequence
-end
-
 def hook_draw()
   # TODO: as hook.register
   easy_jump_draw()
 end
 
-
-
 def render_buffer(buffer = 0, reset = 0)
-
   tmpbuf = $buffer.to_s
   debug "pos:#{$buffer.pos} L:#{$buffer.lpos} C:#{$buffer.cpos}"
   pos = $buffer.pos
@@ -533,10 +457,10 @@ def render_buffer(buffer = 0, reset = 0)
 
   render_text(tmpbuf, pos, selection_start, reset)
 
-  $buffer.highlight 
+  $buffer.highlight
   if Time.now - t1 > 1 / 100.0
-  debug "SLOW render"
-  debug "Render time: #{Time.now - t1}" 
+    debug "SLOW render"
+    debug "Render time: #{Time.now - t1}"
   end
   $buffer.set_redrawed if reset == 1
 end
@@ -650,6 +574,30 @@ end
 def paste_register(char)
   $c = $register[char]
   message("Paste: #{$c}")
+end
+
+def find_project_dir_of_fn(fn)
+  pcomp = Pathname.new(fn).each_filename.to_a
+  parent_dirs = (0..(pcomp.size - 2)).collect { |x| "/" + pcomp[0..x].join("/") + "/" }.reverse
+  projdir = nil
+  for pdir in parent_dirs
+    candfn = "#{pdir}.vma_project"
+    if File.exist?(candfn)
+      projdir = pdir
+      break
+    end
+  end
+  return projdir
+end
+
+def find_project_dir_of_cur_buffer()
+  # Find "project dir" of current file. If currently editing file in path "/foo/bar/baz/fn.txt" and file named "/foo/bar/.vma_project" exists, then dir /foo/bar is treated as project dir and subject to e.g. ack search. 
+  pdir = nil
+  if $buffer.fname
+    pdir = find_project_dir_of_fn($buffer.fname)
+  end
+  # puts "Proj dir of current file: #{pdir}"
+  return pdir
 end
 
 t1 = Thread.new { main_loop }

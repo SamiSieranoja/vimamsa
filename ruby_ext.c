@@ -16,7 +16,7 @@ VALUE method_qt_quit(VALUE self) { _quit = 1; }
 
 VALUE method_open_file_dialog(VALUE self) { g_editor->fileOpen(); }
 
-VALUE qt_file_saveas(VALUE self) { g_editor->fileSaveAs(); }
+VALUE qt_file_saveas(VALUE self, VALUE savepath) { g_editor->fileSaveAs(QString(StringValueCStr(savepath))); }
 
 VALUE method_restart(VALUE self) {
   QProcess::startDetached(QApplication::applicationFilePath());
@@ -455,7 +455,7 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("main_loop", method_main_loop, 0);
   rb_define_global_function("qt_quit", method_qt_quit, 0);
   rb_define_global_function("open_file_dialog", method_open_file_dialog, 0);
-  rb_define_global_function("qt_file_saveas", qt_file_saveas, 0);
+  rb_define_global_function("qt_file_saveas", qt_file_saveas, 1);
 
   rb_define_global_function("restart_application", method_restart, 0);
   rb_define_global_function("cpp_function_wrapper", ruby_cpp_function_wrapper, 2);
