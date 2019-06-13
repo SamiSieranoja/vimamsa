@@ -1511,6 +1511,7 @@ class Buffer < String
     message("Backup buffer #{fname}")
     spfx = fname.gsub("=", "==").gsub("/", "=:")
     spath = File.expand_path("~/autosave")
+    return false if !can_save_to_directory?(spath)
     datetime = DateTime.now().strftime("%d%m%Y:%H%M%S")
     savepath = "#{spath}/#{spfx}_#{datetime}"
     if is_path_writable(savepath)

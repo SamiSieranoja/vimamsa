@@ -320,9 +320,9 @@ void Editor::fileNew() {
   rb_funcall(NULL, rb_intern("qt_signal"), 2, rb_str_new2("filenew"), rb_str_new2(""));
 }
 
-void Editor::fileOpen() {
+void Editor::fileOpen(QString path) {
   qDebug() << "QT:FILE OPEN";
-  QString fn = QFileDialog::getOpenFileName(this, tr("Open File..."), QString(),
+  QString fn = QFileDialog::getOpenFileName(this, tr("Open File..."), path,
                                             tr("HTML-Files (* *.htm *.html *.txt);;All Files (*)"));
 
   if (!fn.isEmpty()) {

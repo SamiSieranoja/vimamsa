@@ -40,7 +40,7 @@ VALUE method_render_text(VALUE self, VALUE text, VALUE _lpos, VALUE _cpos, VALUE
 VALUE method_scan_indexes(VALUE self, VALUE str, VALUE pat);
 VALUE method_qt_quit(VALUE self);
 VALUE method_main_loop(VALUE self);
-VALUE method_open_file_dialog(VALUE self);
+VALUE method_open_file_dialog(VALUE self, VALUE path);
 VALUE method_set_window_title(VALUE self, VALUE new_title);
 void _init_ruby(int argc, char *argv[]);
 
@@ -117,79 +117,6 @@ private:
   QWidget *lineNumberArea;
 };
 
-#ifdef DISABLED
-class Editor : public QMainWindow {
-  Q_OBJECT
-
-public:
-  Editor(QWidget *parent = 0);
-  int setQtStyle(int style_id);
-  
-  QAction *actionSave;
-
-protected:
-  virtual void closeEvent(QCloseEvent *e);
-
-private:
-  void initActions();
-  void setCurrentFileName(const QString &fileName);
-public slots:
-  void fileOpen();
-  bool fileSaveAs();
-private slots:
-  void fileNew();
-  bool fileSave();
-  bool quit();
-  void filePrint();
-  void filePrintPreview();
-  void filePrintPdf();
-
-  void textFamily(const QString &f);
-  void textSize(const QString &p);
-
-  void currentCharFormatChanged(const QTextCharFormat &format);
-  void cursorPositionChanged();
-
-  void clipboardDataChanged();
-  void about();
-  void printPreview(QPrinter *);
-
-protected:
-  void focusOutEvent(QFocusEvent *event);
-
-private:
-  void mergeFormatOnWordOrSelection(const QTextCharFormat &format);
-  void fontChanged(const QFont &f);
-  void colorChanged(const QColor &c);
-  Overlay overlay;
-
-
-  QComboBox *comboStyle;
-  QFontComboBox *comboFont;
-  QComboBox *comboSize;
-
-  QToolBar *tb;
-  QString fileName;
-  SEditor *textEdit;
-  Highlighter *highlighter;
-  SelectWindow *select_w;
-};
-
-// From http://doc.qt.io/qt-5/qtwidgets-widgets-codeeditor-codeeditor-h.html
-class LineNumberArea : public QWidget {
-public:
-  LineNumberArea(SEditor *editor) : QWidget(editor) { codeEditor = editor; }
-
-  QSize sizeHint() const override { return QSize(codeEditor->lineNumberAreaWidth(), 0); }
-
-protected:
-  void paintEvent(QPaintEvent *event) override { codeEditor->lineNumberAreaPaintEvent(event); }
-//  void paintEvent(QPaintEvent *event);
-
-private:
-  SEditor *codeEditor;
-};
-#endif
 
 
 

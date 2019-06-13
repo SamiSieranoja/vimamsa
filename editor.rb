@@ -133,6 +133,12 @@ def file_saveas(filename)
   $buffer.save()
 end
 
+def open_file_dialog()
+  path = ""
+  path = $buffer.fname if $buffer.fname
+  qt_open_file_dialog(File.dirname(path))
+end
+
 def system_clipboard_changed(clipboard_contents)
   max_clipboard_items = 100
   if clipboard_contents != $clipboard[-1]
@@ -167,6 +173,13 @@ end
 
 def set_last_command(cmd)
   $command_history << cmd
+end
+
+def can_save_to_directory?(dpath)
+  return false if !File.exist?(dpath)
+  return false if !File.directory?(dpath)
+  return false if !File.writable?(dpath)
+  return true
 end
 
 def repeat_last_action()
@@ -591,7 +604,7 @@ def find_project_dir_of_fn(fn)
 end
 
 def find_project_dir_of_cur_buffer()
-  # Find "project dir" of current file. If currently editing file in path "/foo/bar/baz/fn.txt" and file named "/foo/bar/.vma_project" exists, then dir /foo/bar is treated as project dir and subject to e.g. ack search. 
+  # Find "project dir" of current file. If currently editing file in path "/foo/bar/baz/fn.txt" and file named "/foo/bar/.vma_project" exists, then dir /foo/bar is treated as project dir and subject to e.g. ack search.
   pdir = nil
   if $buffer.fname
     pdir = find_project_dir_of_fn($buffer.fname)
