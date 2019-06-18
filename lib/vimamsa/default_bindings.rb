@@ -55,6 +55,10 @@ reg_act(:gui_search_replace, proc{gui_search_replace}, "Search and replace")
 bindkey "C , r r"  , :gui_search_replace
 bindkey "V , r r"  , :gui_search_replace
 
+
+reg_act(:gui_select_buffer, proc{$at.set_mode("S");gui_select_buffer}, "Select buffer")
+bindkey "C , b", :gui_select_buffer
+
 reg_act :open_file_dialog, "open_file_dialog", "Open file"
 bindkey "C , f o"  , :open_file_dialog
 bindkey "CI ctrl-o" , :open_file_dialog

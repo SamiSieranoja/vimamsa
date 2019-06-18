@@ -368,6 +368,10 @@ def read_file(text, path)
   end
   debug("END GUESS ENCODING")
 
+  #TODO: Should put these as option:
+  content.gsub!(/\r\n/,"\n")
+  content.gsub!(/\t/,"    ")
+  
   #    content = filter_buffer(content)
   debug("END FILTER")
   return content

@@ -9,15 +9,21 @@ def gui_select_buffer()
       puts "bufpath:#{buffer.pathname}"
       list_item = [fpath,
                    buffer.pathname.dirname.realpath.to_s, ""]
+      buffer_list << list_item
     else
-      list_item = ["unnamed", "unnamed"]
+      # list_item = ["unnamed", "unnamed"]
     end
-    buffer_list << list_item
   end
   puts buffer_list.inspect
   #$select_keys = ['h', 'l', 'f', 'd', 's', 'a', 'g', 'z']
   $select_keys = "sdflkjabceghimnopqrtuvxyz".split("")
   show_keys = $select_keys.collect { |x| x.upcase }
+  if buffer_list.size > show_keys.size
+    message("More buffers than can handle")
+    # TODO: find a better fix
+    buffer_list = buffer_list[0..(show_keys.size - 1)]
+  end
+
   qt_select_window(buffer_list, show_keys, method(:gui_select_buffer_callback), 0)
 end
 
