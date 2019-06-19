@@ -130,24 +130,23 @@ class BufferList < Array
     $buffer_history = bh.reverse
   end
 
-  def close_buffer(buffer_i, from_recent=false)
+  def close_buffer(buffer_i, from_recent = false)
     return if self.size <= buffer_i
-    
+
     bufname = self[buffer_i].basename
     message("Closed buffer #{bufname}")
     recent = get_recent_buffers
-    jump_to_buf = recent[@recent_ind+1]
-    jump_to_buf = 0 if jump_to_buf==nil
-
+    jump_to_buf = recent[@recent_ind + 1]
+    jump_to_buf = 0 if jump_to_buf == nil
 
     self.slice!(buffer_i)
     $buffer_history = $buffer_history.collect { |x| r = x; r = x - 1 if x > buffer_i; r = nil if x == buffer_i; r }.compact
 
     if @current_buf == buffer_i
       if from_recent
-      @current_buf = jump_to_buf 
+        @current_buf = jump_to_buf
       else
-      @current_buf = $buffer_history.last
+        @current_buf = $buffer_history.last
       end
     end
     # Ripl.start :binding => binding
@@ -155,7 +154,7 @@ class BufferList < Array
     if self.size == 0
       self << Buffer.new("emptybuf\n")
     end
-    set_current_buffer(@current_buf,false)
+    set_current_buffer(@current_buf, false)
   end
 
   def close_scrap_buffers()
@@ -169,8 +168,8 @@ class BufferList < Array
     end
   end
 
-  def close_current_buffer(from_recent=false)
-    close_buffer(@current_buf,from_recent)
+  def close_current_buffer(from_recent = false)
+    close_buffer(@current_buf, from_recent)
   end
 end
 
@@ -260,7 +259,7 @@ class Buffer < String
     str = read_file("", @fname)
     self.set_content(str)
   end
-  
+
   def reset_highlight()
     @update_highlight = true
     $update_hl_startpos = 0 #TODO
@@ -370,7 +369,11 @@ class Buffer < String
     if @edit_pos_history.any? and (@edit_pos_history.last - pos).abs <= 2
       @edit_pos_history.pop
     end
-    @edit_pos_history << pos
+    # lpos = get_line_pos(pos)
+    lsp = get_line_start(pos)
+    if @edit_pos_history[-1] != lsp
+      @edit_pos_history << lsp
+    end
     @edit_pos_history_i = 0
 
     if delta[1] == DELETE
@@ -442,6 +445,7 @@ class Buffer < String
 
     #        if @edit_pos_history.size >= @edit_pos_history_i
     set_pos(@edit_pos_history[-@edit_pos_history_i])
+    center_on_current_line
     #        end
   end
 
@@ -453,6 +457,7 @@ class Buffer < String
     puts "@edit_pos_history_i=#{@edit_pos_history_i}"
     puts @edit_pos_history.size
     set_pos(@edit_pos_history[-@edit_pos_history_i])
+    center_on_current_line
   end
 
   def undo()
@@ -527,7 +532,28 @@ class Buffer < String
   end
 
   def get_line_start(pos)
-    ls = @line_ends.select { |x| x < pos }.max
+
+    # Bsearch: https://www.rubydoc.info/stdlib/core/Array#bsearch-instance_method
+    # In find-minimum mode (this is a good choice for typical use case), the block must return true or false, and there must be an index i (0 <= i <= ary.size) so that:
+    # the block returns false for any element whose index is less than i, and
+    # the block returns true for any element whose index is greater than or equal to i.
+    # This method returns the i-th element. If i is equal to ary.size, it returns nil.
+
+    # (OLD) slower version:
+    # ls = @line_ends.select { |x| x < pos }.max
+    a = @line_ends.bsearch_index { |x| x >= pos }
+    if a > 0
+      a = a - 1
+    else
+      a = nil
+    end
+    ls = nil
+    ls = @line_ends[a] if a !=nil
+    # if a != nil and ls != @line_ends[a]
+      # puts "NO MATCH @line_ends[a]"
+      # Ripl.start :binding => binding
+    # end
+
     if ls == nil
       ls = 0
     else
@@ -717,11 +743,17 @@ class Buffer < String
 
   def set_pos(new_pos)
     if new_pos >= self.size
-      @pos = self.size # right side of last char
+      @pos = self.size - 1 # TODO:??right side of last char
     elsif new_pos >= 0
       @pos = new_pos
     end
     calculate_line_and_column_pos
+  end
+
+  # Get the line number of character position
+  def get_line_pos(pos)
+    lpos = @line_ends.bsearch_index { |x, _| x >= pos }
+    return lpos
   end
 
   # Calculate the two dimensional column and line positions based on
@@ -730,7 +762,7 @@ class Buffer < String
     pos = self.size if pos > self.size
     pos = 0 if pos < 0
 
-    lpos = @line_ends.bsearch_index { |x, _| x >= pos }
+    lpos = get_line_pos(pos)
 
     lpos = @line_ends.size if lpos == nil
     cpos = pos
@@ -1094,6 +1126,7 @@ class Buffer < String
   def jump_to_mark(mark_char)
     p = @marks[mark_char]
     set_pos(p) if p
+    center_on_current_line
   end
 
   def jump(target)
@@ -1201,7 +1234,7 @@ class Buffer < String
   end
 
   def insert_txt(c, mode = BEFORE)
-  # start_profiler
+    # start_profiler
     #Sometimes we get ASCII-8BIT although actually UTF-8  "incompatible character encodings: UTF-8 and ASCII-8BIT (Encoding::CompatibilityError)"
     c = c.force_encoding("UTF-8");  #TODO:correct?
 
@@ -1428,8 +1461,7 @@ class Buffer < String
   end
 
   def save_as()
-  
-    savepath =""
+    savepath = ""
     savepath = @fname if @fname
     qt_file_saveas(savepath)
   end
@@ -1477,7 +1509,7 @@ class Buffer < String
 
     message("Auto format #{@fname}")
 
-    if get_file_type() == "c" 
+    if get_file_type() == "c"
       #C/C++/Java/JavaScript/Objective-C/Protobuf code
       system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")
       bufc = IO.read(infile.path)
@@ -1545,3 +1577,5 @@ def backup_all_buffers()
   end
   message("Backup all buffers")
 end
+
+

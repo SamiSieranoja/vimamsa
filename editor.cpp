@@ -257,6 +257,7 @@ void SEditor::drawTextCursor() {
 
   QList<QTextEdit::ExtraSelection> extraSelections;
   QTextEdit::ExtraSelection selection;
+  QTextEdit::ExtraSelection selection2;
 
   // Draw line highlight
   // QColor lineColor = QColor("#073642");
@@ -264,17 +265,23 @@ void SEditor::drawTextCursor() {
   // QColor lineColor = QColor("#353030");
   QColor lineColor = QColor(StringValueCStr(linehl_color));
 
+
+  
+  // Draw line highlight
   selection.format.setBackground(lineColor);
   selection.format.setProperty(QTextFormat::FullWidthSelection, true);
   selection.cursor = textCursor();
   extraSelections.append(selection);
   setExtraSelections(extraSelections);
 
-  if (selection.cursor.atBlockEnd()) {
-    at_line_end = 1;
-  } else {
-    at_line_end = 0;
-  }
+
+   at_line_end = 0;
+  // if (selection.cursor.atBlockEnd()) {
+    // at_line_end = 1;
+  // } else {
+    // at_line_end = 0;
+  // }
+
 
   setCursorWidth(0);
   overlay_paint_cursor = 0;
@@ -283,16 +290,19 @@ void SEditor::drawTextCursor() {
   //  if(!at_line_end && is_command_mode > 0) {
   // TODO: visual or command mode
 
+
   VALUE ivtmp = rb_eval_string("$at.is_visual_mode()");
   if (!at_line_end && (NUM2INT(ivtmp) == 1 || is_command_mode)) {
     qDebug() << "Draw cursor";
-    selection.cursor.clearSelection();
-    selection.format.setBackground(QColor("#839496"));
-    selection.format.setForeground(QColor("#002b36"));
-
-    selection.cursor.setPosition(cursor_pos);
-    selection.cursor.setPosition(cursor_pos + 1, QTextCursor::KeepAnchor);
-    extraSelections.append(selection);
+    
+    selection2.cursor = textCursor();
+    selection2.cursor.clearSelection();
+    selection2.format.setBackground(QColor("#839496"));
+    selection2.format.setForeground(QColor("#002b36"));
+    
+    selection2.cursor.setPosition(cursor_pos);
+    selection2.cursor.setPosition(cursor_pos + 1, QTextCursor::KeepAnchor);
+    extraSelections.append(selection2);
     setExtraSelections(extraSelections);
   }
   // Command mode at line end
@@ -310,4 +320,12 @@ void SEditor::drawTextCursor() {
   cursor_y = r.y();
   cursor_height = r.height();
 }
+
+
+
+
+
+
+
+
 

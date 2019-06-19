@@ -83,7 +83,6 @@ $default_keys = {
   "VC /[1-9]/" => "set_next_command_count(<char>)",
   #    'VC number=/[0-9]/+ g'=> 'jump_to_line(<number>)',
   #    'VC X=/[0-9]/+ * Y=/[0-9]/+ '=> 'x_times_y(<X>,<Y>)',
-  "VC G($next_command_count!=nil)" => "$buffer.jump_to_line()",
   "VC ^" => "$buffer.jump(BEGINNING_OF_LINE)",
   "VC 0($next_command_count!=nil)" => "set_next_command_count(<char>)",
   "VC 0($next_command_count==nil)" => "$buffer.jump(BEGINNING_OF_LINE)",

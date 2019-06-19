@@ -105,15 +105,48 @@ KEY_RELEASE = 7 # QEvent::KeyRelease
 
 # http://qt-project.org/doc/qt-5.0/qtcore/qt.html#KeyboardModifier-enum
 ALTMODIFIER = 0x08000000
-NOMODIFIER = 0x00000000 #	No modifier key is pressed.
-SHIFTMODIFIER = 0x02000000 #	A Shift key on the keyboard is pressed.
-CONTROLMODIFIER = 0x04000000 #	A Ctrl key on the keyboard is pressed.
-ALTMODIFIER = 0x08000000 #	An Alt key on the keyboard is pressed.
-METAMODIFIER = 0x10000000 #	A Meta key on the keyboard is pressed.
-KEYPADMODIFIER = 0x20000000 #	A keypad button is pressed.
+NOMODIFIER = 0x00000000 #    No modifier key is pressed.
+SHIFTMODIFIER = 0x02000000 #    A Shift key on the keyboard is pressed.
+CONTROLMODIFIER = 0x04000000 #    A Ctrl key on the keyboard is pressed.
+ALTMODIFIER = 0x08000000 #    An Alt key on the keyboard is pressed.
+METAMODIFIER = 0x10000000 #    A Meta key on the keyboard is pressed.
+KEYPADMODIFIER = 0x20000000 #    A keypad button is pressed.
 
 $buffers = BufferList.new
 $minibuffer = Buffer.new(">", "")
+
+class Editor
+
+  attr_reader :file_content_search_paths, :file_name_search_paths
+  #attr_writer :call_func, :update_highlight
+
+  def initialize()
+    # Search for content inside files (e.g. using ack/grep) in: 
+    @file_content_search_paths = []
+    
+    # Search for files based on filenames in: 
+    @file_name_search_paths = []
+  end
+
+  def add_content_search_path(pathstr)
+    p = File.expand_path(pathstr)
+    if !@file_content_search_paths.include?(p)
+      @file_content_search_paths << p
+    end
+  end
+
+  def get_content_search_paths()
+    r = @file_content_search_paths.clone
+    p = find_project_dir_of_cur_buffer()
+    
+    if p and !@file_content_search_paths.include?(p)
+      r.insert(0, p)
+    end
+    return r
+  end
+end
+
+$vma = Editor.new
 
 def _quit()
   # Shut down the Qt thread before the ruby thread
@@ -215,14 +248,14 @@ end
 def ack_buffer(instr)
   instr = instr.gsub("'", ".") # TODO
   bufstr = ""
-  for path in $file_content_search_paths
+  for path in $vma.get_content_search_paths
     bufstr += run_cmd("ack -Q --type-add=gd=.gd -k --nohtml --nojs --nojson '#{instr}' #{path}")
   end
-  pdir = find_project_dir_of_cur_buffer()
-  if pdir
-    bufstr += run_cmd("ack -Q --type-add=gd=.gd -k --nohtml --nojs --nojson '#{instr}' #{pdir}")
+  if bufstr.size > 5
+    create_new_file(nil, bufstr)
+  else
+    message("No results for input:#{instr}")
   end
-  create_new_file(nil, bufstr)
 end
 
 def invoke_ack_search()
@@ -369,9 +402,9 @@ def read_file(text, path)
   debug("END GUESS ENCODING")
 
   #TODO: Should put these as option:
-  content.gsub!(/\r\n/,"\n")
-  content.gsub!(/\t/,"    ")
-  
+  content.gsub!(/\r\n/, "\n")
+  content.gsub!(/\t/, "    ")
+
   #    content = filter_buffer(content)
   debug("END FILTER")
   return content
@@ -413,7 +446,10 @@ end
 
 def jump_to_file(filename, linenum)
   new_file_opened(filename)
-  $buffer.jump_to_line(linenum) if linenum > 0
+  if linenum > 0
+    $buffer.jump_to_line(linenum)
+    center_on_current_line
+  end
 end
 
 def open_existing_file(filename)
@@ -455,7 +491,7 @@ def get_visible_area()
 end
 
 def center_on_current_line()
-  return cpp_function_wrapper(3, [])
+  $do_center = 1
 end
 
 def hook_draw()
@@ -492,11 +528,11 @@ def vimamsa_init
   sleep(0.03)
   $fname = "test.txt"
   $fname = ARGV[1] if ARGV.size >= 2 and File.file?(ARGV[1])
-  $file_content_search_paths = [Dir.pwd]
+  $vma.add_content_search_path(Dir.pwd)
   for fn in ARGV
     fn = File.expand_path(fn)
     if File.directory?(fn)
-      $file_content_search_paths << fn
+      $vma.add_content_search_path(fn)
       $search_dirs << fn
     end
   end
@@ -595,10 +631,10 @@ end
 
 def find_project_dir_of_fn(fn)
   pcomp = Pathname.new(fn).each_filename.to_a
-  parent_dirs = (0..(pcomp.size - 2)).collect { |x| "/" + pcomp[0..x].join("/") + "/" }.reverse
+  parent_dirs = (0..(pcomp.size - 2)).collect { |x| "/" + pcomp[0..x].join("/") }.reverse
   projdir = nil
   for pdir in parent_dirs
-    candfn = "#{pdir}.vma_project"
+    candfn = "#{pdir}/.vma_project"
     if File.exist?(candfn)
       projdir = pdir
       break
@@ -620,3 +656,5 @@ end
 t1 = Thread.new { main_loop }
 t1.join
 debug("END")
+
+

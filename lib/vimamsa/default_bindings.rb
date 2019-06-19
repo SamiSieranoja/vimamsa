@@ -36,6 +36,7 @@ reg_act(:jump_to_next_edit, "jump_to_next_edit", "")
 reg_act(:jump_to_last_edit, proc{$buffer.jump_to_last_edit}, "")
 
 
+
 reg_act(:close_current_buffer, proc{$buffers.close_current_buffer(true)},"Close current buffer")
 bindkey "C , c b", :close_current_buffer
 
