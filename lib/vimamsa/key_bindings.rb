@@ -247,7 +247,7 @@ class State
 end
 
 class AutomataTree
-  attr_accessor :C, :I, :cur_state, :root, :match_state
+  attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action
 
   def initialize()
     @root = State.new("ROOT")
@@ -262,6 +262,8 @@ class AutomataTree
     @match_state = [@C] # used for matching input
     @mode_root_state = @C
     @mode_history = []
+    @last_action = nil
+    @cur_action = nil
   end
 
   def add_mode(id)
@@ -567,20 +569,12 @@ def match_key_conf(c, translated_c, event_type)
     end
   end
 
-  # elsif $cur_key_dict.include?('<char>') and c.size == 1
-  # $cur_key_dict = $cur_key_dict['<char>']
-  # #$context[:input] << c
-  # eval_s = $cur_key_dict['action'].clone
-  # eval_s.gsub!("<char>","'#{c}'")
-  # else
-  # $cur_key_dict = $key_bind_dict[$context[:mode]] if event_type == KEY_PRESS
-  # return false
-  # end
-
   return true
 end
 
 def exec_action(action)
+  $at.last_action = $at.cur_action
+  $at.cur_action = action
   if action.class == Symbol
     return call(action)
   elsif action.class == Proc

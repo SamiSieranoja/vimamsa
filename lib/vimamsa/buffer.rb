@@ -186,7 +186,11 @@ class Buffer < String
     end
 
     super(str)
-    @fname = fname
+    if fname != nil
+      @fname = File.expand_path(fname)
+    else
+      @fname = fname
+    end
 
     t1 = Time.now
     set_content(str)
@@ -194,6 +198,7 @@ class Buffer < String
 
     # TODO: add \n when chars are added after last \n
     self << "\n" if self[-1] != "\n"
+    @current_word = nil
   end
 
   def get_file_type()
@@ -548,10 +553,10 @@ class Buffer < String
       a = nil
     end
     ls = nil
-    ls = @line_ends[a] if a !=nil
+    ls = @line_ends[a] if a != nil
     # if a != nil and ls != @line_ends[a]
-      # puts "NO MATCH @line_ends[a]"
-      # Ripl.start :binding => binding
+    # puts "NO MATCH @line_ends[a]"
+    # Ripl.start :binding => binding
     # end
 
     if ls == nil
@@ -1051,28 +1056,30 @@ class Buffer < String
   end
 
   def jump_to_next_instance_of_word()
-    start_search = [@pos - 150, 0].max
+    if $at.last_action == $at.cur_action and @current_word != nil
+      # puts "REPEATING *"
+    else
+      start_search = [@pos - 150, 0].max
 
-    search_str1 = self[start_search..(@pos)]
-    wsmarks = scan_indexes(search_str1, /(?<=[^\p{Word}])\p{Word}/)
-    a = wsmarks[-1]
-    a = 0 if a == nil
+      search_str1 = self[start_search..(@pos)]
+      wsmarks = scan_indexes(search_str1, /(?<=[^\p{Word}])\p{Word}/)
+      a = wsmarks[-1]
+      a = 0 if a == nil
 
-    search_str2 = self[(@pos)..(@pos + 150)]
-    wemarks = scan_indexes(search_str2, /(?<=\p{Word})[^\p{Word}]/)
-    b = wemarks[0]
-    puts search_str1.inspect
-    word_start = (@pos - search_str1.size + a + 1)
-    word_start = 0 if !(word_start >= 0)
-    current_word = self[word_start..(@pos + b - 1)]
-    #printf("CURRENT WORD: '#{current_word}' a:#{a} b:#{b}\n")
+      search_str2 = self[(@pos)..(@pos + 150)]
+      wemarks = scan_indexes(search_str2, /(?<=\p{Word})[^\p{Word}]/)
+      b = wemarks[0]
+      word_start = (@pos - search_str1.size + a + 1)
+      word_start = 0 if !(word_start >= 0)
+      @current_word = self[word_start..(@pos + b - 1)]
+    end
 
     #TODO: search for /[^\p{Word}]WORD[^\p{Word}]/
-    position_of_next_word = self.index(current_word, @pos + 1)
+    position_of_next_word = self.index(@current_word, @pos + 1)
     if position_of_next_word != nil
       set_pos(position_of_next_word)
     else #Search from beginning
-      position_of_next_word = self.index(current_word)
+      position_of_next_word = self.index(@current_word)
       set_pos(position_of_next_word) if position_of_next_word != nil
     end
     center_on_current_line
@@ -1418,6 +1425,10 @@ class Buffer < String
     $paste_lines = true
   end
 
+  def put_file_path_to_clipboard
+    set_clipboard(self.fname)
+  end
+
   def delete_active_selection() #TODO: remove this function
     return if !@visual_mode #TODO: this should not happen
 
@@ -1577,5 +1588,3 @@ def backup_all_buffers()
   end
   message("Backup all buffers")
 end
-
-

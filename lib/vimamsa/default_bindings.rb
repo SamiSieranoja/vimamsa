@@ -35,7 +35,8 @@ reg_act(:center_on_current_line, "center_on_current_line", "")
 reg_act(:jump_to_next_edit, "jump_to_next_edit", "")
 reg_act(:jump_to_last_edit, proc{$buffer.jump_to_last_edit}, "")
 
-
+reg_act(:put_file_path_to_clipboard, proc{$buffer.put_file_path_to_clipboard},"Put file path of current file to clipboard")
+bindkey "C , , c b", :put_file_path_to_clipboard #TODO: better binding or remove?
 
 reg_act(:close_current_buffer, proc{$buffers.close_current_buffer(true)},"Close current buffer")
 bindkey "C , c b", :close_current_buffer
