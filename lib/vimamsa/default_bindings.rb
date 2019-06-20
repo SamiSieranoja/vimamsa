@@ -38,6 +38,14 @@ reg_act(:jump_to_last_edit, proc{$buffer.jump_to_last_edit}, "")
 reg_act(:put_file_path_to_clipboard, proc{$buffer.put_file_path_to_clipboard},"Put file path of current file to clipboard")
 bindkey "C , , c b", :put_file_path_to_clipboard #TODO: better binding or remove?
 
+# reg_act(:encrypt_file, proc{$buffer.set_encrypted},"Set current file to encrypt on save")
+reg_act(:encrypt_file, proc{encrypt_cur_buffer},"Set current file to encrypt on save")
+bindkey "C , , e", :encrypt_file #TODO: better binding
+
+reg_act(:set_unencrypted, proc{$buffer.set_unencrypted},"Set current file to save unencrypted")
+bindkey "C , , u e", :encrypt_file #TODO: better binding
+
+
 reg_act(:close_current_buffer, proc{$buffers.close_current_buffer(true)},"Close current buffer")
 bindkey "C , c b", :close_current_buffer
 
@@ -71,7 +79,10 @@ bindkey "M return", :minibuffer_end
 reg_act(:invoke_replace, "invoke_replace", "")
 reg_act(:diff_buffer, "diff_buffer", "")
 
-reg_act(:invoke_grep_search, proc{invoke_grep_search}, "")
+# reg_act(:invoke_grep_search, proc{invoke_grep_search}, "")
+reg_act(:invoke_grep_search, proc{gui_grep}, "")
+
+
 #reg_act(:update_file_index, 'update_file_index', '')
 
 reg_act :update_file_index, proc { update_file_index }, "Update file index"

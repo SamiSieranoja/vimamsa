@@ -116,15 +116,14 @@ $buffers = BufferList.new
 $minibuffer = Buffer.new(">", "")
 
 class Editor
-
   attr_reader :file_content_search_paths, :file_name_search_paths
   #attr_writer :call_func, :update_highlight
 
   def initialize()
-    # Search for content inside files (e.g. using ack/grep) in: 
+    # Search for content inside files (e.g. using ack/grep) in:
     @file_content_search_paths = []
-    
-    # Search for files based on filenames in: 
+
+    # Search for files based on filenames in:
     @file_name_search_paths = []
   end
 
@@ -138,7 +137,7 @@ class Editor
   def get_content_search_paths()
     r = @file_content_search_paths.clone
     p = find_project_dir_of_cur_buffer()
-    
+
     if p and !@file_content_search_paths.include?(p)
       r.insert(0, p)
     end
@@ -262,7 +261,7 @@ def invoke_ack_search()
   start_minibuffer_cmd("", "", :ack_buffer)
 end
 
-def grep_cur_buffer(search_str)
+def grep_cur_buffer(search_str, b = nil)
   debug "grep_cur_buffer(search_str)"
   lines = $buffer.split("\n")
   r = Regexp.new(Regexp.escape(search_str), Regexp::IGNORECASE)
@@ -656,5 +655,3 @@ end
 t1 = Thread.new { main_loop }
 t1.join
 debug("END")
-
-

@@ -1,3 +1,22 @@
+def gui_grep()
+  gui_one_input_action("Grep","Search:","grep","grep_cur_buffer")
+end
+def gui_grep_callback(grepstr,b=nil)
+  puts "GUI GREP CALLBACK: [#{grepstr},#{b}]"
+end
+
+def gui_one_input_action(title,field_label,button_title,callback)
+  params = {}
+  params["title"] = title
+  params["input1_label"] = field_label
+  params["input1"] = ""
+  params["input2_label"] = nil
+  params["input2"] = nil
+  params["callback"] = callback
+  
+  params["button1"] = button_title
+  qt_popup_window(params)
+end
 
 def gui_replace_callback(search_str, replace_str)
   puts "gui_replace_callback: #{search_str} => #{replace_str}"

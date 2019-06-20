@@ -1,25 +1,46 @@
 
 require "openssl"
 
-def encrypt(text, pass_phrase)
-  salt = "uvgixEtU"
-  cipher = OpenSSL::Cipher.new "AES-128-CBC"
-  cipher.encrypt
-  cipher.pkcs5_keyivgen pass_phrase, salt
-  encrypted = cipher.update text
-  encrypted << cipher.final
-  return encrypted
+class Encrypt
+  def initialize(pass_phrase)
+    salt = "uvgixEtU"
+    @enc = OpenSSL::Cipher.new "AES-128-CBC"
+    @enc.encrypt
+    @enc.pkcs5_keyivgen pass_phrase, salt
+    @dec = OpenSSL::Cipher.new "AES-128-CBC"
+    @dec.decrypt
+    @dec.pkcs5_keyivgen pass_phrase, salt
+  end
+
+  def encrypt(text)
+    cipher=@enc
+    encrypted = cipher.update text
+    encrypted << cipher.final
+    encrypted = encrypted.unpack('H*')[0].upcase
+    @enc.reset
+    return encrypted
+  end
+
+  def decrypt(encrypted)
+    cipher=@dec
+    encrypted = [encrypted].pack("H*").unpack("C*").pack("c*")
+    plain = cipher.update encrypted
+    plain << cipher.final
+    plain.force_encoding("utf-8")
+    @dec.reset
+    return plain
+  end
 end
 
-def decrypt(encrypted, pass_phrase)
-  salt = "uvgixEtU"
-  cipher = OpenSSL::Cipher.new "AES-128-CBC"
-  cipher.decrypt
-  cipher.pkcs5_keyivgen pass_phrase, salt
-  plain = cipher.update encrypted
-  plain << cipher.final
-  # OpenSSL::Cipher::CipherError: bad decrypt
+def decrypt_cur_buffer(password, b = nil)
+  $buffer.decrypt(password)
+end
 
-  return plain
+def encrypt_cur_buffer()
+  gui_one_input_action("Encrypt", "Password:", "Encrypt", "encrypt_cur_buffer_callback")
+end
+
+def encrypt_cur_buffer_callback(password,b=nil)
+  $buffer.set_encrypted(password)
 end
 

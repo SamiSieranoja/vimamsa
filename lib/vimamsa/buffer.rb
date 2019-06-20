@@ -1,6 +1,7 @@
 require "digest"
 require "tempfile"
 require "pathname"
+require "openssl"
 require "ripl/multi_line"
 
 $paste_lines = false
@@ -181,11 +182,8 @@ class Buffer < String
   attr_writer :call_func, :update_highlight
 
   def initialize(str = "\n", fname = nil)
-    if (str[-1] != "\n")
-      str << "\n"
-    end
-
     super(str)
+    @crypt = nil
     if fname != nil
       @fname = File.expand_path(fname)
     else
@@ -199,6 +197,15 @@ class Buffer < String
     # TODO: add \n when chars are added after last \n
     self << "\n" if self[-1] != "\n"
     @current_word = nil
+  end
+
+  def set_encrypted(password)
+    @crypt = Encrypt.new(password)
+    message("Set buffer encrypted")
+  end
+
+  def set_unencrypted()
+    @crypt = nil
   end
 
   def get_file_type()
@@ -274,7 +281,30 @@ class Buffer < String
     # highlight()
   end
 
+  def decrypt(password)
+    begin
+      @crypt = Encrypt.new(password)
+      str = @crypt.decrypt(@encrypted_str)
+    rescue OpenSSL::Cipher::CipherError => e
+      str = "incorrect password"
+    end
+    self.set_content(str)
+  end
+
   def set_content(str)
+    @encrypted_str = nil
+    if str[0..10] == "VMACRYPT001"
+      @encrypted_str = str[11..-1]
+      gui_one_input_action("Decrypt", "Password:", "decrypt", "decrypt_cur_buffer")
+      str = "ENCRYPTED"
+    else
+      # @crypt = nil
+    end
+
+    if (str[-1] != "\n")
+      str << "\n"
+    end
+
     self.replace(str)
     @line_ends = scan_indexes(self, /\n/)
     @last_update = Time.now - 10
@@ -1484,10 +1514,16 @@ class Buffer < String
       return
     end
     message("Saving file #{@fname}")
+    if @crypt != nil
+      mode = "wb+"
+      contents = "VMACRYPT001" + @crypt.encrypt(self.to_s)
+    else
+      mode = "w+"
+      contents = self.to_s
+    end
 
     Thread.new {
-      contents = self.to_s
-      File.open(@fname, "w+") do |io|
+      File.open(@fname, mode) do |io|
         #io.set_encoding(self.encoding)
 
         begin

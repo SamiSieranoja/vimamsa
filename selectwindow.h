@@ -37,6 +37,7 @@ private:
     QLineEdit* input1_lineedit;
     QLineEdit* input2_lineedit;
     int use_filter;
+    int num_inputs;
     void SelectWindow::handleKeyEvent(QKeyEvent*);
     bool SelectWindow::eventFilter(QObject *object, QEvent *event);
     bool SelectWindow::handleReturn();

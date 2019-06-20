@@ -21,6 +21,7 @@ SelectWindow::SelectWindow(QWidget *parent, int use_filter) : QWidget(parent) {
   // flags = Qt::Popup;
   flags = Qt::Window;
   flags |= Qt::FramelessWindowHint;
+  flags |= Qt::WindowStaysOnTopHint;
   QWidget::setWindowFlags(flags);
 
   if (use_filter) {
@@ -66,6 +67,7 @@ SelectWindow::SelectWindow(QWidget *parent, VALUE params) : QWidget(parent) {
 
   cancelButton = new QPushButton(tr("&Cancel"));
   connect(cancelButton, SIGNAL(clicked()), this, SLOT(close()));
+  cancelButton->installEventFilter(this);
 
   // QVBoxLayout *layout = new QVBoxLayout;
   QFormLayout *layout = new QFormLayout;
@@ -76,6 +78,7 @@ SelectWindow::SelectWindow(QWidget *parent, VALUE params) : QWidget(parent) {
   // flags = Qt::Popup;
   flags = Qt::Window;
   flags |= Qt::FramelessWindowHint;
+  flags |= Qt::WindowStaysOnTopHint;
   QWidget::setWindowFlags(flags);
 
   QLabel *action_nfo = new QLabel(this);
@@ -97,13 +100,16 @@ SelectWindow::SelectWindow(QWidget *parent, VALUE params) : QWidget(parent) {
   if (input1 != Qnil) {
     input1_lineedit = new QLineEdit;
     input1_qt_label->setText(StringValueCStr(input1_label));
+    input1_lineedit->installEventFilter(this);
     layout->addRow(input1_qt_label, input1_lineedit);
+    num_inputs = 1;
   }
   if (input2 != Qnil) {
     input2_qt_label->setText(StringValueCStr(input2_label));
     input2_lineedit = new QLineEdit;
     layout->addRow(input2_qt_label, input2_lineedit);
     input2_lineedit->installEventFilter(this);
+    num_inputs = 2;
   }
 
   if (button1 != Qnil) {
@@ -148,9 +154,30 @@ bool SelectWindow::handleReturn() { qDebug() << "SelectWindow: returnPressed"; }
 void SelectWindow::handleKeyEvent(QKeyEvent *e) { qDebug() << "SelectWindow: SET NEW KEYPRESS"; }
 
 bool SelectWindow::eventFilter(QObject *obj, QEvent *event) {
+
   QKeyEvent *key;
   if (event->type() == QEvent::KeyPress) {
     key = static_cast<QKeyEvent *>(event);
+  }
+
+  if (event->type() == QEvent::KeyPress) {
+    // qDebug() << "eventFilter: got key press";
+    if (key->key() == Qt::Key_Escape) {
+      // qDebug() << "eventFilter: got ESC";
+      close();
+      return true;
+    }
+    // return false;
+  }
+
+  if (event->type() == QEvent::KeyPress && obj == cancelButton) {
+    if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
+      close();
+      return true;
+    }
+  }
+  if (obj == cancelButton) {
+    return false;
   }
 
   // TODO: pass events to ruby event handler
@@ -158,22 +185,23 @@ bool SelectWindow::eventFilter(QObject *obj, QEvent *event) {
 
     // QKeyEvent *key = static_cast<QKeyEvent *>(event);
     if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
-      qDebug() << "eventFilter: got ENTER";
+      // qDebug() << "eventFilter: got ENTER";
       close();
       rb_funcall(INT2NUM(0), select_callback, 1, qstring_to_ruby(filterEdit->text()));
       return true;
     }
     if (key->key() == Qt::Key_Escape) {
-      qDebug() << "eventFilter: got ESC";
+      // qDebug() << "eventFilter: got ESC";
       close();
       return true;
     }
 
     return false;
   }
+
   if (event->type() == QEvent::KeyPress && obj == qt_button1) {
     if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
-      qDebug() << "qt_button1: ENTER!!";
+      // qDebug() << "qt_button1: ENTER!!";
       runCallback();
       return true;
     }
@@ -182,7 +210,14 @@ bool SelectWindow::eventFilter(QObject *obj, QEvent *event) {
 
   else if (event->type() == QEvent::KeyPress && obj == input2_lineedit) {
     if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
-      qDebug() << "input2_lineedit: ENTER!!";
+      // qDebug() << "input2_lineedit: ENTER!!";
+      runCallback();
+      return true;
+    }
+    return false;
+  } else if (event->type() == QEvent::KeyPress && obj == input1_lineedit) {
+    if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
+      // qDebug() << "input1_lineedit: ENTER!!";
       runCallback();
       return true;
     }
@@ -195,21 +230,17 @@ bool SelectWindow::eventFilter(QObject *obj, QEvent *event) {
     return true;
   }
 
-  if (event->type() == QEvent::KeyPress) {
-    // qDebug() << "ZZZZZZZZZZZZZZZZZZ";
-    // if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
-    // qDebug() << "eventFilter22: got ENTER";
-    // // rb_funcall(INT2NUM(0), select_callback, 1, qstring_to_ruby(filterEdit->text()));
-    // return true;
-    // }
-  }
-
   return false;
 }
 
 void SelectWindow::runCallback() {
-  rb_funcall(NULL, callback, 2, qstring_to_ruby(input1_lineedit->text()),
-             qstring_to_ruby(input2_lineedit->text()));
+  // TODO: make this more flexible
+  if (num_inputs == 1) {
+    rb_funcall(NULL, callback, 2, qstring_to_ruby(input1_lineedit->text()), qstring_to_ruby(""));
+  } else if (num_inputs == 2) {
+    rb_funcall(NULL, callback, 2, qstring_to_ruby(input1_lineedit->text()),
+               qstring_to_ruby(input2_lineedit->text()));
+  }
   close();
   rb_eval_string("render_buffer($buffer)"); // HACK
 }
