@@ -180,10 +180,12 @@ class Buffer < String
 
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :highlights, :update_highlight, :marks, :is_highlighted
   attr_writer :call_func, :update_highlight
+  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos
 
   def initialize(str = "\n", fname = nil)
     super(str)
     @crypt = nil
+    @update_highlight = false
     if fname != nil
       @fname = File.expand_path(fname)
     else
@@ -225,11 +227,13 @@ class Buffer < String
     if @syntax_parser != nil
       # Not first time, calculate only for changed part
     else
-      $update_hl_startpos = 0
-      $update_hl_endpos = self.size - 1
+      @update_hl_startpos = 0
+      @update_hl_endpos = self.size - 1
+      puts "@update_hl_endpos = #{@update_hl_endpos}"
     end
 
     if @syntax_parser == nil
+      debug("Create @syntax_parser")
       if self.get_file_type() == "ruby"
         file = "vendor/ver/config/syntax/Ruby.rb"
       elsif self.get_file_type() == "c"
@@ -255,10 +259,9 @@ class Buffer < String
         #TODO
         @highlights = sp.highlights
         $update_highlight = true
+        @qt_update_highlight = true
         @last_update = Time.now
       }
-
-      # t1=Thread.new{ sp = Processor.new;                 @syntax_parser.parse($buffer.to_s, sp);   @highlights = sp.highlights;                 $update_highlight = true;             }
 
       @update_highlight = false
     end
@@ -274,10 +277,10 @@ class Buffer < String
 
   def reset_highlight()
     @update_highlight = true
-    $update_hl_startpos = 0 #TODO
-    $update_hl_endpos = self.size - 1
+    @update_hl_startpos = 0 #TODO
+    @update_hl_endpos = self.size - 1
     @last_update = Time.now - 10
-    message("Reset highlight")
+    message("Reset highlight: #{@update_hl_startpos} #{@update_hl_endpos}")
     # highlight()
   end
 
@@ -293,6 +296,7 @@ class Buffer < String
 
   def set_content(str)
     @encrypted_str = nil
+    @qt_update_highlight = true
     if str[0..10] == "VMACRYPT001"
       @encrypted_str = str[11..-1]
       gui_one_input_action("Decrypt", "Password:", "decrypt", "decrypt_cur_buffer")
@@ -332,8 +336,8 @@ class Buffer < String
 
     @is_highlighted = false
     @update_highlight = true
-    $update_hl_startpos = 0 #TODO
-    $update_hl_endpos = self.size - 1
+    @update_hl_startpos = 0 #TODO
+    @update_hl_endpos = self.size - 1
   end
 
   def set_filename(filename)
@@ -419,8 +423,9 @@ class Buffer < String
       update_highlights(pos, -delta[2], delta[3])
       update_cursor_pos(pos, -delta[2]) if auto_update_cpos
 
-      $update_hl_startpos = pos - delta[2]
-      $update_hl_endpos = pos
+      @update_hl_startpos = pos - delta[2]
+      @update_hl_endpos = pos
+      puts "@update_hl_endpos = #{@update_hl_endpos}"
     elsif delta[1] == INSERT
       self.insert(delta[0], delta[3])
       @deltas << delta
@@ -430,8 +435,9 @@ class Buffer < String
       update_line_ends(pos, +delta[2], delta[3])
       update_highlights(pos, +delta[2], delta[3])
 
-      $update_hl_startpos = pos
-      $update_hl_endpos = pos + delta[2]
+      @update_hl_startpos = pos
+      @update_hl_endpos = pos + delta[2]
+      puts "@update_hl_endpos = #{@update_hl_endpos}"
     end
     puts "DELTA=#{delta.inspect}"
     # sanity_check_line_ends #TODO: enable with debug mode

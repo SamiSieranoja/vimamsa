@@ -1,5 +1,5 @@
 
-class Theme < Struct.new(:name, :uuid, :default, :colors)
+class Theme < Struct.new(:name, :uuid, :default, :colors, :color_keys)
   CACHE = {}
 
   def self.list
@@ -20,6 +20,7 @@ class Theme < Struct.new(:name, :uuid, :default, :colors)
   end
 
   def self.create(uuid, hash)
+    puts "self.create(uuid, hash)XXXXXXXXX"
     instance = new
     instance.name = hash[:name]
     instance.uuid = uuid
@@ -33,7 +34,7 @@ class Theme < Struct.new(:name, :uuid, :default, :colors)
           instance.set(scope_name, settings)
         end
       elsif setting.has_key?(:name)
-      # TODO: ?
+        # TODO: ?
       elsif !settings.empty?
         # general settings
         # puts settings.inspect
@@ -42,6 +43,30 @@ class Theme < Struct.new(:name, :uuid, :default, :colors)
         instance.default = settings
       end
     end
+
+    instance.color_keys = instance.colors.keys.sort.reverse
+    # Sort so that matching in right order, e.g.:
+    # keyword.control.import
+    # keyword.control
+    # keyword
+    
+    i=0;
+    for ck in instance.color_keys
+      style=instance.colors[ck]
+      forec =""
+      backc =""
+      fntsty=0
+      fntsty=1 if style[:fontStyle] =="bold"
+      forec = style[:foreground] if style[:foreground]
+      backc = style[:background] if style[:background]
+      # qt_add_text_format("#aaffbb","#111111",1);
+      qt_add_text_format(forec,backc,fntsty);
+      # puts "#{i} #{ck}:#{instance.colors[ck]}"
+      instance.colors[ck][:qtid]=i
+      i+=1;
+    end
+
+    puts instance.color_keys
 
     instance
   end
@@ -79,10 +104,9 @@ class Theme < Struct.new(:name, :uuid, :default, :colors)
 
   def get(name)
     name = normalize(name)
-    colors.each do |syntax_name, _options|
+    color_keys.each do |syntax_name|
       return syntax_name if name.start_with?(syntax_name)
     end
-
     nil
   end
 
@@ -209,4 +233,3 @@ class Theme < Struct.new(:name, :uuid, :default, :colors)
     end
   end
 end
-

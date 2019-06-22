@@ -15,6 +15,8 @@ extern SEditor *miniEditor;
 extern QApplication *app;
 extern int cursor_pos;
 
+int loadTheme();
+
 int Editor::setQtStyle(int style_id) {
   if (style_id == 1) { // Dark fusion
     QApplication::setStyle(QStyleFactory::create("Fusion"));
@@ -50,6 +52,37 @@ int Editor::setQtStyle(int style_id) {
   } else if (style_id == 4) {
     QApplication::setStyle(QStyleFactory::create("Windows"));
   }
+}
+
+int Editor::addTextFormat(QString foregroundColor, QString backgroundColor, int fontStyle) {
+  qDebug() << "foregC:" << foregroundColor << "fontStyle:" << fontStyle;
+  printf("sty:%d\n", fontStyle);
+
+  QTextCharFormat *newfmt = new QTextCharFormat();
+  if (!foregroundColor.isEmpty()) {
+    newfmt->setForeground(QColor(foregroundColor));
+  }
+
+  if (!backgroundColor.isEmpty()) {
+    newfmt->setBackground(QColor(backgroundColor));
+  }
+
+  if (fontStyle == 1) {
+    newfmt->setFontWeight(QFont::Bold);
+  }
+
+  textFormats.push_back(newfmt);
+}
+
+int Editor::clearTextFormats() {
+  QTextCharFormat *fmt;
+  qDebug() << "Clear TEXT FORMATS";
+  for (int i = 0; i < textFormats.size(); i++) {
+    fmt = textFormats[i];
+    // free(fmt); //TODO: need to clear after sure no longer used by Qt rendering
+  }
+  textFormats.clear();
+  printf("Clear text formats, size:%d\n", textFormats.size());fflush(stdout);
 }
 
 Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
@@ -147,8 +180,6 @@ void SEditor::handleKeyEvent(QKeyEvent *e) { processKeyEvent(e); }
 
 void SEditor::processKeyEvent(QKeyEvent *e) {
 
-  // QString str; str.sprintf("POS:%i",cursorpos);
-  // QTextCursor tc = textCursor();
   QByteArray ba;
   const char *c_str2;
 
@@ -158,15 +189,11 @@ void SEditor::processKeyEvent(QKeyEvent *e) {
   // qDebug() << "nativeScanCode:" << e->nativeScanCode() << endl;
   // qDebug() << "nativeVirtualKey:" << e->nativeVirtualKey() << endl;
 
-  // qDebug() << "keyPressEvent thread:" << thread()->currentThreadId();
-  // qDebug() << "SET NEW KEYPRESS";
-
   QString event_text = e->text();
   ba = e->text().toLocal8Bit();
   c_str2 = ba.data();
   rb_event = rb_ary_new3(5, INT2NUM(e->key()), INT2NUM(e->type()), rb_str_new2(c_str2),
                          rb_str_new2(c_str2), INT2NUM(e->modifiers())
-
   );
 
   rb_funcall(NULL, handle_key_event, 1, rb_event);
@@ -175,11 +202,12 @@ void SEditor::processKeyEvent(QKeyEvent *e) {
   QTextCharFormat defaultCharFormat;
   charFormat.setFontWeight(QFont::Black);
 
-  if (RTEST(rb_eval_string("$update_highlight")) &&
+  if (RTEST(rb_eval_string("$buffer.qt_update_highlight")) &&
       RTEST(rb_eval_string("$cnf[:syntax_highlight]"))) {
+    qDebug("[QT] Update highlight");
 
-    int startpos = NUM2INT(rb_eval_string("$update_hl_startpos"));
-    int endpos = NUM2INT(rb_eval_string("$update_hl_endpos"));
+    int startpos = NUM2INT(rb_eval_string("$buffer.update_hl_startpos"));
+    int endpos = NUM2INT(rb_eval_string("$buffer.update_hl_endpos"));
 
     QTextBlock startblock = c_te->document()->findBlock(startpos);
     QTextBlock endblock = c_te->document()->findBlock(endpos);
@@ -194,11 +222,13 @@ void SEditor::processKeyEvent(QKeyEvent *e) {
     // c_te->hl->rehighlight();
     // c_te->hl->rehighlightBlock(hlblock);
 
-    rb_eval_string("$update_highlight=false");
+    rb_eval_string("$buffer.qt_update_highlight=false");
+    // rb_eval_string("$update_highlight=false"); //TODO: Remove
   }
 }
 
-void SEditor::cursorPositionChanged() { qDebug() << "Cursor pos changed"; }
+void SEditor::cursorPositionChanged() { /*qDebug() << "Cursor pos changed"; */
+}
 
 void SEditor::keyPressEvent(QKeyEvent *e) {
 
@@ -236,7 +266,7 @@ void Editor::initActions() {
   menu->addAction(a);
 
   a = new QAction(QIcon::fromTheme("document-open", QIcon(rsrcPath + "/fileopen.png")),
-                  tr("&Open..."), this);
+                  tr("&Open.."), this);
   // a->setShortcut(QKeySequence::Open);
   connect(a, SIGNAL(triggered()), this, SLOT(fileOpen()));
   tb->addAction(a);
@@ -320,6 +350,11 @@ void Editor::fileNew() {
   rb_funcall(NULL, rb_intern("qt_signal"), 2, rb_str_new2("filenew"), rb_str_new2(""));
 }
 
+void Editor::fileOpen() {
+  qDebug() << "QT:FILE OPEN(nopath)";
+  fileOpen("");
+}
+
 void Editor::fileOpen(QString path) {
   qDebug() << "QT:FILE OPEN";
   QString fn = QFileDialog::getOpenFileName(this, tr("Open File..."), path,
@@ -345,6 +380,11 @@ bool Editor::fileSave() {
 
   return 1;
 }
+
+bool Editor::fileSaveAs() {
+  return fileSaveAs("");
+}
+
 
 bool Editor::fileSaveAs(QString path) {
 
@@ -455,7 +495,6 @@ void Editor::config() {
 void Editor::handleActionMenu() { qDebug() << "handleActionMenu"; }
 void Editor::SearchAndReplace() { rb_eval_string("gui_search_replace"); }
 void Editor::SearchActions() { rb_eval_string("search_actions"); }
-
 
 void Editor::mergeFormatOnWordOrSelection(const QTextCharFormat &format) {
   QTextCursor cursor = textEdit->textCursor();

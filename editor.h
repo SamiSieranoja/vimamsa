@@ -91,6 +91,7 @@ public:
 public:
   void lineNumberAreaPaintEvent(QPaintEvent *event);
   int lineNumberAreaWidth();
+  int loadTheme();
 
 //  void updateLineNumberArea(const QRect &, int);
 

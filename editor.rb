@@ -38,7 +38,6 @@ $debuginfo = {}
 $paint_stack = []
 $jump_sequence = []
 
-$cnf[:syntax_highlight] = false
 
 def debug(message)
   puts "[#{DateTime.now().strftime("%H:%M:%S")}] #{message}"
@@ -157,6 +156,11 @@ def qt_signal(sgnname, param)
   debug "GOT QT-SIGNAL #{sgnname}: #{param}"
   if sgnname == "saveas"
     file_saveas(param)
+  elsif sgnname == "filenew"
+    create_new_file
+    render_buffer
+  elsif sgnname == "save"
+    $buffer.save
   end
 end
 
@@ -244,7 +248,7 @@ def start_minibuffer_cmd(bufname, bufstr, cmd)
   $minibuffer.call_func = method(cmd)
 end
 
-def ack_buffer(instr)
+def ack_buffer(instr, b = nil)
   instr = instr.gsub("'", ".") # TODO
   bufstr = ""
   for path in $vma.get_content_search_paths
@@ -255,6 +259,11 @@ def ack_buffer(instr)
   else
     message("No results for input:#{instr}")
   end
+end
+
+def gui_ack()
+  nfo = "Search contents of all files using ack\nHint: add empty file named .vma_project to dirs you want to search.\nIf .vma_project exists in parent dir of current file, searches in that dir"
+  gui_one_input_action(nfo, "Search:", "search", "ack_buffer")
 end
 
 def invoke_ack_search()
@@ -539,7 +548,8 @@ def vimamsa_init
   dot_dir = File.expand_path("~/.vimamsa")
   Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
 
-  $cnf[:theme] = "Pastels on Dark"
+  $cnf[:theme] = "Twilight_edit"
+  $cnf[:syntax_highlight] = true
   settings_path = get_dot_path("settings.rb")
   if File.exist?(settings_path)
     $cnf = eval(IO.read(settings_path))

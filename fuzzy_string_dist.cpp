@@ -2,7 +2,6 @@
 #include <string.h>
 #include <cstdlib>
 
-
 struct node {
 int i;
 void * next;

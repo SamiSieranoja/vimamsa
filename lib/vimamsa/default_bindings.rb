@@ -43,7 +43,7 @@ reg_act(:encrypt_file, proc{encrypt_cur_buffer},"Set current file to encrypt on 
 bindkey "C , , e", :encrypt_file #TODO: better binding
 
 reg_act(:set_unencrypted, proc{$buffer.set_unencrypted},"Set current file to save unencrypted")
-bindkey "C , , u e", :encrypt_file #TODO: better binding
+bindkey "C , ; u", :set_unencrypted #TODO: better binding
 
 
 reg_act(:close_current_buffer, proc{$buffers.close_current_buffer(true)},"Close current buffer")
@@ -80,10 +80,10 @@ reg_act(:invoke_replace, "invoke_replace", "")
 reg_act(:diff_buffer, "diff_buffer", "")
 
 # reg_act(:invoke_grep_search, proc{invoke_grep_search}, "")
-reg_act(:invoke_grep_search, proc{gui_grep}, "")
+reg_act(:invoke_grep_search, proc{gui_grep}, "Grep current buffer")
 
-
-#reg_act(:update_file_index, 'update_file_index', '')
+reg_act(:ack_search, proc{gui_ack}, "") #invoke_ack_search
+bindkey "C , a", :ack_search
 
 reg_act :update_file_index, proc { update_file_index }, "Update file index"
 

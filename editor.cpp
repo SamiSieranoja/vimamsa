@@ -132,6 +132,11 @@ SEditor::SEditor(QWidget *parent) {
 
 }
 
+
+int SEditor::loadTheme() {
+qDebug() << "SEditor::loadTheme\n";
+}
+
 int SEditor::lineNumberAreaWidth() {
   int digits = 5;
   //    while (max >= 10) {

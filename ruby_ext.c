@@ -46,9 +46,6 @@ VALUE method_main_loop(VALUE self) {
   a.setWindowIcon(QIcon("./images/icon.png"));
   app = &a;
 
-  qDebug() << "hello from GUI thread " << QThread::currentThreadId();
-  // qDebug() << "main_loop thread id:" << thread()->currentThreadId();
-  // Editor g_editor;
   g_editor = new Editor();
   g_editor->resize(700, 800);
   g_editor->show();
@@ -57,8 +54,6 @@ VALUE method_main_loop(VALUE self) {
 
   rb_eval_string("vimamsa_init");
   window_title = new QString("Vimamsa");
-  VALUE rb_event;
-  VALUE handle_key_event = rb_intern("handle_key_event");
   while (1) {
     a.processEvents();
     // rb_thread_schedule(); //TODO if there are plugins with threads?
@@ -214,6 +209,12 @@ VALUE method_render_text(VALUE self, VALUE text, VALUE _pos, VALUE _selection_st
   render_text();
 
   return INT2NUM(1);
+}
+
+VALUE qt_load_theme(VALUE self, VALUE theme)
+{
+  c_te->loadTheme();
+  g_editor->clearTextFormats();
 }
 
 int get_visible_area(int &start_pos, int &end_pos) {
@@ -393,16 +394,19 @@ VALUE qt_open_url(VALUE self, VALUE url) {
 
 VALUE qt_add_font_style(VALUE self, VALUE sty) {
   printf("qt_add_font_style\n");
-  qt_add_font_style_cpp(sty);
+  // qt_add_font_style_cpp(sty);
+  // Qstring QString(StringValueCStr(new_title));
 
   return INT2NUM(0);
 }
 
-
-VALUE qt_load_theme(VALUE self, VALUE theme) {
-  printf("qt_load_theme\n");
-  return INT2NUM(0);
+VALUE qt_add_text_format(VALUE self, VALUE forec,VALUE backc, VALUE fontStyle) {
+  QString foregroundColor = QString(StringValueCStr(forec));
+  QString backgroundColor = QString(StringValueCStr(backc));
+  int fs = NUM2INT(fontStyle);
+  g_editor->addTextFormat(foregroundColor, backgroundColor, fs);
 }
+
 
 VALUE qt_set_stylesheet(VALUE self, VALUE css) {
   qt_set_stylesheet_cpp(css);
@@ -456,6 +460,8 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("qt_quit", method_qt_quit, 0);
   rb_define_global_function("qt_open_file_dialog", method_open_file_dialog, 1);
   rb_define_global_function("qt_file_saveas", qt_file_saveas, 1);
+  rb_define_global_function("qt_load_theme", qt_load_theme, 1);
+  
 
   rb_define_global_function("restart_application", method_restart, 0);
   rb_define_global_function("cpp_function_wrapper", ruby_cpp_function_wrapper, 2);
@@ -469,10 +475,11 @@ void _init_ruby(int argc, char *argv[]) {
 
   rb_define_global_function("qt_select_update_window", qt_select_update_window, 4);
   rb_define_global_function("qt_popup_window", qt_popup_window, 1);
+  rb_define_global_function("qt_add_text_format", qt_add_text_format, 3);
+  
   
   rb_define_global_function("qt_open_url", qt_open_url, 1);
   rb_define_global_function("qt_get_buffer", qt_get_buffer, 0);
-  rb_define_global_function("qt_load_theme", qt_load_theme, 1);
   rb_define_global_function("qt_add_font_style", qt_add_font_style, 1);
   rb_define_global_function("qt_set_stylesheet", qt_set_stylesheet, 1);
   
@@ -535,7 +542,6 @@ int render_text() {
   // qDebug() << "render_text thread:" <<QThread::currentThreadId();
   VALUE minibuf;
   minibuf = rb_eval_string("$minibuffer.to_s");
-  // VALUE is_command_mode;
   VALUE icmtmp = rb_eval_string("$at.is_command_mode()");
   c_te->is_command_mode = NUM2INT(icmtmp);
   QString *minibufstr = new QString(StringValueCStr(minibuf));
@@ -549,14 +555,11 @@ int render_text() {
     delete stext;
   }
 
-  // return;
-
   QTextCursor tc = c_te->textCursor();
 
   // qDebug() << "QT:process deltas\n";
   // ID rb_intern(const char *name)
   VALUE deltas = rb_eval_string("$buffer.deltas");
-  // rb_eval_string("puts \"DELTAS2:#{$buffer.deltas.inspect} \"");
 
   while (RARRAY_LEN(deltas) > 0) {
     VALUE d = rb_ary_shift(deltas);
@@ -604,8 +607,6 @@ int render_text() {
   // Without this draw area is not always updated although
   // Overlay::paintEvent is called
   c_te->overlay->repaint(c_te->overlay->contentsRect());
-
-  // get_visible_area();
 
   app->processEvents();
 }

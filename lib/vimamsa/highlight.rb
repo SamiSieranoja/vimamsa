@@ -41,7 +41,7 @@ def handle_conf_change()
     load_theme(t)
   end
   c = $cnf.clone
-  IO.write(get_dot_path("settings.rb"),$cnf.inspect)
+  IO.write(get_dot_path("settings.rb"), $cnf.inspect)
 end
 
 def load_theme(name = nil)
@@ -52,6 +52,7 @@ def load_theme(name = nil)
   theme_path = "vendor/ver/themes/#{name}.rb" if name != nil and name.class == String
   message "load theme #{theme_path}"
 
+  qt_load_theme($theme)
   $theme = Theme.load(theme_path)
   # qt_load_theme($theme)
   # sty = [$theme.default[:background]]
@@ -68,14 +69,13 @@ def load_theme(name = nil)
 end
 
 def get_format(name)
+  thm = $theme.get(name)
   format = nil
-  #format = 4 if name.match(/keyword.operator/)
-  # format = 4 if name.match(/keyword.control/)
-  format = 4 if name.match(/keyword/)
-  format = 3 if name.match(/storage.type/)
-  format = 2 if name.match(/string.quoted/)
-  format = 2 if name.match(/constant.numeric/)
-  format = 1 if name.match(/constant.other.placeholder/)
+  if thm
+    style = $theme.colors[thm]
+    format = style[:qtid]
+    # puts "close_tag:#{name} mark:#{mark}, match:#{thm} qtid=#{style[:qtid]} style:#{style}"
+  end
   return format
 end
 
@@ -88,6 +88,7 @@ class Processor
     @lineno = -1
     @tags = {}
 
+    #TODO:delete
     @hltags = {}
     @hltags["storage.type.c"] = 3
     @hltags["string.quoted.double.c"] = 2
@@ -102,8 +103,6 @@ class Processor
   end
 
   def end_parsing(name)
-    #        Ripl.start :binding => binding
-    #        puts "end_parsing"
   end
 
   def new_line(line)
@@ -113,22 +112,31 @@ class Processor
 
   def open_tag(name, pos)
     format = get_format(name)
-    #        puts "open_tag:#{name} pos:#{pos}"
-    #        if name == "string.quoted.double.c"
     if format
       @tags[name] = [@lineno, pos]
     end
   end
 
   def close_tag(name, mark)
-    #        puts "close_tag:#{name} mark:#{mark}"
-    format = get_format(name)
-    if format
+    # Ripl.start :binding => binding
+
+    thm = $theme.get(name)
+    format = nil
+    if thm
+      style = $theme.colors[thm]
+      format = style[:qtid]
+      puts "close_tag:#{name} mark:#{mark}, match:#{thm} qtid=#{style[:qtid]} style:#{style}"
+    end
+
+    # format = get_format(name)
+    if format != nil
       if @tags[name] and @tags[name][0] == @lineno
         startpos = @tags[name][1]
         endpos = mark - 1
         @highlights[@lineno] = [] if @highlights[@lineno] == nil
-        @highlights[@lineno] << [startpos, endpos, format]
+        x = [startpos, endpos, format]
+        puts "x:#{x}"
+        @highlights[@lineno] << x
         @highlights[@lineno].sort!
       end
     end

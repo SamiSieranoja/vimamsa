@@ -2,6 +2,8 @@
 #define MAIN_WINDOW_H
 
 #include <iostream>
+#include <vector>
+
 #include <QtCore>
 #include <QtConcurrent>
 #include <QAction>
@@ -39,6 +41,7 @@
 #include "selectwindow.h"
 #include "fuzzy_string_dist.h"
 
+using namespace std;
 
 class Editor : public QMainWindow {
   Q_OBJECT
@@ -47,8 +50,11 @@ public:
   Editor(QWidget *parent = 0);
   // Editor(QWidget *parent);
   int setQtStyle(int style_id);
-  
+  int addTextFormat(QString foregroundColor, QString backgroundColor, int fontStyle);
+  int clearTextFormats(); 
   QAction *actionSave;
+  
+  vector<QTextCharFormat*> textFormats;
 
 protected:
   virtual void closeEvent(QCloseEvent *e);
@@ -57,6 +63,8 @@ private:
   void initActions();
   void setCurrentFileName(const QString &fileName);
 public slots:
+  void fileOpen();
+  bool fileSaveAs();
   void fileOpen(QString path);
   bool fileSaveAs(QString path);
 private slots:

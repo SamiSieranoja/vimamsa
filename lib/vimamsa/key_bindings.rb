@@ -54,7 +54,6 @@ $default_keys = {
   "C , n b" => "create_new_file()",
   "C , ." => "$buffer.backup()",
   # "C , , ." => "backup_all_buffers()",
-  "C , a" => "invoke_ack_search()",
   "VC , , s" => "search_actions()",
 
   "C enter" => "$buffer.get_cur_nonwhitespace_word()",
@@ -246,7 +245,7 @@ class State
   end
 end
 
-class AutomataTree
+class KeyBindingTree
   attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action
 
   def initialize()
@@ -380,10 +379,7 @@ class AutomataTree
 end
 
 def build_key_bindings_tree
-  # $context = {mode:'C',last_down_key:nil,input:{}}
-  $at = AutomataTree.new()
-  # $key_bind_dict = {}
-  # $cur_key_dict = {}
+  $at = KeyBindingTree.new()
   $default_keys.each { |key, value|
     bindkey(key, value)
   }
@@ -392,11 +388,8 @@ end
 $action_list = []
 
 def bindkey(key, action)
-  #    $action_list << [action, key]
-  #  Ripl.start :binding => binding if key == "C , g"
   $action_list << { :action => action, :key => key }
 
-  # dict_i = $key_bind_dict
   k_arr = key.split
   modes = k_arr.shift # modes = "C" or "I" or "CI"
   modes.each_char { |m|
@@ -481,22 +474,19 @@ $translate_table = {
 
 }
 
+# Modifies state of key binding tree (move to new state) based on received event
 def match_key_conf(c, translated_c, event_type)
   # $cur_key_dict = $key_bind_dict[$context[:mode]]
   print "MATCH KEY CONF: #{[c, translated_c]}"
 
-  # Sometimes we get ASCII-8BIT although actually UTF-8
+  # Sometimes we get ASCII-8BIT encoding although content actually UTF-8
   c = c.force_encoding("UTF-8");  # TODO:correct?
 
-  # found_match =
   eval_s = nil
   new_state = $at.match(translated_c)
   if new_state == nil and translated_c.index("shift") == 0
     new_state = $at.match(c)
   end
-  # if new_state == nil
-  # new_state = $at.match(translated_c)
-  # end
 
   if new_state == nil
     s1 = $at.match_state[0].children.select { |s| s.key_name.include?("<char>") } # TODO: [0]
@@ -660,9 +650,6 @@ def handle_key_event(event)
   event[3] = event[2]
 
   if ($check_modifiers or true) # TODO: rely on check_modifiers?
-    # debug("CHECKING key modifiers")
-
-    #        debug($keys_pressed)
     $keys_pressed.delete(Qt::Key_Alt) if event[4] & ALTMODIFIER == 0
     $keys_pressed.delete(Qt::Key_Control) if event[4] & CONTROLMODIFIER == 0
     $keys_pressed.delete(Qt::Key_Shift) if event[4] & SHIFTMODIFIER == 0
@@ -685,9 +672,6 @@ def handle_key_event(event)
 
   $keys_pressed.delete(Qt::Key_Enter) # TODO: Delete after timeout?
   $keys_pressed.delete(Qt::Key_Return)
-
-  # $keys_pressed[event[0]] = true if event[1] == "KEY_PRESS"
-  # $keys_pressed[event[0]] = false if event[1] == "KEY_RELEASE"
 
   # TODO
   # if $keys_pressed.any?

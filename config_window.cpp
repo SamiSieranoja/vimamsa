@@ -1,6 +1,9 @@
 
 #include "config_window.h"
 #include "editor.h"
+#include "main_window.h"
+extern Editor *g_editor;
+
 
 ConfigWindow::ConfigWindow(QWidget *parent, int use_filter) : QWidget(parent) {
 
