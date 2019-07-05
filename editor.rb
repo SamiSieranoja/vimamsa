@@ -9,6 +9,8 @@ require "json"
 # require 'benchmark/ips'
 
 load "vendor/ver/lib/ver/vendor/textpow.rb"
+load "vendor/ver/lib/ver/syntax/detector.rb"
+load "vendor/ver/config/detect.rb"
 
 require "differ"
 
@@ -262,7 +264,7 @@ def ack_buffer(instr, b = nil)
 end
 
 def gui_ack()
-  nfo = "Search contents of all files using ack\nHint: add empty file named .vma_project to dirs you want to search.\nIf .vma_project exists in parent dir of current file, searches in that dir"
+  nfo = "Search contents of all files using ack\n\nHint: add empty file named .vma_project to dirs you want to search.\nIf .vma_project exists in parent dir of current file, searches in that dir"
   gui_one_input_action(nfo, "Search:", "search", "ack_buffer")
 end
 

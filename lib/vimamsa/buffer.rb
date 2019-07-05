@@ -186,6 +186,7 @@ class Buffer < String
     super(str)
     @crypt = nil
     @update_highlight = false
+    @syntax_detect_failed = false
     if fname != nil
       @fname = File.expand_path(fname)
     else
@@ -212,16 +213,18 @@ class Buffer < String
 
   def get_file_type()
     return "" if !@fname
-    ext = File.extname(@fname)
-    ext = ext[1..-1]
-    puts "EXT:#{ext}"
-    return "ruby" if ext == "rb"
-    return "c" if ext == "c" or ext == "cpp" or ext == "h" or ext == "hpp"
-    return "js" if ext == "js"
+    if @ftype != nil
+    else
+      @ftype = VER::Syntax::Detector.detect(@fname)
+      @syntax_detect_failed = true if @ftype == nil
+    end
+    puts "ftype=#{@ftype.inspect}"
+    return @ftype
   end
 
   def highlight()
     return if !$cnf[:syntax_highlight]
+    return if @syntax_detect_failed
     puts "START HIGHLIGHT"
 
     if @syntax_parser != nil
@@ -234,17 +237,14 @@ class Buffer < String
 
     if @syntax_parser == nil
       debug("Create @syntax_parser")
-      if self.get_file_type() == "ruby"
-        file = "vendor/ver/config/syntax/Ruby.rb"
-      elsif self.get_file_type() == "c"
-        file = "vendor/ver/config/syntax/C.rb"
-      elsif self.get_file_type() == "js"
-        file = "vendor/ver/config/syntax/JavaScript.rb"
+      ft = self.get_file_type()
+      file = "vendor/ver/config/syntax/#{ft}.rb"
+      if File.exist?(file)
+        @syntax_parser = Textpow::SyntaxNode.load(file)
       else
-        puts "NON-HIGHLIGHTABLE FILE: '#{get_file_type()}'"
+        puts "NON-HIGHLIGHTABLE FILE: '#{ft}'"
         return
       end
-      @syntax_parser = Textpow::SyntaxNode.load(file)
     end
 
     @is_highlighted = true
@@ -297,6 +297,7 @@ class Buffer < String
   def set_content(str)
     @encrypted_str = nil
     @qt_update_highlight = true
+    @ftype = nil
     if str[0..10] == "VMACRYPT001"
       @encrypted_str = str[11..-1]
       gui_one_input_action("Decrypt", "Password:", "decrypt", "decrypt_cur_buffer")
@@ -544,10 +545,12 @@ class Buffer < String
   end
 
   def get_com_str()
+   return nil if @syntax_detect_failed
+
     com_str = nil
-    if get_file_type() == "c" or get_file_type() == "js"
+    if get_file_type() == "C" or get_file_type() == "Javascript"
       com_str = "//"
-    elsif get_file_type() == "ruby"
+    elsif get_file_type() == "Ruby"
       com_str = "#"
     else
       com_str = "//"
@@ -1562,23 +1565,21 @@ class Buffer < String
 
     message("Auto format #{@fname}")
 
-    if get_file_type() == "c"
+    if get_file_type() == "C" or get_file_type() == "C++"
+
       #C/C++/Java/JavaScript/Objective-C/Protobuf code
       system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")
       bufc = IO.read(infile.path)
-    elsif get_file_type() == "js"
+    elsif get_file_type() == "Javascript"
       cmd = "/home/samisi/bin/clang-format #{file.path} > #{infile.path}'"
       puts cmd
       system(cmd)
       bufc = IO.read(infile.path)
       # puts bufc
-    elsif get_file_type() == "ruby"
-      #TODO:
-      #            cmd = "./vendor/ruby_formatter.rb -s 4 #{file.path}"
+    elsif get_file_type() == "Ruby"
       cmd = "rufo #{file.path}"
       puts cmd
       system(cmd)
-      system("cp #{file.path} /tmp/foob")
       bufc = IO.read(file.path)
     else
       return
