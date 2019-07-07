@@ -54,11 +54,20 @@ int Editor::setQtStyle(int style_id) {
   }
 }
 
-int Editor::addTextFormat(QString foregroundColor, QString backgroundColor, int fontStyle) {
+// int Editor::addTextFormat(QString foregroundColor, QString backgroundColor, int fontStyle) {
+int Editor::addTextFormat(QString foregroundColor, QString backgroundColor, int fontStyle,
+                          float fontScale) {
   qDebug() << "foregC:" << foregroundColor << "fontStyle:" << fontStyle;
   printf("sty:%d\n", fontStyle);
 
+  // float fontScale=1.2;
   QTextCharFormat *newfmt = new QTextCharFormat();
+
+  if (fontScale != 1.0) {
+    int pointSize = (int)(c_te->fnt.pointSize() * fontScale);
+    newfmt->setFontPointSize(pointSize);
+  }
+
   if (!foregroundColor.isEmpty()) {
     newfmt->setForeground(QColor(foregroundColor));
   }
@@ -82,7 +91,8 @@ int Editor::clearTextFormats() {
     // free(fmt); //TODO: need to clear after sure no longer used by Qt rendering
   }
   textFormats.clear();
-  printf("Clear text formats, size:%d\n", textFormats.size());fflush(stdout);
+  printf("Clear text formats, size:%d\n", textFormats.size());
+  fflush(stdout);
 }
 
 Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
@@ -193,8 +203,7 @@ void SEditor::processKeyEvent(QKeyEvent *e) {
   ba = e->text().toLocal8Bit();
   c_str2 = ba.data();
   rb_event = rb_ary_new3(5, INT2NUM(e->key()), INT2NUM(e->type()), rb_str_new2(c_str2),
-                         rb_str_new2(c_str2), INT2NUM(e->modifiers())
-  );
+                         rb_str_new2(c_str2), INT2NUM(e->modifiers()));
 
   rb_funcall(NULL, handle_key_event, 1, rb_event);
 
@@ -381,10 +390,7 @@ bool Editor::fileSave() {
   return 1;
 }
 
-bool Editor::fileSaveAs() {
-  return fileSaveAs("");
-}
-
+bool Editor::fileSaveAs() { return fileSaveAs(""); }
 
 bool Editor::fileSaveAs(QString path) {
 
@@ -470,7 +476,7 @@ void Editor::cursorPositionChanged() {
 
 void Editor::clipboardDataChanged() {
   // http://doc.qt.io/qt-5/qclipboard.html
-  printf("DEBUG: Clipboard data changed\n");
+  // printf("DEBUG: Clipboard data changed\n");
   // const QMimeData *md = QApplication::clipboard()->mimeData();
   if (const QMimeData *md = QApplication::clipboard()->mimeData()) {
     if (md->hasText()) {

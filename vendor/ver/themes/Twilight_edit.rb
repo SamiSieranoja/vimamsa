@@ -131,7 +131,32 @@
    {name: "Markup: List",
     scope: "markup.list",
     settings: {foreground: "#F9EE98"}},
+
+    {name: "M link",
+    scope: 
+     "markup.link, meta.reference.list, markup.underline.link, text.html.textile",
+    settings: {fontStyle: "bold", foreground: "#00FFF8"}},
+    
+     {name: "Date",
+    scope: 
+     "text.date",
+    settings: {fontStyle: "bold", foreground: "#DADADA"}},
+    
+      {name: "Bold",
+    scope: 
+     "text.bold",
+    settings: {fontStyle: "bold"}},
+   
+    
+     {name: "Page title",
+    scope: 
+     "page.title",
+    settings: {fontStyle: "bold", foreground: "#DADADA", sizeScale: "1.7" }},
+   
+
    {name: "Markup: Heading",
     scope: "markup.heading",
-    settings: {foreground: "#CF6A4C"}}],
+    settings: {fontStyle: "bold", foreground: "#CF6A4C", sizeScale: "1.4" }}],
+    
+    
  uuid: "DE82A2D0-032A-40DB-A573-98564C484F59"}

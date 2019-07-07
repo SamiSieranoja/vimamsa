@@ -400,11 +400,13 @@ VALUE qt_add_font_style(VALUE self, VALUE sty) {
   return INT2NUM(0);
 }
 
-VALUE qt_add_text_format(VALUE self, VALUE forec,VALUE backc, VALUE fontStyle) {
+VALUE qt_add_text_format(VALUE self, VALUE forec,VALUE backc, VALUE fontStyle, VALUE fontScale) {
+// VALUE qt_add_text_format(VALUE self, VALUE forec,VALUE backc, VALUE fontStyle) {
   QString foregroundColor = QString(StringValueCStr(forec));
   QString backgroundColor = QString(StringValueCStr(backc));
   int fs = NUM2INT(fontStyle);
-  g_editor->addTextFormat(foregroundColor, backgroundColor, fs);
+  float scale = (float) NUM2DBL(fontScale);
+  g_editor->addTextFormat(foregroundColor, backgroundColor, fs,scale);
 }
 
 
@@ -475,7 +477,7 @@ void _init_ruby(int argc, char *argv[]) {
 
   rb_define_global_function("qt_select_update_window", qt_select_update_window, 4);
   rb_define_global_function("qt_popup_window", qt_popup_window, 1);
-  rb_define_global_function("qt_add_text_format", qt_add_text_format, 3);
+  rb_define_global_function("qt_add_text_format", qt_add_text_format, 4);
   
   
   rb_define_global_function("qt_open_url", qt_open_url, 1);

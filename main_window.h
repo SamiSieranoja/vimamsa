@@ -50,7 +50,7 @@ public:
   Editor(QWidget *parent = 0);
   // Editor(QWidget *parent);
   int setQtStyle(int style_id);
-  int addTextFormat(QString foregroundColor, QString backgroundColor, int fontStyle);
+  int addTextFormat(QString foregroundColor, QString backgroundColor, int fontStyle, float fontScale);
   int clearTextFormats(); 
   QAction *actionSave;
   

@@ -55,12 +55,15 @@ class Theme < Struct.new(:name, :uuid, :default, :colors, :color_keys)
       style=instance.colors[ck]
       forec =""
       backc =""
+      sizeScale=1.0
       fntsty=0
       fntsty=1 if style[:fontStyle] =="bold"
       forec = style[:foreground] if style[:foreground]
       backc = style[:background] if style[:background]
+      sizeScale = style[:sizeScale].to_f if style[:sizeScale]
+
       # qt_add_text_format("#aaffbb","#111111",1);
-      qt_add_text_format(forec,backc,fntsty);
+      qt_add_text_format(forec,backc,fntsty,sizeScale);
       # puts "#{i} #{ck}:#{instance.colors[ck]}"
       instance.colors[ck][:qtid]=i
       i+=1;

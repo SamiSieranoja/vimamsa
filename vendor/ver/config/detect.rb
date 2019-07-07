@@ -3,9 +3,18 @@
 module VER::Syntax::Detector
   exts "C", ["c", "h"]
   head "C", /-[*]-( Mode:)? C -[*]-/
-  exts "C++", ["cc", "cpp", "cp", "cxx", "c++", "C", "h", "hh", "hpp", "h++"]
-  head "C++", /-\*- C\+\+ -\*-/
-    exts "Ruby", ["rb", "rbx", "rjs", "Rakefile", "rake", "cgi", "fcgi", "gemspec", "irbrc", "capfile"]
+  
+  exts "TXT", ["txt", "asciidoc"]
+  
+  # C++ parsing does not seem to work correctly, but C is ok.
+  # exts "C++", ["cc", "cpp", "cp", "cxx", "c++", "C", "h", "hh", "hpp", "h++"]
+  # head "C++", /-\*- C\+\+ -\*-/
+  
+  exts "C", ["c", "h", "cc", "cpp", "cp", "cxx", "c++", "C", "h", "hh", "hpp", "h++"]
+  head "C", /-\*- C\+\+ -\*-/
+ 
+  
+  exts "Ruby", ["rb", "rbx", "rjs", "Rakefile", "rake", "cgi", "fcgi", "gemspec", "irbrc", "capfile"]
   head "Ruby", /^#!\/.*\bruby/
   exts "HTML", ["html", "htm", "shtml", "xhtml", "phtml", "php", "inc", "tmpl", "tpl", "ctp"]
   head "HTML", /<!DOCTYPE|<(?i:html)|<\?(?i:php)/

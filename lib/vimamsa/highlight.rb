@@ -89,15 +89,7 @@ class Processor
     @tags = {}
 
     #TODO:delete
-    @hltags = {}
-    @hltags["storage.type.c"] = 3
-    @hltags["string.quoted.double.c"] = 2
-    @hltags["constant.other.placeholder.c"] = 1
-    @hltags["constant.numeric.c"] = 2
-    #        @hltags["support.function.C99.c"] = 4
-    @hltags["keyword.operator.sizeof.c"] = 4
-    @hltags["keyword.control.c"] = 4
-
+    # @hltags = {}
     $highlight = {}
     @highlights = {}
   end
@@ -125,7 +117,9 @@ class Processor
     if thm
       style = $theme.colors[thm]
       format = style[:qtid]
-      puts "close_tag:#{name} mark:#{mark}, match:#{thm} qtid=#{style[:qtid]} style:#{style}"
+      debug("L=#{@lineno} close_tag:#{name} mark:#{mark}, match:#{thm} qtid=#{style[:qtid]} style:#{style}")
+    else
+      debug("L=#{@lineno} NO THEME FOR close_tag:#{name} mark:#{mark}")
     end
 
     # format = get_format(name)
@@ -135,7 +129,7 @@ class Processor
         endpos = mark - 1
         @highlights[@lineno] = [] if @highlights[@lineno] == nil
         x = [startpos, endpos, format]
-        puts "x:#{x}"
+        # puts "x:#{x}"
         @highlights[@lineno] << x
         @highlights[@lineno].sort!
       end

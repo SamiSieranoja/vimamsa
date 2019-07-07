@@ -40,10 +40,12 @@ $debuginfo = {}
 $paint_stack = []
 $jump_sequence = []
 
-
+$debug = false
 def debug(message)
-  puts "[#{DateTime.now().strftime("%H:%M:%S")}] #{message}"
-  $stdout.flush
+  if $debug
+    puts "[#{DateTime.now().strftime("%H:%M:%S")}] #{message}"
+    $stdout.flush
+  end
 end
 
 require "fileutils"
@@ -184,7 +186,7 @@ def system_clipboard_changed(clipboard_contents)
     $paste_lines = false
   end
   $clipboard << clipboard_contents
-  puts $clipboard[-1]
+  # puts $clipboard[-1]
   $clipboard = $clipboard[-([$clipboard.size, max_clipboard_items].min)..-1]
 end
 
