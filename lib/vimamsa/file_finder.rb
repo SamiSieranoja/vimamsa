@@ -65,9 +65,9 @@ def gui_file_finder_update_callback(search_str = "")
   return []
 end
 
-def gui_file_finder_select_callback(search_str)
-  selected_file = $file_search_list[0][0]
-  puts "FILE FINDER SELECT CALLBACK: #{search_str}: #{selected_file}"
+def gui_file_finder_select_callback(search_str,idx)
+  selected_file = $file_search_list[idx][0]
+  debug "FILE FINDER SELECT CALLBACK: s=#{search_str},i=#{idx}: #{selected_file}"
   qt_select_window_close(0)
   new_file_opened(selected_file)
 end
@@ -80,6 +80,7 @@ def gui_file_finder_handle_char(c)
   end
 end
 
+# TODO: delete?
 def gui_file_finder_init()
   $at.add_mode("Z")
   bindkey "Z enter", "$at.set_mode(COMMAND)"

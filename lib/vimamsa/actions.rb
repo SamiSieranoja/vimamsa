@@ -60,9 +60,8 @@ def search_actions_update_callback(search_str = "")
   return r
 end
 
-def search_actions_select_callback(search_str)
-  #    acc = $item_list[0][0].to_s
-  item = $item_list[0][2]
+def search_actions_select_callback(search_str,idx)
+  item = $item_list[idx][2]
   acc = item[0][:action]
 
   puts "Selected:" + acc.to_s

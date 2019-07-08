@@ -26,6 +26,7 @@ public:
     ID callback;
     ID update_callback;
     ID select_callback;
+    int selected_row;
 
 private:
     QPushButton *cancelButton;

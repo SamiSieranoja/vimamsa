@@ -7,6 +7,7 @@
 SelectWindow::SelectWindow(QWidget *parent, int use_filter) : QWidget(parent) {
 
   this->use_filter = use_filter;
+  this->selected_row = 0;
 
   cancelButton = new QPushButton(tr("&Cancel"));
   connect(cancelButton, SIGNAL(clicked()), this, SLOT(close()));
@@ -147,6 +148,11 @@ void SelectWindow::filterChanged() {
     model->setData(model->index(i, 1), StringValueCStr(c0));
     // model->item(0)->setEditable(false);
   }
+  if (RARRAY_LEN(item_list) > this->selected_row) {
+    proxyView->setCurrentIndex(model->index(this->selected_row, 0));
+    // QModelIndex indx = proxyView->currentIndex();
+    // printf("ROW=%d\n", indx.row());
+  }
 }
 
 bool SelectWindow::handleReturn() { qDebug() << "SelectWindow: returnPressed"; }
@@ -187,12 +193,25 @@ bool SelectWindow::eventFilter(QObject *obj, QEvent *event) {
     if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
       // qDebug() << "eventFilter: got ENTER";
       close();
-      rb_funcall(INT2NUM(0), select_callback, 1, qstring_to_ruby(filterEdit->text()));
+      rb_funcall(INT2NUM(0), select_callback, 2, qstring_to_ruby(filterEdit->text()),INT2NUM(this->selected_row));
       return true;
     }
     if (key->key() == Qt::Key_Escape) {
       // qDebug() << "eventFilter: got ESC";
       close();
+      return true;
+    }
+    if (key->key() == Qt::Key_Down) {
+      this->selected_row += 1;
+      proxyView->setCurrentIndex(model->index(this->selected_row, 0));
+      return true;
+    }
+    if (key->key() == Qt::Key_Up) {
+      this->selected_row -= 1;
+      if (this->selected_row < 0) {
+        this->selected_row = 0;
+      }
+      proxyView->setCurrentIndex(model->index(this->selected_row, 0));
       return true;
     }
 
@@ -262,7 +281,9 @@ SelectWindow::setItems(VALUE item_list, VALUE jump_keys) {
 }
 
 void SelectWindow::selectItem(QModelIndex index) {
-  printf("ITEM %d CLICKED\n", index.row());
-  rb_funcall(NULL, rb_intern("gui_select_buffer_callback"), 1, INT2NUM(index.row()));
+  this->selected_row = index.row();
+  // printf("ITEM %d CLICKED\n", index.row());
+  //TODO: When double clicked:
+  // rb_funcall(NULL, rb_intern("gui_select_buffer_callback"), 1, INT2NUM(index.row()));
   // close();
 }
