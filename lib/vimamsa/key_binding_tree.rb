@@ -7,8 +7,8 @@
 #
 # Change mode from INSERT into COMMAND when ctrl key is released immediately
 # after it has been pressed (there are no other key events between key press and key release).
-#        'I ctrl!'=> '$at.set_mode(COMMAND)',
-#        'C ctrl!'=> '$at.set_mode(INSERT)',
+#        'I ctrl!'=> '$kbd.set_mode(COMMAND)',
+#        'C ctrl!'=> '$kbd.set_mode(INSERT)',
 
 #
 # In command mode: press keys "," "r" "v" and "b" sequentially.
@@ -18,7 +18,6 @@
 # 'I ctrl-a'=> '$buffer.jump(BEGINNING_OF_LINE)',
 #
 
-# The default keymap
 $cnf = {} # TODO
 
 def conf(id)
@@ -28,208 +27,13 @@ end
 def set_conf(id, val)
   $cnf[id] = val
 end
+def setcnf(id, val)
+  set_conf(id, val)
+end
 
-set_conf(:indent_based_on_last_line, true)
-$cnf[:extensions_to_open] = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd"]
+setcnf :indent_based_on_last_line, true
+setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd"]
 
-$cnf["modes"] = { "R" => "READCHAR", "M" => "MINIBUFFER", "C" => "COMMAND", "V" => "VISUAL", "I" => "INSERT", "B" => "BROWSE" }
-
-$default_keys = {
-  # 'C q'=> 'quit',
-
-  # File handling
-  "C ctrl-s" => "$buffer.save",
-  "C W" => "$buffer.save",
-  # "C , f o" => "open_file_dialog",
-  # "C , o" => "open_file_dialog",
-  # "CI ctrl-o" => "open_file_dialog",
-
-  # Buffer handling
-  "C B" => "$buffers.switch",
-  "C tab" => "$buffers.switch_to_last_buf",
-  #    'C , s'=> 'gui_select_buffer',
-  "C , r v b" => "$buffer.revert",
-  "C , c b" => "$buffers.close_current_buffer",
-  #"C , b" => '$at.set_mode("S");gui_select_buffer',
-  "C , n b" => "create_new_file()",
-  "C , ." => "$buffer.backup()",
-  # "C , , ." => "backup_all_buffers()",
-  "VC , , s" => "search_actions()",
-
-  "C enter" => "$buffer.get_cur_nonwhitespace_word()",
-  "C return" => "$buffer.get_cur_nonwhitespace_word()",
-
-  # MOVING
-  #    'VC h' => '$buffer.move(BACKWARD_CHAR)',
-  "VC l" => "$buffer.move(FORWARD_CHAR)",
-  "VC j" => "$buffer.move(FORWARD_LINE)",
-  "VC k" => "$buffer.move(BACKWARD_LINE)",
-
-  "VC pagedown" => "page_down",
-  "VC pageup" => "page_up",
-
-  "VCI left" => "$buffer.move(BACKWARD_CHAR)",
-  "VCI right" => "$buffer.move(FORWARD_CHAR)",
-  "VCI down" => "$buffer.move(FORWARD_LINE)",
-  "VCI up" => "$buffer.move(BACKWARD_LINE)",
-
-  "VC w" => "$buffer.jump_word(FORWARD,WORD_START)",
-  "VC b" => "$buffer.jump_word(BACKWARD,WORD_START)",
-  "VC e" => "$buffer.jump_word(FORWARD,WORD_END)",
-  #    'C '=> '$buffer.jump_word(BACKWARD,END)',#TODO
-  "VC f <char>" => "$buffer.jump_to_next_instance_of_char(<char>)",
-  "VC F <char>" => "$buffer.jump_to_next_instance_of_char(<char>,BACKWARD)",
-  "VC /[1-9]/" => "set_next_command_count(<char>)",
-  #    'VC number=/[0-9]/+ g'=> 'jump_to_line(<number>)',
-  #    'VC X=/[0-9]/+ * Y=/[0-9]/+ '=> 'x_times_y(<X>,<Y>)',
-  "VC ^" => "$buffer.jump(BEGINNING_OF_LINE)",
-  "VC G($next_command_count!=nil)" => "$buffer.jump_to_line()",
-  "VC 0($next_command_count!=nil)" => "set_next_command_count(<char>)",
-  "VC 0($next_command_count==nil)" => "$buffer.jump(BEGINNING_OF_LINE)",
-  # 'C 0'=> '$buffer.jump(BEGINNING_OF_LINE)',
-  "VC g g" => "$buffer.jump(START_OF_BUFFER)",
-  "VC g ;" => "$buffer.jump_to_last_edit",
-  "VC G" => "$buffer.jump(END_OF_BUFFER)",
-  #    'VC z z' => 'center_on_current_line',
-  "VC *" => "$buffer.jump_to_next_instance_of_word",
-  "C s" => "easy_jump(:visible_area)",
-
-  # MINIBUFFER bindings
-  "VC /" => "invoke_search",
-  # 'VC :' => 'invoke_command', #TODO
-  "VC , e" => "invoke_command", # Currently eval
-  "M enter" => "minibuffer_end()",
-  # "M return" => "minibuffer_end()",
-  "M esc" => "minibuffer_cancel()",
-  "M backspace" => "minibuffer_delete()",
-  "M <char>" => "minibuffer_new_char(<char>)",
-  "M ctrl-v" => "$minibuffer.paste(BEFORE)",
-
-  # READCHAR bindings
-
-  "R <char>" => "readchar_new_char(<char>)",
-
-  "C n" => "$search.jump_to_next()",
-  "C N" => "$search.jump_to_previous()",
-
-  # Debug
-  "C , d r p" => "start_ripl",
-  "C , D" => "debug_print_buffer",
-  "C , c s" => "$buffers.close_scrap_buffers",
-  "C , d b" => "debug_print_buffer",
-  "C , d c" => "debug_dump_clipboard",
-  "C , d d" => "debug_dump_deltas",
-  "VC O" => "$buffer.jump(END_OF_LINE)",
-  "VC $" => "$buffer.jump(END_OF_LINE)",
-
-  "C o" => '$buffer.jump(END_OF_LINE);$buffer.insert_txt("\n");$at.set_mode(INSERT)',
-  "C X" => '$buffer.jump(END_OF_LINE);$buffer.insert_txt("\n");',
-  "C A" => "$buffer.jump(END_OF_LINE);$at.set_mode(INSERT)",
-  "C I" => "$buffer.jump(FIRST_NON_WHITESPACE);$at.set_mode(INSERT)",
-  "C a" => "$buffer.move(FORWARD_CHAR);$at.set_mode(INSERT)",
-  "C J" => "$buffer.join_lines()",
-  "C u" => "$buffer.undo()",
-
-  "C ^" => "$buffer.jump(BEGINNING_OF_LINE)",
-  "C /[1-9]/" => "set_next_command_count(<char>)",
-
-  # Command mode only:
-  "C ctrl-r" => "$buffer.redo()", # TODO:???
-  "C R" => "$buffer.redo()",
-  "C v" => "$buffer.start_visual_mode",
-  "C p" => "$buffer.paste(AFTER)", # TODO: implement as replace for visual mode
-  "C P" => "$buffer.paste(BEFORE)", # TODO: implement as replace for visual mode
-  "C space <char>" => "$buffer.insert_txt(<char>)",
-  "C y y" => "$buffer.copy_line",
-  "C y O" => "$buffer.copy(:to_line_end)",
-  "C y 0" => "$buffer.copy(:to_line_start)",
-  "C y e" => "$buffer.copy(:to_word_end)", # TODO
-  #### Deleting
-  "C x" => "$buffer.delete(CURRENT_CHAR_FORWARD)",
-  # 'C d k'=> 'delete_line(BACKWARD)', #TODO
-  # 'C d j'=> 'delete_line(FORWARD)', #TODO
-  # 'C d d'=> '$buffer.delete_cur_line',
-  "C d d" => "$buffer.delete_line",
-  "C d w" => "$buffer.delete2(:to_word_end)",
-  "C d e" => "$buffer.delete2(:to_word_end)",
-  "C d O" => "$buffer.delete2(:to_line_end)",
-  "C d $" => "$buffer.delete2(:to_line_end)",
-  "C d 0" => "$buffer.delete2(:to_line_start)",
-  #    'C d e'=> '$buffer.delete_to_next_word_end',
-  "C d <num> e" => "delete_next_word",
-  "C r <char>" => "$buffer.replace_with_char(<char>)", # TODO
-  "C , l b" => "load_buffer_list",
-  "C , l l" => "save_buffer_list",
-  "C , r <char>" => "set_register(<char>)", # TODO
-  "C , p <char>" => "$buffer.paste(BEFORE,<char>)", # TODO
-
-  "C ctrl-c" => "$buffer.comment_line()",
-  "C ctrl-x" => "$buffer.comment_line(:uncomment)",
-
-  # 'C 0($next_command_count==nil)'=> 'jump_to_beginning_of_line',
-
-  # Visual mode only:
-  "V esc" => "$buffer.end_visual_mode",
-  "V ctrl!" => "$buffer.end_visual_mode",
-  "V y" => "$buffer.copy_active_selection",
-  "V g U" => "$buffer.transform_selection(:upcase)",
-  "V g u" => "$buffer.transform_selection(:downcase)",
-  "V g c" => "$buffer.transform_selection(:capitalize)",
-  "V g s" => "$buffer.transform_selection(:swapcase)",
-  "V g r" => "$buffer.transform_selection(:reverse)",
-
-  "V d" => "$buffer.delete(SELECTION)",
-  "V x" => "$buffer.delete(SELECTION)",
-  # "V ctrl-c" => "$buffer.comment_selection",
-  "V ctrl-x" => "$buffer.comment_selection(:uncomment)",
-
-  "CI ctrl-v" => "$buffer.paste(BEFORE)",
-  "CI backspace" => "$buffer.delete(BACKWARD_CHAR)",
-
-  # Marks
-  "CV m <char>" => "$buffer.mark_current_position(<char>)",
-  'CV \' <char>' => "$buffer.jump_to_mark(<char>)",
-  # "CV ''" =>'jump_to_mark(NEXT_MARK)', #TODO
-
-  "C i" => "$at.set_mode(INSERT)",
-  "C ctrl!" => "$at.set_mode(INSERT)",
-
-  # Macros
-  # (experimental, may not work correctly)
-  "C q a" => '$macro.start_recording("a")',
-  "C q($macro.is_recording==true) " => "$macro.end_recording", # TODO
-  # 'C q'=> '$macro.end_recording', #TODO
-  "C q v" => "$macro.end_recording",
-  # 'C v'=> '$macro.end_recording',
-  "C M" => '$macro.run_macro("a")',
-  "C , m s" => '$macro.save_macro("a")',
-  "C , t r" => "run_tests()",
-
-  "C ." => "repeat_last_action", # TODO
-  "C ;" => "repeat_last_find",
-  "CV Q" => "_quit",
-  "CV ctrl-q" => "_quit",
-  "CV , R" => "restart_application",
-  "I ctrl!" => "$at.set_mode(COMMAND)",
-  "I shift!" => "$at.set_mode(COMMAND)",
-  "C shift!" => "$buffer.save",
-  "I <char>" => "$buffer.insert_txt(<char>)",
-  "I esc" => "$at.set_mode(COMMAND)",
-
-  "I ctrl-d" => "$buffer.delete2(:to_word_end)",
-
-  # INSERT MODE: Moving
-  "I ctrl-a" => "$buffer.jump(BEGINNING_OF_LINE)",
-  "I ctrl-b" => "$buffer.move(BACKWARD_CHAR)",
-  "I ctrl-f" => "$buffer.move(FORWARD_CHAR)",
-  "I ctrl-n" => "$buffer.move(FORWARD_LINE)",
-  "I ctrl-p" => "$buffer.move(BACKWARD_LINE)",
-  "I ctrl-e" => "$buffer.jump(END_OF_LINE)", # context: mode:I, buttons down: {C}
-  "I alt-f" => "$buffer.jump_word(FORWARD,WORD_START)",
-  "I alt-b" => "$buffer.jump_word(BACKWARD,WORD_START)",
-
-  "I tab" => '$buffer.insert_txt("  ")',
-}
 
 class State
   attr_accessor :key_name, :eval_rule, :children, :action
@@ -326,7 +130,7 @@ class KeyBindingTree
   end
 
   def is_command_mode()
-    # debug $at.mode_root_state.inspect
+    # debug $kbd.mode_root_state.inspect
     if @mode_root_state.to_s() == "C"
       # debug "IS COMMAND MODE"
       return 1
@@ -379,12 +183,12 @@ class KeyBindingTree
   end
 end
 
-def build_key_bindings_tree
-  $at = KeyBindingTree.new()
-  $default_keys.each { |key, value|
-    bindkey(key, value)
-  }
-end
+# def build_key_bindings_tree
+  # $kbd = KeyBindingTree.new()
+  # $default_keys.each { |key, value|
+    # bindkey(key, value)
+  # }
+# end
 
 $action_list = []
 
@@ -394,7 +198,7 @@ def bindkey(key, action)
   k_arr = key.split
   modes = k_arr.shift # modes = "C" or "I" or "CI"
   modes.each_char { |m|
-    $at.set_state(m, "") # TODO: check is ok?
+    $kbd.set_state(m, "") # TODO: check is ok?
 
     k_arr.each { |i|
       # check if key has rules for context like q has in
@@ -409,16 +213,16 @@ def bindkey(key, action)
       end
 
       # Create a new state for key if it doesn't exist
-      s1 = $at.find_state(key_name, eval_rule)
+      s1 = $kbd.find_state(key_name, eval_rule)
       if s1 == nil
         new_state = State.new(key_name, eval_rule)
-        $at.cur_state.children << new_state
+        $kbd.cur_state.children << new_state
       end
 
-      $at.set_state(key_name, eval_rule) # TODO: check is ok?
+      $kbd.set_state(key_name, eval_rule) # TODO: check is ok?
     }
-    $at.cur_state.action = action
-    $at.cur_state = $at.root
+    $kbd.cur_state.action = action
+    $kbd.cur_state = $kbd.root
   }
 end
 
@@ -484,13 +288,13 @@ def match_key_conf(c, translated_c, event_type)
   c = c.force_encoding("UTF-8");  # TODO:correct?
 
   eval_s = nil
-  new_state = $at.match(translated_c)
+  new_state = $kbd.match(translated_c)
   if new_state == nil and translated_c.index("shift") == 0
-    new_state = $at.match(c)
+    new_state = $kbd.match(c)
   end
 
   if new_state == nil
-    s1 = $at.match_state[0].children.select { |s| s.key_name.include?("<char>") } # TODO: [0]
+    s1 = $kbd.match_state[0].children.select { |s| s.key_name.include?("<char>") } # TODO: [0]
     if s1.any? and (c.size == 1) and event_type == KEY_PRESS
       eval_s = s1.first.action.clone
       # eval_s.gsub!("<char>","'#{c}'") #TODO: remove
@@ -502,7 +306,7 @@ def match_key_conf(c, translated_c, event_type)
     # Child is regexp like /[1-9]/ in:
     # 'C /[1-9]/'=> 'set_next_command_count(<char>)',
     # Execute child regexps one until matches
-    s1 = $at.match_state[0].children.select { |s|
+    s1 = $kbd.match_state[0].children.select { |s|
       s.key_name =~ /^\/.*\/$/
     } # TODO: [0]
 
@@ -530,7 +334,7 @@ def match_key_conf(c, translated_c, event_type)
     printf("NO MATCH")
     if event_type == KEY_PRESS and translated_c != "shift"
       # TODO:include other modifiers in addition to shift?
-      $at.set_state_to_root
+      $kbd.set_state_to_root
       printf(", BACK TO ROOT")
     end
 
@@ -538,7 +342,7 @@ def match_key_conf(c, translated_c, event_type)
       # Pressing a modifier key (shift) puts state back to root
       # only on key release when no other key has been pressed
       # after said modifier key (shift).
-      $at.set_state_to_root
+      $kbd.set_state_to_root
       printf(", BACK TO ROOT")
     end
 
@@ -556,7 +360,7 @@ def match_key_conf(c, translated_c, event_type)
       puts eval_s
       puts c
       handle_key_bindigs_action(eval_s, c)
-      $at.set_state_to_root
+      $kbd.set_state_to_root
     end
   end
 
@@ -564,8 +368,8 @@ def match_key_conf(c, translated_c, event_type)
 end
 
 def exec_action(action)
-  $at.last_action = $at.cur_action
-  $at.cur_action = action
+  $kbd.last_action = $kbd.cur_action
+  $kbd.cur_action = action
   if action.class == Symbol
     return call(action)
   elsif action.class == Proc

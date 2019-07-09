@@ -16,7 +16,7 @@ def easy_jump(direction)
   $jump_sequence = make_jump_sequence($easy_jump_wsmarks.size)
   #puts $jump_sequence.inspect
   $input_char_call_func = method(:easy_jump_input_char)
-  $at.set_mode(READCHAR)
+  $kbd.set_mode(READCHAR)
   $easy_jump_input = ""
   puts "========="
 end
@@ -29,12 +29,12 @@ def easy_jump_input_char(c)
     nthword = jshash[$easy_jump_input] + 1
     puts "nthword:#{nthword} #{$easy_jump_wsmarks[nthword]}"
     $buffer.set_pos($easy_jump_wsmarks[nthword])
-    $at.set_mode(COMMAND)
+    $kbd.set_mode(COMMAND)
     $input_char_call_func = nil
     $jump_sequence = []
   end
   if $easy_jump_input.size > 2
-    $at.set_mode(COMMAND)
+    $kbd.set_mode(COMMAND)
     $input_char_call_func = nil
     $jump_sequence = []
   end

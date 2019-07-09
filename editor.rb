@@ -41,6 +41,7 @@ $paint_stack = []
 $jump_sequence = []
 
 $debug = false
+
 def debug(message)
   if $debug
     puts "[#{DateTime.now().strftime("%H:%M:%S")}] #{message}"
@@ -53,7 +54,7 @@ require "vimamsa/macro"
 require "vimamsa/buffer"
 require "vimamsa/search"
 require "vimamsa/search_replace"
-require "vimamsa/key_bindings"
+require "vimamsa/key_binding_tree"
 require "vimamsa/buffer_select"
 require "vimamsa/file_finder"
 require "vimamsa/actions"
@@ -247,7 +248,7 @@ def invoke_search()
 end
 
 def start_minibuffer_cmd(bufname, bufstr, cmd)
-  $at.set_mode(MINIBUFFER)
+  $kbd.set_mode(MINIBUFFER)
   $minibuffer = Buffer.new(bufstr, "")
   $minibuffer.call_func = method(cmd)
 end
@@ -329,14 +330,14 @@ end
 
 def minibuffer_end()
   debug "minibuffer_end"
-  $at.set_mode(COMMAND)
+  $kbd.set_mode(COMMAND)
   minibuffer_input = $minibuffer.to_s[0..-2]
   return $minibuffer.call_func.call(minibuffer_input)
 end
 
 def minibuffer_cancel()
   debug "minibuffer_cancel"
-  $at.set_mode(COMMAND)
+  $kbd.set_mode(COMMAND)
   minibuffer_input = $minibuffer.to_s[0..-2]
   # $minibuffer.call_func.call('')
 end
@@ -534,20 +535,11 @@ def vimamsa_init
   $highlight = {}
 
   debug "ARGV: " + ARGV.inspect
-  build_key_bindings_tree
+  # build_key_bindings_tree
+  $kbd = KeyBindingTree.new()
   require "vimamsa/default_bindings"
   debug "START reading file"
   sleep(0.03)
-  $fname = "test.txt"
-  $fname = ARGV[1] if ARGV.size >= 2 and File.file?(ARGV[1])
-  $vma.add_content_search_path(Dir.pwd)
-  for fn in ARGV
-    fn = File.expand_path(fn)
-    if File.directory?(fn)
-      $vma.add_content_search_path(fn)
-      $search_dirs << fn
-    end
-  end
 
   dot_dir = File.expand_path("~/.vimamsa")
   Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
@@ -559,8 +551,6 @@ def vimamsa_init
     $cnf = eval(IO.read(settings_path))
   end
 
-  buffer = Buffer.new(read_file("", $fname), $fname)
-  $buffers << buffer
   set_qt_style(1)
   # load_theme("Amy")
   # load_theme("Espresso Libre")
@@ -573,6 +563,27 @@ def vimamsa_init
   eval(dotfile) if dotfile
 
   build_options
+
+  $fname = "test.txt"
+  if conf(:startup_file)
+    fname_ = File.expand_path(conf(:startup_file))
+    if File.exist?(fname_)
+      $fname = fname_
+    end
+  end
+  $fname = ARGV[1] if ARGV.size >= 2 and File.file?(ARGV[1])
+  $vma.add_content_search_path(Dir.pwd)
+  for fn in ARGV
+    fn = File.expand_path(fn)
+    if File.directory?(fn)
+      $vma.add_content_search_path(fn)
+      $search_dirs << fn
+    end
+  end
+
+  buffer = Buffer.new(read_file("", $fname), $fname)
+  $buffers << buffer
+
   load_theme($cnf[:theme])
 
   render_buffer($buffer, 1)

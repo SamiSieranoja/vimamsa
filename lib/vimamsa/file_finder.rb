@@ -82,7 +82,7 @@ end
 
 # TODO: delete?
 def gui_file_finder_init()
-  $at.add_mode("Z")
-  bindkey "Z enter", "$at.set_mode(COMMAND)"
-  bindkey "Z return", "$at.set_mode(COMMAND)"
+  $kbd.add_mode("Z")
+  bindkey "Z enter", "$kbd.set_mode(COMMAND)"
+  bindkey "Z return", "$kbd.set_mode(COMMAND)"
 end

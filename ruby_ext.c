@@ -544,7 +544,7 @@ int render_text() {
   // qDebug() << "render_text thread:" <<QThread::currentThreadId();
   VALUE minibuf;
   minibuf = rb_eval_string("$minibuffer.to_s");
-  VALUE icmtmp = rb_eval_string("$at.is_command_mode()");
+  VALUE icmtmp = rb_eval_string("$kbd.is_command_mode()");
   c_te->is_command_mode = NUM2INT(icmtmp);
   QString *minibufstr = new QString(StringValueCStr(minibuf));
   miniEditor->setPlainText(*minibufstr);

@@ -545,7 +545,7 @@ class Buffer < String
   end
 
   def get_com_str()
-   return nil if @syntax_detect_failed
+    return nil if @syntax_detect_failed
 
     com_str = nil
     if get_file_type() == "C" or get_file_type() == "Javascript"
@@ -663,7 +663,7 @@ class Buffer < String
     return range
   end
 
-  def line_range(start_line, num_lines)
+  def line_range(start_line, num_lines, include_last_nl = true)
     end_line = start_line + num_lines - 1
     if end_line >= @line_ends.size
       debug("lpos too large") #TODO
@@ -671,7 +671,12 @@ class Buffer < String
     end
     start = @line_ends[start_line - 1] + 1 if start_line > 0
     start = 0 if start_line == 0
-    _End = @line_ends[end_line]
+    if include_last_nl
+      _End = @line_ends[end_line]
+    else
+      _End = @line_ends[end_line] - 1
+    end
+    _End = start if _End < start
     debug "line range: start=#{start}, end=#{_End}"
     return start.._End
   end
@@ -1095,7 +1100,7 @@ class Buffer < String
   end
 
   def jump_to_next_instance_of_word()
-    if $at.last_action == $at.cur_action and @current_word != nil
+    if $kbd.last_action == $kbd.cur_action and @current_word != nil
       # puts "REPEATING *"
     else
       start_search = [@pos - 150, 0].max
@@ -1418,7 +1423,7 @@ class Buffer < String
   def start_visual_mode()
     @visual_mode = true
     @selection_start = @pos
-    $at.set_mode(VISUAL)
+    $kbd.set_mode(VISUAL)
   end
 
   def copy_active_selection()
@@ -1453,6 +1458,30 @@ class Buffer < String
     end_visual_mode
   end
 
+  def style_transform(op)
+    return if !@visual_mode
+    r = get_visual_mode_range
+    txt = self[r]
+    txt = "⦁" + txt + "⦁" if op == :bold
+    txt = "⟦" + txt + "⟧" if op == :link
+    txt = "❙" + txt + "❙" if op == :title
+    txt.gsub!(/[❙◼⟦⟧⦁]/, "") if op == :clear
+
+    replace_range(r, txt)
+    end_visual_mode
+  end
+
+  def set_line_style(op)
+    lrange = line_range(@lpos, 1, false)
+    txt = self[lrange]
+    txt = "◼ " + txt if op == :heading
+    txt = "⦁" + txt + "⦁" if op == :bold
+    txt = "❙" + txt + "❙" if op == :title
+    txt.gsub!(/◼ /, "") if op == :clear
+    txt.gsub!(/[❙◼⟦⟧⦁]/, "") if op == :clear
+    replace_range(lrange, txt)
+  end
+
   def copy_line()
     $method_handles_repeat = true
     num_lines = 1
@@ -1478,7 +1507,7 @@ class Buffer < String
 
   def end_visual_mode()
     #TODO:take previous mode (insert|command) from stack?
-    $at.set_mode(COMMAND)
+    $kbd.set_mode(COMMAND)
     @visual_mode = false
   end
 
