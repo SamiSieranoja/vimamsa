@@ -296,7 +296,7 @@ void SEditor::drawTextCursor() {
   // TODO: visual or command mode
 
 
-  VALUE ivtmp = rb_eval_string("$kbd.is_visual_mode()");
+  VALUE ivtmp = rb_eval_string("is_visual_mode()");
   if (!at_line_end && (NUM2INT(ivtmp) == 1 || is_command_mode)) {
     qDebug() << "Draw cursor";
     

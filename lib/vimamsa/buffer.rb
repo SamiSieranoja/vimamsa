@@ -1423,7 +1423,7 @@ class Buffer < String
   def start_visual_mode()
     @visual_mode = true
     @selection_start = @pos
-    $kbd.set_mode(VISUAL)
+    $kbd.set_mode(:visual)
   end
 
   def copy_active_selection()
@@ -1507,7 +1507,7 @@ class Buffer < String
 
   def end_visual_mode()
     #TODO:take previous mode (insert|command) from stack?
-    $kbd.set_mode(COMMAND)
+    $kbd.set_mode(:command)
     @visual_mode = false
   end
 

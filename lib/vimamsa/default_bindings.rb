@@ -1,4 +1,5 @@
 
+
 def e_move_forward_char
   $buffer.move(FORWARD_CHAR)
 end
@@ -19,6 +20,16 @@ def jump_to_next_edit
   $buffer.jump_to_next_edit
 end
 
+def is_command_mode()
+  return 1 if $kbd.mode_root_state.to_s() == "C"
+  return 0
+end
+
+def is_visual_mode()
+  return 1 if $kbd.mode_root_state.to_s() == "V"
+  return 0
+end
+
 reg_act(:savedebug, "savedebug", "Save debug info")
 
 reg_act(:file_finder, "gui_file_finder", "Fuzzy file finder")
@@ -34,6 +45,10 @@ reg_act(:center_on_current_line, "center_on_current_line", "")
 
 reg_act(:jump_to_next_edit, "jump_to_next_edit", "")
 reg_act(:jump_to_last_edit, proc { $buffer.jump_to_last_edit }, "")
+
+
+reg_act(:show_key_bindings, proc { show_key_bindings }, "Show key bindings")
+bindkey "C , ; s k", :show_key_bindings #TODO: better binding
 
 reg_act(:put_file_path_to_clipboard, proc { $buffer.put_file_path_to_clipboard }, "Put file path of current file to clipboard")
 bindkey "C , , c b", :put_file_path_to_clipboard #TODO: better binding or remove?
@@ -110,15 +125,15 @@ bindkey "VC h", :e_move_backward_char
 
 bindkey "C , , .", :backup_all_buffers
 
-bindkey "C z ", "$kbd.set_mode(BROWSE)"
+bindkey "C z ", "$kbd.set_mode(:browse)"
 bindkey "B h", :history_switch_backwards
 bindkey "B l", :history_switch_forwards
 #bindkey 'B z', :center_on_current_line
-bindkey "B z", "center_on_current_line();$kbd.set_mode(COMMAND)"
-bindkey "B j", "$buffers.add_current_buf_to_history();$kbd.set_mode(COMMAND)"
-bindkey "B esc", "$buffers.add_current_buf_to_history();$kbd.set_mode(COMMAND)"
-bindkey "B return", "$buffers.add_current_buf_to_history();$kbd.set_mode(COMMAND)"
-bindkey "B enter", "$buffers.add_current_buf_to_history();$kbd.set_mode(COMMAND)"
+bindkey "B z", "center_on_current_line();$kbd.set_mode(:command)"
+bindkey "B j", "$buffers.add_current_buf_to_history();$kbd.set_mode(:command)"
+bindkey "B esc", "$buffers.add_current_buf_to_history();$kbd.set_mode(:command)"
+bindkey "B return", "$buffers.add_current_buf_to_history();$kbd.set_mode(:command)"
+bindkey "B enter", "$buffers.add_current_buf_to_history();$kbd.set_mode(:command)"
 bindkey "B c", :close_current_buffer
 
 bindkey "B ;", "$buffer.jump_to_last_edit"
@@ -227,11 +242,11 @@ default_keys = {
   "VC O" => "$buffer.jump(END_OF_LINE)",
   "VC $" => "$buffer.jump(END_OF_LINE)",
 
-  "C o" => '$buffer.jump(END_OF_LINE);$buffer.insert_txt("\n");$kbd.set_mode(INSERT)',
+  "C o" => '$buffer.jump(END_OF_LINE);$buffer.insert_txt("\n");$kbd.set_mode(:insert)',
   "C X" => '$buffer.jump(END_OF_LINE);$buffer.insert_txt("\n");',
-  "C A" => "$buffer.jump(END_OF_LINE);$kbd.set_mode(INSERT)",
-  "C I" => "$buffer.jump(FIRST_NON_WHITESPACE);$kbd.set_mode(INSERT)",
-  "C a" => "$buffer.move(FORWARD_CHAR);$kbd.set_mode(INSERT)",
+  "C A" => "$buffer.jump(END_OF_LINE);$kbd.set_mode(:insert)",
+  "C I" => "$buffer.jump(FIRST_NON_WHITESPACE);$kbd.set_mode(:insert)",
+  "C a" => "$buffer.move(FORWARD_CHAR);$kbd.set_mode(:insert)",
   "C J" => "$buffer.join_lines()",
   "C u" => "$buffer.undo()",
 
@@ -296,8 +311,8 @@ default_keys = {
   'CV \' <char>' => "$buffer.jump_to_mark(<char>)",
   # "CV ''" =>'jump_to_mark(NEXT_MARK)', #TODO
 
-  "C i" => "$kbd.set_mode(INSERT)",
-  "C ctrl!" => "$kbd.set_mode(INSERT)",
+  "C i" => "$kbd.set_mode(:insert)",
+  "C ctrl!" => "$kbd.set_mode(:insert)",
 
   # Macros
   # (experimental, may not work correctly)
@@ -315,11 +330,11 @@ default_keys = {
   "CV Q" => "_quit",
   "CV ctrl-q" => "_quit",
   "CV , R" => "restart_application",
-  "I ctrl!" => "$kbd.set_mode(COMMAND)",
-  "I shift!" => "$kbd.set_mode(COMMAND)",
+  "I ctrl!" => "$kbd.set_mode(:command)",
+  "I shift!" => "$kbd.set_mode(:command)",
   "C shift!" => "$buffer.save",
   "I <char>" => "$buffer.insert_txt(<char>)",
-  "I esc" => "$kbd.set_mode(COMMAND)",
+  "I esc" => "$kbd.set_mode(:command)",
 
   "I ctrl-d" => "$buffer.delete2(:to_word_end)",
 

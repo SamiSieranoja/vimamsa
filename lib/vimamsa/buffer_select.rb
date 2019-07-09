@@ -30,7 +30,7 @@ end
 def gui_select_buffer_callback(buffer_id)
   puts "BUFFER ID: #{buffer_id}"
   $buffers.set_current_buffer(buffer_id)
-  $kbd.set_mode(COMMAND); qt_select_window_close(0)
+  $kbd.set_mode(:command); qt_select_window_close(0)
   render_buffer($buffer)
 end
 
@@ -44,9 +44,9 @@ def gui_select_buffer_handle_char(c)
 end
 
 def gui_select_buffer_init()
-  $kbd.add_mode("S")
-  bindkey "S enter", "$kbd.set_mode(COMMAND);qt_select_window_close(0)"
-  bindkey "S return", "$kbd.set_mode(COMMAND);qt_select_window_close(0)"
-  bindkey "S esc", "$kbd.set_mode(COMMAND);qt_select_window_close(0)"
+  $kbd.add_mode("S",:selectbuf)
+  bindkey "S enter", "$kbd.set_mode(:command);qt_select_window_close(0)"
+  bindkey "S return", "$kbd.set_mode(:command);qt_select_window_close(0)"
+  bindkey "S esc", "$kbd.set_mode(:command);qt_select_window_close(0)"
   bindkey "S <char>", "gui_select_buffer_handle_char(<char>)"
 end

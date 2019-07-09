@@ -7,8 +7,8 @@
 #
 # Change mode from INSERT into COMMAND when ctrl key is released immediately
 # after it has been pressed (there are no other key events between key press and key release).
-#        'I ctrl!'=> '$kbd.set_mode(COMMAND)',
-#        'C ctrl!'=> '$kbd.set_mode(INSERT)',
+#        'I ctrl!'=> '$kbd.set_mode(:command)',
+#        'C ctrl!'=> '$kbd.set_mode(:insert)',
 
 #
 # In command mode: press keys "," "r" "v" and "b" sequentially.
@@ -27,6 +27,7 @@ end
 def set_conf(id, val)
   $cnf[id] = val
 end
+
 def setcnf(id, val)
   set_conf(id, val)
 end
@@ -34,9 +35,8 @@ end
 setcnf :indent_based_on_last_line, true
 setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd"]
 
-
 class State
-  attr_accessor :key_name, :eval_rule, :children, :action
+  attr_accessor :key_name, :eval_rule, :children, :action, :label
 
   def initialize(key_name, eval_rule = "")
     @key_name = key_name
@@ -51,28 +51,27 @@ class State
 end
 
 class KeyBindingTree
-  attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action
+  attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action 
+  attr_reader :mode_root_state
 
   def initialize()
+    @modes = {}
     @root = State.new("ROOT")
-    @C = State.new("C")
-    @I = State.new("I")
-    @V = State.new("V")
-    @M = State.new("M")
-    @R = State.new("R")
-    @B = State.new("B")
-    @root.children << @C << @I << @V << @M << @R << @B
     @cur_state = @root # used for building the tree
-    @match_state = [@C] # used for matching input
-    @mode_root_state = @C
     @mode_history = []
     @last_action = nil
     @cur_action = nil
   end
 
-  def add_mode(id)
-    @mode = State.new(id)
-    @root.children << @mode
+  def set_default_mode(id)
+    @match_state = [@modes[id]] # used for matching input
+    @mode_root_state = @modes[id]
+  end
+
+  def add_mode(id, label)
+    mode = State.new(id)
+    @modes[label] = mode
+    @root.children << mode
   end
 
   def find_state(key_name, eval_rule)
@@ -114,36 +113,26 @@ class KeyBindingTree
     end
   end
 
-  def set_mode(mode_s)
+  def set_mode(label)
     @mode_history << @mode_root_state
-    @mode_root_state = @C if mode_s == COMMAND
-    @mode_root_state = @I if mode_s == INSERT
-    @mode_root_state = @V if mode_s == VISUAL
-    @mode_root_state = @M if mode_s == MINIBUFFER
-    @mode_root_state = @R if mode_s == READCHAR
-    @mode_root_state = @B if mode_s == BROWSE
-    for mode in @root.children
-      if mode.key_name == mode_s
-        @mode_root_state = mode
+
+    # Check if label in form :label
+    if @modes.has_key?(label)
+      @mode_root_state = @modes[label]
+    else
+      # Check if label matches mode name in string format
+      for mode in @root.children
+        if mode.key_name == label
+          @mode_root_state = mode
+        end
       end
     end
   end
 
-  def is_command_mode()
-    # debug $kbd.mode_root_state.inspect
-    if @mode_root_state.to_s() == "C"
-      # debug "IS COMMAND MODE"
-      return 1
-    else
-      # debug "IS NOT COMMAND MODE"
-      return 0
-    end
+  def cur_mode_str()
+    return @mode_root_state.key_name
   end
 
-  def is_visual_mode()
-    return 1 if @mode_root_state.to_s() == "V"
-    return 0
-  end
 
   def set_state(key_name, eval_rule = "")
     new_state = find_state(key_name, eval_rule)
@@ -162,15 +151,15 @@ class KeyBindingTree
   def to_s()
     s = ""
     # @cur_state = @root
-    stack = [[@root, "#"]]
+    stack = [[@root, ""]]
     while stack.any?
       t, p = *stack.pop # t = current state, p = current path
       if t.children.any?
-        t.children.each { |c|
+        t.children.reverse.each { |c|
           if c.eval_rule.size > 0
-            new_p = "#{p} -> #{c.key_name}(#{c.eval_rule})"
+            new_p = "#{p} #{c.key_name}(#{c.eval_rule})"
           else
-            new_p = "#{p} -> #{c.key_name}"
+            new_p = "#{p} #{c.key_name}"
           end
           stack << [c, new_p]
         }
@@ -184,10 +173,10 @@ class KeyBindingTree
 end
 
 # def build_key_bindings_tree
-  # $kbd = KeyBindingTree.new()
-  # $default_keys.each { |key, value|
-    # bindkey(key, value)
-  # }
+# $kbd = KeyBindingTree.new()
+# $default_keys.each { |key, value|
+# bindkey(key, value)
+# }
 # end
 
 $action_list = []

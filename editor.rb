@@ -50,6 +50,7 @@ def debug(message)
 end
 
 require "fileutils"
+require "vimamsa/constants"
 require "vimamsa/macro"
 require "vimamsa/buffer"
 require "vimamsa/search"
@@ -64,60 +65,6 @@ require "vimamsa/highlight"
 require "vimamsa/easy_jump"
 require "vimamsa/encrypt"
 require "vimamsa/profiler"
-
-$macro = Macro.new
-$search = Search.new
-$hook = Hook.new
-
-COMMAND = 1
-INSERT = 2
-BROWSE = 3
-VISUAL = 4
-MINIBUFFER = 5
-READCHAR = 6
-BROWSE = 7
-
-NEXT_MARK = 1001
-PREVIOUS_MARK = 1002
-BACKWARD = 1003
-FORWARD = 1004
-BEFORE = 1005
-AFTER = 1006
-SELECTION = 1007
-
-FORWARD_CHAR = 2001
-BACKWARD_CHAR = 2002
-FORWARD_LINE = 2003
-BACKWARD_LINE = 2004
-CURRENT_CHAR_FORWARD = 2005
-CURRENT_CHAR_BACKWARD = 2006
-START_OF_BUFFER = 2007
-END_OF_BUFFER = 2008
-BACKWARD = 2009
-FORWARD = 2010
-END_OF_LINE = 2011
-BEGINNING_OF_LINE = 2012
-WORD_START = 2013
-WORD_END = 2014
-FIRST_NON_WHITESPACE = 2014
-
-DELETE = 3001
-REPLACE = 3002
-
-KEY_PRESS = 6
-KEY_RELEASE = 7 # QEvent::KeyRelease
-
-# http://qt-project.org/doc/qt-5.0/qtcore/qt.html#KeyboardModifier-enum
-ALTMODIFIER = 0x08000000
-NOMODIFIER = 0x00000000 #    No modifier key is pressed.
-SHIFTMODIFIER = 0x02000000 #    A Shift key on the keyboard is pressed.
-CONTROLMODIFIER = 0x04000000 #    A Ctrl key on the keyboard is pressed.
-ALTMODIFIER = 0x08000000 #    An Alt key on the keyboard is pressed.
-METAMODIFIER = 0x10000000 #    A Meta key on the keyboard is pressed.
-KEYPADMODIFIER = 0x20000000 #    A keypad button is pressed.
-
-$buffers = BufferList.new
-$minibuffer = Buffer.new(">", "")
 
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths
@@ -248,7 +195,7 @@ def invoke_search()
 end
 
 def start_minibuffer_cmd(bufname, bufstr, cmd)
-  $kbd.set_mode(MINIBUFFER)
+  $kbd.set_mode(:minibuffer)
   $minibuffer = Buffer.new(bufstr, "")
   $minibuffer.call_func = method(cmd)
 end
@@ -274,6 +221,15 @@ end
 def invoke_ack_search()
   start_minibuffer_cmd("", "", :ack_buffer)
 end
+
+def show_key_bindings()
+ kbd_s = "❙Key bindings❙\n"
+  kbd_s << "=======================================\n"
+  kbd_s << $kbd.to_s
+  kbd_s << "=======================================\n"
+  create_new_file(nil, kbd_s)
+end
+
 
 def grep_cur_buffer(search_str, b = nil)
   debug "grep_cur_buffer(search_str)"
@@ -330,14 +286,14 @@ end
 
 def minibuffer_end()
   debug "minibuffer_end"
-  $kbd.set_mode(COMMAND)
+  $kbd.set_mode(:command)
   minibuffer_input = $minibuffer.to_s[0..-2]
   return $minibuffer.call_func.call(minibuffer_input)
 end
 
 def minibuffer_cancel()
   debug "minibuffer_cancel"
-  $kbd.set_mode(COMMAND)
+  $kbd.set_mode(:command)
   minibuffer_input = $minibuffer.to_s[0..-2]
   # $minibuffer.call_func.call('')
 end
@@ -533,10 +489,23 @@ end
 
 def vimamsa_init
   $highlight = {}
+  $macro = Macro.new
+  $search = Search.new
+  $hook = Hook.new
+
+  $buffers = BufferList.new
+  $minibuffer = Buffer.new(">", "")
 
   debug "ARGV: " + ARGV.inspect
   # build_key_bindings_tree
   $kbd = KeyBindingTree.new()
+  $kbd.add_mode("C", :command)
+  $kbd.add_mode("I", :insert)
+  $kbd.add_mode("V", :visual)
+  $kbd.add_mode("M", :minibuffer)
+  $kbd.add_mode("R", :readchar)
+  $kbd.add_mode("B", :browse)
+  $kbd.set_default_mode(:command)
   require "vimamsa/default_bindings"
   debug "START reading file"
   sleep(0.03)
