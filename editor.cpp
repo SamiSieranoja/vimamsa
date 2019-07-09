@@ -298,7 +298,7 @@ void SEditor::drawTextCursor() {
 
   VALUE ivtmp = rb_eval_string("is_visual_mode()");
   if (!at_line_end && (NUM2INT(ivtmp) == 1 || is_command_mode)) {
-    qDebug() << "Draw cursor";
+    // qDebug() << "Draw cursor";
     
     selection2.cursor = textCursor();
     selection2.cursor.clearSelection();

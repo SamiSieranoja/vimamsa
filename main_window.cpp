@@ -202,6 +202,7 @@ void SEditor::processKeyEvent(QKeyEvent *e) {
   QString event_text = e->text();
   ba = e->text().toLocal8Bit();
   c_str2 = ba.data();
+  
   rb_event = rb_ary_new3(5, INT2NUM(e->key()), INT2NUM(e->type()), rb_str_new2(c_str2),
                          rb_str_new2(c_str2), INT2NUM(e->modifiers()));
 

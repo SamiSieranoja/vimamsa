@@ -18,7 +18,7 @@ Encoding.default_external = Encoding::UTF_8
 Encoding.default_internal = Encoding::UTF_8
 
 # Globals
-$last_event = []
+# $last_event = []
 $command_history = []
 $clipboard = []
 $register = Hash.new("")

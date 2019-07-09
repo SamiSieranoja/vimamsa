@@ -225,14 +225,14 @@ class Buffer < String
   def highlight()
     return if !$cnf[:syntax_highlight]
     return if @syntax_detect_failed
-    puts "START HIGHLIGHT"
+    debug "START HIGHLIGHT"
 
     if @syntax_parser != nil
       # Not first time, calculate only for changed part
     else
       @update_hl_startpos = 0
       @update_hl_endpos = self.size - 1
-      puts "@update_hl_endpos = #{@update_hl_endpos}"
+      debug "@update_hl_endpos = #{@update_hl_endpos}"
     end
 
     if @syntax_parser == nil
@@ -242,15 +242,15 @@ class Buffer < String
       if File.exist?(file)
         @syntax_parser = Textpow::SyntaxNode.load(file)
       else
-        puts "NON-HIGHLIGHTABLE FILE: '#{ft}'"
+        debug "NON-HIGHLIGHTABLE FILE: '#{ft}'"
         return
       end
     end
 
     @is_highlighted = true
-    puts "@update_highlight=#{@update_highlight}"
+    debug "@update_highlight=#{@update_highlight}"
     if @update_highlight and (Time.now - @last_update > 5)
-      puts "if @update_highlight"
+      debug "if @update_highlight"
 
       #            Ripl.start :binding => binding
       t1 = Thread.new {

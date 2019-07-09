@@ -42,7 +42,7 @@ def savedebug(message,e)
   dbginfo["cnf"] = $cnf
   dbginfo["register"] = $register
   dbginfo["clipboard"] = $clipboard
-  dbginfo["last_event"] = $last_event
+  # dbginfo["last_event"] = $last_event
   dbginfo["buffer"] = {}
   dbginfo["buffer"]["str"] = $buffer.to_s
   dbginfo["buffer"]["lpos"] = $buffer.lpos
