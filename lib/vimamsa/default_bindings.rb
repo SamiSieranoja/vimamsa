@@ -331,7 +331,6 @@ default_keys = {
   "CV ctrl-q" => "_quit",
   "CV , R" => "restart_application",
   "I ctrl!" => "$kbd.set_mode(:command)",
-  "I shift!" => "$kbd.set_mode(:command)",
   "C shift!" => "$buffer.save",
   "I <char>" => "$buffer.insert_txt(<char>)",
   "I esc" => "$kbd.set_mode(:command)",
@@ -349,6 +348,8 @@ default_keys = {
   "I alt-b" => "$buffer.jump_word(BACKWARD,WORD_START)",
 
   "I tab" => '$buffer.insert_txt("  ")',
+  "I space" => '$buffer.insert_txt(" ")',
+  "I return" => '$buffer.insert_txt("\n")',
 }
 
 default_keys.each { |key, value|

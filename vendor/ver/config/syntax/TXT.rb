@@ -18,7 +18,7 @@
       match: /(?<=[◦⦁]).+(?=[◦⦁])/ },
      
      { name: 'text.date',
-      match: /^(\d\d.\d\d.\d\d\d\d|\d\d\d\d-\d\d-\d\d)/ },
+      match: /^(\d\d\.\d\d\.\d\d\d\d|\d\d\d\d-\d\d-\d\d)/ },
       
 
     { name: 'keyword.other.asciidoc',

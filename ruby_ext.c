@@ -56,6 +56,7 @@ VALUE method_main_loop(VALUE self) {
   window_title = new QString("Vimamsa");
   while (1) {
     a.processEvents();
+    rb_eval_string("$buffer.highlight()");
     // rb_thread_schedule(); //TODO if there are plugins with threads?
 
     g_editor->setWindowTitle(*window_title); // TODO only when changed
@@ -66,9 +67,10 @@ VALUE method_main_loop(VALUE self) {
     }
 
     // Sleep while releasing ruby interpreter lock 
-    rb_thread_call_without_gvl(_sleep, NULL, NULL, NULL);
+     rb_thread_call_without_gvl(_sleep, NULL, NULL, NULL);
     // Could also just run: rb_eval_string("sleep(0.01)");
     
+    c_te->processHighlights();
   }
   return INT2NUM(1);
 }

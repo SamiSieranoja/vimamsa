@@ -188,6 +188,24 @@ void SEditor::paintEvent(QPaintEvent *e) {
 
 void SEditor::handleKeyEvent(QKeyEvent *e) { processKeyEvent(e); }
 
+int SEditor::processHighlights() {
+  while (RTEST(rb_eval_string("$cnf[:syntax_highlight]")) && RTEST(rb_eval_string("!$buffer.hl_queue.empty?"))) {
+    int startpos = NUM2INT(rb_eval_string("$buffer.hl_queue[0][0]"));
+    int endpos = NUM2INT(rb_eval_string("$buffer.hl_queue[0][1]"));
+    printf("HLqueue not empty:%d %d\n", startpos, endpos);
+    rb_eval_string("$buffer.hl_queue.delete_at(0)");
+
+    QTextBlock startblock = c_te->document()->findBlock(startpos);
+    QTextBlock endblock = c_te->document()->findBlock(endpos);
+    QTextBlock curblock = startblock;
+    c_te->hl->rehighlightBlock(startblock);
+    while (curblock != endblock && curblock.isValid()) {
+      curblock = curblock.next();
+      c_te->hl->rehighlightBlock(curblock);
+    }
+  }
+}
+
 void SEditor::processKeyEvent(QKeyEvent *e) {
 
   QByteArray ba;
@@ -202,7 +220,7 @@ void SEditor::processKeyEvent(QKeyEvent *e) {
   QString event_text = e->text();
   ba = e->text().toLocal8Bit();
   c_str2 = ba.data();
-  
+
   rb_event = rb_ary_new3(5, INT2NUM(e->key()), INT2NUM(e->type()), rb_str_new2(c_str2),
                          rb_str_new2(c_str2), INT2NUM(e->modifiers()));
 
@@ -212,29 +230,8 @@ void SEditor::processKeyEvent(QKeyEvent *e) {
   QTextCharFormat defaultCharFormat;
   charFormat.setFontWeight(QFont::Black);
 
-  if (RTEST(rb_eval_string("$buffer.qt_update_highlight")) &&
-      RTEST(rb_eval_string("$cnf[:syntax_highlight]"))) {
-    qDebug("[QT] Update highlight");
+  processHighlights();
 
-    int startpos = NUM2INT(rb_eval_string("$buffer.update_hl_startpos"));
-    int endpos = NUM2INT(rb_eval_string("$buffer.update_hl_endpos"));
-
-    QTextBlock startblock = c_te->document()->findBlock(startpos);
-    QTextBlock endblock = c_te->document()->findBlock(endpos);
-    QTextBlock curblock = startblock;
-    c_te->hl->rehighlightBlock(startblock);
-    while (curblock != endblock && curblock.isValid()) {
-      curblock = curblock.next();
-      c_te->hl->rehighlightBlock(curblock);
-    }
-
-    printf("highlight startpos=%d endpos=%d\n", startpos, endpos);
-    // c_te->hl->rehighlight();
-    // c_te->hl->rehighlightBlock(hlblock);
-
-    rb_eval_string("$buffer.qt_update_highlight=false");
-    // rb_eval_string("$update_highlight=false"); //TODO: Remove
-  }
 }
 
 void SEditor::cursorPositionChanged() { /*qDebug() << "Cursor pos changed"; */

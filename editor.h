@@ -92,7 +92,7 @@ public:
   void lineNumberAreaPaintEvent(QPaintEvent *event);
   int lineNumberAreaWidth();
   int loadTheme();
-
+  int processHighlights(); 
 //  void updateLineNumberArea(const QRect &, int);
 
   /*~Editor();*/

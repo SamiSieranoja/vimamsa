@@ -71,6 +71,8 @@ class Editor
   #attr_writer :call_func, :update_highlight
 
   def initialize()
+    # Thread.new{10000.times{|x|sleep(3);10000.times{|y|y+2};puts "FOOTHREAD #{x}"}}
+
     # Search for content inside files (e.g. using ack/grep) in:
     @file_content_search_paths = []
 
@@ -226,7 +228,7 @@ def show_key_bindings()
  kbd_s = "❙Key bindings❙\n"
   kbd_s << "=======================================\n"
   kbd_s << $kbd.to_s
-  kbd_s << "=======================================\n"
+  kbd_s << "\n=======================================\n"
   create_new_file(nil, kbd_s)
 end
 

@@ -180,7 +180,7 @@ class Buffer < String
 
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :highlights, :update_highlight, :marks, :is_highlighted
   attr_writer :call_func, :update_highlight
-  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos
+  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue
 
   def initialize(str = "\n", fname = nil)
     super(str)
@@ -192,6 +192,7 @@ class Buffer < String
     else
       @fname = fname
     end
+    @hl_queue=[]
 
     t1 = Time.now
     set_content(str)
@@ -223,6 +224,7 @@ class Buffer < String
   end
 
   def highlight()
+    # puts "higlight()"
     return if !$cnf[:syntax_highlight]
     return if @syntax_detect_failed
     debug "START HIGHLIGHT"
@@ -232,6 +234,7 @@ class Buffer < String
     else
       @update_hl_startpos = 0
       @update_hl_endpos = self.size - 1
+      add_hl_update(@update_hl_startpos,@update_hl_endpos)
       debug "@update_hl_endpos = #{@update_hl_endpos}"
     end
 
@@ -249,23 +252,28 @@ class Buffer < String
 
     @is_highlighted = true
     debug "@update_highlight=#{@update_highlight}"
-    if @update_highlight and (Time.now - @last_update > 5)
+    if @update_highlight and (Time.now - @last_update > 10)
+    # if (Time.now - @last_update > 5)
       debug "if @update_highlight"
 
       #            Ripl.start :binding => binding
       t1 = Thread.new {
+        @last_update = Time.now
+        puts "START HL parsing #{Time.now}"
         sp = Processor.new
         @syntax_parser.parse($buffer.to_s, sp)
         #TODO
         @highlights = sp.highlights
         $update_highlight = true
         @qt_update_highlight = true
-        @last_update = Time.now
+        
+        add_hl_update(0,self.size - 1)
+        puts "END oF HL parsing"
       }
 
       @update_highlight = false
     end
-    puts @highlight
+    # puts @highlight
   end
 
   def revert()
@@ -280,6 +288,7 @@ class Buffer < String
     @update_hl_startpos = 0 #TODO
     @update_hl_endpos = self.size - 1
     @last_update = Time.now - 10
+    add_hl_update(@update_hl_startpos,@update_hl_endpos)
     message("Reset highlight: #{@update_hl_startpos} #{@update_hl_endpos}")
     # highlight()
   end
@@ -339,6 +348,7 @@ class Buffer < String
     @update_highlight = true
     @update_hl_startpos = 0 #TODO
     @update_hl_endpos = self.size - 1
+    add_hl_update(@update_hl_startpos,@update_hl_endpos)
   end
 
   def set_filename(filename)
@@ -402,6 +412,10 @@ class Buffer < String
     @edit_history << delta
     reset_larger_cpos #TODO: correct here?
   end
+  
+  def add_hl_update(startpos,endpos)
+    @hl_queue << [startpos,endpos]
+  end
 
   def run_delta(delta, auto_update_cpos = false)
     # auto_update_cpos: In some cases position of cursor should be updated automatically based on change to buffer (delta). In other cases this is handled by the action that creates the delta.
@@ -426,6 +440,7 @@ class Buffer < String
 
       @update_hl_startpos = pos - delta[2]
       @update_hl_endpos = pos
+      add_hl_update(@update_hl_startpos,@update_hl_endpos)
       puts "@update_hl_endpos = #{@update_hl_endpos}"
     elsif delta[1] == INSERT
       self.insert(delta[0], delta[3])
@@ -438,6 +453,7 @@ class Buffer < String
 
       @update_hl_startpos = pos
       @update_hl_endpos = pos + delta[2]
+      add_hl_update(@update_hl_startpos,@update_hl_endpos)
       puts "@update_hl_endpos = #{@update_hl_endpos}"
     end
     puts "DELTA=#{delta.inspect}"

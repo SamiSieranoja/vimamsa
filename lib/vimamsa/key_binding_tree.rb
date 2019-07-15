@@ -52,13 +52,14 @@ end
 
 class KeyBindingTree
   attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action
-  attr_reader :mode_root_state
+  attr_reader :mode_root_state, :state_trail
 
   def initialize()
     @modes = {}
     @root = State.new("ROOT")
     @cur_state = @root # used for building the tree
     @mode_history = []
+    @state_trail = []
     @last_action = nil
     @cur_action = nil
 
@@ -151,13 +152,17 @@ class KeyBindingTree
 
   def set_state_to_root
     @match_state = [@mode_root_state]
+    @state_trail = [@mode_root_state]
+    # puts get_state_trail_str()
     # $next_command_count = nil # TODO: set somewhere else?
   end
 
+  # Print key bindings to show as documentation or for debugging
   def to_s()
     s = ""
     # @cur_state = @root
     stack = [[@root, ""]]
+    lines = []
     while stack.any?
       t, p = *stack.pop # t = current state, p = current path
       if t.children.any?
@@ -171,14 +176,34 @@ class KeyBindingTree
         }
         # stack.concat[t.children]
       else
-        s += p + " : #{t.action}\n"
+        # s += p + " : #{t.action}\n"
+        lines << p + " : #{t.action}"
       end
+    end
+    s = lines.sort.join("\n")
+    return s
+  end
+
+  def get_state_trail_str
+    s = ""
+    s_trail = ""
+    last_state = @state_trail.last
+    last_state = last_state[0] if last_state.class==Array
+    for st in @state_trail
+      st = st[0] if st.class == Array
+      s_trail << " #{st.to_s}"
+    end
+    s << "CUR STATE: #{s_trail}\n"
+    for cstate in last_state.children
+      act_s = "..."
+      act_s = cstate.action.to_s if cstate.action != nil
+      s << "  #{cstate.to_s} #{act_s}\n"
     end
     return s
   end
 
   # Modifies state of key binding tree (move to new state) based on received event
-  # Checks childs of current state if they match to received event
+  # Checks child nodes of current state if they match received event
   # if yes, change state to child
   # if no, go back to root
   def match_key_conf(c, translated_c, event_type)
@@ -231,15 +256,34 @@ class KeyBindingTree
       end
     end
 
+    if new_state != nil
+      @state_trail << new_state
+      puts get_state_trail_str()
+      # # puts "CUR STATE: #{@state_trail.collect{|x| x.to_s}.join}"
+      # s_trail = ""
+      # for st in @state_trail
+        # st = st[0] if st.class == Array
+        # s_trail << " #{st.to_s}"
+      # end
+      # puts "CUR STATE: #{s_trail}"
+      # for cstate in new_state[0].children
+        # act_s = "..."
+        # act_s = cstate.action.to_s if cstate.action != nil
+        # puts "  #{cstate.to_s} #{act_s}"
+      # end
+      # Ripl.start :binding => binding
+      # new_state[0].children.collect{|x|x.to_s}
+    end
+
     if new_state == nil
       printf("NO MATCH") if $debug
-      if event_type == KEY_PRESS and translated_c != "shift"
+      if event_type == KEY_PRESS and c != "shift"
         # TODO:include other modifiers in addition to shift?
         set_state_to_root
         printf(", BACK TO ROOT") if $debug
       end
 
-      if event_type == KEY_RELEASE and translated_c == "shift!"
+      if event_type == KEY_RELEASE and c == "shift!"
         # Pressing a modifier key (shift) puts state back to root
         # only on key release when no other key has been pressed
         # after said modifier key (shift).
@@ -454,7 +498,7 @@ def exec_action(action)
 end
 
 def handle_key_bindigs_action(action, c)
-  $method_handles_repeat = false
+  $method_handles_repeat = false #TODO:??
   n = 1
   if $next_command_count and !(action.class == String and action.include?("set_next_command_count"))
     n = $next_command_count
