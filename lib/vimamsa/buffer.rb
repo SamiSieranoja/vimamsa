@@ -98,6 +98,7 @@ class BufferList < Array
 
     set_window_title("Vimamsa - #{fpath}")
     $buffer.need_redraw!
+    $buffer.reset_highlight
   end
 
   def get_recent_buffers()
@@ -178,21 +179,25 @@ class Buffer < String
 
   #attr_reader (:pos, :cpos, :lpos)
 
-  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :highlights, :update_highlight, :marks, :is_highlighted
+  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted
   attr_writer :call_func, :update_highlight
-  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue
+  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight
 
   def initialize(str = "\n", fname = nil)
     super(str)
     @crypt = nil
-    @update_highlight = false
+    @update_highlight = true 
     @syntax_detect_failed = false
+    @is_parsing_syntax = false
+    @last_update = Time.now - 100
     if fname != nil
       @fname = File.expand_path(fname)
     else
       @fname = fname
     end
-    @hl_queue=[]
+    @hl_queue = []
+    
+    @qt_reset_highlight = true
 
     t1 = Time.now
     set_content(str)
@@ -227,14 +232,14 @@ class Buffer < String
     # puts "higlight()"
     return if !$cnf[:syntax_highlight]
     return if @syntax_detect_failed
-    debug "START HIGHLIGHT"
+    # debug "START HIGHLIGHT"
 
     if @syntax_parser != nil
       # Not first time, calculate only for changed part
     else
       @update_hl_startpos = 0
       @update_hl_endpos = self.size - 1
-      add_hl_update(@update_hl_startpos,@update_hl_endpos)
+      add_hl_update(@update_hl_startpos, @update_hl_endpos)
       debug "@update_hl_endpos = #{@update_hl_endpos}"
     end
 
@@ -251,24 +256,28 @@ class Buffer < String
     end
 
     @is_highlighted = true
-    debug "@update_highlight=#{@update_highlight}"
-    if @update_highlight and (Time.now - @last_update > 10)
-    # if (Time.now - @last_update > 5)
+    # debug "@update_highlight=#{@update_highlight}"
+    if @update_highlight and (Time.now - @last_update > 1) and !@is_parsing_syntax
+      @is_parsing_syntax = true
+      @last_update = Time.now
+      # if (Time.now - @last_update > 5)
       debug "if @update_highlight"
 
       #            Ripl.start :binding => binding
+      bufstr = $buffer.to_s
+      curbuf =$buffer
       t1 = Thread.new {
-        @last_update = Time.now
         puts "START HL parsing #{Time.now}"
         sp = Processor.new
-        @syntax_parser.parse($buffer.to_s, sp)
+        curbuf.syntax_parser.parse(bufstr, sp)
         #TODO
-        @highlights = sp.highlights
+        curbuf.highlights = sp.highlights
         $update_highlight = true
         @qt_update_highlight = true
-        
-        add_hl_update(0,self.size - 1)
+
+        curbuf.add_hl_update(0, self.size - 1)
         puts "END oF HL parsing"
+        @is_parsing_syntax = false
       }
 
       @update_highlight = false
@@ -285,10 +294,11 @@ class Buffer < String
 
   def reset_highlight()
     @update_highlight = true
+    @qt_reset_highlight = true
     @update_hl_startpos = 0 #TODO
     @update_hl_endpos = self.size - 1
     @last_update = Time.now - 10
-    add_hl_update(@update_hl_startpos,@update_hl_endpos)
+    add_hl_update(@update_hl_startpos, @update_hl_endpos)
     message("Reset highlight: #{@update_hl_startpos} #{@update_hl_endpos}")
     # highlight()
   end
@@ -348,7 +358,7 @@ class Buffer < String
     @update_highlight = true
     @update_hl_startpos = 0 #TODO
     @update_hl_endpos = self.size - 1
-    add_hl_update(@update_hl_startpos,@update_hl_endpos)
+    add_hl_update(@update_hl_startpos, @update_hl_endpos)
   end
 
   def set_filename(filename)
@@ -412,9 +422,9 @@ class Buffer < String
     @edit_history << delta
     reset_larger_cpos #TODO: correct here?
   end
-  
-  def add_hl_update(startpos,endpos)
-    @hl_queue << [startpos,endpos]
+
+  def add_hl_update(startpos, endpos)
+    @hl_queue << [startpos, endpos]
   end
 
   def run_delta(delta, auto_update_cpos = false)
@@ -440,7 +450,7 @@ class Buffer < String
 
       @update_hl_startpos = pos - delta[2]
       @update_hl_endpos = pos
-      add_hl_update(@update_hl_startpos,@update_hl_endpos)
+      add_hl_update(@update_hl_startpos, @update_hl_endpos)
       puts "@update_hl_endpos = #{@update_hl_endpos}"
     elsif delta[1] == INSERT
       self.insert(delta[0], delta[3])
@@ -453,7 +463,7 @@ class Buffer < String
 
       @update_hl_startpos = pos
       @update_hl_endpos = pos + delta[2]
-      add_hl_update(@update_hl_startpos,@update_hl_endpos)
+      add_hl_update(@update_hl_startpos, @update_hl_endpos)
       puts "@update_hl_endpos = #{@update_hl_endpos}"
     end
     puts "DELTA=#{delta.inspect}"

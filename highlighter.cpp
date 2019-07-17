@@ -5,32 +5,16 @@
 extern Editor *g_editor;
 
 Highlighter::Highlighter(QTextDocument *parent) : QSyntaxHighlighter(parent) {
-  HighlightingRule rule;
-
-  keywordFormat.setForeground(QColor("#b58900"));
-  keywordFormat.setFontWeight(QFont::Bold);
-
-  classFormat.setFontWeight(QFont::Bold);
-  classFormat.setForeground(Qt::darkMagenta);
-
-  singleLineCommentFormat.setForeground(Qt::red);
-
-  multiLineCommentFormat.setForeground(Qt::red);
-
-  quotationFormat.setForeground(QColor("#2aa198"));
-
-  rule.pattern = QRegExp("\".*\"");
-  rule.format = quotationFormat;
-  highlightingRules.append(rule);
-
-  functionFormat.setForeground(QColor("#859900"));
 }
 
 void Highlighter::highlightBlock(const QString &text) {
   // QTextBlock currentBlock()
-
-  VALUE highlight = rb_eval_string("$buffer.highlights");
-  VALUE linetags = rb_hash_lookup(highlight, INT2NUM(currentBlock().blockNumber()));
+  // https://silverhammermba.github.io/emberb/c/
+  // VALUE gv = rb_gv_get("$buffer");
+  // VALUE highlight = rb_eval_string("$buffer.highlights");
+  if(!RTEST(rb_highlight)) {return;}
+  
+  VALUE linetags = rb_hash_lookup(rb_highlight, INT2NUM(currentBlock().blockNumber()));
   // printf("g_editor->textFormats
 
   if (RTEST(linetags)) {

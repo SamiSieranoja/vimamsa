@@ -60,6 +60,7 @@ class Highlighter : public QSyntaxHighlighter
 
 public:
     Highlighter(QTextDocument *parent = 0);
+    VALUE rb_highlight;
 
 protected:
     void highlightBlock(const QString &text);

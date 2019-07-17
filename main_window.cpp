@@ -123,6 +123,8 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
   c_te->setFont(QFont("Ubuntu Mono", 12));
   c_te->overlay = new Overlay(c_te);
   c_te->hl = new Highlighter(c_te->document());
+  c_te->hl->rb_highlight = rb_eval_string("false");
+  c_te->continue_hl_batch=0;
 
   QFrame *frame = new QFrame;
   QVBoxLayout *layout = new QVBoxLayout(frame);
@@ -188,21 +190,58 @@ void SEditor::paintEvent(QPaintEvent *e) {
 
 void SEditor::handleKeyEvent(QKeyEvent *e) { processKeyEvent(e); }
 
+int SEditor::runHighlightBatch() {
+  int i = 0;
+  // c_te->hl->rehighlightBlock(curblock);
+  while (curblock != endblock && curblock.isValid()) {
+    continue_hl_batch=1;
+    c_te->hl->rehighlightBlock(curblock);
+    curblock = curblock.next();
+    i++;
+    if (i > 30) {
+      break;
+    }
+  }
+  if (curblock == endblock || !curblock.isValid()) {
+    continue_hl_batch=0;
+    // Reached the end
+    // curblock = 0;
+  }
+  return i;
+}
+
 int SEditor::processHighlights() {
-  while (RTEST(rb_eval_string("$cnf[:syntax_highlight]")) && RTEST(rb_eval_string("!$buffer.hl_queue.empty?"))) {
+  // Continuing from previous batch
+  
+  if(RTEST(rb_eval_string("$buffer.qt_reset_highlight")))
+  {
+    rb_eval_string("$buffer.qt_reset_highlight=false");
+    continue_hl_batch=0;
+  }
+  if(continue_hl_batch) {
+    runHighlightBatch();
+    return;
+  }
+  c_te->hl->rb_highlight = rb_eval_string("$buffer.highlights");
+  while (RTEST(rb_eval_string("$cnf[:syntax_highlight]")) &&
+         RTEST(rb_eval_string("!$buffer.hl_queue.empty?"))) {
     int startpos = NUM2INT(rb_eval_string("$buffer.hl_queue[0][0]"));
     int endpos = NUM2INT(rb_eval_string("$buffer.hl_queue[0][1]"));
     printf("HLqueue not empty:%d %d\n", startpos, endpos);
     rb_eval_string("$buffer.hl_queue.delete_at(0)");
 
-    QTextBlock startblock = c_te->document()->findBlock(startpos);
-    QTextBlock endblock = c_te->document()->findBlock(endpos);
-    QTextBlock curblock = startblock;
-    c_te->hl->rehighlightBlock(startblock);
-    while (curblock != endblock && curblock.isValid()) {
-      curblock = curblock.next();
-      c_te->hl->rehighlightBlock(curblock);
-    }
+    // QTextBlock startblock = c_te->document()->findBlock(startpos);
+    // QTextBlock endblock = c_te->document()->findBlock(endpos);
+    // QTextBlock curblock = startblock;
+    startblock = c_te->document()->findBlock(startpos);
+    endblock = c_te->document()->findBlock(endpos);
+    curblock = startblock;
+    runHighlightBatch();
+    // c_te->hl->rehighlightBlock(startblock);
+    // while (curblock != endblock && curblock.isValid()) {
+      // curblock = curblock.next();
+      // c_te->hl->rehighlightBlock(curblock);
+    // }
   }
 }
 
@@ -231,7 +270,6 @@ void SEditor::processKeyEvent(QKeyEvent *e) {
   charFormat.setFontWeight(QFont::Black);
 
   processHighlights();
-
 }
 
 void SEditor::cursorPositionChanged() { /*qDebug() << "Cursor pos changed"; */

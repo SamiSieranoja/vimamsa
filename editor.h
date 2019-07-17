@@ -83,6 +83,13 @@ public:
   Overlay *overlay;
   Highlighter *hl;
   QFont fnt;
+  
+  QTextBlock startblock;
+  QTextBlock endblock;
+  QTextBlock curblock;
+  int continue_hl_batch;
+  int runHighlightBatch();
+
 
   void drawTextCursor();
   void processKeyEvent(QKeyEvent *e);
