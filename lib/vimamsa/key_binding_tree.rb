@@ -374,6 +374,10 @@ class KeyBindingTree
     end
     # puts "key_str=|#{key_str}| key_str=|#{key_str.inspect}| key_str2=|#{key_str2}|"
     prefixed_key_str = key_prefix + key_str2
+    
+    # Space is only key in $event_keysym_translate_table
+    # which is representable by single char
+    key_str = " " if key_str == "space" # HACK
 
     # if keycode == @last_event[0] and event_type == KEY_RELEASE
     # puts "KEY! key_str=|#{key_str}| prefixed_key_str=|#{prefixed_key_str}|"

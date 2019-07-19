@@ -118,7 +118,13 @@ bindkey "C , a", :ack_search
 
 reg_act :update_file_index, proc { update_file_index }, "Update file index"
 
-#    'VC z z' => 'center_on_current_line',
+
+reg_act :delete_to_word_end, proc { $buffer.delete2(:to_word_end) }, "Delete to file end"
+bindkey  "C d w", :delete_to_word_end
+
+reg_act :delete_to_line_start, proc { $buffer.delete2(:to_line_start) }, "Delete to line start"
+bindkey  "C d 0", :delete_to_line_start
+
 
 bindkey "C , , f", :file_finder
 bindkey "VC h", :e_move_backward_char
@@ -270,11 +276,9 @@ default_keys = {
   # 'C d j'=> 'delete_line(FORWARD)', #TODO
   # 'C d d'=> '$buffer.delete_cur_line',
   "C d d" => "$buffer.delete_line",
-  "C d w" => "$buffer.delete2(:to_word_end)",
   "C d e" => "$buffer.delete2(:to_word_end)",
   "C d O" => "$buffer.delete2(:to_line_end)",
   "C d $" => "$buffer.delete2(:to_line_end)",
-  "C d 0" => "$buffer.delete2(:to_line_start)",
   #    'C d e'=> '$buffer.delete_to_next_word_end',
   "C d <num> e" => "delete_next_word",
   "C r <char>" => "$buffer.replace_with_char(<char>)", # TODO

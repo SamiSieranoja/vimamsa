@@ -181,12 +181,12 @@ class Buffer < String
 
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted
   attr_writer :call_func, :update_highlight
-  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight
+  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax
 
   def initialize(str = "\n", fname = nil)
     super(str)
     @crypt = nil
-    @update_highlight = true 
+    @update_highlight = true
     @syntax_detect_failed = false
     @is_parsing_syntax = false
     @last_update = Time.now - 100
@@ -196,7 +196,7 @@ class Buffer < String
       @fname = fname
     end
     @hl_queue = []
-    
+
     @qt_reset_highlight = true
 
     t1 = Time.now
@@ -257,7 +257,7 @@ class Buffer < String
 
     @is_highlighted = true
     # debug "@update_highlight=#{@update_highlight}"
-    if @update_highlight and (Time.now - @last_update > 1) and !@is_parsing_syntax
+    if @update_highlight and (Time.now - @last_update > 5) and !@is_parsing_syntax
       @is_parsing_syntax = true
       @last_update = Time.now
       # if (Time.now - @last_update > 5)
@@ -265,19 +265,28 @@ class Buffer < String
 
       #            Ripl.start :binding => binding
       bufstr = $buffer.to_s
-      curbuf =$buffer
+      curbuf = $buffer
       t1 = Thread.new {
         puts "START HL parsing #{Time.now}"
         sp = Processor.new
         curbuf.syntax_parser.parse(bufstr, sp)
+        
         #TODO
-        curbuf.highlights = sp.highlights
+        curbuf.highlights.delete_if{|x|true}
+        curbuf.highlights.merge!(sp.highlights)
+        
+        # if doing like this, sometimes segfaults from Highlighter::highlightBlock
+        # which tries to use old $buffer.highlights
+        # curbuf.highlights = sp.highlights
+        
         $update_highlight = true
-        @qt_update_highlight = true
 
-        curbuf.add_hl_update(0, self.size - 1)
+        @hl_queue.clear
+        add_hl_update(0, self.size - 1)
         puts "END oF HL parsing"
-        @is_parsing_syntax = false
+        # @last_update = Time.now
+        curbuf.is_parsing_syntax = false
+        @qt_update_highlight = true
       }
 
       @update_highlight = false
@@ -874,6 +883,7 @@ class Buffer < String
   def delete2(range_id)
     $paste_lines = false
     range = get_range(range_id)
+    return if range == nil
     puts "RANGE"
     puts range.inspect
     puts range.inspect
@@ -924,6 +934,7 @@ class Buffer < String
   end
 
   def get_range(range_id)
+    range = nil
     if range_id == :to_word_end
       wmarks = get_word_end_marks(@pos, @pos + 150)
       if wmarks.any?
@@ -933,16 +944,24 @@ class Buffer < String
       puts "TO LINE END"
       range = @pos..(@line_ends[@lpos] - 1)
     elsif range_id == :to_line_start
-      puts "TO LINE START"
-      if @lpos == 0
-        startpos = 0
+      puts "TO LINE START: #{@lpos}"
+
+      if @cpos == 0
+        range = nil
       else
-        startpos = @line_ends[@lpos - 1] + 1
+        if @lpos == 0
+          startpos = 0
+        else
+          startpos = @line_ends[@lpos - 1] + 1
+        end
+        endpos = @pos - 1
+        range = startpos..endpos
       end
-      range = startpos..(@pos - 1)
+      # range = startpos..(@pos - 1)
     else
       crash("INVALID RANGE")
     end
+    return range if range == nil
     if range.last < range.first
       range.last = range.first
     end

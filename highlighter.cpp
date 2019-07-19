@@ -8,14 +8,12 @@ Highlighter::Highlighter(QTextDocument *parent) : QSyntaxHighlighter(parent) {
 }
 
 void Highlighter::highlightBlock(const QString &text) {
-  // QTextBlock currentBlock()
-  // https://silverhammermba.github.io/emberb/c/
-  // VALUE gv = rb_gv_get("$buffer");
-  // VALUE highlight = rb_eval_string("$buffer.highlights");
+
   if(!RTEST(rb_highlight)) {return;}
   
-  VALUE linetags = rb_hash_lookup(rb_highlight, INT2NUM(currentBlock().blockNumber()));
-  // printf("g_editor->textFormats
+  int blocknum = currentBlock().blockNumber();
+
+  VALUE linetags = rb_hash_lookup(rb_highlight, INT2NUM(blocknum));
 
   if (RTEST(linetags)) {
     for (int i = 0; i < RARRAY_LEN(linetags); i++) {

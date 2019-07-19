@@ -211,13 +211,21 @@ int SEditor::runHighlightBatch() {
 }
 
 int SEditor::processHighlights() {
-  // Continuing from previous batch
+  
+  // If buffer syntax parsing is happening in separate thread,
+  // wait til it has finnished
+  if(RTEST(rb_eval_string("$buffer.is_parsing_syntax"))) {
+    continue_hl_batch=0;
+    return;
+  }
   
   if(RTEST(rb_eval_string("$buffer.qt_reset_highlight")))
   {
     rb_eval_string("$buffer.qt_reset_highlight=false");
     continue_hl_batch=0;
   }
+  
+  // Continuing from previous batch
   if(continue_hl_batch) {
     runHighlightBatch();
     return;
