@@ -156,7 +156,24 @@
 
    {name: "Markup: Heading",
     scope: "markup.heading",
-    settings: {fontStyle: "bold", foreground: "#CF6A4C", sizeScale: "1.4" }}],
+    settings: {fontStyle: "bold", foreground: "#CF6A4C", sizeScale: "1.4" }},
+    
+    {name: "Markup: H1",
+    scope: "markup.h1",
+    settings: {fontStyle: "bold", foreground: "#CF6A4C", sizeScale: "1.4" }},
+   
+     {name: "Markup: H2",
+    scope: "markup.h2",
+    settings: {fontStyle: "bold", foreground: "#CF6A4C", sizeScale: "1.2" }},
+  
+      {name: "Markup: H3",
+    scope: "markup.h3",
+    settings: {fontStyle: "bold", foreground: "#CF6A4C", sizeScale: "1.0" }},
+ 
+       {name: "Markup: H4",
+    scope: "markup.h4",
+    settings: {foreground: "#CF6A4C", sizeScale: "1.0" }}],
+
     
     
  uuid: "DE82A2D0-032A-40DB-A573-98564C484F59"}

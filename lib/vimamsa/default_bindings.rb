@@ -43,9 +43,13 @@ reg_act(:history_switch_backwards, "history_switch_backwards", "")
 reg_act(:history_switch_forwards, "history_switch_forwards", "")
 reg_act(:center_on_current_line, "center_on_current_line", "")
 
+
 reg_act(:jump_to_next_edit, "jump_to_next_edit", "")
 reg_act(:jump_to_last_edit, proc { $buffer.jump_to_last_edit }, "")
 
+
+reg_act(:insert_new_line, proc { $buffer.insert_new_line()}, "")
+bindkey "I return", :insert_new_line
 
 reg_act(:show_key_bindings, proc { show_key_bindings }, "Show key bindings")
 bindkey "C , ; s k", :show_key_bindings #TODO: better binding
@@ -82,11 +86,25 @@ bindkey "V , r r", :gui_search_replace
 reg_act(:set_style_bold, proc { $buffer.style_transform(:bold) }, "Set text weight to bold")
 bindkey "V , t b", :set_style_bold
 
+reg_act(:set_style_link, proc { $buffer.style_transform(:link) }, "Set text as link")
+bindkey "V , t l", :set_style_link
+
+
 reg_act(:clear_formats, proc { $buffer.style_transform(:clear) }, "Clear style formats")
 bindkey "V , t c", :clear_formats
 
 reg_act(:set_line_style_heading, proc { $buffer.set_line_style(:heading) }, "Set style of current line as heading")
 bindkey "C , t h", :set_line_style_heading
+
+reg_act(:set_line_style_h1, proc { $buffer.set_line_style(:h1) }, "Set cur line as Heading 1")
+bindkey "C , t 1", :set_line_style_h1
+reg_act(:set_line_style_h2, proc { $buffer.set_line_style(:h2) }, "Set cur line as Heading 1")
+bindkey "C , t 2", :set_line_style_h2
+reg_act(:set_line_style_h3, proc { $buffer.set_line_style(:h3) }, "Set cur line as Heading 1")
+bindkey "C , t 3", :set_line_style_h3
+reg_act(:set_line_style_h4, proc { $buffer.set_line_style(:h4) }, "Set cur line as Heading 1")
+bindkey "C , t 4", :set_line_style_h4
+
 
 reg_act(:set_line_style_bold, proc { $buffer.set_line_style(:bold) }, "Set style of current line as bold")
 bindkey "C , t b", :set_line_style_bold
@@ -223,7 +241,7 @@ default_keys = {
   # MINIBUFFER bindings
   "VC /" => "invoke_search",
   # 'VC :' => 'invoke_command', #TODO
-  "VC , e" => "invoke_command", # Currently eval
+  "C , e" => "invoke_command", # Currently eval
   "M enter" => "minibuffer_end()",
   # "M return" => "minibuffer_end()",
   "M esc" => "minibuffer_cancel()",
@@ -263,7 +281,7 @@ default_keys = {
   "C ctrl-r" => "$buffer.redo()", # TODO:???
   "C R" => "$buffer.redo()",
   "C v" => "$buffer.start_visual_mode",
-  "C p" => "$buffer.paste(AFTER)", # TODO: implement as replace for visual mode
+  "C p" => proc{$buffer.paste(AFTER)}, # TODO: implement as replace for visual mode
   "C P" => "$buffer.paste(BEFORE)", # TODO: implement as replace for visual mode
   "C space <char>" => "$buffer.insert_txt(<char>)",
   "C y y" => "$buffer.copy_line",
@@ -353,7 +371,7 @@ default_keys = {
 
   "I tab" => '$buffer.insert_txt("  ")',
   "I space" => '$buffer.insert_txt(" ")',
-  "I return" => '$buffer.insert_txt("\n")',
+#  "I return" => '$buffer.insert_new_line()',
 }
 
 default_keys.each { |key, value|

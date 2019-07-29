@@ -8,10 +8,14 @@ class HookItem
     @weight = weight
   end
 
-  def call
-    @call_func.call()
+  def call(x=nil)
+    @call_func.call(x) if x!=nil
+    @call_func.call() if x==nil
   end
 end
+
+#$hook.register(:puts,"puts")
+#$hook.call(:puts,"AAAA")
 
 class Hook < Hash
 
@@ -26,10 +30,11 @@ class Hook < Hash
     self[hook_id] << HookItem.new(method_name, weight)
   end
 
-  def call(hook_id)
+  def call(hook_id,x=nil)
     if self[hook_id]
       self[hook_id].each { |hi|
-        hi.call()
+        hi.call(x) if x!=nil
+        hi.call() if x==nil
       }
     end
   end

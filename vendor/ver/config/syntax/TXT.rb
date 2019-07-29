@@ -9,8 +9,17 @@
     { name: 'meta.tag.email.asciidoc',
       match: /(\w(\w|[.-])*)@(\w|[.-])*[0-9A-Za-z_.]/ },
       
-    { name: 'markup.heading',
-      match: /^◼.*/ },
+    { name: 'markup.h1',
+      match: /^◼[^◼].*/ },
+      
+     { name: 'markup.h2',
+      match: /^◼◼[^◼].*/ },
+      
+     { name: 'markup.h3',
+      match: /^◼◼◼[^◼].*/ },
+      
+      { name: 'markup.h4',
+      match: /^◼◼◼◼[^◼].*/ },
       
      { name: 'page.title',
       match: /^❙.*❙/ },

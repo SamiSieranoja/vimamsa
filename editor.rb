@@ -65,9 +65,34 @@ require "vimamsa/highlight"
 require "vimamsa/easy_jump"
 require "vimamsa/encrypt"
 require "vimamsa/profiler"
+require "vimamsa/hyper_plain_text.rb"
+
+class Converter
+  def initialize(obj, type, id = nil)
+    @obj = obj
+    @type = type
+    if id != nil
+      $vma.reg_conv(self, id)
+    end
+  end
+
+  def apply(txt)
+    if @type == :gsub
+      return txt.gsub(@obj[0], @obj[1])
+    elsif @type == :lambda
+      return @obj.call(txt)
+    end
+  end
+end
+
+# Example:
+# c=Converter.new([/(.*):(\d+)/,'\1 => [\2]'],:gsub)
+# c.apply('foo:23')
+# "foo => [23]"
 
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths
+  attr_accessor :converters
   #attr_writer :call_func, :update_highlight
 
   def initialize()
@@ -78,6 +103,9 @@ class Editor
 
     # Search for files based on filenames in:
     @file_name_search_paths = []
+
+    #Regexp gsubs or other small modifiers of text
+    @converters = {}
   end
 
   def add_content_search_path(pathstr)
@@ -85,6 +113,15 @@ class Editor
     if !@file_content_search_paths.include?(p)
       @file_content_search_paths << p
     end
+  end
+
+  # Register converter
+  def reg_conv(converter, converter_id)
+    @converters[converter_id] = converter
+  end
+
+  def apply_conv(converter_id, txt)
+    @converters[converter_id].apply(txt)
   end
 
   def get_content_search_paths()
@@ -225,13 +262,12 @@ def invoke_ack_search()
 end
 
 def show_key_bindings()
- kbd_s = "❙Key bindings❙\n"
+  kbd_s = "❙Key bindings❙\n"
   kbd_s << "=======================================\n"
   kbd_s << $kbd.to_s
   kbd_s << "\n=======================================\n"
   create_new_file(nil, kbd_s)
 end
-
 
 def grep_cur_buffer(search_str, b = nil)
   debug "grep_cur_buffer(search_str)"
@@ -278,7 +314,7 @@ end
 
 def execute_command(input_str)
   begin
-    out_str = eval(input_str)
+    out_str = eval(input_str,TOPLEVEL_BINDING) #TODO: Other binding?
     $minibuffer.clear
     $minibuffer << out_str.to_s #TODO: segfaults, why?
   rescue SyntaxError
@@ -433,10 +469,10 @@ def new_file_opened(filename, file_contents = "")
   b = $buffers.get_buffer_by_filename(filename)
   # File is already opened to existing buffer
   if b != nil
-    message "File is already opened to existing buffer: #{filename}"
+    message "Switching to: #{filename}"
     $buffers.set_current_buffer(b)
   else
-    message "NEW FILE OPENED: #{filename}"
+    message "New file opened: #{filename}"
     $fname = filename
     load_buffer($fname)
   end

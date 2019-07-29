@@ -32,10 +32,9 @@ def load_buffer_list()
   return if !File.exist?(buffn)
   bufstr = IO.read(buffn)
   buflist = eval(bufstr)
-  puts buflist
+  debug buflist
   for buf in buflist
     load_buffer(buf) if buf != nil and File.file?(buf)
-    puts buf
   end
 end
 
@@ -60,8 +59,8 @@ class BufferList < Array
   end
 
   def switch_to_last_buf()
-    puts "SWITCH TO LAST BUF:"
-    puts $buffer_history
+    debug "SWITCH TO LAST BUF:"
+    debug $buffer_history
     last_buf = $buffer_history[-2]
     if last_buf
       set_current_buffer(last_buf)
@@ -112,7 +111,7 @@ class BufferList < Array
     @recent_ind += 1
     @recent_ind = 0 if @recent_ind >= recent.size
     bufid = recent[@recent_ind]
-    puts "IND:#{@recent_ind} RECENT:#{recent.join(" ")}"
+    debug "IND:#{@recent_ind} RECENT:#{recent.join(" ")}"
     set_current_buffer(bufid, false)
   end
 
@@ -121,7 +120,7 @@ class BufferList < Array
     @recent_ind -= 1
     @recent_ind = self.size - 1 if @recent_ind < 0
     bufid = recent[@recent_ind]
-    puts "IND:#{@recent_ind} RECENT:#{recent.join(" ")}"
+    debug "IND:#{@recent_ind} RECENT:#{recent.join(" ")}"
     set_current_buffer(bufid, false)
   end
 
@@ -181,7 +180,7 @@ class Buffer < String
 
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted
   attr_writer :call_func, :update_highlight
-  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax
+  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax, :line_ends
 
   def initialize(str = "\n", fname = nil)
     super(str)
@@ -201,7 +200,7 @@ class Buffer < String
 
     t1 = Time.now
     set_content(str)
-    puts "init time:#{Time.now - t1}"
+    debug "init time:#{Time.now - t1}"
 
     # TODO: add \n when chars are added after last \n
     self << "\n" if self[-1] != "\n"
@@ -218,13 +217,20 @@ class Buffer < String
   end
 
   def get_file_type()
-    return "" if !@fname
-    if @ftype != nil
-    else
-      @ftype = VER::Syntax::Detector.detect(@fname)
-      @syntax_detect_failed = true if @ftype == nil
+    # We cant detect syntax if no filename
+    if !@fname
+      @syntax_detect_failed = true
+      return ""
     end
-    puts "ftype=#{@ftype.inspect}"
+    if @ftype == nil
+      @ftype = VER::Syntax::Detector.detect(@fname)
+      if @ftype == nil
+        @syntax_detect_failed = true
+      else
+        @syntax_detect_failed = false
+      end
+    end
+    debug "ftype=#{@ftype.inspect}"
     return @ftype
   end
 
@@ -251,6 +257,7 @@ class Buffer < String
         @syntax_parser = Textpow::SyntaxNode.load(file)
       else
         debug "NON-HIGHLIGHTABLE FILE: '#{ft}'"
+        @syntax_detect_failed = true
         return
       end
     end
@@ -267,23 +274,23 @@ class Buffer < String
       bufstr = $buffer.to_s
       curbuf = $buffer
       t1 = Thread.new {
-        puts "START HL parsing #{Time.now}"
+        debug "START HL parsing #{Time.now}"
         sp = Processor.new
         curbuf.syntax_parser.parse(bufstr, sp)
-        
+
         #TODO
-        curbuf.highlights.delete_if{|x|true}
+        curbuf.highlights.delete_if { |x| true }
         curbuf.highlights.merge!(sp.highlights)
-        
+
         # if doing like this, sometimes segfaults from Highlighter::highlightBlock
         # which tries to use old $buffer.highlights
         # curbuf.highlights = sp.highlights
-        
+
         $update_highlight = true
 
         @hl_queue.clear
         add_hl_update(0, self.size - 1)
-        puts "END oF HL parsing"
+        debug "END oF HL parsing"
         # @last_update = Time.now
         curbuf.is_parsing_syntax = false
         @qt_update_highlight = true
@@ -296,7 +303,6 @@ class Buffer < String
 
   def revert()
     message("Revert buffer #{@fname}")
-    puts @fname.inspect
     str = read_file("", @fname)
     self.set_content(str)
   end
@@ -308,7 +314,7 @@ class Buffer < String
     @update_hl_endpos = self.size - 1
     @last_update = Time.now - 10
     add_hl_update(@update_hl_startpos, @update_hl_endpos)
-    message("Reset highlight: #{@update_hl_startpos} #{@update_hl_endpos}")
+    # message("Reset highlight: #{@update_hl_startpos} #{@update_hl_endpos}")
     # highlight()
   end
 
@@ -342,7 +348,6 @@ class Buffer < String
     @line_ends = scan_indexes(self, /\n/)
     @last_update = Time.now - 10
     debug("line_ends")
-    #puts str.inspect
     @marks = Hash.new
     @basename = ""
     @pathname = Pathname.new(fname) if @fname
@@ -367,7 +372,7 @@ class Buffer < String
     @update_highlight = true
     @update_hl_startpos = 0 #TODO
     @update_hl_endpos = self.size - 1
-    add_hl_update(@update_hl_startpos, @update_hl_endpos)
+    # add_hl_update(@update_hl_startpos, @update_hl_endpos)
   end
 
   def set_filename(filename)
@@ -407,13 +412,13 @@ class Buffer < String
     pos = delta[0]
     if pos < 0
       ret = false
-      puts "pos=#{pos} < 0"
+      debug "pos=#{pos} < 0"
     elsif pos > self.size
-      puts "pos=#{pos} > self.size=#{self.size}"
+      debug "pos=#{pos} > self.size=#{self.size}"
       ret = false
     end
     if ret == false
-      crash("DELTA OK=#{ret}")
+      # crash("DELTA OK=#{ret}")
     end
     return ret
   end
@@ -421,6 +426,14 @@ class Buffer < String
   #TODO: change to apply=true as default
   def add_delta(delta, apply = false, auto_update_cpos = false)
     return if !is_delta_ok(delta)
+    if delta[1] == DELETE
+      return if delta[0] >= self.size
+      # If go over length of buffer
+      if delta[0] + delta[2] >= self.size
+        delta[2] = self.size - delta[0]
+      end
+    end
+
     @edit_version += 1
     @redo_stack = []
     if apply
@@ -429,10 +442,14 @@ class Buffer < String
       @deltas << delta
     end
     @edit_history << delta
+    if self[-1] != "\n"
+      add_delta([self.size, INSERT, 1, "\n"], true)
+    end
     reset_larger_cpos #TODO: correct here?
   end
 
   def add_hl_update(startpos, endpos)
+    return if @is_highlighted == false
     @hl_queue << [startpos, endpos]
   end
 
@@ -442,8 +459,9 @@ class Buffer < String
     if @edit_pos_history.any? and (@edit_pos_history.last - pos).abs <= 2
       @edit_pos_history.pop
     end
-    # lpos = get_line_pos(pos)
+
     lsp = get_line_start(pos)
+
     if @edit_pos_history[-1] != lsp
       @edit_pos_history << lsp
     end
@@ -460,11 +478,11 @@ class Buffer < String
       @update_hl_startpos = pos - delta[2]
       @update_hl_endpos = pos
       add_hl_update(@update_hl_startpos, @update_hl_endpos)
-      puts "@update_hl_endpos = #{@update_hl_endpos}"
+      debug "@update_hl_endpos = #{@update_hl_endpos}"
     elsif delta[1] == INSERT
       self.insert(delta[0], delta[3])
       @deltas << delta
-      puts [pos, +delta[2]].inspect
+      debug [pos, +delta[2]].inspect
       update_index(pos, +delta[2])
       update_cursor_pos(pos, +delta[2]) if auto_update_cpos
       update_line_ends(pos, +delta[2], delta[3])
@@ -473,9 +491,9 @@ class Buffer < String
       @update_hl_startpos = pos
       @update_hl_endpos = pos + delta[2]
       add_hl_update(@update_hl_startpos, @update_hl_endpos)
-      puts "@update_hl_endpos = #{@update_hl_endpos}"
+      debug "@update_hl_endpos = #{@update_hl_endpos}"
     end
-    puts "DELTA=#{delta.inspect}"
+    debug "DELTA=#{delta.inspect}"
     # sanity_check_line_ends #TODO: enable with debug mode
     #highlight_c()
 
@@ -531,18 +549,17 @@ class Buffer < String
     @edit_pos_history_i -= 1
     @edit_pos_history_i = @edit_pos_history.size - 1 if @edit_pos_history_i < 0
     #        Ripl.start :binding => binding
-    puts "@edit_pos_history_i=#{@edit_pos_history_i}"
-    puts @edit_pos_history.size
+    debug "@edit_pos_history_i=#{@edit_pos_history_i}"
     set_pos(@edit_pos_history[-@edit_pos_history_i])
     center_on_current_line
   end
 
   def undo()
-    puts @edit_history.inspect
+    debug @edit_history.inspect
     return if !@edit_history.any?
     last_delta = @edit_history.pop
     @redo_stack << last_delta
-    puts last_delta.inspect
+    debug last_delta.inspect
     if last_delta[1] == DELETE
       d = [last_delta[0], INSERT, 0, last_delta[3]]
       run_delta(d)
@@ -562,7 +579,7 @@ class Buffer < String
     #last_delta = @edit_history[-1].pop
     redo_delta = @redo_stack.pop
     #printf("==== UNDO ====\n")
-    puts redo_delta.inspect
+    debug redo_delta.inspect
     run_delta(redo_delta)
     @edit_history << redo_delta
     @pos = redo_delta[0]
@@ -621,10 +638,13 @@ class Buffer < String
     # (OLD) slower version:
     # ls = @line_ends.select { |x| x < pos }.max
     a = @line_ends.bsearch_index { |x| x >= pos }
+
+    a = @line_ends[-1] if a == nil
+    a = 0 if a == nil
     if a > 0
       a = a - 1
     else
-      a = nil
+      a = 0
     end
     ls = nil
     ls = @line_ends[a] if a != nil
@@ -718,10 +738,10 @@ class Buffer < String
 
   def copy(range_id)
     $paste_lines = false
-    puts "range_id: #{range_id}"
-    puts range_id.inspect
+    debug "range_id: #{range_id}"
+    debug range_id.inspect
     range = get_range(range_id)
-    puts range.inspect
+    debug range.inspect
     set_clipboard(self[range])
   end
 
@@ -730,12 +750,12 @@ class Buffer < String
     leo = @line_ends.clone
     @line_ends = scan_indexes(self, /\n/)
     if @line_ends == leo
-      puts "No change to line ends"
+      debug "No change to line ends"
     else
-      puts "CHANGES to line ends"
+      debug "CHANGES to line ends"
     end
 
-    puts "Scan line_end time: #{Time.now - t1}"
+    debug "Scan line_end time: #{Time.now - t1}"
     #puts @line_ends
   end
 
@@ -743,11 +763,11 @@ class Buffer < String
     leo = @line_ends.clone
     @line_ends = scan_indexes(self, /\n/)
     if @line_ends == leo
-      puts "No change to line ends"
+      debug "No change to line ends"
     else
-      puts "CHANGES to line ends"
-      puts leo.inspect
-      puts @line_ends.inspect
+      debug "CHANGES to line ends"
+      debug leo.inspect
+      debug @line_ends.inspect
       crash("CHANGES to line ends")
     end
   end
@@ -772,34 +792,21 @@ class Buffer < String
       hle = hl.collect { |x| x[1] } # highlight range end
       hls2 = update_bufpos_on_change(hls, cpos, changeamount)
       hle2 = update_bufpos_on_change(hle, cpos, changeamount)
-      # puts hls.inspect
-      # puts hls2.inspect
-      # puts hle.inspect
-      # puts hle2.inspect
       hlnew = []
-      # hle.size.times.collect{|i|[hls2[i], hle2[i],hl[i][2]]}
       for i in hle.size.times
-        # puts i
         if hls2[i] != nil and hle2[i] != nil
           hlnew << [hls2[i], hle2[i], hl[i][2]]
         end
       end
-      # puts hlnew.inspect
       @highlights[lpos] = hlnew
-      # Ripl.start :binding => binding
-      # hls
-      # hls2
     end
   end
 
   def update_line_ends(pos, changeamount, changestr)
-    #    puts @line_ends.inspect
-    #    puts pos
     if changeamount > -1
       changeamount = changestr.size
       i_nl = scan_indexes(changestr, /\n/)
       i_nl.collect! { |x| x + pos }
-      #      puts "new LINE ENDS:#{i.inspect}"
     end
     #    puts "change:#{changeamount}"
     #TODO: this is the bottle neck in insert_txt action
@@ -884,10 +891,10 @@ class Buffer < String
     $paste_lines = false
     range = get_range(range_id)
     return if range == nil
-    puts "RANGE"
-    puts range.inspect
-    puts range.inspect
-    puts "------"
+    debug "RANGE"
+    debug range.inspect
+    debug range.inspect
+    debug "------"
     delete_range(range.first, range.last)
     pos = [range.first, @pos].min
     set_pos(pos)
@@ -1109,7 +1116,7 @@ class Buffer < String
     word_start = pos if word_start == nil
     word_end = pos if word_end == nil
     word = self[word_start..word_end]
-    puts "'#{word}'"
+    puts "'WORD: #{word}'"
     message("'#{word}'")
     linep = get_file_line_pointer(word)
     puts "linep'#{linep}'"
@@ -1124,6 +1131,8 @@ class Buffer < String
       else
         open_url(path)
       end
+    elsif hpt_check_cur_word(word)
+      puts word
     elsif linep != nil
       puts linep
       jump_to_file(linep[0], linep[1].to_i)
@@ -1313,13 +1322,13 @@ class Buffer < String
   end
 
   def replace_with_char(char)
-    puts "self_pos:'#{self[@pos]}'"
+    debug "self_pos:'#{self[@pos]}'"
     return if self[@pos] == "\n"
     d1 = [@pos, DELETE, 1]
     d2 = [@pos, INSERT, 1, char]
     add_delta(d1, true)
     add_delta(d2, true)
-    puts "DELTAS:#{$buffer.deltas.inspect} "
+    debug "DELTAS:#{$buffer.deltas.inspect} "
   end
 
   def insert_txt_at(c, pos)
@@ -1327,6 +1336,13 @@ class Buffer < String
     c = "\n" if c == "\r"
     add_delta([pos, INSERT, c.size, c], true)
     calculate_line_and_column_pos
+  end
+
+  def insert_new_line()
+    s = get_current_line
+    $hook.call(:insert_new_line, s)
+    insert_txt("\n")
+    # message("foo")
   end
 
   def insert_txt(c, mode = BEFORE)
@@ -1339,7 +1355,7 @@ class Buffer < String
       # Indent start of new line based on last line
       last_line = line(@lpos)
       m = /^( +)([^ ]+|$)/.match(last_line)
-      puts m.inspect
+      debug m.inspect
       c = c + " " * m[1].size if m
     end
     if mode == BEFORE
@@ -1417,11 +1433,11 @@ class Buffer < String
     return if text == ""
 
     if $paste_lines
-      puts "PASTE LINES"
+      debug "PASTE LINES"
       l = current_line_range()
-      puts "------------"
-      puts l.inspect
-      puts "------------"
+      debug "------------"
+      debug l.inspect
+      debug "------------"
       #$buffer.move(FORWARD_LINE)
       #set_pos(l.end+1)
       insert_txt_at(text, l.end + 1)
@@ -1438,10 +1454,6 @@ class Buffer < String
     #TODO: AFTER does not work
     #insert_txt($clipboard[-1],AFTER)
     #recalc_line_ends #TODO: bug when run twice?
-  end
-
-  def insert_new_line()
-    insert_txt("\n")
   end
 
   def delete_line()
@@ -1472,11 +1484,11 @@ class Buffer < String
   end
 
   def copy_active_selection()
-    puts "!COPY SELECTION"
+    debug "!COPY SELECTION"
     $paste_lines = false
     return if !@visual_mode
 
-    puts "COPY SELECTION"
+    debug "COPY SELECTION"
     #_start = @selection_start
     #_end = @pos
     #_start,_end = _end,_start if _start > _end
@@ -1503,9 +1515,20 @@ class Buffer < String
     end_visual_mode
   end
 
+  def convert_selected_text(converter_id)
+    return if !@visual_mode
+    r = get_visual_mode_range
+    txt = self[r]
+    txt = $vma.apply_conv(converter_id, txt)
+    #TODO: Detect if changed?
+    replace_range(r, txt)
+    end_visual_mode
+  end
+
   def style_transform(op)
     return if !@visual_mode
     r = get_visual_mode_range
+    #TODO: if txt[-1]=="\n"
     txt = self[r]
     txt = "⦁" + txt + "⦁" if op == :bold
     txt = "⟦" + txt + "⟧" if op == :link
@@ -1519,11 +1542,19 @@ class Buffer < String
   def set_line_style(op)
     lrange = line_range(@lpos, 1, false)
     txt = self[lrange]
-    txt = "◼ " + txt if op == :heading
+    # txt = "◼ " + txt if op == :heading
     txt = "⦁" + txt + "⦁" if op == :bold
     txt = "❙" + txt + "❙" if op == :title
     txt.gsub!(/◼ /, "") if op == :clear
-    txt.gsub!(/[❙◼⟦⟧⦁]/, "") if op == :clear
+    txt.gsub!(/[❙◼⟦⟧⦁]/, "") if op == :clear or [:h1, :h2, :h3, :h4].include?(op)
+
+    if [:h1, :h2, :h3, :h4].include?(op)
+      txt.strip!
+      txt = "◼ " + txt if op == :h1
+      txt = "◼◼ " + txt if op == :h2
+      txt = "◼◼◼ " + txt if op == :h3
+      txt = "◼◼◼◼ " + txt if op == :h4
+    end
     replace_range(lrange, txt)
   end
 
@@ -1536,6 +1567,11 @@ class Buffer < String
     end
     set_clipboard(self[line_range(@lpos, num_lines)])
     $paste_lines = true
+  end
+
+  def get_current_line
+    s = self[line_range(@lpos, 1)]
+    return s
   end
 
   def put_file_path_to_clipboard
@@ -1585,15 +1621,33 @@ class Buffer < String
   end
 
   def save_as()
+    debug "save_as"
     savepath = ""
-    savepath = @fname if @fname
+
+    # If current file has fname, save to that fname
+    # Else search for previously open files and save to the directory of
+    # the last viewed file that has a filename
+    # $buffers[$buffer_history.reverse[1]].fname
+
+    if @fname
+      savepath = @fname
+    else
+      for bufid in $buffer_history.reverse[1..-1]
+        buf = $buffers[bufid]
+        debug "FNAME:#{buf.fname}"
+        if buf.fname
+          savepath = File.dirname(buf.fname)
+          break
+        end
+      end
+    end
+    # Ripl.start :binding => binding
     qt_file_saveas(savepath)
   end
 
   def save()
     if !@fname
-      puts "TODO: SAVE AS"
-      qt_file_saveas("")
+      save_as()
       return
     end
     message("Saving file #{@fname}")
@@ -1633,7 +1687,6 @@ class Buffer < String
     file.write($buffer.to_s)
     file.flush
     bufc = "FOO"
-    # puts $buffer.to_s
 
     tmppos = @pos
 
@@ -1646,13 +1699,12 @@ class Buffer < String
       bufc = IO.read(infile.path)
     elsif get_file_type() == "Javascript"
       cmd = "/home/samisi/bin/clang-format #{file.path} > #{infile.path}'"
-      puts cmd
+      debug cmd
       system(cmd)
       bufc = IO.read(infile.path)
-      # puts bufc
     elsif get_file_type() == "Ruby"
       cmd = "rufo #{file.path}"
-      puts cmd
+      debug cmd
       system(cmd)
       bufc = IO.read(file.path)
     else
@@ -1675,7 +1727,7 @@ class Buffer < String
     datetime = DateTime.now().strftime("%d%m%Y:%H%M%S")
     savepath = "#{spath}/#{spfx}_#{datetime}"
     if is_path_writable(savepath)
-      puts "BACKUP BUFFER TO: #{savepath}"
+      debug "BACKUP BUFFER TO: #{savepath}"
       IO.write(savepath, $buffer.to_s)
     else
       message("PATH NOT WRITABLE: #{savepath}")
