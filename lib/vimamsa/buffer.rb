@@ -1489,16 +1489,9 @@ class Buffer < String
     return if !@visual_mode
 
     debug "COPY SELECTION"
-    #_start = @selection_start
-    #_end = @pos
-    #_start,_end = _end,_start if _start > _end
-
-    #_start,_end = get_visual_mode_range
-    # TODO: Jump to start pos
-
-    #TODO: check if range ok
     set_clipboard(self[get_visual_mode_range])
     end_visual_mode
+    return true
   end
 
   def transform_selection(op)
@@ -1590,6 +1583,7 @@ class Buffer < String
     #TODO:take previous mode (insert|command) from stack?
     $kbd.set_mode(:command)
     @visual_mode = false
+    return true
   end
 
   def get_visual_mode_range2()

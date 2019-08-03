@@ -118,6 +118,8 @@ class Editor
   # Register converter
   def reg_conv(converter, converter_id)
     @converters[converter_id] = converter
+    reg_act(converter_id, proc { $buffer.convert_selected_text(converter_id); }, "Converter #{converter_id}", [:selection])
+    # reg_act(converter_id, "$buffer.convert_selected_text(:#{converter_id})", "Converter #{converter_id}", [:selection])
   end
 
   def apply_conv(converter_id, txt)
@@ -314,7 +316,7 @@ end
 
 def execute_command(input_str)
   begin
-    out_str = eval(input_str,TOPLEVEL_BINDING) #TODO: Other binding?
+    out_str = eval(input_str, TOPLEVEL_BINDING) #TODO: Other binding?
     $minibuffer.clear
     $minibuffer << out_str.to_s #TODO: segfaults, why?
   rescue SyntaxError

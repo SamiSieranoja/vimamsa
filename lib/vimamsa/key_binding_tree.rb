@@ -403,7 +403,12 @@ end
 $action_list = []
 
 def bindkey(key, action)
-  $action_list << { :action => action, :key => key }
+  # $action_list << { :action => action, :key => key }
+  if !$actions.has_key?(action)
+    if action.class==String
+      reg_act(action, proc { eval(action) }, action)
+    end
+  end
 
   k_arr = key.split
   modes = k_arr.shift # modes = "C" or "I" or "CI"

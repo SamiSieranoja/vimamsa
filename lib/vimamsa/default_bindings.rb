@@ -44,6 +44,10 @@ reg_act(:history_switch_forwards, "history_switch_forwards", "")
 reg_act(:center_on_current_line, "center_on_current_line", "")
 
 
+reg_act(:center_on_current_line, "center_on_current_line", "")
+
+# a = Action.new(:transform_upcase, "Transform selection upcase", proc{ $buffer.transform_selection(:upcase)  } , [:selection]) 
+
 reg_act(:jump_to_next_edit, "jump_to_next_edit", "")
 reg_act(:jump_to_last_edit, proc { $buffer.jump_to_last_edit }, "")
 
