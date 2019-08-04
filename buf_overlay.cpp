@@ -1,7 +1,7 @@
 
 #include "editor.h"
 
-extern SEditor *c_te;
+extern BufferWidget *c_te;
 
 void Overlay::paintEvent(QPaintEvent *e) {
   int jm_x = 0;

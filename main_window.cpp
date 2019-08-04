@@ -6,12 +6,13 @@
 
 #include "editor.h"
 #include "main_window.h"
+#include "buffer_widget.h"
 #include "buf_overlay.h"
 #include "highlighter.h"
 #include "config_window.h"
 
-extern SEditor *c_te;
-extern SEditor *miniEditor;
+extern BufferWidget *c_te;
+extern BufferWidget *miniEditor;
 extern QApplication *app;
 extern int cursor_pos;
 
@@ -118,7 +119,7 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
     actionMenu->addAction(tr("Search Actions"), this, SLOT(SearchActions()));
   }
 
-  textEdit = new SEditor(this);
+  textEdit = new BufferWidget(this);
   c_te = textEdit;
   c_te->setFont(QFont("Ubuntu Mono", 12));
   c_te->overlay = new Overlay(c_te);
@@ -130,7 +131,7 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
   QVBoxLayout *layout = new QVBoxLayout(frame);
   layout->setSpacing(1);
   layout->setContentsMargins(0, 0, 0, 0);
-  miniEditor = new SEditor(this);
+  miniEditor = new BufferWidget(this);
   miniEditor->setMaximumSize(4000, 30); // TODO: resize dynamically
   layout->addWidget(textEdit);
   layout->addWidget(miniEditor);
@@ -147,153 +148,6 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
   connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(clipboardDataChanged()));
 
   textEdit->setFocus();
-}
-
-void SEditor::keyReleaseEvent(QKeyEvent *e) {
-  handleKeyEvent(e);
-  return;
-}
-
-void SEditor::mouseReleaseEvent(QMouseEvent *event) {
-  qDebug() << "QT: Mouse release";
-
-  QTextCursor cursor = this->textCursor();
-  qDebug() << "Editor:Cursor pos changed\n";
-  qDebug() << "New pos:" << cursor.position() << "\n";
-
-  rb_funcall(NULL, rb_intern("qt_signal"), 2, rb_str_new2("mouse_release"), rb_str_new2(""));
-
-  cursor_pos = cursor.position();
-  rb_funcall(NULL, rb_intern("set_cursor_pos"), 1, INT2NUM(cursor_pos));
-  drawTextCursor();
-  update(); // TODO: needed?
-}
-
-void SEditor::paintEvent(QPaintEvent *e) {
-
-  // Q_D(QTextEdit);
-  // QPainter p(d->viewport);
-  // d->paint(&p, e);
-  // TODO: gives error if trying to draw after calling superclass paintEvent
-  // return;
-  QTextEdit::paintEvent(e);
-  QRect r = cursorRect();
-  cursor_x = r.x();
-  cursor_y = r.y();
-  cursor_height = r.height();
-
-  // TODO:
-  if (lineNumberArea) {
-    lineNumberArea->repaint();
-  }
-}
-
-void SEditor::handleKeyEvent(QKeyEvent *e) { processKeyEvent(e); }
-
-int SEditor::runHighlightBatch() {
-  int i = 0;
-  // c_te->hl->rehighlightBlock(curblock);
-  while (curblock != endblock && curblock.isValid()) {
-    continue_hl_batch=1;
-    c_te->hl->rehighlightBlock(curblock);
-    curblock = curblock.next();
-    i++;
-    if (i > 30) {
-      break;
-    }
-  }
-  if (curblock == endblock || !curblock.isValid()) {
-    continue_hl_batch=0;
-    // Reached the end
-    // curblock = 0;
-  }
-  return i;
-}
-
-int SEditor::processHighlights() {
-  
-  // If buffer syntax parsing is happening in separate thread,
-  // wait til it has finnished
-  if(RTEST(rb_eval_string("$buffer.is_parsing_syntax"))) {
-    continue_hl_batch=0;
-    return;
-  }
-  
-  if(RTEST(rb_eval_string("$buffer.qt_reset_highlight")))
-  {
-    rb_eval_string("$buffer.qt_reset_highlight=false");
-    continue_hl_batch=0;
-  }
-  
-  // Continuing from previous batch
-  if(continue_hl_batch) {
-    runHighlightBatch();
-    return;
-  }
-  c_te->hl->rb_highlight = rb_eval_string("$buffer.highlights");
-  while (RTEST(rb_eval_string("$cnf[:syntax_highlight]")) &&
-         RTEST(rb_eval_string("!$buffer.hl_queue.empty?"))) {
-    int startpos = NUM2INT(rb_eval_string("$buffer.hl_queue[0][0]"));
-    int endpos = NUM2INT(rb_eval_string("$buffer.hl_queue[0][1]"));
-    printf("HLqueue not empty:%d %d\n", startpos, endpos);
-    rb_eval_string("$buffer.hl_queue.delete_at(0)");
-
-    // QTextBlock startblock = c_te->document()->findBlock(startpos);
-    // QTextBlock endblock = c_te->document()->findBlock(endpos);
-    // QTextBlock curblock = startblock;
-    startblock = c_te->document()->findBlock(startpos);
-    endblock = c_te->document()->findBlock(endpos);
-    curblock = startblock;
-    runHighlightBatch();
-    // c_te->hl->rehighlightBlock(startblock);
-    // while (curblock != endblock && curblock.isValid()) {
-      // curblock = curblock.next();
-      // c_te->hl->rehighlightBlock(curblock);
-    // }
-  }
-}
-
-void SEditor::processKeyEvent(QKeyEvent *e) {
-
-  QByteArray ba;
-  const char *c_str2;
-
-  VALUE rb_event;
-  VALUE handle_key_event = rb_intern("handle_key_event");
-
-  // qDebug() << "nativeScanCode:" << e->nativeScanCode() << endl;
-  // qDebug() << "nativeVirtualKey:" << e->nativeVirtualKey() << endl;
-
-  QString event_text = e->text();
-  ba = e->text().toLocal8Bit();
-  c_str2 = ba.data();
-
-  rb_event = rb_ary_new3(5, INT2NUM(e->key()), INT2NUM(e->type()), rb_str_new2(c_str2),
-                         rb_str_new2(c_str2), INT2NUM(e->modifiers()));
-
-  rb_funcall(NULL, handle_key_event, 1, rb_event);
-
-  QTextCharFormat charFormat;
-  QTextCharFormat defaultCharFormat;
-  charFormat.setFontWeight(QFont::Black);
-
-  processHighlights();
-}
-
-void SEditor::cursorPositionChanged() { /*qDebug() << "Cursor pos changed"; */
-}
-
-void SEditor::keyPressEvent(QKeyEvent *e) {
-
-  handleKeyEvent(e);
-  return;
-}
-
-void SEditor::focusOutEvent(QFocusEvent *event) {
-  // qDebug() << "StE:Focus OUT";
-
-  rb_funcall(NULL, rb_intern("focus_out"), 0);
-  // qDebug() << "StE FOCUS OUT: END";
 }
 
 void Editor::closeEvent(QCloseEvent *e) {

@@ -5,6 +5,7 @@
 #include <QWidget>
 #include <QtWidgets>
 #include <QObject>
+#include "buffer_widget.h"
 
 extern "C" {
 #include <ruby.h>

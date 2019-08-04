@@ -37,6 +37,7 @@
 #endif
 
 #include "editor.h"
+#include "buffer_widget.h"
 #include "buf_overlay.h"
 #include "selectwindow.h"
 #include "fuzzy_string_dist.h"
@@ -106,15 +107,16 @@ private:
 
   QToolBar *tb;
   QString fileName;
-  SEditor *textEdit;
+  BufferWidget *textEdit;
   Highlighter *highlighter;
   SelectWindow *select_w;
 };
 
 // From http://doc.qt.io/qt-5/qtwidgets-widgets-codeeditor-codeeditor-h.html
+/*
 class LineNumberArea : public QWidget {
 public:
-  LineNumberArea(SEditor *editor) : QWidget(editor) { codeEditor = editor; }
+  LineNumberArea(BufferWidget *editor) : QWidget(editor) { codeEditor = editor; }
 
   QSize sizeHint() const override { return QSize(codeEditor->lineNumberAreaWidth(), 0); }
 
@@ -123,7 +125,8 @@ protected:
 //  void paintEvent(QPaintEvent *event);
 
 private:
-  SEditor *codeEditor;
+  BufferWidget *codeEditor;
 };
+*/
 
 #endif

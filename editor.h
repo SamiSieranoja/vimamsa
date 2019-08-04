@@ -23,13 +23,11 @@ const QString rsrcPath = ":/images/mac";
 const QString rsrcPath = ":/images/default";
 #endif
 
-class LineNumberArea;
-class SEditor;
-class QPaintEvent;
 
 #include "highlighter.h"
 #include "selectwindow.h"
 #include "buf_overlay.h"
+#include "buffer_widget.h"
 #include "constants.h"
 
 
@@ -68,62 +66,6 @@ private:
   void run();
 };
 
-
-class SEditor : public QTextEdit {
-  Q_OBJECT
-public:
-  SEditor(QWidget *parent = 0);
-  int cursor_x;
-  int cursor_y;
-  int cursor_height;
-  int cursor_width;
-  int at_line_end;
-  int overlay_paint_cursor;
-  int is_command_mode;
-  Overlay *overlay;
-  Highlighter *hl;
-  QFont fnt;
-  
-  QTextBlock startblock;
-  QTextBlock endblock;
-  QTextBlock curblock;
-  int continue_hl_batch;
-  int runHighlightBatch();
-
-
-  void drawTextCursor();
-  void processKeyEvent(QKeyEvent *e);
-  void contextMenuEvent(QContextMenuEvent *event);
-
-public:
-  void lineNumberAreaPaintEvent(QPaintEvent *event);
-  int lineNumberAreaWidth();
-  int loadTheme();
-  int processHighlights(); 
-//  void updateLineNumberArea(const QRect &, int);
-
-  /*~Editor();*/
-
-protected:
-  void keyPressEvent(QKeyEvent *e);
-  void keyReleaseEvent(QKeyEvent *e);
-  void mouseReleaseEvent(QMouseEvent *e);
-  void cursorPositionChanged();
-  void focusOutEvent(QFocusEvent *event);
-  void paintEvent(QPaintEvent *e);
-
-private:
-  void handleKeyEvent(QKeyEvent *e);
-  int cursorpos = 0;
-
-private slots:
-  void updateLineNumberAreaWidth(int newBlockCount);
-//  void updateLineNumberArea(const QRect &, int);
-  void updateLineNumberArea();
-
-private:
-  QWidget *lineNumberArea;
-};
 
 
 

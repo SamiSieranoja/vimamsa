@@ -245,7 +245,7 @@ bool SelectWindow::eventFilter(QObject *obj, QEvent *event) {
 
   else if (event->type() == QEvent::KeyPress) {
     // Process event with ruby
-    ((SEditor *)parent())->processKeyEvent((QKeyEvent *)event);
+    ((BufferWidget *)parent())->processKeyEvent((QKeyEvent *)event);
     return true;
   }
 
