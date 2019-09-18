@@ -125,16 +125,29 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
   c_te->overlay = new Overlay(c_te);
   c_te->hl = new Highlighter(c_te->document());
   c_te->hl->rb_highlight = rb_eval_string("false");
-  c_te->continue_hl_batch=0;
+  c_te->continue_hl_batch = 0;
 
   QFrame *frame = new QFrame;
-  QVBoxLayout *layout = new QVBoxLayout(frame);
+  // QVBoxLayout *layout = new QVBoxLayout(frame);
+  layout = new QGridLayout(frame);
   layout->setSpacing(1);
   layout->setContentsMargins(0, 0, 0, 0);
   miniEditor = new BufferWidget(this);
   miniEditor->setMaximumSize(4000, 30); // TODO: resize dynamically
-  layout->addWidget(textEdit);
-  layout->addWidget(miniEditor);
+  layout->addWidget(textEdit, 1, 1);
+  layout->addWidget(miniEditor, 2, 1);
+
+  rightMiniBuffer = NULL;
+  rightBuffer = NULL;
+  // rightBuffer = new BufferWidget(this);
+  // rightMiniBuffer = new BufferWidget(this);
+  // rightMiniBuffer->setMaximumSize(4000, 30); // TODO: resize dynamically
+  // layout->addWidget(rightBuffer, 1, 2);
+  // layout->addWidget(rightMiniBuffer, 2, 2);
+  // setNumColumns(2);
+  setNumColumns(1);
+  // setNumColumns(2);
+
   setCentralWidget(frame);
 
   connect(textEdit->document(), SIGNAL(modificationChanged(bool)), actionSave,
@@ -148,6 +161,30 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
   connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(clipboardDataChanged()));
 
   textEdit->setFocus();
+}
+
+int Editor::setNumColumns(int _numColumns) {
+  numColumns = _numColumns;
+  if (numColumns == 2) {
+    rightBuffer = new BufferWidget(this);
+    rightMiniBuffer = new BufferWidget(this);
+    rightMiniBuffer->setMaximumSize(4000, 30); // TODO: resize dynamically
+    layout->addWidget(rightBuffer, 1, 2);
+    layout->addWidget(rightMiniBuffer, 2, 2);
+  }
+  if (numColumns == 1) {
+    if (rightBuffer != NULL) {
+      layout->removeWidget(rightBuffer);
+      delete rightBuffer;
+      rightBuffer = NULL;
+    }
+     if (rightMiniBuffer != NULL) {
+      layout->removeWidget(rightMiniBuffer);
+      delete rightMiniBuffer;
+      rightMiniBuffer = NULL;
+    }
+   
+  }
 }
 
 void Editor::closeEvent(QCloseEvent *e) {

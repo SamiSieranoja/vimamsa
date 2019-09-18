@@ -178,11 +178,12 @@ class Buffer < String
 
   #attr_reader (:pos, :cpos, :lpos)
 
-  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted
+  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed
   attr_writer :call_func, :update_highlight
   attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax, :line_ends
 
   def initialize(str = "\n", fname = nil)
+    debug "Buffer.rb: def initialize"
     super(str)
     @crypt = nil
     @update_highlight = true
@@ -234,10 +235,25 @@ class Buffer < String
     return @ftype
   end
 
+  def create_syntax_parser()
+    @syntax_detect_failed = false
+    debug("Create @syntax_parser")
+    ft = self.get_file_type()
+    file = "vendor/ver/config/syntax/#{ft}.rb"
+    if File.exist?(file)
+      @syntax_parser = Textpow::SyntaxNode.load(file)
+    else
+      debug "NON-HIGHLIGHTABLE FILE: '#{ft}'"
+      @syntax_detect_failed = true
+      return
+    end
+  end
+
   def highlight()
     # puts "higlight()"
     return if !$cnf[:syntax_highlight]
     return if @syntax_detect_failed
+    return if fname == nil
     # debug "START HIGHLIGHT"
 
     if @syntax_parser != nil
@@ -250,16 +266,7 @@ class Buffer < String
     end
 
     if @syntax_parser == nil
-      debug("Create @syntax_parser")
-      ft = self.get_file_type()
-      file = "vendor/ver/config/syntax/#{ft}.rb"
-      if File.exist?(file)
-        @syntax_parser = Textpow::SyntaxNode.load(file)
-      else
-        debug "NON-HIGHLIGHTABLE FILE: '#{ft}'"
-        @syntax_detect_failed = true
-        return
-      end
+      create_syntax_parser()
     end
 
     @is_highlighted = true
@@ -379,6 +386,8 @@ class Buffer < String
     @fname = filename
     @pathname = Pathname.new(fname) if @fname
     @basename = @pathname.basename if @fname
+    create_syntax_parser()
+    reset_highlight()
   end
 
   def get_short_path()
@@ -1637,6 +1646,8 @@ class Buffer < String
     end
     # Ripl.start :binding => binding
     qt_file_saveas(savepath)
+    # calls back to file_saveas
+    # TODO:?
   end
 
   def save()
@@ -1722,7 +1733,7 @@ class Buffer < String
     savepath = "#{spath}/#{spfx}_#{datetime}"
     if is_path_writable(savepath)
       debug "BACKUP BUFFER TO: #{savepath}"
-      IO.write(savepath, $buffer.to_s)
+      IO.write(savepath, self.to_s) if @crypt == nil #TODO: For encrypted
     else
       message("PATH NOT WRITABLE: #{savepath}")
     end

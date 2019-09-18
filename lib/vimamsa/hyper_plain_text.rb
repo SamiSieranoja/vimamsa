@@ -10,19 +10,33 @@ def hpt_check_cur_word(w)
     fpfx = m[1]
     if $buffer.fname
       dn = File.dirname($buffer.fname)
-      fcand1 = "#{dn}/#{fpfx}"
-      fcand2 = "#{dn}/#{fpfx}.txt"
+
+      fcands=[]
+      fcands << "#{dn}/#{fpfx}"
+      fcands << "#{dn}/#{fpfx}.txt"
+      fcands << File.expand_path("#{fpfx}")
+      fcands << File.expand_path("#{fpfx}.txt")
+
       fn = nil
-      fn = fcand1 if File.exists?(fcand1)
-      fn = fcand2 if File.exists?(fcand2)
+      for fc in fcands
+        if File.exists?(fc)
+          fn = fc
+          break
+        end
+      end
+
       if fn
         message "HPT opening file #{fn}"
         open_existing_file(fn)
         return true
-        else
+      else
         message "File not found: #{fpfx}"
       end
     end
   end
   return false
 end
+
+
+
+

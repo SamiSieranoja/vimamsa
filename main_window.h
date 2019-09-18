@@ -53,9 +53,19 @@ public:
   int setQtStyle(int style_id);
   int addTextFormat(QString foregroundColor, QString backgroundColor, int fontStyle, float fontScale);
   int clearTextFormats(); 
+  int setNumColumns(int _numColumns); 
   QAction *actionSave;
+  int numColumns;
   
   vector<QTextCharFormat*> textFormats;
+
+  BufferWidget *leftBuffer;
+  BufferWidget *leftMiniBuffer;
+  
+  BufferWidget *rightBuffer;
+  BufferWidget *rightMiniBuffer;
+
+  QGridLayout *layout;
 
 protected:
   virtual void closeEvent(QCloseEvent *e);
@@ -108,6 +118,9 @@ private:
   QToolBar *tb;
   QString fileName;
   BufferWidget *textEdit;
+  
+ 
+  
   Highlighter *highlighter;
   SelectWindow *select_w;
 };

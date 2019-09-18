@@ -358,6 +358,13 @@ VALUE qt_select_window(VALUE self, VALUE item_list, VALUE jump_keys, VALUE callb
   return INT2NUM(0);
 }
 
+VALUE qt_set_num_columns(VALUE self, VALUE num_columns)
+{
+  g_editor->setNumColumns(NUM2INT(num_columns));
+  return INT2NUM(0);
+}
+
+
 VALUE qt_select_window_close(VALUE self, VALUE id) {
   qDebug() << "close window: ";
   if (select_w) {
@@ -474,6 +481,7 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("set_window_title", method_set_window_title, 1);
   rb_define_global_function("set_system_clipboard", set_system_clipboard, 1);
   rb_define_global_function("set_qt_style", set_qt_style, 1);
+  rb_define_global_function("qt_set_num_columns", qt_set_num_columns, 1);
   rb_define_global_function("qt_select_window", qt_select_window, 4);
   rb_define_global_function("qt_select_window_close", qt_select_window_close, 1);
 
