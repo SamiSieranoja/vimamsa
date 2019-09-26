@@ -32,7 +32,8 @@ end
 
 reg_act(:savedebug, "savedebug", "Save debug info")
 
-reg_act(:file_finder, "gui_file_finder", "Fuzzy file finder")
+# reg_act(:file_finder, "gui_file_finder", "Fuzzy file finder")
+
 reg_act(:open_file_dialog, "open_file_dialog", "Open file")
 reg_act(:create_new_file, "create_new_file", "Create new file")
 reg_act(:backup_all_buffers, "backup_all_buffers", "Backup all buffers")
@@ -82,6 +83,10 @@ bindkey "C , , l t", :load_theme
 
 reg_act(:gui_file_finder, proc { gui_file_finder }, "Fuzzy file finder")
 bindkey "C , f", :gui_file_finder
+
+reg_act(:gui_file_history_finder, proc { gui_file_history }, "Fuzzy file history finder")
+bindkey "C , h", :gui_file_history_finder
+
 
 reg_act(:gui_search_replace, proc { gui_search_replace }, "Search and replace")
 bindkey "C , r r", :gui_search_replace
@@ -352,7 +357,7 @@ default_keys = {
   "C , t r" => "run_tests()",
 
   "C ." => "repeat_last_action", # TODO
-  "C ;" => "repeat_last_find",
+  "VC ;" => "repeat_last_find",
   "CV Q" => "_quit",
   "CV ctrl-q" => "_quit",
   "CV , R" => "restart_application",

@@ -92,7 +92,7 @@ end
 
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths
-  attr_accessor :converters
+  attr_accessor :converters, :fh
   #attr_writer :call_func, :update_highlight
 
   def initialize()
@@ -108,6 +108,88 @@ class Editor
     @converters = {}
   end
 
+  def start
+    $highlight = {}
+    $macro = Macro.new
+    $search = Search.new
+    $hook = Hook.new
+
+    $buffers = BufferList.new
+    $minibuffer = Buffer.new(">", "")
+
+    debug "ARGV: " + ARGV.inspect
+    # build_key_bindings_tree
+    $kbd = KeyBindingTree.new()
+    $kbd.add_mode("C", :command)
+    $kbd.add_mode("I", :insert)
+    $kbd.add_mode("V", :visual)
+    $kbd.add_mode("M", :minibuffer)
+    $kbd.add_mode("R", :readchar)
+    $kbd.add_mode("B", :browse)
+    $kbd.set_default_mode(:command)
+    require "vimamsa/default_bindings"
+    sleep(0.03)
+
+    dot_dir = File.expand_path("~/.vimamsa")
+    Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
+
+    $cnf[:theme] = "Twilight_edit"
+    $cnf[:syntax_highlight] = true
+    settings_path = get_dot_path("settings.rb")
+    if File.exist?(settings_path)
+      $cnf = eval(IO.read(settings_path))
+    end
+
+    set_qt_style(1)
+    # load_theme("Amy")
+    # load_theme("Espresso Libre")
+    # load_theme("SovietCockpit")
+
+    # Limit file search to these extensions:
+    $find_extensions = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb"]
+
+    dotfile = read_file("", "~/.vimamsarc")
+    eval(dotfile) if dotfile
+
+    build_options
+
+    $fname = "test.txt"
+    if conf(:startup_file)
+      fname_ = File.expand_path(conf(:startup_file))
+      if File.exist?(fname_)
+        $fname = fname_
+      end
+    end
+    $fname = ARGV[1] if ARGV.size >= 2 and File.file?(ARGV[1])
+    $vma.add_content_search_path(Dir.pwd)
+    for fn in ARGV
+      fn = File.expand_path(fn)
+      if File.directory?(fn)
+        $vma.add_content_search_path(fn)
+        $search_dirs << fn
+      end
+    end
+
+    buffer = Buffer.new(read_file("", $fname), $fname)
+    $buffers << buffer
+
+    load_theme($cnf[:theme])
+
+    render_buffer($buffer, 1)
+
+    gui_select_buffer_init
+    gui_file_finder_init
+
+    #Load plugins
+    require "vimamsa/file_history.rb"
+    @fh = FileHistory.new
+    
+  end
+  
+  def shutdown()
+    $hook.call(:shutdown)
+  end
+
   def add_content_search_path(pathstr)
     p = File.expand_path(pathstr)
     if !@file_content_search_paths.include?(p)
@@ -118,7 +200,7 @@ class Editor
   # Register converter
   def reg_conv(converter, converter_id)
     @converters[converter_id] = converter
-    reg_act(converter_id, proc { $buffer.convert_selected_text(converter_id); }, "Converter #{converter_id}", [:selection])
+    reg_act(converter_id, proc { $buffer.convert_selected_text(converter_id) }, "Converter #{converter_id}", [:selection])
     # reg_act(converter_id, "$buffer.convert_selected_text(:#{converter_id})", "Converter #{converter_id}", [:selection])
   end
 
@@ -141,6 +223,7 @@ $vma = Editor.new
 
 def _quit()
   # Shut down the Qt thread before the ruby thread
+  $vma.shutdown
   qt_quit
   exit
 end
@@ -527,79 +610,6 @@ def render_buffer(buffer = 0, reset = 0)
   $buffer.set_redrawed if reset == 1
 end
 
-def vimamsa_init
-  $highlight = {}
-  $macro = Macro.new
-  $search = Search.new
-  $hook = Hook.new
-
-  $buffers = BufferList.new
-  $minibuffer = Buffer.new(">", "")
-
-  debug "ARGV: " + ARGV.inspect
-  # build_key_bindings_tree
-  $kbd = KeyBindingTree.new()
-  $kbd.add_mode("C", :command)
-  $kbd.add_mode("I", :insert)
-  $kbd.add_mode("V", :visual)
-  $kbd.add_mode("M", :minibuffer)
-  $kbd.add_mode("R", :readchar)
-  $kbd.add_mode("B", :browse)
-  $kbd.set_default_mode(:command)
-  require "vimamsa/default_bindings"
-  debug "START reading file"
-  sleep(0.03)
-
-  dot_dir = File.expand_path("~/.vimamsa")
-  Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
-
-  $cnf[:theme] = "Twilight_edit"
-  $cnf[:syntax_highlight] = true
-  settings_path = get_dot_path("settings.rb")
-  if File.exist?(settings_path)
-    $cnf = eval(IO.read(settings_path))
-  end
-
-  set_qt_style(1)
-  # load_theme("Amy")
-  # load_theme("Espresso Libre")
-  # load_theme("SovietCockpit")
-
-  # Limit file search to these extensions:
-  $find_extensions = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb"]
-
-  dotfile = read_file("", "~/.vimamsarc")
-  eval(dotfile) if dotfile
-
-  build_options
-
-  $fname = "test.txt"
-  if conf(:startup_file)
-    fname_ = File.expand_path(conf(:startup_file))
-    if File.exist?(fname_)
-      $fname = fname_
-    end
-  end
-  $fname = ARGV[1] if ARGV.size >= 2 and File.file?(ARGV[1])
-  $vma.add_content_search_path(Dir.pwd)
-  for fn in ARGV
-    fn = File.expand_path(fn)
-    if File.directory?(fn)
-      $vma.add_content_search_path(fn)
-      $search_dirs << fn
-    end
-  end
-
-  buffer = Buffer.new(read_file("", $fname), $fname)
-  $buffers << buffer
-
-  load_theme($cnf[:theme])
-
-  render_buffer($buffer, 1)
-
-  gui_select_buffer_init
-  gui_file_finder_init
-end
 
 def get_dot_path(sfx)
   dot_dir = File.expand_path("~/.vimamsa")

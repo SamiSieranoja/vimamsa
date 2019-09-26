@@ -47,6 +47,7 @@ class BufferList < Array
     @current_buf = self.size - 1
     $buffer_history << @current_buf
     @recent_ind = 0
+    $hook.call(:change_buffer, $buffer)
   end
 
   def switch()
@@ -94,6 +95,8 @@ class BufferList < Array
     if update_history
       add_current_buf_to_history
     end
+    
+    $hook.call(:change_buffer, $buffer)
 
     set_window_title("Vimamsa - #{fpath}")
     $buffer.need_redraw!

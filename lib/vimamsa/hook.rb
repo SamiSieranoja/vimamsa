@@ -2,15 +2,20 @@
 class HookItem
   attr_writer :method_name, :weight
 
-  def initialize(method_name, weight)
-    @method_name = method_name
-    @call_func = method(method_name)
+  def initialize(hook_method, weight)
+    @method_name = hook_method.to_s
+
+    if hook_method.class == Method
+      @call_func = hook_method
+    elsif hook_method.class == String
+      @call_func = method(hook_method)
+    end
     @weight = weight
   end
 
-  def call(x=nil)
-    @call_func.call(x) if x!=nil
-    @call_func.call() if x==nil
+  def call(x = nil)
+    @call_func.call(x) if x != nil
+    @call_func.call() if x == nil
   end
 end
 
@@ -25,16 +30,16 @@ class Hook < Hash
   def initialize()
   end
 
-  def register(hook_id, method_name, weight = 0)
+  def register(hook_id, hook_method, weight = 0)
     self[hook_id] = [] if self[hook_id] == nil
-    self[hook_id] << HookItem.new(method_name, weight)
+    self[hook_id] << HookItem.new(hook_method, weight)
   end
 
-  def call(hook_id,x=nil)
+  def call(hook_id, x = nil)
     if self[hook_id]
       self[hook_id].each { |hi|
-        hi.call(x) if x!=nil
-        hi.call() if x==nil
+        hi.call(x) if x != nil
+        hi.call() if x == nil
       }
     end
   end

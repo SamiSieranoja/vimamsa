@@ -23,9 +23,15 @@
       
      { name: 'page.title',
       match: /^❙.*❙/ },
-      { name: 'text.bold',
-      match: /(?<=[◦⦁]).+(?=[◦⦁])/ },
      
+ {begin: /⦁/,
+    beginCaptures: {0 => {name: "text.begin.bold"}},
+    end: "⦁",
+    endCaptures: {0 => {name: "text.end.bold"}},
+    name: "text.bold",
+    patterns: []
+    },    
+    
      { name: 'text.date',
       match: /^(\d\d\.\d\d\.\d\d\d\d|\d\d\d\d-\d\d-\d\d)/ },
       
@@ -37,7 +43,7 @@
     { name: 'markup.underline.link.asciidoc',
       match: /(http|https|ftp|file|irc):\/\/[^|\s]*(\w|\/)/ },
      { name: 'markup.link',
-      match: /⟦.*⟧/ },
+      match: /⟦.+?⟧/ },
      
       
       

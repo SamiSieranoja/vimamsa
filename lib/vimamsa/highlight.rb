@@ -127,11 +127,18 @@ class Processor
       if @tags[name] and @tags[name][0] == @lineno
         startpos = @tags[name][1]
         endpos = mark - 1
-        @highlights[@lineno] = [] if @highlights[@lineno] == nil
-        x = [startpos, endpos, format]
-        # puts "x:#{x}"
-        @highlights[@lineno] << x
-        @highlights[@lineno].sort!
+        if name == "text.bold"  #TODO: as setting in style file 
+          startpos = startpos + 1
+          endpos = endpos - 1
+        end
+
+        if endpos > startpos
+          @highlights[@lineno] = [] if @highlights[@lineno] == nil
+          x = [startpos, endpos, format]
+          # puts "x:#{x}"
+          @highlights[@lineno] << x
+          @highlights[@lineno].sort!
+        end
       end
     end
   end

@@ -52,7 +52,7 @@ VALUE method_main_loop(VALUE self) {
 
   VALUE do_center;
 
-  rb_eval_string("vimamsa_init");
+  rb_eval_string("$vma.start");
   window_title = new QString("Vimamsa");
   while (1) {
     a.processEvents();
