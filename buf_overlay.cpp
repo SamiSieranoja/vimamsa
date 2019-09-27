@@ -38,17 +38,21 @@ void Overlay::paintEvent(QPaintEvent *e) {
     // printf("Overlay:paintEvent. overlay_paint_cursor=false\n");
   }
 
-  VALUE paint_stack = rb_eval_string("$paint_stack");
-  while (RARRAY_LEN(paint_stack) > 0) {
-    VALUE p = rb_ary_shift(paint_stack);
+  VALUE paint_stack = rb_eval_string("vma.paint_stack");
+  
+  for (int i=0; i< RARRAY_LEN(paint_stack); i++) {
+    //TODO: Cache drawing so don't need to redo?
+    // VALUE p = rb_ary_shift(paint_stack);
+    VALUE p = rb_ary_entry(paint_stack,i);
+    
     int draw_type = NUM2INT(rb_ary_entry(p, 0));
     int x_coord = NUM2INT(rb_ary_entry(p, 1));
     int y_coord = NUM2INT(rb_ary_entry(p, 2));
     VALUE c = rb_ary_entry(p, 3);
-    // qDebug() << "Paint item: " << " " << NUM2INT(rb_ary_entry(p,0)) << " " <<
-    // NUM2INT(rb_ary_entry(p,1)) << " " << NUM2INT(rb_ary_entry(p,2)) << "\n";
     draw_text(x_coord, y_coord, StringValueCStr(c));
   }
+
+  
 }
 
 int Overlay::draw_text(int x, int y, char *text) {
@@ -56,13 +60,10 @@ int Overlay::draw_text(int x, int y, char *text) {
   QPainter p(this);
   p.setPen(QColor("#ffff2222"));
   QFont font = p.font();
-  // font.setPointSize (10);
-  font.setPointSize(10);
+  font.setPointSize(c_te->fnt.pointSize()-1);
   font.setWeight(QFont::DemiBold);
   QFontMetrics fm(font);
   p.setFont(font);
-  // QRect qr =  fm.tightBoundingRect(text);
-  // QRect qr =  fm.tightBoundingRect("X");
   QRect qr = fm.tightBoundingRect(text);
   int padding = 2;
   int y_align = -0;

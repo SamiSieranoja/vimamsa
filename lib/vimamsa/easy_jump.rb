@@ -8,25 +8,20 @@ end
 
 def easy_jump(direction)
   message "EASY JUMP"
-  $easy_jump_wsmarks = scan_word_start_marks($buffer)
   visible_range = get_visible_area()
-  $easy_jump_wsmarks = $easy_jump_wsmarks.select { |x|
-    x >= visible_range[0] && x <= visible_range[1]
-  }
-
+  visible_text = $buffer[visible_range[0]..visible_range[1]]
+  wsmarks = scan_word_start_marks(visible_text)
+  $easy_jump_wsmarks = wsmarks.collect{|x|x+visible_range[0]}
+  
   $easy_jump_wsmarks.sort_by! { |x| (x - $buffer.pos).abs }
-
-  printf("VISIBLE RANGE: #{visible_range.inspect}\n")
-  printf("vsmarks: #{$easy_jump_wsmarks.inspect}\n")
   $jump_sequence = make_jump_sequence($easy_jump_wsmarks.size)
-  #puts $jump_sequence.inspect
   $input_char_call_func = method(:easy_jump_input_char)
   $kbd.set_mode(:readchar)
   $easy_jump_input = ""
-  puts "========="
 end
 
 def easy_jump_input_char(c)
+  vma.paint_stack=[]
   puts "EASY JUMP: easy_jump_input_char [#{c}]"
   $easy_jump_input << c.upcase
   if $jump_sequence.include?($easy_jump_input)

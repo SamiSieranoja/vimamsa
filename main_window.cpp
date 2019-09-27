@@ -121,6 +121,10 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
 
   textEdit = new BufferWidget(this);
   c_te = textEdit;
+  // c_te->fnt.setFamily(f);
+
+
+  c_te->fnt.setPointSize(12);
   c_te->setFont(QFont("Ubuntu Mono", 12));
   c_te->overlay = new Overlay(c_te);
   c_te->hl = new Highlighter(c_te->document());

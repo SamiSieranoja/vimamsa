@@ -92,7 +92,7 @@ end
 
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths
-  attr_accessor :converters, :fh
+  attr_accessor :converters, :fh, :paint_stack
   #attr_writer :call_func, :update_highlight
 
   def initialize()
@@ -106,6 +106,7 @@ class Editor
 
     #Regexp gsubs or other small modifiers of text
     @converters = {}
+    @paint_stack=[]
   end
 
   def start
@@ -183,10 +184,10 @@ class Editor
     #Load plugins
     require "vimamsa/file_history.rb"
     @fh = FileHistory.new
-    
+
     $hook.call(:after_init)
   end
-  
+
   def shutdown()
     $hook.call(:shutdown)
   end
@@ -221,6 +222,9 @@ class Editor
 end
 
 $vma = Editor.new
+def vma()
+  return $vma
+end
 
 def _quit()
   # Shut down the Qt thread before the ruby thread
@@ -575,8 +579,7 @@ def scan_word_start_marks(search_str)
 end
 
 def draw_text(str, x, y)
-  $paint_stack << [4, x, y, str]
-  #cpp_function_wrapper(1,[str,x,y]);
+  vma.paint_stack << [4, x, y, str]
 end
 
 def get_visible_area()
@@ -610,7 +613,6 @@ def render_buffer(buffer = 0, reset = 0)
   end
   $buffer.set_redrawed if reset == 1
 end
-
 
 def get_dot_path(sfx)
   dot_dir = File.expand_path("~/.vimamsa")

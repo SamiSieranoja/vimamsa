@@ -32,8 +32,8 @@ end
 
 
 
-# reg_act(:easy_jump, proc { mod.easy_jump }, "Easy jump")
-#  "C s" => "easy_jump(:visible_area)",
+reg_act(:easy_jump, proc { easy_jump(:visible_area) }, "Easy jump")
+bindkey "C s", :easy_jump
 
 reg_act(:savedebug, "savedebug", "Save debug info")
 
