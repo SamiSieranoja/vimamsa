@@ -7,6 +7,7 @@ class Macro
     @recorded_evals = {}
     @current_recording = []
     @current_name = nil
+    @last_macro = "a"
   end
 
   def start_recording(name)
@@ -22,9 +23,10 @@ class Macro
   def end_recording()
     if @recording == true
       @recorded_evals[@current_name] = @current_recording
+      @last_macro = @current_name
       @current_name = @current_recording = nil
       @recording = false
-      message("Stop recording macro")
+      message("Stop recording macro [#{@last_macro}]")
     else
       message("Not recording macro")
     end
@@ -44,12 +46,20 @@ class Macro
     end
   end
 
+
+  def run_last_macro
+   run_macro(@last_macro)
+  end
+
   def run_macro(name)
     if $macro.is_recording == true
       message("Can't run a macro that runs a macro (recursion risk)")
       return false
     end
     message("Start running macro [#{name}]")
+    if @recorded_evals.has_key?(name)
+      @last_macro = name
+    end
     acts = @recorded_evals[name]
     if acts.kind_of?(Array) and acts.any?
       set_last_command({ method: $macro.method("run_macro"), params: [name] })

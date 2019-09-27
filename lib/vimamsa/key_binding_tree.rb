@@ -188,7 +188,7 @@ class KeyBindingTree
     s = ""
     s_trail = ""
     last_state = @state_trail.last
-    last_state = last_state[0] if last_state.class==Array
+    last_state = last_state[0] if last_state.class == Array
     for st in @state_trail
       st = st[0] if st.class == Array
       s_trail << " #{st.to_s}"
@@ -262,14 +262,14 @@ class KeyBindingTree
       # # puts "CUR STATE: #{@state_trail.collect{|x| x.to_s}.join}"
       # s_trail = ""
       # for st in @state_trail
-        # st = st[0] if st.class == Array
-        # s_trail << " #{st.to_s}"
+      # st = st[0] if st.class == Array
+      # s_trail << " #{st.to_s}"
       # end
       # puts "CUR STATE: #{s_trail}"
       # for cstate in new_state[0].children
-        # act_s = "..."
-        # act_s = cstate.action.to_s if cstate.action != nil
-        # puts "  #{cstate.to_s} #{act_s}"
+      # act_s = "..."
+      # act_s = cstate.action.to_s if cstate.action != nil
+      # puts "  #{cstate.to_s} #{act_s}"
       # end
       # Ripl.start :binding => binding
       # new_state[0].children.collect{|x|x.to_s}
@@ -374,7 +374,7 @@ class KeyBindingTree
     end
     # puts "key_str=|#{key_str}| key_str=|#{key_str.inspect}| key_str2=|#{key_str2}|"
     prefixed_key_str = key_prefix + key_str2
-    
+
     # Space is only key in $event_keysym_translate_table
     # which is representable by single char
     key_str = " " if key_str == "space" # HACK
@@ -403,9 +403,20 @@ end
 $action_list = []
 
 def bindkey(key, action)
+  if key.class != Array
+    key = key.split("||")
+  end
+  key.each { |k| _bindkey(k, action) }
+end
+
+def _bindkey(key, action)
+  # if key.class == Array
+    # key.each { |k| bindkey(k, action) }
+    # return
+  # end
   # $action_list << { :action => action, :key => key }
   if !$actions.has_key?(action)
-    if action.class==String
+    if action.class == String
       reg_act(action, proc { eval(action) }, action)
     end
   end

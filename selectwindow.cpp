@@ -35,6 +35,9 @@ SelectWindow::SelectWindow(QWidget *parent, int use_filter) : QWidget(parent) {
   proxyView = new QTreeView;
   proxyView->setAlternatingRowColors(true);
   proxyView->setSortingEnabled(true);
+  // proxyView->setTextElideMode(Qt::ElideLeft);
+  proxyView->setTextElideMode(Qt::ElideMiddle);
+
   connect(proxyView, SIGNAL(clicked(const QModelIndex &)), SLOT(selectItem(QModelIndex)));
   model = new QStandardItemModel(0, 3, parent);
   model->setHeaderData(0, Qt::Horizontal, QObject::tr("jmp"));

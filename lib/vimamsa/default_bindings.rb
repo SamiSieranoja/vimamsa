@@ -30,6 +30,11 @@ def is_visual_mode()
   return 0
 end
 
+
+
+# reg_act(:easy_jump, proc { mod.easy_jump }, "Easy jump")
+#  "C s" => "easy_jump(:visible_area)",
+
 reg_act(:savedebug, "savedebug", "Save debug info")
 
 # reg_act(:file_finder, "gui_file_finder", "Fuzzy file finder")
@@ -48,6 +53,9 @@ reg_act(:center_on_current_line, "center_on_current_line", "")
 reg_act(:center_on_current_line, "center_on_current_line", "")
 
 # a = Action.new(:transform_upcase, "Transform selection upcase", proc{ $buffer.transform_selection(:upcase)  } , [:selection]) 
+
+reg_act(:run_last_macro, proc { $macro.run_last_macro }, "Run last recorded or executed macro")
+bindkey ["CB M","B m"], :run_last_macro
 
 reg_act(:jump_to_next_edit, "jump_to_next_edit", "")
 reg_act(:jump_to_last_edit, proc { $buffer.jump_to_last_edit }, "")
@@ -68,6 +76,8 @@ bindkey "C , , e", :encrypt_file #TODO: better binding
 
 reg_act(:set_unencrypted, proc { $buffer.set_unencrypted }, "Set current file to save unencrypted")
 bindkey "C , ; u", :set_unencrypted #TODO: better binding
+
+reg_act(:close_all_buffers, proc { $buffers.close_all_buffers()  }, "Close all buffers")
 
 reg_act(:close_current_buffer, proc { $buffers.close_current_buffer(true) }, "Close current buffer")
 bindkey "C , c b", :close_current_buffer
@@ -163,12 +173,13 @@ bindkey "B h", :history_switch_backwards
 bindkey "B l", :history_switch_forwards
 #bindkey 'B z', :center_on_current_line
 bindkey "B z", "center_on_current_line();$kbd.set_mode(:command)"
-bindkey "B j", "$buffers.add_current_buf_to_history();$kbd.set_mode(:command)"
-bindkey "B esc", "$buffers.add_current_buf_to_history();$kbd.set_mode(:command)"
-bindkey "B return", "$buffers.add_current_buf_to_history();$kbd.set_mode(:command)"
-bindkey "B enter", "$buffers.add_current_buf_to_history();$kbd.set_mode(:command)"
-bindkey "B c", :close_current_buffer
 
+reg_act :exit_browse_mode, proc { $buffers.add_current_buf_to_history();$kbd.set_mode(:command)
+}, "Exit browse mode"
+#TODO: Need to deside which of these is best:
+bindkey "B enter || B return || B esc || B j || B ctrl!", :exit_browse_mode
+
+bindkey "B c", :close_current_buffer
 bindkey "B ;", "$buffer.jump_to_last_edit"
 bindkey "B q", :jump_to_last_edit
 bindkey "B w", :jump_to_next_edit
@@ -245,7 +256,6 @@ default_keys = {
   "VC G" => "$buffer.jump(END_OF_BUFFER)",
   #    'VC z z' => 'center_on_current_line',
   "VC *" => "$buffer.jump_to_next_instance_of_word",
-  "C s" => "easy_jump(:visible_area)",
 
   # MINIBUFFER bindings
   "VC /" => "invoke_search",
@@ -347,12 +357,14 @@ default_keys = {
 
   # Macros
   # (experimental, may not work correctly)
-  "C q a" => '$macro.start_recording("a")',
+  # "C q a" => '$macro.start_recording("a")',
+  "C q <char>" => '$macro.start_recording(<char>)',
   "C q($macro.is_recording==true) " => "$macro.end_recording", # TODO
   # 'C q'=> '$macro.end_recording', #TODO
   "C q v" => "$macro.end_recording",
   # 'C v'=> '$macro.end_recording',
-  "C M" => '$macro.run_macro("a")',
+  # "C M" => '$macro.run_last_macro',
+  "C @ <char>" => '$macro.run_macro(<char>)',
   "C , m s" => '$macro.save_macro("a")',
   "C , t r" => "run_tests()",
 

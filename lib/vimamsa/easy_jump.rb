@@ -1,5 +1,10 @@
 
 # Similar feature as Vim EasyMotion https://github.com/easymotion/vim-easymotion
+class EasyJump
+  def initialize()
+  make_jump_sequence
+  end
+end
 
 def easy_jump(direction)
   message "EASY JUMP"
@@ -43,11 +48,8 @@ end
 def easy_jump_draw()
   return if $jump_sequence.empty?
   puts "EASY JUMP DRAW"
-  #wsmarks = scan_word_start_marks($buffer)
   screen_cord = cpp_function_wrapper(0, [$easy_jump_wsmarks])
   screen_cord = screen_cord[1..$jump_sequence.size]
-  #puts $jump_sequence
-  #puts screen_cord.inspect
   screen_cord.each_with_index { |point, i|
     mark_str = $jump_sequence[i]
     #puts "draw #{point[0]}x#{point[1]}"

@@ -184,6 +184,7 @@ class Editor
     require "vimamsa/file_history.rb"
     @fh = FileHistory.new
     
+    $hook.call(:after_init)
   end
   
   def shutdown()

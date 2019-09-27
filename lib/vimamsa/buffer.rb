@@ -95,7 +95,7 @@ class BufferList < Array
     if update_history
       add_current_buf_to_history
     end
-    
+
     $hook.call(:change_buffer, $buffer)
 
     set_window_title("Vimamsa - #{fpath}")
@@ -154,11 +154,26 @@ class BufferList < Array
       end
     end
     # Ripl.start :binding => binding
-    @current_buf = 0 if @current_buf >= self.size
     if self.size == 0
-      self << Buffer.new("emptybuf\n")
+      self << Buffer.new("\n")
+      @current_buf = 0
+    else
+      @current_buf = 0 if @current_buf >= self.size
     end
     set_current_buffer(@current_buf, false)
+  end
+
+  def close_all_buffers()
+    message("Closing all buffers")
+    while true
+      if self.size == 1
+        close_buffer(0)
+        break
+      else
+        close_buffer(0)
+      end
+    end
+    # self << Buffer.new("\n")
   end
 
   def close_scrap_buffers()
