@@ -198,6 +198,10 @@ bindkey "C , , u", :update_file_index
 
 bindkey "C , s a", "$buffer.save_as()"
 
+
+reg_act(:show_images, proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")
+
+
 #bindkey 'C z h', :history_switch_backwards
 #bindkey 'C z l', :history_switch_forwards
 

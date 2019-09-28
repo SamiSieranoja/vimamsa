@@ -101,6 +101,7 @@ class BufferList < Array
     set_window_title("Vimamsa - #{fpath}")
     $buffer.need_redraw!
     $buffer.reset_highlight
+    hpt_scan_images() if $debug # experimental
   end
 
   def get_recent_buffers()
@@ -233,7 +234,7 @@ class Buffer < String
 
   def add_image(imgpath, pos)
     return if !is_legal_pos(pos)
-    insert_txt_at(" ", pos)
+    # insert_txt_at(" ", pos)
     qt_process_deltas
     qt_add_image(imgpath, pos)
   end

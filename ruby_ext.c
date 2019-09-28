@@ -422,15 +422,15 @@ VALUE qt_add_image(VALUE self, VALUE imgfn, VALUE pos) {
     return INT2NUM(0);
   }
 
-  // printf("img nfo: width:%d height:%d, buf width:%d\n", image.width(), image.height(),
-         // c_te->width());
+  printf("img nfo: width:%d height:%d, buf width:%d\n", image.width(), image.height(),
+         c_te->width());
   int img_screen_width = image.width();
   int img_screen_height = image.height();
-  float fit_ratio = ((float)image.width()) / c_te->width();
+  float fit_ratio = ((float)(image.width())) / (c_te->width() - 30);
   // If does not fit window, make smaller
   if (fit_ratio > 1.0) {
-    img_screen_width = img_screen_width / (fit_ratio + 0.05);
-    img_screen_height = img_screen_height / (fit_ratio + 0.05);
+    img_screen_width = img_screen_width / (fit_ratio);
+    img_screen_height = img_screen_height / (fit_ratio );
   }
   // QImageReader ( fn ).read();
 

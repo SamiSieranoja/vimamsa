@@ -106,7 +106,7 @@ class Editor
 
     #Regexp gsubs or other small modifiers of text
     @converters = {}
-    @paint_stack=[]
+    @paint_stack = []
   end
 
   def start
@@ -222,6 +222,7 @@ class Editor
 end
 
 $vma = Editor.new
+
 def vma()
   return $vma
 end
@@ -600,11 +601,18 @@ def render_buffer(buffer = 0, reset = 0)
   debug "pos:#{$buffer.pos} L:#{$buffer.lpos} C:#{$buffer.cpos}"
   pos = $buffer.pos
   selection_start = $buffer.selection_start
-  reset = 1 if $buffer.need_redraw?
+
+  if $buffer.need_redraw?
+    reset = 1
+  end
   t1 = Time.now
   hook_draw()
 
   render_text(tmpbuf, pos, selection_start, reset)
+  
+  if $buffer.need_redraw?
+    hpt_scan_images() if $debug #experimental
+  end
 
   $buffer.highlight
   if Time.now - t1 > 1 / 100.0
