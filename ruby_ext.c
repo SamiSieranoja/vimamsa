@@ -14,9 +14,13 @@ extern "C" {
 
 VALUE method_qt_quit(VALUE self) { _quit = 1; }
 
-VALUE method_open_file_dialog(VALUE self, VALUE path) { g_editor->fileOpen(QString(StringValueCStr(path))); }
+VALUE method_open_file_dialog(VALUE self, VALUE path) {
+  g_editor->fileOpen(QString(StringValueCStr(path)));
+}
 
-VALUE qt_file_saveas(VALUE self, VALUE savepath) { g_editor->fileSaveAs(QString(StringValueCStr(savepath))); }
+VALUE qt_file_saveas(VALUE self, VALUE savepath) {
+  g_editor->fileSaveAs(QString(StringValueCStr(savepath)));
+}
 
 VALUE method_restart(VALUE self) {
   QProcess::startDetached(QApplication::applicationFilePath());
@@ -66,10 +70,10 @@ VALUE method_main_loop(VALUE self) {
       rb_eval_string("$do_center=0");
     }
 
-    // Sleep while releasing ruby interpreter lock 
-     rb_thread_call_without_gvl(_sleep, NULL, NULL, NULL);
+    // Sleep while releasing ruby interpreter lock
+    rb_thread_call_without_gvl(_sleep, NULL, NULL, NULL);
     // Could also just run: rb_eval_string("sleep(0.01)");
-    
+
     c_te->processHighlights();
   }
   return INT2NUM(1);
@@ -213,8 +217,7 @@ VALUE method_render_text(VALUE self, VALUE text, VALUE _pos, VALUE _selection_st
   return INT2NUM(1);
 }
 
-VALUE qt_load_theme(VALUE self, VALUE theme)
-{
+VALUE qt_load_theme(VALUE self, VALUE theme) {
   c_te->loadTheme();
   g_editor->clearTextFormats();
 }
@@ -258,45 +261,47 @@ int center_where_cursor() {
 }
 
 VALUE page_up() {
-    
+
   QTextCursor cursor = c_te->cursorForPosition(QPoint(0, 20));
-  int offset_y =  c_te->verticalScrollBar()->value()  - ((int)c_te->size().height()*0.9);
-  if(offset_y < 0 ) { offset_y = 0; }
-  
+  int offset_y = c_te->verticalScrollBar()->value() - ((int)c_te->size().height() * 0.9);
+  if (offset_y < 0) {
+    offset_y = 0;
+  }
+
   c_te->verticalScrollBar()->setValue(offset_y);
 
-  cursor = c_te->cursorForPosition(QPoint(0, ((int)(c_te->size().height()*0.8)) ));
-  int new_cursor_pos = cursor.position()+1;
+  cursor = c_te->cursorForPosition(QPoint(0, ((int)(c_te->size().height() * 0.8))));
+  int new_cursor_pos = cursor.position() + 1;
 
-  QString evalcmd = QString("$buffer.set_pos(%1);$buffer.jump(BEGINNING_OF_LINE)").arg(QString::number(new_cursor_pos));
-  // BUG: Sometimes cursorForPosition gives position for end of line.$buffer.jump(BEGINNING_OF_LINE) used as quick hack.
-  
+  QString evalcmd = QString("$buffer.set_pos(%1);$buffer.jump(BEGINNING_OF_LINE)")
+                        .arg(QString::number(new_cursor_pos));
+  // BUG: Sometimes cursorForPosition gives position for end of line.$buffer.jump(BEGINNING_OF_LINE)
+  // used as quick hack.
+
   rb_eval_string(evalcmd.toLatin1().data());
-return 0;
+  return 0;
 }
-
 
 VALUE page_down() {
   printf("page_down()\n");
-    
+
   QTextCursor cursor = c_te->cursorForPosition(QPoint(0, 20));
-  int offset_y =  c_te->verticalScrollBar()->value()  + ((int)c_te->size().height()*0.9);
-  
-//  qDebug() << "scrollbar val:" << c_te->verticalScrollBar()->value() << " height:" <<  c_te->size().height() << "offset:" << offset_y << endl;
-  
-  
+  int offset_y = c_te->verticalScrollBar()->value() + ((int)c_te->size().height() * 0.9);
+
+  //  qDebug() << "scrollbar val:" << c_te->verticalScrollBar()->value() << " height:" <<
+  //  c_te->size().height() << "offset:" << offset_y << endl;
+
   c_te->verticalScrollBar()->setValue(offset_y);
 
-  cursor = c_te->cursorForPosition(QPoint(0, ((int)(c_te->size().height()*0.2)) ));
+  cursor = c_te->cursorForPosition(QPoint(0, ((int)(c_te->size().height() * 0.2))));
   int new_cursor_pos = cursor.position();
 
-  QString evalcmd = QString("$buffer.set_pos(%1);$buffer.jump(BEGINNING_OF_LINE)").arg(QString::number(new_cursor_pos));
+  QString evalcmd = QString("$buffer.set_pos(%1);$buffer.jump(BEGINNING_OF_LINE)")
+                        .arg(QString::number(new_cursor_pos));
   rb_eval_string(evalcmd.toLatin1().data());
-  
-return 0;
+
+  return 0;
 }
-
-
 
 VALUE top_where_cursor() {
   int cursorY = c_te->cursorRect().bottom();
@@ -358,12 +363,10 @@ VALUE qt_select_window(VALUE self, VALUE item_list, VALUE jump_keys, VALUE callb
   return INT2NUM(0);
 }
 
-VALUE qt_set_num_columns(VALUE self, VALUE num_columns)
-{
+VALUE qt_set_num_columns(VALUE self, VALUE num_columns) {
   g_editor->setNumColumns(NUM2INT(num_columns));
   return INT2NUM(0);
 }
-
 
 VALUE qt_select_window_close(VALUE self, VALUE id) {
   qDebug() << "close window: ";
@@ -394,7 +397,6 @@ VALUE qt_popup_window(VALUE self, VALUE params) {
   return INT2NUM(0);
 }
 
-
 VALUE qt_open_url(VALUE self, VALUE url) {
   char *cstr_url = StringValueCStr(url);
   QDesktopServices::openUrl(QUrl(cstr_url));
@@ -409,22 +411,60 @@ VALUE qt_add_font_style(VALUE self, VALUE sty) {
   return INT2NUM(0);
 }
 
-VALUE qt_add_text_format(VALUE self, VALUE forec,VALUE backc, VALUE fontStyle, VALUE fontScale) {
-// VALUE qt_add_text_format(VALUE self, VALUE forec,VALUE backc, VALUE fontStyle) {
+VALUE qt_add_image(VALUE self, VALUE imgfn, VALUE pos) {
+  QString fn = QString(StringValueCStr(imgfn));
+  QUrl Uri(QString("file://%1").arg(fn));
+
+  QImageReader reader(fn);
+  QImage image = reader.read();
+  if (image.isNull()) {
+    rb_eval_string("message('IMAGE=NULL')");
+    return INT2NUM(0);
+  }
+
+  // printf("img nfo: width:%d height:%d, buf width:%d\n", image.width(), image.height(),
+         // c_te->width());
+  int img_screen_width = image.width();
+  int img_screen_height = image.height();
+  float fit_ratio = ((float)image.width()) / c_te->width();
+  // If does not fit window, make smaller
+  if (fit_ratio > 1.0) {
+    img_screen_width = img_screen_width / (fit_ratio + 0.05);
+    img_screen_height = img_screen_height / (fit_ratio + 0.05);
+  }
+  // QImageReader ( fn ).read();
+
+  rb_eval_string("message('Adding image')");
+
+  QTextDocument *textDocument = c_te->document();
+  QTextCursor cursor = c_te->textCursor();
+  textDocument->addResource(QTextDocument::ImageResource, Uri, QVariant(image));
+  QTextImageFormat imageFormat;
+  imageFormat.setWidth(img_screen_width);
+  imageFormat.setHeight(img_screen_height);
+
+  imageFormat.setName(Uri.toString());
+  cursor.setPosition(NUM2INT(pos));
+  cursor.setPosition(NUM2INT(pos) + 1, QTextCursor::KeepAnchor);
+  cursor.insertText("");
+  cursor.setPosition(NUM2INT(pos));
+  cursor.insertImage(imageFormat);
+  return INT2NUM(8888);
+}
+
+VALUE qt_add_text_format(VALUE self, VALUE forec, VALUE backc, VALUE fontStyle, VALUE fontScale) {
+  // VALUE qt_add_text_format(VALUE self, VALUE forec,VALUE backc, VALUE fontStyle) {
   QString foregroundColor = QString(StringValueCStr(forec));
   QString backgroundColor = QString(StringValueCStr(backc));
   int fs = NUM2INT(fontStyle);
-  float scale = (float) NUM2DBL(fontScale);
-  g_editor->addTextFormat(foregroundColor, backgroundColor, fs,scale);
+  float scale = (float)NUM2DBL(fontScale);
+  g_editor->addTextFormat(foregroundColor, backgroundColor, fs, scale);
 }
-
 
 VALUE qt_set_stylesheet(VALUE self, VALUE css) {
   qt_set_stylesheet_cpp(css);
   return INT2NUM(0);
 }
-
-
 
 VALUE qt_get_buffer(VALUE self) {
   // char* cstr_url = StringValueCStr(url);
@@ -457,6 +497,40 @@ VALUE _srn_dst(VALUE self, VALUE s1, VALUE s2) {
   return ret;
 }
 
+// Process changes to buffer contents. Update qt qtextedit according to changes to ruby Buffer.
+int qt_process_deltas() {
+
+  QTextCursor tc = c_te->textCursor();
+  VALUE deltas = rb_eval_string("buf.deltas");
+
+  while (RARRAY_LEN(deltas) > 0) {
+    VALUE d = rb_ary_shift(deltas);
+    // qDebug() << "DELTA: "
+    // << " " << NUM2INT(rb_ary_entry(d, 0)) << " " << NUM2INT(rb_ary_entry(d, 1)) << " "
+    // << NUM2INT(rb_ary_entry(d, 2)) << "\n";
+    int _pos = NUM2INT(rb_ary_entry(d, 0));
+    int op = NUM2INT(rb_ary_entry(d, 1));
+    int count = NUM2INT(rb_ary_entry(d, 2));
+
+    if (op == DELETE) {
+      tc.setPosition(_pos);
+      tc.setPosition(_pos + count, QTextCursor::KeepAnchor);
+      tc.insertText("");
+    } else if (op == INSERT) {
+      tc.setPosition(_pos);
+      // tc.setPosition(_pos + count,QTextCursor::KeepAnchor);
+      VALUE c = rb_ary_entry(d, 3);
+      tc.insertText(StringValueCStr(c));
+    }
+
+    if (RARRAY_LEN(deltas) == 0) { // last iteration
+      rb_eval_string("$hook.call(:buffer_changed)");
+    }
+  }
+}
+
+VALUE _qt_process_deltas(VALUE self) { qt_process_deltas(); return INT2NUM(0);}
+
 void _init_ruby(int argc, char *argv[]) {
   ruby_sysinit(&argc, &argv);
   RUBY_INIT_STACK;
@@ -465,6 +539,9 @@ void _init_ruby(int argc, char *argv[]) {
 
   VALUE *MyTest;
   rb_define_global_function("render_text", method_render_text, 4);
+
+  rb_define_global_function("qt_process_deltas", _qt_process_deltas, 0);
+
   rb_define_global_function("scan_indexes", method_scan_indexes, 2);
   // rb_define_global_function("render_text",method_render_text,-1);
   rb_define_global_function("main_loop", method_main_loop, 0);
@@ -472,7 +549,6 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("qt_open_file_dialog", method_open_file_dialog, 1);
   rb_define_global_function("qt_file_saveas", qt_file_saveas, 1);
   rb_define_global_function("qt_load_theme", qt_load_theme, 1);
-  
 
   rb_define_global_function("restart_application", method_restart, 0);
   rb_define_global_function("cpp_function_wrapper", ruby_cpp_function_wrapper, 2);
@@ -488,19 +564,18 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("qt_select_update_window", qt_select_update_window, 4);
   rb_define_global_function("qt_popup_window", qt_popup_window, 1);
   rb_define_global_function("qt_add_text_format", qt_add_text_format, 4);
-  
-  
+
+  rb_define_global_function("qt_add_image", qt_add_image, 2);
+
   rb_define_global_function("qt_open_url", qt_open_url, 1);
   rb_define_global_function("qt_get_buffer", qt_get_buffer, 0);
   rb_define_global_function("qt_add_font_style", qt_add_font_style, 1);
   rb_define_global_function("qt_set_stylesheet", qt_set_stylesheet, 1);
-  
 
   rb_define_global_function("top_where_cursor", top_where_cursor, 0);
   rb_define_global_function("bottom_where_cursor", bottom_where_cursor, 0);
   rb_define_global_function("page_down", page_down, 0);
   rb_define_global_function("page_up", page_up, 0);
-
 
   VALUE qt_module = rb_define_module("Qt");
 #include "qt_keys.h"
@@ -567,38 +642,8 @@ int render_text() {
     delete stext;
   }
 
+  qt_process_deltas();
   QTextCursor tc = c_te->textCursor();
-
-  // qDebug() << "QT:process deltas\n";
-  // ID rb_intern(const char *name)
-  VALUE deltas = rb_eval_string("$buffer.deltas");
-
-  while (RARRAY_LEN(deltas) > 0) {
-    VALUE d = rb_ary_shift(deltas);
-    // qDebug() << "DELTA: "
-             // << " " << NUM2INT(rb_ary_entry(d, 0)) << " " << NUM2INT(rb_ary_entry(d, 1)) << " "
-             // << NUM2INT(rb_ary_entry(d, 2)) << "\n";
-    int _pos = NUM2INT(rb_ary_entry(d, 0));
-    int op = NUM2INT(rb_ary_entry(d, 1));
-    int count = NUM2INT(rb_ary_entry(d, 2));
-
-    if (op == DELETE) {
-      tc.setPosition(_pos);
-      tc.setPosition(_pos + count, QTextCursor::KeepAnchor);
-      tc.insertText("");
-    } else if (op == INSERT) {
-      tc.setPosition(_pos);
-      // tc.setPosition(_pos + count,QTextCursor::KeepAnchor);
-      VALUE c = rb_ary_entry(d, 3);
-      tc.insertText(StringValueCStr(c));
-    }
-
-    if (RARRAY_LEN(deltas) == 0) { // last iteration
-      rb_eval_string("$hook.call(:buffer_changed)");
-    }
-  }
-
-  // qDebug() << "QT: END process deltas\n";
 
   if (selection_start >= 0) {
     if (cursor_pos < selection_start) {

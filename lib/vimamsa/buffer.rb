@@ -192,6 +192,11 @@ class BufferList < Array
   end
 end
 
+# Return currently active buffer
+def buf()
+  return $buffer
+end
+
 class Buffer < String
 
   #attr_reader (:pos, :cpos, :lpos)
@@ -224,6 +229,23 @@ class Buffer < String
     # TODO: add \n when chars are added after last \n
     self << "\n" if self[-1] != "\n"
     @current_word = nil
+  end
+
+  def add_image(imgpath, pos)
+    return if !is_legal_pos(pos)
+    insert_txt_at(" ", pos)
+    qt_process_deltas
+    qt_add_image(imgpath, pos)
+  end
+
+  def is_legal_pos(pos, op = :read)
+    return false if pos < 0
+    if op == :add
+      return false if pos > self.size
+    elsif op == :read
+      return false if pos >= self.size
+    end
+    return true
   end
 
   def set_encrypted(password)
