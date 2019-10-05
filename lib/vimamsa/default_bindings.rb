@@ -343,7 +343,7 @@ default_keys = {
   "V g s" => "$buffer.transform_selection(:swapcase)",
   "V g r" => "$buffer.transform_selection(:reverse)",
 
-  "V d" => "$buffer.delete(SELECTION)",
+  "V d" => proc{$buffer.delete(SELECTION)},
   "V x" => "$buffer.delete(SELECTION)",
   # "V ctrl-c" => "$buffer.comment_selection",
   "V ctrl-x" => "$buffer.comment_selection(:uncomment)",

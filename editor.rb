@@ -41,6 +41,7 @@ $paint_stack = []
 $jump_sequence = []
 
 $debug = false
+$experimental = true
 
 def debug(message)
   if $debug

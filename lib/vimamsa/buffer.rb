@@ -379,6 +379,7 @@ class Buffer < String
   end
 
   def sanitycheck_btree()
+      return
     lines = self.split("\n")
 
     ok = true
@@ -538,6 +539,9 @@ class Buffer < String
 
   def run_delta(delta, auto_update_cpos = false)
     # auto_update_cpos: In some cases position of cursor should be updated automatically based on change to buffer (delta). In other cases this is handled by the action that creates the delta.
+    if $experimental
+      @bt.handle_delta(Delta.new(delta[0],delta[1],delta[2],delta[3]))
+    end
     pos = delta[0]
     if @edit_pos_history.any? and (@edit_pos_history.last - pos).abs <= 2
       @edit_pos_history.pop
