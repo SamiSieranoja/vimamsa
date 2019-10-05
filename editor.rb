@@ -66,6 +66,7 @@ require "vimamsa/easy_jump"
 require "vimamsa/encrypt"
 require "vimamsa/profiler"
 require "vimamsa/hyper_plain_text.rb"
+require "vimamsa/binary_tree.rb"
 
 class Converter
   def initialize(obj, type, id = nil)

@@ -350,6 +350,8 @@ class Buffer < String
   end
 
   def revert()
+    return if !@fname
+    return if !File.exists?(@fname)
     message("Revert buffer #{@fname}")
     str = read_file("", @fname)
     self.set_content(str)
@@ -376,6 +378,31 @@ class Buffer < String
     self.set_content(str)
   end
 
+  def sanitycheck_btree()
+    lines = self.split("\n")
+
+    ok = true
+    for i in 0..(lines.size - 1)
+      leaf = @bt.tree.get_line(i)
+      spos = leaf.pos
+      epos = (leaf.pos + leaf.nchar - 2)
+      r = ""
+      r = self[spos..epos] if epos >= spos
+      if lines[i] != r #or true
+        puts "NO MATCH FOR LINE:"
+        puts "i=#{i}["
+        puts "pos=#{leaf.pos} |#{leaf.data}|"
+        puts "spos=#{spos} nchar=#{leaf.nchar} epos=#{epos} a[]=\n|#{r}|"
+        puts "|#{lines[i]}"
+        puts "]"
+        ok = false
+      end
+    end
+    puts "BT: NO ERRORS" if ok
+
+    puts "nchar=#{@bt.numchars} a.size=#{self.size} lines=#{@bt.numlines}"
+  end
+
   def set_content(str)
     @encrypted_str = nil
     @qt_update_highlight = true
@@ -394,6 +421,12 @@ class Buffer < String
 
     self.replace(str)
     @line_ends = scan_indexes(self, /\n/)
+
+    @bt = BufferTree.new(str)
+    if $debug
+      sanitycheck_btree()
+    end
+
     @last_update = Time.now - 10
     debug("line_ends")
     @marks = Hash.new
