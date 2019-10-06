@@ -379,29 +379,32 @@ class Buffer < String
   end
 
   def sanitycheck_btree()
-      return
-    lines = self.split("\n")
+    # lines = self.split("\n")
+    lines = self.scan(/([^\n]*\n)/).flatten
 
     ok = true
     for i in 0..(lines.size - 1)
       leaf = @bt.tree.get_line(i)
+      # leaf = @bt.get_line(i,self)
       spos = leaf.pos
-      epos = (leaf.pos + leaf.nchar - 2)
+      epos = (leaf.pos + leaf.nchar - 1)
       r = ""
       r = self[spos..epos] if epos >= spos
       if lines[i] != r #or true
         puts "NO MATCH FOR LINE:"
         puts "i=#{i}["
-        puts "pos=#{leaf.pos} |#{leaf.data}|"
-        puts "spos=#{spos} nchar=#{leaf.nchar} epos=#{epos} a[]=\n|#{r}|"
+        puts "[orig]pos=#{leaf.pos} |#{leaf.data}|"
+        puts "spos=#{spos} nchar=#{leaf.nchar} epos=#{epos} a[]=\nr=|#{r}|"
         puts "|#{lines[i]}"
         puts "]"
         ok = false
       end
     end
-    puts "BT: NO ERRORS" if ok
 
-    puts "nchar=#{@bt.numchars} a.size=#{self.size} lines=#{@bt.numlines}"
+
+    # puts "nchar=#{@bt.numchars} a.size=#{self.size} lines=#{@bt.numlines}"
+    puts "BT: NO ERRORS" if ok
+    puts "BT: ERRORS" if !ok
   end
 
   def set_content(str)
@@ -540,7 +543,7 @@ class Buffer < String
   def run_delta(delta, auto_update_cpos = false)
     # auto_update_cpos: In some cases position of cursor should be updated automatically based on change to buffer (delta). In other cases this is handled by the action that creates the delta.
     if $experimental
-      @bt.handle_delta(Delta.new(delta[0],delta[1],delta[2],delta[3]))
+      @bt.handle_delta(Delta.new(delta[0], delta[1], delta[2], delta[3]))
     end
     pos = delta[0]
     if @edit_pos_history.any? and (@edit_pos_history.last - pos).abs <= 2

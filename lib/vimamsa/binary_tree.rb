@@ -7,6 +7,7 @@ $debug = false
 
 # Binary tree representation of the buffer
 # This class stores the root node and provides interface to access the tree
+# Reason for using binary trees: reduce time complexity of all edit operations from O(N) to O(logN)
 
 class Delta
   attr_accessor :pos, :type, :nchars, :txt
@@ -38,10 +39,13 @@ class BufferTree
   def set_content(_buf)
     @buf = _buf
     t1 = Time.now
-    lines = @buf.split("\n")
+    # "sdfsdf\n\nsdf\n\n\n".scan(/([^\n]*\n)/).flatten
+    # Same as split("\n"), but returns also empty lines at end
+    lines = @buf.scan(/([^\n]*\n)/).flatten
+    # lines = @buf.split("\n")
     puts Time.now - t1
-    @tree = BNode.new
-    lines.each { |l| @tree.insert(BData.new(l + "\n")) }
+    @tree = BNode.new(nil, self, true)
+    lines.each { |l| @tree.insert(BData.new(l)) }
     if $debug
       puts "TREE CREATED in time: #{Time.now - t1}"
     end
@@ -50,19 +54,37 @@ class BufferTree
   def handle_delta(delta)
     if delta.insert?
     elsif delta.delete?
+      nchars_before = @tree.nchar()
       (snode, pos_on_line) = @tree.find_node_of_char(delta.pos)
       lastnode = snode.delete(delta.nchars, pos_on_line)
+      snode.reset_size()
+      # @tree.recurse("reset_size()")
+
+      nchars_after = @tree.nchar()
+      debug("NCHARS before: #{nchars_before} after: #{nchars_after}")
+
       # Merge nodes
       if lastnode != snode and lastnode.nchar > 0 and snode.nchar > 0
+        debug("MERGE TWO NODES OF SIZE: #{snode.data.numchar}, #{lastnode.data.numchar}")
         snode.data.numchar += lastnode.data.numchar
         lastnode.delete_node
       end
+
+      snode.reset_size()
 
       #Merge first and last nodes
       # @tree.delete(delta.pos, delta.nchars)
     end
     # add_delta([self.size, INSERT, 1, "\n"], true)
     # add_delta([@pos, DELETE, 1], true)
+  end
+
+  def left()
+    return @tree
+  end
+
+  def left=(node)
+    @tree = node
   end
 
   def numlines()
@@ -75,6 +97,8 @@ class BufferTree
 end
 
 class NullNode
+  attr_accessor :parent, :left, :right
+
   def size()
     return 0
   end
@@ -90,26 +114,31 @@ class NullNode
   def to_a()
     return []
   end
+  def data
+     return ""
+  end
 end
 
 # Organized from right to left. First char of buffer belongs to rightmost node.
 class BNode
-  attr_accessor :count, :left, :right, :parent, :_size, :numchar, :data, :pos, :leaf
+  # attr_accessor :count, :left, :right, :parent, :_size, :numchar, :data, :pos, :leaf
+  attr_accessor :count, :left, :right, :parent, :_size, :data, :pos, :leaf, :cache_chars
 
   # include Enumerable
 
-  def initialize(s = nil, _parent = nil)
+  def initialize(s = nil, _parent = nil, _is_root = false)
     @left = NullNode.new()
     @right = NullNode.new()
     @parent = _parent
     @data = nil
     @leaf = false
+    @is_root = _is_root
     if !s.nil?
       @data = s
       @leaf = true
     end
     @_size = nil
-    @numchar = nil
+    @cache_chars = nil
     @pos = nil
   end
 
@@ -128,11 +157,11 @@ class BNode
     c += 1 if @leaf == true
     c += ls + rs
     if $debug == true
-      lnchar = -1
-      rnchar = -1
-      lnchar = @left.nchar
-      rnchar = @right.nchar
-      puts "ls=#{ls} rs=#{rs} c=#{c} numchar=#{nchar} left.nchar=#{lnchar} right.nchar=#{rnchar}"
+      # lnchar = -1
+      # rnchar = -1
+      # lnchar = @left.nchar
+      # rnchar = @right.nchar
+      # puts "ls=#{ls} rs=#{rs} c=#{c} numchar=#{nchar} left.nchar=#{lnchar} right.nchar=#{rnchar}"
     end
     @_size = c
     return @_size
@@ -140,23 +169,31 @@ class BNode
 
   # Number of characters within this subtree
   def nchar()
-    # puts "cached" if !@numchar.nil?
-    return @numchar if !@numchar.nil?
-    c = 0
-    ls = @left.nchar
-    rs = @right.nchar
-    c += @data.numchar if @leaf == true
-    # + 1 from \n which is not part of data
-    c += ls + rs
-    if $debug == true
-      # puts "ls=#{ls} rs=#{rs} c=#{c}"
+    # puts "cached" if !@cache_chars.nil?
+    if !(@cache_chars.nil?)
+      # puts "(cached) numchar=#{@cache_chars} depth=#{depth()} leaf=#{@leaf}"
+      return @cache_chars
     end
-    @numchar = c
-    return @numchar
+    c = 0
+    if @leaf == true
+      c = @data.numchar
+    else
+      ls = @left.nchar
+      rs = @right.nchar
+      c = ls + rs
+    end
+
+    # + 1 from \n which is not part of data
+    if $debug == true
+      # puts "ls=#{ls} rs=#{rs} c=#{c} [#{@data.to_s}] depth=#{depth()} leaf=#{@leaf}"
+    end
+    @cache_chars = c
+    # puts "numchar=#{@cache_chars} depth=#{depth()}"
+    return @cache_chars
   end
 
   def rotate()
-    return if @parent.nil? # Don't rotate root node
+    return if root? # Don't rotate root node
 
     if !@left.nil? and !@right.nil?
       ls = @left.size
@@ -170,29 +207,34 @@ class BNode
 
       if rs - ls > 1 # More on right side
         newroot = b
+
         c.right = b.left
+        c.right.parent = c if !c.right.nil?
+
         b.left = c
       end
 
       if ls - rs > 1 # More on left side
         newroot = a
+
         c.left = a.right
+        c.left.parent = c if !c.left.nil?
+
         a.right = c
       end
 
-      if newroot
-        newroot.parent = @parent
-        @parent = newroot
+      if !newroot.nil?
+        newroot.parent = c.parent
+        c.parent = newroot
 
-        # newroot._size = nil
-        # @_size = nil
-        # @numchar = nil
-        # newroot.numchar = nil
-        reset_size
+        # These should be enough:
+        c.reset_size
+        # a.reset_size
+        # b.reset_size
 
         if !d.nil?
-          d.left = newroot if d.left == self
-          d.right = newroot if d.right == self
+          d.left = newroot if d.left.equal?(self)
+          d.right = newroot if d.right.equal?(self)
         end
       end
 
@@ -204,19 +246,32 @@ class BNode
 
   def reset_size()
     @_size = nil
-    @numchar = nil
-    if !@parent.nil?
-      @parent.reset_size
+    @cache_chars = nil
+    if !root?
+      @parent.reset_size()
     end
+    # puts "RESET SIZE (depth=#{depth()}) [#{data.to_s}]"
+  end
+
+  def root?()
+    return true if @parent.class != BNode
+    # return true if @parent.nil?
+    return false
+  end
+
+  def depth()
+    return 0 if root?
+    return 1 + @parent.depth()
   end
 
   def insert(s)
-    nchar()
-    @numchar = nil
+    # nchar()
+    @cache_chars = nil
     if @leaf == true
       @right = BNode.new(@data, self)
       @left = BNode.new(s, self)
       @leaf = false
+      @data = nil
       # @right.parent = self
       # @left.parent = self
       balance()
@@ -235,6 +290,7 @@ class BNode
   end
 
   def balance()
+    reset_size()
     rotate
     reset_size()
     # @parent.balance if !@parent.nil?
@@ -256,7 +312,7 @@ class BNode
         puts "self.size=#{size} @left.size = #{@left.size} @right.size = #{@right.size}"
       end
     end
-    # eval(e)
+    eval(e)
   end
 
   def get_line(i, ind = nil)
@@ -283,7 +339,11 @@ class BNode
       end
       return [self, pos]
     end
-    if @right.nchar >= pos
+    if depth >= 5
+      puts "FOO"
+    end
+
+    if @right.nchar > pos
       return @right.find_node_of_char(pos)
     else
       return @left.find_node_of_char(pos - @right.nchar)
@@ -302,16 +362,26 @@ class BNode
   end
 
   def nextleaf()
-    cur = @parent
+    # cur = @parent
+    prev = cur = self
     # cur = @parent.parent if self.leftchild?
 
+
+    #TODO: When there is no next leaf
     # Go up until find first branch to left
     while true
       #Left branch but not where we started
-      if !cur.left.nil? and !self.equal?(cur.left)
+      if !cur.left.nil? and !cur.left.equal?(prev)
+        prev = cur
         cur = cur.left
+        debug("TAKE LEFT")
         break
+      elsif cur.root?
+        debug("No next leaf, self is the last")
+        return NullNode.new() # No next leaf, self is the last
       else
+        debug("MOVE UP")
+        prev = cur
         cur = cur.parent
       end
     end
@@ -319,9 +389,11 @@ class BNode
     # Then go downwards, taking always right child
     while true
       if cur.leaf? or cur.nil?
+        debug("RET")
         return cur
       else
         cur = cur.right
+        debug("TAKE RIGHT")
       end
     end
     #TODO
@@ -330,22 +402,35 @@ class BNode
   def copyToSelf(fromNode)
     @left = fromNode.left
     @right = fromNode.right
+    @left.parent = self
+    @right.parent = self
     # @parent = _parent
     @data = fromNode.data
     @leaf = fromNode.leaf
     @_size = fromNode._size
-    @numchar = fromNode.numchar
+    # @cache_chars = fromNode.numchar
+    @cache_chars = nil
     # @pos = fromNode.pos
   end
 
   def replace_self()
     # Replace self with that child which is not empty
-    # TODO: Change ref from parent instead of copy
+    # (done after leaf node delete)
     if @left.nil? and !@right.nil?
-      copyToSelf(@right)
+      # replace self with left child
+      liftup = @right
     elsif !@left.nil? and @right.nil?
-      copyToSelf(@left)
+      liftup = @left
+    else
+      return #TODO: error?
     end
+
+    if leftchild?
+      @parent.left = liftup
+    elsif rightchild?
+      @parent.right = liftup
+    end
+    liftup.parent = @parent
   end
 
   def delete_node()
@@ -356,7 +441,10 @@ class BNode
   end
 
   # Delete characters, starting from this node
+  # Returns the last node (line) that was not completely deleted
+  # (either shortened, or not edited at all)
   def delete(delchars, frompos = 0)
+    reset_size()
     debug("DELETE delchars=#{delchars} frompos=#{frompos}")
     delete_this_node = false
     lastnode = self
@@ -369,54 +457,30 @@ class BNode
     # delete_from_this_node = [delchars, (nchar - frompos)].min
 
     if delchars > delete_from_this_node
-      debug("DELETE STARTING FROM NEXT LINE: delchars=#{delchars - delete_from_this_node}")
+      debug("DELETE STARTING FROM NEXT LINE: delchars=#{delchars - delete_from_this_node} ")
       lastnode = nextleaf.delete(delchars - delete_from_this_node)
+      debug("A lastnode = #{lastnode.data}")
+    elsif delchars == nchar
+      lastnode = nextleaf
+      debug("B lastnode = #{lastnode.data}")
     end
 
     # Delete all chars from this node => Delete whole node
     if delete_from_this_node == nchar
-      debug("DELETE THIS NODE (chars=#{delete_from_this_node})")
+      debug("DELETE THIS NODE (chars=#{delete_from_this_node}) [#{@data}]")
       delete_node()
       # reset_size()
       # @parent.left = nil if leftchild?
       # @parent.right = nil if rightchild?
       # @parent.replace_self
     else
-      debug("Shorten THIS NODE by #{delete_from_this_node}")
+      debug("Shorten THIS NODE (depth=#{depth()}) by #{delete_from_this_node} [#{@data}]")
       # Shorten this node
     end
     @data.numchar -= delete_from_this_node
+    reset_size()
 
     return lastnode
-
-    # if delchars > nchar
-    # end
-
-    # if frompos == 0 and delchars > nchar
-    # delete_this_node = true
-
-    # debug("DELETE LINE+ delchars=#{delchars} nchar=#{nchar}")
-    # # Delete this node and continue to next
-    # nextleaf.delete(delchars - nchar)
-    # @parent.left = nil if leftchild?
-    # @parent.right = nil if rightchild?
-    # @parent.replace_self
-    # elsif delchars == nchar
-    # debug("DELETE LINE delchars=#{delchars} nchar=#{nchar}")
-    # # Delete this node but don't continue to next
-    # @parent.left = nil if leftchild?
-    # @parent.right = nil if rightchild?
-    # @parent.replace_self
-    # elsif delchars < nchar
-    # # Shorten this node
-    # debug("SHORTEN LINE BY #{delchars} (#{nchar})")
-    # @data.numchar -= delchars
-    # end
-    # @tree.delete(delta.pos, delta.nchars)
-  end
-
-  def handle_delta(d)
-    #TODO
   end
 end
 
