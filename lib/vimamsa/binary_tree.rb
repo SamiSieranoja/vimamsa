@@ -53,6 +53,23 @@ class BufferTree
 
   def handle_delta(delta)
     if delta.insert?
+      if !delta.txt.include?("\n")
+        (snode, pos_on_line) = @tree.find_node_of_char(delta.pos)
+        snode.nchar = snode.nchar + delta.nchars
+      else
+        (snode, pos_on_line) = @tree.find_node_of_char(delta.pos)
+        nind = scan_indexes(delta.txt, /\n/)
+        # Split current line to two parts: a and b
+        a = pos_on_line 
+        b = snode.nchar - pos_on_line 
+        snode.nchar = a + nind[0] + 1 # Set length of current line
+        to_add=[]
+        (1..(nind.size-1)).each{|i|to_add << nind[i]-nind[i-1]}; 
+        to_add << b + (delta.txt.size - nind[-1] - 1) 
+        lastnode = snode
+        # Insert each new line as new node
+        to_add.each{|x|lastnode = lastnode.insert(BData.new(x))}
+      end
     elsif delta.delete?
       nchars_before = @tree.nchar()
       (snode, pos_on_line) = @tree.find_node_of_char(delta.pos)
@@ -114,8 +131,9 @@ class NullNode
   def to_a()
     return []
   end
+
   def data
-     return ""
+    return ""
   end
 end
 
@@ -165,6 +183,13 @@ class BNode
     end
     @_size = c
     return @_size
+  end
+
+  def nchar=(newnchar)
+    if @leaf == true
+      @data.numchar = newnchar
+      reset_size
+    end
   end
 
   # Number of characters within this subtree
@@ -272,20 +297,23 @@ class BNode
       @left = BNode.new(s, self)
       @leaf = false
       @data = nil
+      newnode = @left
       # @right.parent = self
       # @left.parent = self
       balance()
     elsif right.nil?
-      @right = BNode.new(s, self)
+      # TODO: Should not come to here? Should be leaf node if right.nil?
+      newnode = @right = BNode.new(s, self)
       # @right.parent = self
       balance()
     elsif left.nil?
-      @left = BNode.new(s, self)
+      newnode = @left = BNode.new(s, self)
       # @left.parent = self
       balance()
     else
-      @left.insert(s)
+      newnode = @left.insert(s)
     end
+    return newnode
     # rotate
   end
 
@@ -365,7 +393,6 @@ class BNode
     # cur = @parent
     prev = cur = self
     # cur = @parent.parent if self.leftchild?
-
 
     #TODO: When there is no next leaf
     # Go up until find first branch to left
@@ -460,19 +487,17 @@ class BNode
       debug("DELETE STARTING FROM NEXT LINE: delchars=#{delchars - delete_from_this_node} ")
       lastnode = nextleaf.delete(delchars - delete_from_this_node)
       debug("A lastnode = #{lastnode.data}")
-    elsif delchars == nchar
+    elsif frompos + delchars == nchar 
+      # End of line is last deleted char => merge with next line
       lastnode = nextleaf
       debug("B lastnode = #{lastnode.data}")
     end
+
 
     # Delete all chars from this node => Delete whole node
     if delete_from_this_node == nchar
       debug("DELETE THIS NODE (chars=#{delete_from_this_node}) [#{@data}]")
       delete_node()
-      # reset_size()
-      # @parent.left = nil if leftchild?
-      # @parent.right = nil if rightchild?
-      # @parent.replace_self
     else
       debug("Shorten THIS NODE (depth=#{depth()}) by #{delete_from_this_node} [#{@data}]")
       # Shorten this node
@@ -490,10 +515,17 @@ end
 
 class BData
   attr_accessor :str, :numchar, :highlights
-
-  def initialize(_str)
-    @str = _str
-    @numchar = _str.size
+  
+  # Takes as input a String or a size of String (integer)
+  # TODO: convert to using just integer?
+  def initialize(a)
+    @str = nil
+    if a.class == Integer
+      @numchar = a
+    elsif a.class == String
+      @str = a
+      @numchar = @str.size
+    end
     @highlights = nil
   end
 
