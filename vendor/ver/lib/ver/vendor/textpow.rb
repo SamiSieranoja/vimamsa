@@ -154,14 +154,49 @@ module Textpow
     def parse(string, processor = Processor.new)
       processor.start_parsing scopeName
 
+      processor.line_stack=[]
       stack = [[self, nil]]
+      i=0
       string.each_line do |line|
+        processor.line_stack[i] = stack.clone
         parse_line(stack, line, processor)
+        # puts processor.line_stack[0].collect{|x|x[0].name}.join("/")
+        # Ripl.start :binding => binding
+        i+=1
       end
 
+      Ripl.start :binding => binding
       processor.end_parsing scopeName
       processor
     end
+    
+    def parse_from_line(string, processor, lineno)
+      processor.start_parsing scopeName
+
+      old_line_stack = processor.line_stack
+      old_line_stack = [] if !old_line_stack
+      processor.line_stack=[]
+      stack = [[self, nil]]
+      i=0
+      string.each_line do |line|
+        if old_line_stack[i] != stack
+        puts "LINE CHANGED: #{i}"
+        if old_line_stack.size > 10
+        # Ripl.start :binding => binding
+        end
+        end
+        processor.line_stack[i] = stack.clone
+        parse_line(stack, line, processor)
+        # puts processor.line_stack[0].collect{|x|x[0].name}.join("/")
+        # Ripl.start :binding => binding
+        i+=1
+      end
+
+      # Ripl.start :binding => binding
+      processor.end_parsing scopeName
+      processor
+    end
+
 
     def parse_repository(repository)
       @repository = {}
@@ -290,7 +325,7 @@ module Textpow
       processor.new_line(line)
       top, match = stack.last
       position = 0
-
+      
       loop do
         if top.patterns
           pattern, pattern_match = top.match_first_son(line, position)

@@ -30,8 +30,6 @@ def is_visual_mode()
   return 0
 end
 
-
-
 reg_act(:easy_jump, proc { easy_jump(:visible_area) }, "Easy jump")
 bindkey "VC s", :easy_jump
 
@@ -48,7 +46,6 @@ reg_act(:e_move_backward_char, "e_move_backward_char", "")
 reg_act(:history_switch_backwards, "history_switch_backwards", "")
 reg_act(:history_switch_forwards, "history_switch_forwards", "")
 reg_act(:center_on_current_line, "center_on_current_line", "")
-
 
 reg_act(:center_on_current_line, "center_on_current_line", "")
 

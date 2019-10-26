@@ -29,7 +29,8 @@ class Delta
 end
 
 class BufferTree
-  attr_accessor :tree
+  include Enumerable
+  attr_accessor :tree, :buf
 
   def initialize(_buf = nil)
     @buf = nil
@@ -51,6 +52,24 @@ class BufferTree
     end
   end
 
+  def each
+    i = 0
+    cur = @tree.get_line(0)
+    while !cur.nil?
+      yield cur
+      cur = cur.nextleaf()
+    end
+    #  buf.bt.each{|x| puts x.startpos..x.endpos}
+    #  buf.bt.each{|x| puts buf[x.startpos..x.endpos]}
+  end
+  
+   def each_line
+    self.each{|x| yield buf[x.startpos..x.endpos]}
+    # buf.bt.each_line{|x| puts x}
+   # self.each{|leaf| }
+  end
+  
+  # Change binatry tree structure based on changes (insert, delete) to  buffer contents
   def handle_delta(delta)
     if delta.insert?
       if !delta.txt.include?("\n")
@@ -60,15 +79,15 @@ class BufferTree
         (snode, pos_on_line) = @tree.find_node_of_char(delta.pos)
         nind = scan_indexes(delta.txt, /\n/)
         # Split current line to two parts: a and b
-        a = pos_on_line 
-        b = snode.nchar - pos_on_line 
+        a = pos_on_line
+        b = snode.nchar - pos_on_line
         snode.nchar = a + nind[0] + 1 # Set length of current line
-        to_add=[]
-        (1..(nind.size-1)).each{|i|to_add << nind[i]-nind[i-1]}; 
-        to_add << b + (delta.txt.size - nind[-1] - 1) 
+        to_add = []
+        (1..(nind.size - 1)).each { |i| to_add << nind[i] - nind[i - 1] }
+        to_add << b + (delta.txt.size - nind[-1] - 1)
         lastnode = snode
         # Insert each new line as new node
-        to_add.each{|x|lastnode = lastnode.insert(BData.new(x))}
+        to_add.each { |x| lastnode = lastnode.insert(BData.new(x)) }
       end
     elsif delta.delete?
       nchars_before = @tree.nchar()
@@ -343,6 +362,18 @@ class BNode
     eval(e)
   end
 
+  # Start of range in buffer
+  def startpos()
+    #TODO: cache?
+    return 0 if root?
+    return @parent.startpos if rightchild?
+    return @parent.startpos + @parent.right.nchar if leftchild?
+  end
+
+  def endpos()
+    return startpos + (nchar - 1)
+  end
+
   def get_line(i, ind = nil)
     if ind == nil
       ind = nchar()
@@ -401,13 +432,13 @@ class BNode
       if !cur.left.nil? and !cur.left.equal?(prev)
         prev = cur
         cur = cur.left
-        debug("TAKE LEFT")
+        # debug("TAKE LEFT")
         break
       elsif cur.root?
-        debug("No next leaf, self is the last")
+        # debug("No next leaf, self is the last")
         return NullNode.new() # No next leaf, self is the last
       else
-        debug("MOVE UP")
+        # debug("MOVE UP")
         prev = cur
         cur = cur.parent
       end
@@ -416,11 +447,11 @@ class BNode
     # Then go downwards, taking always right child
     while true
       if cur.leaf? or cur.nil?
-        debug("RET")
+        # debug("RET")
         return cur
       else
         cur = cur.right
-        debug("TAKE RIGHT")
+        # debug("TAKE RIGHT")
       end
     end
     #TODO
@@ -487,12 +518,11 @@ class BNode
       debug("DELETE STARTING FROM NEXT LINE: delchars=#{delchars - delete_from_this_node} ")
       lastnode = nextleaf.delete(delchars - delete_from_this_node)
       debug("A lastnode = #{lastnode.data}")
-    elsif frompos + delchars == nchar 
+    elsif frompos + delchars == nchar
       # End of line is last deleted char => merge with next line
       lastnode = nextleaf
       debug("B lastnode = #{lastnode.data}")
     end
-
 
     # Delete all chars from this node => Delete whole node
     if delete_from_this_node == nchar
@@ -515,14 +545,14 @@ end
 
 class BData
   attr_accessor :str, :numchar, :highlights
-  
+
   # Takes as input a String or a size of String (integer)
   # TODO: convert to using just integer?
   def initialize(a)
     @str = nil
     if a.class == Integer
       @numchar = a
-    elsif a.class == String
+    elsif a.class == String or a.class==Buffer
       @str = a
       @numchar = @str.size
     end

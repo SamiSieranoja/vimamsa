@@ -81,6 +81,7 @@ end
 
 class Processor
   attr_reader :highlights
+  attr_accessor:line_stack
 
   def start_parsing(name)
     puts "start_parsing"

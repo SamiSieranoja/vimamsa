@@ -204,7 +204,7 @@ class Buffer < String
 
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed
   attr_writer :call_func, :update_highlight
-  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax, :line_ends
+  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax, :line_ends, :bt
 
   def initialize(str = "\n", fname = nil)
     debug "Buffer.rb: def initialize"
@@ -222,6 +222,8 @@ class Buffer < String
     @hl_queue = []
 
     @qt_reset_highlight = true
+    
+    @processor =  Processor.new
 
     t1 = Time.now
     set_content(str)
@@ -323,12 +325,13 @@ class Buffer < String
       curbuf = $buffer
       t1 = Thread.new {
         debug "START HL parsing #{Time.now}"
-        sp = Processor.new
-        curbuf.syntax_parser.parse(bufstr, sp)
+        # sp = Processor.new
+        curbuf.syntax_parser.parse_from_line(bufstr, @processor,0)
+ 
 
         #TODO
         curbuf.highlights.delete_if { |x| true }
-        curbuf.highlights.merge!(sp.highlights)
+        curbuf.highlights.merge!(@processor.highlights)
 
         # if doing like this, sometimes segfaults from Highlighter::highlightBlock
         # which tries to use old $buffer.highlights
@@ -380,29 +383,25 @@ class Buffer < String
 
   def sanitycheck_btree()
     # lines = self.split("\n")
+
     lines = self.scan(/([^\n]*\n)/).flatten
 
+    i = 0
     ok = true
-    for i in 0..(lines.size - 1)
-      leaf = @bt.tree.get_line(i)
-      # leaf = @bt.get_line(i,self)
-      spos = leaf.pos
-      epos = (leaf.pos + leaf.nchar - 1)
-      r = ""
-      r = self[spos..epos] if epos >= spos
+    @bt.each_line { |r|
       if lines[i] != r #or true
         puts "NO MATCH FOR LINE:"
         puts "i=#{i}["
-        puts "[orig]pos=#{leaf.pos} |#{leaf.data}|"
-        puts "spos=#{spos} nchar=#{leaf.nchar} epos=#{epos} a[]=\nr=|#{r}|"
-        puts "|#{lines[i]}"
+        # puts "[orig]pos=#{leaf.pos} |#{leaf.data}|"
+        # puts "spos=#{spos} nchar=#{leaf.nchar} epos=#{epos} a[]=\nr=|#{r}|"
+        puts "fromtree:|#{r}|"
+        puts "frombuf:|#{lines[i]}"
         puts "]"
         ok = false
       end
-    end
+      i += 1
+    }
 
-
-    # puts "nchar=#{@bt.numchars} a.size=#{self.size} lines=#{@bt.numlines}"
     puts "BT: NO ERRORS" if ok
     puts "BT: ERRORS" if !ok
   end
@@ -426,7 +425,10 @@ class Buffer < String
     self.replace(str)
     @line_ends = scan_indexes(self, /\n/)
 
-    @bt = BufferTree.new(str)
+    # @bt = BufferTree.new(str)
+    @bt = BufferTree.new(self)
+    # Ripl.start :binding => binding
+
     if $debug
       sanitycheck_btree()
     end
@@ -542,6 +544,7 @@ class Buffer < String
 
   def run_delta(delta, auto_update_cpos = false)
     # auto_update_cpos: In some cases position of cursor should be updated automatically based on change to buffer (delta). In other cases this is handled by the action that creates the delta.
+    
     if $experimental
       @bt.handle_delta(Delta.new(delta[0], delta[1], delta[2], delta[3]))
     end
