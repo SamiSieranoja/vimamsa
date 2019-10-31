@@ -46,10 +46,6 @@ QApplication *app;
 extern int *_argc;
 extern char **_argv;
 
-int cursor_pos = 0;
-int selection_start = -1;
-int reset_buffer = 0;
-
 int file_opened = 0;
 QString file_contents;
 QString new_file_name;
@@ -60,7 +56,7 @@ char *bufstr;
 QKeyEvent *e1;
 QString *stext;
 QString *window_title;
-VALUE textbuf;
+// VALUE textbuf;
 int _quit = 0;
 
 Editor *g_editor;

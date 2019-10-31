@@ -44,7 +44,8 @@ void _init_ruby(int argc, char *argv[]);
 
 } // END extern "C"
 
-int render_text();
+int render_text(VALUE textbuf, int cursor_pos,int selection_start,int reset_buffer);
+
 int cpp_render_text(); // TODO: ?
 char *qstring_to_cstr(QString qstr);
 VALUE qstring_to_ruby(QString qstr);

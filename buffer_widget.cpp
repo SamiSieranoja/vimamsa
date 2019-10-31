@@ -4,7 +4,6 @@
 #include <QtWidgets>
 
 extern QApplication *app;
-extern int cursor_pos;
 extern BufferWidget *c_te;
 
 void BufferWidget::keyReleaseEvent(QKeyEvent *e) {

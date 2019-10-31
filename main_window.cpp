@@ -7,14 +7,14 @@
 #include "editor.h"
 #include "main_window.h"
 #include "buffer_widget.h"
+
+
 #include "buf_overlay.h"
 #include "highlighter.h"
 #include "config_window.h"
-
 extern BufferWidget *c_te;
 extern BufferWidget *miniEditor;
 extern QApplication *app;
-extern int cursor_pos;
 
 int loadTheme();
 
@@ -29,7 +29,7 @@ int Editor::setQtStyle(int style_id) {
     darkPalette.setColor(QPalette::WindowText, Qt::white);
     darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
     darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
-    darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+    darkPalette.setColor(QPalette::ToolTipBase, Qt::white); 
     darkPalette.setColor(QPalette::ToolTipText, Qt::white);
     darkPalette.setColor(QPalette::Text, Qt::white);
     darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));

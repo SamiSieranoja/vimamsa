@@ -7,7 +7,7 @@ $debug = false
 
 # Binary tree representation of the buffer
 # This class stores the root node and provides interface to access the tree
-# Reason for using binary trees: reduce time complexity of all edit operations from O(N) to O(logN)
+# Reason for using binary trees: reduce time complexity of some edit operations from O(N) to O(logN)
 
 class Delta
   attr_accessor :pos, :type, :nchars, :txt
@@ -159,8 +159,9 @@ end
 # Organized from right to left. First char of buffer belongs to rightmost node.
 class BNode
   # attr_accessor :count, :left, :right, :parent, :_size, :numchar, :data, :pos, :leaf
-  attr_accessor :count, :left, :right, :parent, :_size, :data, :pos, :leaf, :cache_chars
+  attr_accessor :count, :left, :right, :parent, :_size, :data, :pos, :leaf, :cache_chars, :stack, :old_stack
 
+  
   # include Enumerable
 
   def initialize(s = nil, _parent = nil, _is_root = false)
@@ -249,6 +250,7 @@ class BNode
       d = @parent
       newroot = nil
 
+      # TODO: better rule for deciding rotate.
       if rs - ls > 1 # More on right side
         newroot = b
 

@@ -74,6 +74,7 @@ public:
   int lineNumberAreaWidth();
   int loadTheme();
   int processHighlights(); 
+  int cursor_pos; 
 //  void updateLineNumberArea(const QRect &, int);
 
   /*~Editor();*/

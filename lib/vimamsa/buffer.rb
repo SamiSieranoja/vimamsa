@@ -326,7 +326,8 @@ class Buffer < String
       t1 = Thread.new {
         debug "START HL parsing #{Time.now}"
         # sp = Processor.new
-        curbuf.syntax_parser.parse_from_line(bufstr, @processor,0)
+        # curbuf.syntax_parser.parse_from_line(bufstr, @processor,0)
+        curbuf.syntax_parser.parse_from_line(@bt,buf, @processor,0)
  
 
         #TODO

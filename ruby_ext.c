@@ -6,6 +6,8 @@ VALUE draw_text(VALUE args);
 
 SelectWindow *select_w;
 
+
+
 extern "C" {
 
 #include <stdio.h>
@@ -207,12 +209,13 @@ VALUE method_render_text(VALUE self, VALUE text, VALUE _pos, VALUE _selection_st
 
   // Ignore cursor position change events until rendering is over.
 
-  reset_buffer = NUM2INT(_reset);
-  textbuf = text;
-  cursor_pos = NUM2INT(_pos);
-  selection_start = NUM2INT(_selection_start);
+  // textbuf = text;
+  
+  int cursor_pos = NUM2INT(_pos);
+  int reset_buffer = NUM2INT(_reset);
+  int selection_start = NUM2INT(_selection_start);
 
-  render_text();
+  render_text(text, cursor_pos,selection_start,reset_buffer);
 
   return INT2NUM(1);
 }
@@ -624,7 +627,8 @@ VALUE pos_to_viewport_coordinates(VALUE args) {
 
 VALUE draw_text(VALUE args) { c_te->overlay->draw_text("AX", 40, 40); }
 
-int render_text() {
+int  render_text(VALUE textbuf, int cursor_pos,int selection_start,int reset_buffer) {
+// int render_text(int reset_buffer) {
   // qDebug() << "c:RENDER_TEXT\n";
   // qDebug() << "render_text thread:" <<QThread::currentThreadId();
   VALUE minibuf;
@@ -658,6 +662,7 @@ int render_text() {
   }
   c_te->setTextCursor(tc);
   c_te->drawTextCursor();
+  c_te->cursor_pos = cursor_pos;
 
   // c_te->repaint(c_te->contentsRect());
 
