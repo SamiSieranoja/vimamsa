@@ -222,8 +222,8 @@ class Buffer < String
     @hl_queue = []
 
     @qt_reset_highlight = true
-    
-    @processor =  Processor.new
+
+    @processor = Processor.new
 
     t1 = Time.now
     set_content(str)
@@ -327,8 +327,7 @@ class Buffer < String
         debug "START HL parsing #{Time.now}"
         # sp = Processor.new
         # curbuf.syntax_parser.parse_from_line(bufstr, @processor,0)
-        curbuf.syntax_parser.parse_from_line(@bt,buf, @processor,0)
- 
+        curbuf.syntax_parser.parse_from_line(@bt, buf, @processor, 0)
 
         #TODO
         curbuf.highlights.delete_if { |x| true }
@@ -545,7 +544,7 @@ class Buffer < String
 
   def run_delta(delta, auto_update_cpos = false)
     # auto_update_cpos: In some cases position of cursor should be updated automatically based on change to buffer (delta). In other cases this is handled by the action that creates the delta.
-    
+
     if $experimental
       @bt.handle_delta(Delta.new(delta[0], delta[1], delta[2], delta[3]))
     end
@@ -1516,6 +1515,13 @@ class Buffer < String
     @need_redraw = false
   end
 
+  # Create a new line after current line and insert text on that line
+  def put_to_new_next_line(txt)
+    l = current_line_range()
+    insert_txt_at(txt, l.end + 1)
+    set_pos(l.end + 1)
+  end
+
   def paste(at = AFTER, register = nil)
     # Paste after current char. Except if at end of line, paste before end of line.
     return if !$clipboard.any?
@@ -1528,14 +1534,7 @@ class Buffer < String
 
     if $paste_lines
       debug "PASTE LINES"
-      l = current_line_range()
-      debug "------------"
-      debug l.inspect
-      debug "------------"
-      #$buffer.move(FORWARD_LINE)
-      #set_pos(l.end+1)
-      insert_txt_at(text, l.end + 1)
-      set_pos(l.end + 1)
+      put_to_new_next_line(text)
     else
       if at_end_of_buffer? or at_end_of_line? or at == BEFORE
         pos = @pos

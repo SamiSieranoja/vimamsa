@@ -62,18 +62,27 @@ class BufferTree
     #  buf.bt.each{|x| puts x.startpos..x.endpos}
     #  buf.bt.each{|x| puts buf[x.startpos..x.endpos]}
   end
-  
-   def each_line
-    self.each{|x| yield buf[x.startpos..x.endpos]}
+
+  def each_line
+    self.each { |x| yield buf[x.startpos..x.endpos] }
     # buf.bt.each_line{|x| puts x}
-   # self.each{|leaf| }
+    # self.each{|leaf| }
   end
-  
-  # Change binatry tree structure based on changes (insert, delete) to  buffer contents
+
+  # Modify binatry tree structure based on changes (insert, delete) to  buffer contents
   def handle_delta(delta)
     if delta.insert?
-      if !delta.txt.include?("\n")
+    
+      # Inserting to position after last char
+      if delta.pos == @tree.size
+        puts "Inserting to position after last char"
+        pos_on_line = 0
+        lines = delta.txt.scan(/([^\n]*\n)/).flatten
+        lines.each { |l| @tree.insert(BData.new(l)) }
+
+      elsif !delta.txt.include?("\n")
         (snode, pos_on_line) = @tree.find_node_of_char(delta.pos)
+        # (snode, pos_on_line) = @tree.find_node_of_char(delta.pos)
         snode.nchar = snode.nchar + delta.nchars
       else
         (snode, pos_on_line) = @tree.find_node_of_char(delta.pos)
@@ -161,7 +170,6 @@ class BNode
   # attr_accessor :count, :left, :right, :parent, :_size, :numchar, :data, :pos, :leaf
   attr_accessor :count, :left, :right, :parent, :_size, :data, :pos, :leaf, :cache_chars, :stack, :old_stack
 
-  
   # include Enumerable
 
   def initialize(s = nil, _parent = nil, _is_root = false)
@@ -554,7 +562,7 @@ class BData
     @str = nil
     if a.class == Integer
       @numchar = a
-    elsif a.class == String or a.class==Buffer
+    elsif a.class == String or a.class == Buffer
       @str = a
       @numchar = @str.size
     end
