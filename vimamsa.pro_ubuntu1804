@@ -7,7 +7,7 @@ TEMPLATE = app
 TARGET = vimamsa
 
 HEADERS = editor.h highlighter.h selectwindow.h fuzzy_string_dist.h main_window.h buf_overlay.h constants.h config_window.h buffer_widget.h
-SOURCES = editor.cpp main.cpp main_window.cpp ruby_ext.c highlighter.cpp selectwindow.cpp fuzzy_string_dist.cpp buf_overlay.cpp config_window.cpp buffer_widget.cpp
+SOURCES = editor.cpp main.cpp main_window.cpp ruby_ext.c highlighter.cpp selectwindow.cpp fuzzy_string_dist.cpp buf_overlay.cpp config_window.cpp buffer_widget.cpp globals.h globals.cpp
 
 RESOURCES += vimamsa.qrc
 build_all:!build_pass {

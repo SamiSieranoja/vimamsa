@@ -2,8 +2,7 @@
 #include "config_window.h"
 #include "editor.h"
 #include "main_window.h"
-extern Editor *g_editor;
-
+#include "globals.h"
 
 ConfigWindow::ConfigWindow(QWidget *parent, int use_filter) : QWidget(parent) {
 

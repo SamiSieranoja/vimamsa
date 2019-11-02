@@ -31,6 +31,8 @@ const QString rsrcPath = ":/images/default";
 #include "constants.h"
 
 
+void cpp_init_qt(); 
+
 extern "C" {
 #include <ruby.h>
 #include <ruby/re.h>
@@ -60,15 +62,5 @@ class QTextCharFormat;
 class QMenu;
 class QPrinter;
 QT_END_NAMESPACE
-
-class VThread : public QThread {
-  Q_OBJECT
-private:
-  void run();
-};
-
-
-
-
 
 #endif // TEXTEDIT_H

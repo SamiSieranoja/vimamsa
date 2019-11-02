@@ -3,6 +3,7 @@
 
 #include "selectwindow.h"
 #include "editor.h"
+#include "globals.h"
 
 SelectWindow::SelectWindow(QWidget *parent, int use_filter) : QWidget(parent) {
 

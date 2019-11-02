@@ -1,10 +1,8 @@
 
 #include "buffer_widget.h"
+#include "globals.h"
 
 #include <QtWidgets>
-
-extern QApplication *app;
-extern BufferWidget *c_te;
 
 void BufferWidget::keyReleaseEvent(QKeyEvent *e) {
   handleKeyEvent(e);

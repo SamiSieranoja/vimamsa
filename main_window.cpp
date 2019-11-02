@@ -12,9 +12,7 @@
 #include "buf_overlay.h"
 #include "highlighter.h"
 #include "config_window.h"
-extern BufferWidget *c_te;
-extern BufferWidget *miniEditor;
-extern QApplication *app;
+#include "globals.h"
 
 int loadTheme();
 

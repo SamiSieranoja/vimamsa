@@ -1,8 +1,8 @@
 
 #include "main_window.h"
 #include "highlighter.h"
+#include "globals.h"
 
-extern Editor *g_editor;
 
 Highlighter::Highlighter(QTextDocument *parent) : QSyntaxHighlighter(parent) {
 }

@@ -1,5 +1,6 @@
 
 #include "editor.h"
+#include "globals.h"
 
 extern BufferWidget *c_te;
 

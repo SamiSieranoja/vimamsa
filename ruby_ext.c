@@ -47,21 +47,14 @@ VALUE method_main_loop(VALUE self) {
   QByteArray ba;
   const char *c_str2;
 
-  cpp_init_qt_thread();
-  QApplication a(*_argc, _argv);
-  a.setWindowIcon(QIcon("./images/icon.png"));
-  app = &a;
-
-  g_editor = new Editor();
-  g_editor->resize(700, 800);
-  g_editor->show();
-
+  cpp_init_qt();
+  
   VALUE do_center;
 
   rb_eval_string("$vma.start");
   window_title = new QString("Vimamsa");
   while (1) {
-    a.processEvents();
+    app->processEvents();
     rb_eval_string("$buffer.highlight()");
     // rb_thread_schedule(); //TODO if there are plugins with threads?
 

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <QtCore>
 #include <QtConcurrent>
+#include <QCoreApplication>
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
@@ -35,16 +36,12 @@
 #include <ruby.h>
 #include <ruby/encoding.h>
 
+#include "editor.h"
 #include "main_window.h"
 #include "buffer_widget.h"
+#include "globals.h"
 
 using namespace std;
-BufferWidget *c_te;
-BufferWidget *miniEditor;
-
-QApplication *app;
-extern int *_argc;
-extern char **_argv;
 
 int file_opened = 0;
 QString file_contents;
@@ -56,12 +53,18 @@ char *bufstr;
 QKeyEvent *e1;
 QString *stext;
 QString *window_title;
-// VALUE textbuf;
 int _quit = 0;
 
-Editor *g_editor;
+void cpp_init_qt() {
+  Q_INIT_RESOURCE(vimamsa);
 
-void cpp_init_qt_thread() { Q_INIT_RESOURCE(vimamsa); }
+  app = new QApplication(*_argc, _argv);
+  app->setWindowIcon(QIcon("./images/icon.png"));
+
+  g_editor = new Editor();
+  g_editor->resize(700, 800);
+  g_editor->show();
+}
 
 char *qstring_to_cstr(QString qstr) {
   // Remember to free memory after use
@@ -105,7 +108,6 @@ void qt_add_font_style_cpp(VALUE sty) {
 
 #include "buf_overlay.h"
 
-
 // void LineNumberArea::paintEvent(QPaintEvent *event) {
 //  qDebug() << "LineNumberArea::paintEvent" << endl;
 //
@@ -127,11 +129,3 @@ void qt_add_font_style_cpp(VALUE sty) {
 //
 //}
 //
-
-
-
-
-
-
-
-

@@ -709,6 +709,6 @@ def find_project_dir_of_cur_buffer()
   return pdir
 end
 
-t1 = Thread.new { main_loop }
-t1.join
+main_loop
 debug("END")
+
