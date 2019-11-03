@@ -41,7 +41,7 @@ $paint_stack = []
 $jump_sequence = []
 
 $debug = false
-$experimental = true
+$experimental = false
 
 def debug(message)
   if $debug
@@ -55,10 +55,11 @@ require "vimamsa/constants"
 require "vimamsa/macro"
 require "vimamsa/buffer"
 require "vimamsa/search"
-require "vimamsa/search_replace"
 require "vimamsa/key_binding_tree"
 require "vimamsa/buffer_select"
 require "vimamsa/file_finder"
+require "vimamsa/search_replace"
+require "vimamsa/ack"
 require "vimamsa/actions"
 require "vimamsa/hook"
 require "vimamsa/debug"
@@ -184,9 +185,10 @@ class Editor
     gui_file_finder_init
 
     #Load plugins
+    @_plugins = {}
     require "vimamsa/file_history.rb"
     @fh = FileHistory.new
-
+    
     $hook.call(:after_init)
   end
 
@@ -322,36 +324,11 @@ def set_next_command_count(num)
   debug("NEXT COMMAND COUNT: #{$next_command_count}")
 end
 
-def invoke_search()
-  start_minibuffer_cmd("", "", :execute_search)
-end
 
 def start_minibuffer_cmd(bufname, bufstr, cmd)
   $kbd.set_mode(:minibuffer)
   $minibuffer = Buffer.new(bufstr, "")
   $minibuffer.call_func = method(cmd)
-end
-
-def ack_buffer(instr, b = nil)
-  instr = instr.gsub("'", ".") # TODO
-  bufstr = ""
-  for path in $vma.get_content_search_paths
-    bufstr += run_cmd("ack -Q --type-add=gd=.gd -k --nohtml --nojs --nojson '#{instr}' #{path}")
-  end
-  if bufstr.size > 5
-    create_new_file(nil, bufstr)
-  else
-    message("No results for input:#{instr}")
-  end
-end
-
-def gui_ack()
-  nfo = "Search contents of all files using ack\n\nHint: add empty file named .vma_project to dirs you want to search.\nIf .vma_project exists in parent dir of current file, searches in that dir"
-  gui_one_input_action(nfo, "Search:", "search", "ack_buffer")
-end
-
-def invoke_ack_search()
-  start_minibuffer_cmd("", "", :ack_buffer)
 end
 
 def show_key_bindings()
@@ -362,24 +339,6 @@ def show_key_bindings()
   create_new_file(nil, kbd_s)
 end
 
-def grep_cur_buffer(search_str, b = nil)
-  debug "grep_cur_buffer(search_str)"
-  lines = $buffer.split("\n")
-  r = Regexp.new(Regexp.escape(search_str), Regexp::IGNORECASE)
-  fpath = ""
-  fpath = $buffer.pathname.expand_path.to_s + ":" if $buffer.pathname
-  res_str = ""
-  lines.each_with_index { |l, i|
-    if r.match(l)
-      res_str << "#{fpath}#{i + 1}:#{l}\n"
-    end
-  }
-  create_new_file(nil, res_str)
-end
-
-def invoke_grep_search()
-  start_minibuffer_cmd("", "", :grep_cur_buffer)
-end
 
 def diff_buffer()
   bufstr = ""
@@ -400,10 +359,6 @@ def invoke_command()
   start_minibuffer_cmd("", "", :execute_command)
 end
 
-def execute_search(input_str)
-  $search = Search.new
-  return $search.set(input_str, "simple", $buffer)
-end
 
 def execute_command(input_str)
   begin
@@ -514,6 +469,7 @@ def create_new_file(filename = nil, file_contents = "\n")
   debug "NEW FILE CREATED"
   buffer = Buffer.new(file_contents)
   $buffers << buffer
+  return buffer
 end
 
 def filter_buffer(buf)
@@ -667,7 +623,7 @@ def open_url(url)
 end
 
 def run_cmd(cmd)
-  tmpf = Tempfile.new("ack", "/tmp").path
+  tmpf = Tempfile.new("vmarun", "/tmp").path
   cmd = "#{cmd} > #{tmpf}"
   puts "CMD:\n#{cmd}"
   system("bash", "-c", cmd)

@@ -1,4 +1,12 @@
 
+def execute_search(input_str)
+  $search = Search.new
+  return $search.set(input_str, "simple", $buffer)
+end
+
+def invoke_search()
+  start_minibuffer_cmd("", "", :execute_search)
+end
 
 class Search
 
@@ -79,3 +87,5 @@ class Search
     @buffer.set_pos(@search_indexes[@cur_search_i])
   end
 end
+
+

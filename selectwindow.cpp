@@ -126,9 +126,7 @@ SelectWindow::SelectWindow(QWidget *parent, VALUE params) : QWidget(parent) {
 
   callback = Qnil;
   VALUE r_callback = rb_hash_lookup(params, rb_str_new2("callback"));
-  if (r_callback != Qnil) {
-    callback = rb_intern_str(r_callback);
-  }
+  callback = rb_hash_lookup(params, rb_str_new2("callback"));
 
   layout->addRow(cancelButton);
 }
@@ -258,8 +256,8 @@ bool SelectWindow::eventFilter(QObject *obj, QEvent *event) {
 
 void SelectWindow::runCallback() {
   // TODO: make this more flexible
-  if (num_inputs == 1) {
-    rb_funcall(NULL, callback, 2, qstring_to_ruby(input1_lineedit->text()), qstring_to_ruby(""));
+  if (num_inputs == 1 && callback != Qnil) {
+    rb_funcall(callback, rb_intern("call"), 1, qstring_to_ruby(input1_lineedit->text()));
   } else if (num_inputs == 2) {
     rb_funcall(NULL, callback, 2, qstring_to_ruby(input1_lineedit->text()),
                qstring_to_ruby(input2_lineedit->text()));

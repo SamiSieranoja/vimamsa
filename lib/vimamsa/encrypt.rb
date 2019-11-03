@@ -37,7 +37,8 @@ def decrypt_cur_buffer(password, b = nil)
 end
 
 def encrypt_cur_buffer()
-  gui_one_input_action("Encrypt", "Password:", "Encrypt", "encrypt_cur_buffer_callback")
+  callback = proc{|x|encrypt_cur_buffer_callback(x)}
+  gui_one_input_action("Encrypt", "Password:", "Encrypt", callback)
 end
 
 def encrypt_cur_buffer_callback(password,b=nil)

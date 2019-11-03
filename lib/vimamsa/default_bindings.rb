@@ -221,8 +221,8 @@ default_keys = {
   # "C , , ." => "backup_all_buffers()",
   "VC , , s" => "search_actions()",
 
-  "C enter" => proc{$buffer.get_cur_nonwhitespace_word()},
-  "C return" => proc{$buffer.get_cur_nonwhitespace_word()},
+  "C enter" => proc{$buffer.handle_line_action()},
+  "C return" => proc{$buffer.handle_line_action()},
 
   # MOVING
   #    'VC h' => '$buffer.move(BACKWARD_CHAR)',

@@ -204,7 +204,7 @@ class Buffer < String
 
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed
   attr_writer :call_func, :update_highlight
-  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax, :line_ends, :bt
+  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler
 
   def initialize(str = "\n", fname = nil)
     debug "Buffer.rb: def initialize"
@@ -220,6 +220,7 @@ class Buffer < String
       @fname = fname
     end
     @hl_queue = []
+    @line_action_handler = nil
 
     @qt_reset_highlight = true
 
@@ -327,7 +328,11 @@ class Buffer < String
         debug "START HL parsing #{Time.now}"
         # sp = Processor.new
         # curbuf.syntax_parser.parse_from_line(bufstr, @processor,0)
-        curbuf.syntax_parser.parse_from_line(@bt, buf, @processor, 0)
+        if $experimental
+        curbuf.syntax_parser.parse_from_line(@bt, buf, @processor, 0) 
+        else
+        curbuf.syntax_parser.parse(bufstr, @processor)
+        end
 
         #TODO
         curbuf.highlights.delete_if { |x| true }
@@ -412,7 +417,8 @@ class Buffer < String
     @ftype = nil
     if str[0..10] == "VMACRYPT001"
       @encrypted_str = str[11..-1]
-      gui_one_input_action("Decrypt", "Password:", "decrypt", "decrypt_cur_buffer")
+      callback = proc{|x| decrypt_cur_buffer(x)}
+      gui_one_input_action("Decrypt", "Password:", "decrypt", callback)
       str = "ENCRYPTED"
     else
       # @crypt = nil
@@ -1194,6 +1200,17 @@ class Buffer < String
     can_open = exts.include?(extname)
     puts "CAN OPEN?: #{can_open}"
     return can_open
+  end
+
+  # Activated when enter/return pressed
+  def handle_line_action()
+    if line_action_handler.class == Proc
+      line_action_handler.call(lpos)
+      # Custom handler
+    else
+      # Generic default action
+      get_cur_nonwhitespace_word()
+    end
   end
 
   def get_cur_nonwhitespace_word()
