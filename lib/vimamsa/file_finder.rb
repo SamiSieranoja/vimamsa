@@ -1,15 +1,27 @@
 require "parallel"
 
-def gui_file_finder()
-  l = []
-  $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
-  if $dir_list == nil
-    Thread.new { recursively_find_files() }
+
+class FileFinder
+  def initialize()
+    $hook.register(:shutdown, self.method("save"))
+    $dir_list = vma.marshal_load("file_index")
   end
-  
-  qt_select_update_window(l, $select_keys.collect { |x| x.upcase },
-                          "gui_file_finder_select_callback",
-                          "gui_file_finder_update_callback")
+
+  def save()
+    vma.marshal_save("file_index",$dir_list)
+  end
+
+  def start_gui()
+    l = []
+    $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
+    if $dir_list == nil
+      Thread.new { recursively_find_files() }
+    end
+
+    qt_select_update_window(l, $select_keys.collect { |x| x.upcase },
+                            "gui_file_finder_select_callback",
+                            "gui_file_finder_update_callback")
+  end
 end
 
 def update_file_index()
@@ -65,7 +77,7 @@ def gui_file_finder_update_callback(search_str = "")
   return []
 end
 
-def gui_file_finder_select_callback(search_str,idx)
+def gui_file_finder_select_callback(search_str, idx)
   selected_file = $file_search_list[idx][0]
   debug "FILE FINDER SELECT CALLBACK: s=#{search_str},i=#{idx}: #{selected_file}"
   qt_select_window_close(0)
@@ -82,7 +94,7 @@ end
 
 # TODO: delete?
 def gui_file_finder_init()
-  $kbd.add_mode("Z",:filefinder)
+  $kbd.add_mode("Z", :filefinder)
   bindkey "Z enter", "$kbd.set_mode(:command)"
   bindkey "Z return", "$kbd.set_mode(:command)"
 end

@@ -113,7 +113,7 @@ class Editor
   end
 
   def start
-    $highlight = {}
+    # $highlight = {}
     $macro = Macro.new
     $search = Search.new
     $hook = Hook.new
@@ -188,12 +188,58 @@ class Editor
     @_plugins = {}
     require "vimamsa/file_history.rb"
     @fh = FileHistory.new
+    @_plugins[:FileFinder] = FileFinder.new
+    @_plugins[:FileHistory] = @fh
     
+    # To access via vma.FileFinder
+    self.define_singleton_method(:FileFinder) { @_plugins[:FileFinder] }
+    self.define_singleton_method(:FileHistory) { @_plugins[:FileHistory] }
+
     $hook.call(:after_init)
+  end
+
+  def marshal_save(varname, vardata)
+    save_var_to_file(varname, Marshal.dump(vardata))
+  end
+
+  def marshal_load(varname)
+    mdata = load_var_from_file(varname)
+    if mdata
+      return Marshal.load(mdata)
+    else
+      return nil
+    end
+  end
+
+  def save_var_to_file(varname, vardata)
+    fn = get_dot_path(varname)
+    f = File.open(fn, "w")
+    File.binwrite(f, vardata)
+    f.close
+  end
+
+  def load_var_from_file(varname)
+    fn = get_dot_path(varname)
+    if File.exist?(fn)
+      vardata = IO.binread(fn)
+      if vardata
+        debug("Successfully red #{varname} from file #{fn}")
+        return vardata
+      end
+    end
+    return nil
+  end
+
+  def plug()
+    return @_plugins
   end
 
   def shutdown()
     $hook.call(:shutdown)
+    save_state
+  end
+
+  def save_state
   end
 
   def add_content_search_path(pathstr)
@@ -324,7 +370,6 @@ def set_next_command_count(num)
   debug("NEXT COMMAND COUNT: #{$next_command_count}")
 end
 
-
 def start_minibuffer_cmd(bufname, bufstr, cmd)
   $kbd.set_mode(:minibuffer)
   $minibuffer = Buffer.new(bufstr, "")
@@ -338,7 +383,6 @@ def show_key_bindings()
   kbd_s << "\n=======================================\n"
   create_new_file(nil, kbd_s)
 end
-
 
 def diff_buffer()
   bufstr = ""
@@ -358,7 +402,6 @@ end
 def invoke_command()
   start_minibuffer_cmd("", "", :execute_command)
 end
-
 
 def execute_command(input_str)
   begin
@@ -567,7 +610,7 @@ def render_buffer(buffer = 0, reset = 0)
   hook_draw()
 
   render_text(tmpbuf, pos, selection_start, reset)
-  
+
   if $buffer.need_redraw?
     hpt_scan_images() if $debug #experimental
   end
@@ -667,4 +710,3 @@ end
 
 main_loop
 debug("END")
-

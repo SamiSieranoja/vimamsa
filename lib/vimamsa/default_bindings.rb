@@ -88,10 +88,10 @@ bindkey "C x", :delete_char_forward
 reg_act(:load_theme, proc { load_theme }, "Load theme")
 bindkey "C , , l t", :load_theme
 
-reg_act(:gui_file_finder, proc { gui_file_finder }, "Fuzzy file finder")
+reg_act(:gui_file_finder, proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
 bindkey "C , f", :gui_file_finder
 
-reg_act(:gui_file_history_finder, proc { gui_file_history }, "Fuzzy file history finder")
+reg_act(:gui_file_history_finder, proc { vma.FileHistory.start_gui }, "Fuzzy file history finder")
 bindkey "C , h", :gui_file_history_finder
 
 

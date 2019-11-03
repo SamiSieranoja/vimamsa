@@ -329,9 +329,9 @@ class Buffer < String
         # sp = Processor.new
         # curbuf.syntax_parser.parse_from_line(bufstr, @processor,0)
         if $experimental
-        curbuf.syntax_parser.parse_from_line(@bt, buf, @processor, 0) 
+          curbuf.syntax_parser.parse_from_line(@bt, buf, @processor, 0)
         else
-        curbuf.syntax_parser.parse(bufstr, @processor)
+          curbuf.syntax_parser.parse(bufstr, @processor)
         end
 
         #TODO
@@ -417,7 +417,7 @@ class Buffer < String
     @ftype = nil
     if str[0..10] == "VMACRYPT001"
       @encrypted_str = str[11..-1]
-      callback = proc{|x| decrypt_cur_buffer(x)}
+      callback = proc { |x| decrypt_cur_buffer(x) }
       gui_one_input_action("Decrypt", "Password:", "decrypt", callback)
       str = "ENCRYPTED"
     else
@@ -432,11 +432,11 @@ class Buffer < String
     @line_ends = scan_indexes(self, /\n/)
 
     # @bt = BufferTree.new(str)
-    @bt = BufferTree.new(self)
-    # Ripl.start :binding => binding
-
-    if $debug
-      sanitycheck_btree()
+    if $experimental
+      @bt = BufferTree.new(self)
+      if $debug
+        sanitycheck_btree()
+      end
     end
 
     @last_update = Time.now - 10

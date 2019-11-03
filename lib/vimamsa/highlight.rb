@@ -91,7 +91,7 @@ class Processor
 
     #TODO:delete
     # @hltags = {}
-    $highlight = {}
+    # $highlight = {}
     @highlights = {}
   end
 
