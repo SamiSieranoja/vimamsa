@@ -7,13 +7,11 @@ class FileHistory
     # puts self.method("update")
     # x = self.method("update")
     # x.call("ASFASF")
-    @history = {}
 
     $hook.register(:change_buffer, self.method("update"))
     $hook.register(:shutdown, self.method("save"))
 
-    hist = vma.marshal_load("file_history")
-    @history = hist if !hist.nil?
+    @history = vma.marshal_load("file_history",{})
     $search_list = []
   end
 

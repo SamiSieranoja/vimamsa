@@ -75,7 +75,10 @@ def gui_search_replace()
   params["input1"] = "rep"
   params["input2_label"] = "Replace:"
   params["input2"] = ""
-  params["callback"] = "gui_replace_callback"
+  callback = proc{|x,y| gui_replace_callback(x,y)}
+  # params["callback"] = "gui_replace_callback"
+  params["callback"] = callback
+  $prevent_carbage_collect_hack = callback # TODO
 
   params["button1"] = "Replace all"
   qt_popup_window(params)

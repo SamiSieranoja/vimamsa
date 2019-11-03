@@ -1,13 +1,20 @@
 
 class Macro
-  attr_reader :recorded_evals, :recording
+  attr_reader :recorded_macros, :recording
 
   def initialize()
     @recording = false
-    @recorded_evals = {}
+    # @recorded_macros = {}
     @current_recording = []
     @current_name = nil
     @last_macro = "a"
+
+    @recorded_macros = vma.marshal_load("macros", {})
+    $hook.register(:shutdown, self.method("save"))
+  end
+
+  def save()
+    vma.marshal_save("macros", @recorded_macros)
   end
 
   def start_recording(name)
@@ -22,7 +29,7 @@ class Macro
 
   def end_recording()
     if @recording == true
-      @recorded_evals[@current_name] = @current_recording
+      @recorded_macros[@current_name] = @current_recording
       @last_macro = @current_name
       @current_name = @current_recording = nil
       @recording = false
@@ -46,9 +53,8 @@ class Macro
     end
   end
 
-
   def run_last_macro
-   run_macro(@last_macro)
+    run_macro(@last_macro)
   end
 
   def run_macro(name)
@@ -57,10 +63,10 @@ class Macro
       return false
     end
     message("Start running macro [#{name}]")
-    if @recorded_evals.has_key?(name)
+    if @recorded_macros.has_key?(name)
       @last_macro = name
     end
-    acts = @recorded_evals[name]
+    acts = @recorded_macros[name]
     if acts.kind_of?(Array) and acts.any?
       set_last_command({ method: $macro.method("run_macro"), params: [name] })
       #
@@ -79,7 +85,7 @@ class Macro
   end
 
   def save_macro(name)
-    m = @recorded_evals[name]
+    m = @recorded_macros[name]
     return if !(m.kind_of?(Array) and m.any?)
     contents = m.join(";")
     dot_dir = File.expand_path("~/.vimamsa")
@@ -100,7 +106,6 @@ class Macro
 
           io.set_encoding(Encoding::UTF_8)
           io.write(contents)
-          #self.encoding = Encoding::UTF_8
         end
       end
       sleep 3 #TODO:remove

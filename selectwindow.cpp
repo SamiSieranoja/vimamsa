@@ -195,7 +195,8 @@ bool SelectWindow::eventFilter(QObject *obj, QEvent *event) {
     if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
       // qDebug() << "eventFilter: got ENTER";
       close();
-      rb_funcall(INT2NUM(0), select_callback, 2, qstring_to_ruby(filterEdit->text()),INT2NUM(this->selected_row));
+      rb_funcall(INT2NUM(0), select_callback, 2, qstring_to_ruby(filterEdit->text()),
+                 INT2NUM(this->selected_row));
       return true;
     }
     if (key->key() == Qt::Key_Escape) {
@@ -259,8 +260,10 @@ void SelectWindow::runCallback() {
   if (num_inputs == 1 && callback != Qnil) {
     rb_funcall(callback, rb_intern("call"), 1, qstring_to_ruby(input1_lineedit->text()));
   } else if (num_inputs == 2) {
-    rb_funcall(NULL, callback, 2, qstring_to_ruby(input1_lineedit->text()),
-               qstring_to_ruby(input2_lineedit->text()));
+    rb_funcall(callback, rb_intern("call"), 2, qstring_to_ruby(input1_lineedit->text()), qstring_to_ruby(input2_lineedit->text())  );
+
+    // rb_funcall(NULL, callback, 2, qstring_to_ruby(input1_lineedit->text()),
+    // qstring_to_ruby(input2_lineedit->text()));
   }
   close();
   rb_eval_string("render_buffer($buffer)"); // HACK
@@ -285,7 +288,7 @@ SelectWindow::setItems(VALUE item_list, VALUE jump_keys) {
 void SelectWindow::selectItem(QModelIndex index) {
   this->selected_row = index.row();
   // printf("ITEM %d CLICKED\n", index.row());
-  //TODO: When double clicked:
+  // TODO: When double clicked:
   // rb_funcall(NULL, rb_intern("gui_select_buffer_callback"), 1, INT2NUM(index.row()));
   // close();
 }

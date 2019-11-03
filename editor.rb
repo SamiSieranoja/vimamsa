@@ -110,13 +110,18 @@ class Editor
     #Regexp gsubs or other small modifiers of text
     @converters = {}
     @paint_stack = []
+    @_plugins = {}
   end
 
   def start
     # $highlight = {}
-    $macro = Macro.new
-    $search = Search.new
+    
     $hook = Hook.new
+    register_plugin(:Hook,$hook)
+    $macro = Macro.new
+    register_plugin(:Macro,$macro)
+    $search = Search.new
+    register_plugin(:Search,$search)
 
     $buffers = BufferList.new
     $minibuffer = Buffer.new(">", "")
@@ -185,29 +190,35 @@ class Editor
     gui_file_finder_init
 
     #Load plugins
-    @_plugins = {}
     require "vimamsa/file_history.rb"
     @fh = FileHistory.new
-    @_plugins[:FileFinder] = FileFinder.new
+    # @_plugins[:FileFinder] = FileFinder.new
     @_plugins[:FileHistory] = @fh
     
+    register_plugin(:FileHistory,@fh)
+    register_plugin(:FileFinder,FileFinder.new)
     # To access via vma.FileFinder
-    self.define_singleton_method(:FileFinder) { @_plugins[:FileFinder] }
-    self.define_singleton_method(:FileHistory) { @_plugins[:FileHistory] }
+    # self.define_singleton_method(:FileFinder) { @_plugins[:FileFinder] }
 
     $hook.call(:after_init)
+  end
+  
+  def register_plugin(name,obj)
+    @_plugins[name] = obj
+    # To access via e.g. vma.FileFinder
+    self.define_singleton_method(name) { obj }
   end
 
   def marshal_save(varname, vardata)
     save_var_to_file(varname, Marshal.dump(vardata))
   end
 
-  def marshal_load(varname)
+  def marshal_load(varname,default_data=nil)
     mdata = load_var_from_file(varname)
     if mdata
       return Marshal.load(mdata)
     else
-      return nil
+      return default_data
     end
   end
 
