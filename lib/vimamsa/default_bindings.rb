@@ -54,6 +54,10 @@ reg_act(:center_on_current_line, "center_on_current_line", "")
 reg_act(:run_last_macro, proc { $macro.run_last_macro }, "Run last recorded or executed macro")
 bindkey ["CB M","B m"], :run_last_macro
 
+bindkey "C , m f", [:find_macro_gui, proc{$macro.find_macro_gui}, "Find named macro"]
+bindkey "C , m n", [:gui_name_macro, proc{$macro.gui_name_macro}, "Name last macro"]
+
+
 reg_act(:jump_to_next_edit, "jump_to_next_edit", "")
 reg_act(:jump_to_last_edit, proc { $buffer.jump_to_last_edit }, "")
 
@@ -199,6 +203,11 @@ bindkey "C , s a", "$buffer.save_as()"
 reg_act(:show_images, proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")
 
 
+bindkey "C d d", [:delete_line, proc{$buffer.delete_line}, "Delete current line"]
+bindkey "C enter || C return",  [:line_action,proc{$buffer.handle_line_action()}, "Line action"]
+bindkey  "C p" , [:paste_after,proc{$buffer.paste(AFTER)},""] # TODO: implement as replace for visual mode
+bindkey  "V d" , [:delete_selection,proc{$buffer.delete(SELECTION)},""]
+
 #bindkey 'C z h', :history_switch_backwards
 #bindkey 'C z l', :history_switch_forwards
 
@@ -221,8 +230,6 @@ default_keys = {
   # "C , , ." => "backup_all_buffers()",
   "VC , , s" => "search_actions()",
 
-  "C enter" => proc{$buffer.handle_line_action()},
-  "C return" => proc{$buffer.handle_line_action()},
 
   # MOVING
   #    'VC h' => '$buffer.move(BACKWARD_CHAR)',
@@ -301,7 +308,6 @@ default_keys = {
   "C ctrl-r" => "$buffer.redo()", # TODO:???
   "C R" => "$buffer.redo()",
   "C v" => "$buffer.start_visual_mode",
-  "C p" => proc{$buffer.paste(AFTER)}, # TODO: implement as replace for visual mode
   "C P" => "$buffer.paste(BEFORE)", # TODO: implement as replace for visual mode
   "C space <char>" => "$buffer.insert_txt(<char>)",
   "C y y" => "$buffer.copy_line",
@@ -313,7 +319,6 @@ default_keys = {
   # 'C d k'=> 'delete_line(BACKWARD)', #TODO
   # 'C d j'=> 'delete_line(FORWARD)', #TODO
   # 'C d d'=> '$buffer.delete_cur_line',
-  "C d d" => proc{$buffer.delete_line},
   "C d e" => "$buffer.delete2(:to_word_end)",
   "C d O" => "$buffer.delete2(:to_line_end)",
   "C d $" => "$buffer.delete2(:to_line_end)",
@@ -340,7 +345,6 @@ default_keys = {
   "V g s" => "$buffer.transform_selection(:swapcase)",
   "V g r" => "$buffer.transform_selection(:reverse)",
 
-  "V d" => proc{$buffer.delete(SELECTION)},
   "V x" => "$buffer.delete(SELECTION)",
   # "V ctrl-c" => "$buffer.comment_selection",
   "V ctrl-x" => "$buffer.comment_selection(:uncomment)",
@@ -366,7 +370,8 @@ default_keys = {
   # 'C v'=> '$macro.end_recording',
   # "C M" => '$macro.run_last_macro',
   "C @ <char>" => '$macro.run_macro(<char>)',
-  "C , m s" => '$macro.save_macro("a")',
+  "C , m S" => '$macro.save_macro("a")',
+  "C , m s" => '$macro.save',
   "C , t r" => "run_tests()",
 
   "C ." => "repeat_last_action", # TODO

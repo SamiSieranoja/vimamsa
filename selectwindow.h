@@ -43,12 +43,13 @@ private:
     void SelectWindow::handleKeyEvent(QKeyEvent*);
     bool SelectWindow::eventFilter(QObject *object, QEvent *event);
     bool SelectWindow::handleReturn();
+    
 
 public slots:
     void runCallback();
     void selectItem(QModelIndex index);
     void filterChanged();
-
+    void updateItemList(VALUE item_list); 
 
 };
 

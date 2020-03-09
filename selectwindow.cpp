@@ -157,6 +157,23 @@ void SelectWindow::filterChanged() {
   }
 }
 
+void SelectWindow::updateItemList(VALUE item_list) {
+  for (int i = 0; i < RARRAY_LEN(item_list); i++) {
+    VALUE d = rb_ary_entry(item_list, i);
+    model->insertRow(i);
+    VALUE c0 = rb_ary_entry(d, 0);
+    VALUE c1 = rb_ary_entry(d, 1);
+    model->setData(model->index(i, 1), StringValueCStr(c0));
+    // model->item(0)->setEditable(false);
+  }
+  if (RARRAY_LEN(item_list) > this->selected_row) {
+    proxyView->setCurrentIndex(model->index(this->selected_row, 0));
+    // QModelIndex indx = proxyView->currentIndex();
+    // printf("ROW=%d\n", indx.row());
+  }
+}
+
+
 bool SelectWindow::handleReturn() { qDebug() << "SelectWindow: returnPressed"; }
 
 void SelectWindow::handleKeyEvent(QKeyEvent *e) { qDebug() << "SelectWindow: SET NEW KEYPRESS"; }

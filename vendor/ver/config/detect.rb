@@ -16,13 +16,16 @@ module VER::Syntax::Detector
   
   exts "Ruby", ["rb", "rbx", "rjs", "Rakefile", "rake", "cgi", "fcgi", "gemspec", "irbrc", "capfile"]
   head "Ruby", /^#!\/.*\bruby/
-  exts "HTML", ["html", "htm", "shtml", "xhtml", "phtml", "php", "inc", "tmpl", "tpl", "ctp"]
+  exts "HTML", ["html", "htm", "shtml", "xhtml", "phtml", "inc", "tmpl", "tpl", "ctp"]
   head "HTML", /<!DOCTYPE|<(?i:html)|<\?(?i:php)/
   exts "MATLAB", ["m"]
   exts "JavaScript", ["js", "htc", "jsx"]
   exts "Shell Script (Bash)", ["sh", "ss", "bashrc", "bash_profile", "bash_login", "profile", "bash_logout", ".textmate_init"]
   exts "Makefile", ["GNUmakefile", "makefile", "Makefile", "OCamlMakefile"]
   exts "Java", ["java", "bsh"]
+  head "PHP", /^#!.*(?<!-)php[0-9]{0,1}\b/
+  exts "Markdown", ["mdown", "markdown", "markdn", "md"]
+  exts "R", ["R", "r", "s", "S", "Rprofile"]
   
 #TODO: Handle conflicts between syntaxes with same file extension, e.g. both matlab and Objective-C have .m
 
@@ -134,7 +137,6 @@ if false  #TODO: Enable after testing
   exts "Mail", ["mail"]
   head "Mail", /^From: .*(?=\w+@[\w-]+\.\w+)/
   exts "Man", ["man"]
-  exts "Markdown", ["mdown", "markdown", "markdn", "md"]
   exts "Maven POM", ["pom.xml"]
   exts "Mediawiki", ["mediawiki", "wikipedia", "wiki"]
   exts "MEL", ["as"]
@@ -159,7 +161,6 @@ if false  #TODO: Enable after testing
   head "Perl", /^#!.*\bperl\b/
   exts "Perl HTML-Template", ["tmpl"]
   head "Perl HTML-Template", /<(?i:TMPL)_.+?>/
-  head "PHP", /^#!.*(?<!-)php[0-9]{0,1}\b/
   exts "Plain Text", ["txt"]
   exts "Postscript", ["ps", "eps"]
   head "Postscript", /^%!PS/
@@ -169,7 +170,6 @@ if false  #TODO: Enable after testing
   head "Python", /^#!\/.*\bpython\b/
   exts "qmake Project file", ["pro", "pri"]
   exts "Quake Style .cfg", ["cfg"]
-  exts "R", ["R", "r", "s", "S", "Rprofile"]
   exts "R Console (Rdaemon)", ["Rcon"]
   exts "R Console (Rdaemon) Plain", ["Rcon"]
   exts "Ragel", ["rl", "ragel"]

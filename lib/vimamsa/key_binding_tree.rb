@@ -402,17 +402,33 @@ end
 
 $action_list = []
 
-def bindkey(key, action)
+def bindkey_old(key, action)
   if key.class != Array
     key = key.split("||")
   end
   key.each { |k| _bindkey(k, action) }
 end
 
+def bindkey(key, action)
+  if key.class != Array
+    key = key.split("||")
+  end
+  
+  a = action
+  if action.class == Array
+    label = a[0]
+    a = label
+    proc = action[1]
+    msg = action[2]
+    reg_act(label, proc, msg)
+  end
+  key.each { |k| _bindkey(k, a) }
+end
+
 def _bindkey(key, action)
   # if key.class == Array
-    # key.each { |k| bindkey(k, action) }
-    # return
+  # key.each { |k| bindkey(k, action) }
+  # return
   # end
   # $action_list << { :action => action, :key => key }
   if !$actions.has_key?(action)

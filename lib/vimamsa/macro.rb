@@ -1,6 +1,37 @@
 
+def gui_find_macro_update_callback(search_str = "")
+  puts "gui_find_macro_update_callback: #{search_str}"
+  heystack = $macro.named_macros
+  return [] if heystack.empty?
+  $macro_search_list = []
+  files = heystack.keys.sort.collect { |x| [x, 0] }
+
+  if (search_str.size > 1)
+    files = fuzzy_filter(search_str, heystack.keys, 40)
+  end
+  $macro_search_list = files
+  return files
+end
+
+def gui_find_macro_select_callback(search_str, idx)
+  selected = $macro_search_list[idx]
+  m = $macro.named_macros[selected[0]].clone
+  puts "SELECTED MACRO:#{selected}, #{m}"
+  id = $macro.last_macro
+  $macro.recorded_macros[id] = m
+  $macro.run_macro(id)
+
+  # selected_file = $file_search_list[idx][0]
+  # selected_file = $search_list[idx][0]
+
+  # debug "FILE HISTORY SELECT CALLBACK: s=#{search_str},i=#{idx}: #{selected_file}"
+  # qt_select_window_close(0)
+  # new_file_opened(selected_file)
+end
+
 class Macro
-  attr_reader :recorded_macros, :recording
+  # attr_reader :recorded_macros, :recording, :named_macros
+  attr_accessor :recorded_macros, :recording, :named_macros, :last_macro
 
   def initialize()
     @recording = false
@@ -10,11 +41,37 @@ class Macro
     @last_macro = "a"
 
     @recorded_macros = vma.marshal_load("macros", {})
+    @named_macros = vma.marshal_load("named_macros", {})
     $hook.register(:shutdown, self.method("save"))
   end
 
   def save()
     vma.marshal_save("macros", @recorded_macros)
+    vma.marshal_save("named_macros", @named_macros)
+  end
+
+  def gui_name_macro()
+    callback = self.method("name_macro")
+    # gui_one_input_action("Grep", "Search:", "grep", "grep_cur_buffer")
+    gui_one_input_action("Name last macro", "Name:", "Set", callback)
+  end
+
+  def find_macro_gui()
+    l = $macro.named_macros.keys.sort.collect { |x| [x, 0] }
+    $macro_search_list = l
+    $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
+
+    qt_select_update_window(l, $select_keys.collect { |x| x.upcase },
+                            "gui_find_macro_select_callback",
+                            "gui_find_macro_update_callback")
+  end
+
+  def name_macro(name, id = nil)
+    puts "NAME MACRO #{name}"
+    if id.nil?
+      id = @last_macro
+    end
+    @named_macros[name] = @recorded_macros[id].clone
   end
 
   def start_recording(name)

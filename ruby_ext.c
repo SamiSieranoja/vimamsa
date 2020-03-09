@@ -378,11 +378,13 @@ VALUE qt_select_update_window(VALUE self, VALUE item_list, VALUE jump_keys, VALU
   select_w = new SelectWindow(g_editor, 1);
   select_w->select_callback = rb_intern_str(select_callback);
   select_w->update_callback = rb_intern_str(update_callback);
+  
   // ID id = rb_to_id(update_callback);
   // ID id = rb_intern_str(update_callback);
 
   select_w->show();
   select_w->resize(500, 700);
+  select_w->updateItemList(item_list);
   return INT2NUM(0);
 }
 
