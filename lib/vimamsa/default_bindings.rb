@@ -52,9 +52,9 @@ reg_act(:center_on_current_line, "center_on_current_line", "")
 # a = Action.new(:transform_upcase, "Transform selection upcase", proc{ $buffer.transform_selection(:upcase)  } , [:selection]) 
 
 reg_act(:run_last_macro, proc { $macro.run_last_macro }, "Run last recorded or executed macro")
-bindkey ["CB M","B m"], :run_last_macro
+bindkey ["VCB M","B m"], :run_last_macro
 
-bindkey "C , m f", [:find_macro_gui, proc{$macro.find_macro_gui}, "Find named macro"]
+bindkey "VC , m f", [:find_macro_gui, proc{$macro.find_macro_gui}, "Find named macro"]
 bindkey "C , m n", [:gui_name_macro, proc{$macro.gui_name_macro}, "Name last macro"]
 
 
@@ -363,8 +363,8 @@ default_keys = {
   # Macros
   # (experimental, may not work correctly)
   # "C q a" => '$macro.start_recording("a")',
-  "C q <char>" => '$macro.start_recording(<char>)',
-  "C q($macro.is_recording==true) " => "$macro.end_recording", # TODO
+  "VC q <char>" => '$macro.start_recording(<char>)',
+  "VC q($macro.is_recording==true) " => "$macro.end_recording", # TODO
   # 'C q'=> '$macro.end_recording', #TODO
   "C q v" => "$macro.end_recording",
   # 'C v'=> '$macro.end_recording',

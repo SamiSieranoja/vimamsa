@@ -2,7 +2,7 @@
 # Similar feature as Vim EasyMotion https://github.com/easymotion/vim-easymotion
 class EasyJump
   def initialize()
-  make_jump_sequence
+    make_jump_sequence
   end
 end
 
@@ -11,17 +11,33 @@ def easy_jump(direction)
   visible_range = get_visible_area()
   visible_text = $buffer[visible_range[0]..visible_range[1]]
   wsmarks = scan_word_start_marks(visible_text)
-  $easy_jump_wsmarks = wsmarks.collect{|x|x+visible_range[0]}
+  line_starts = scan_indexes(visible_text, /^/)
+  lsh = Hash[line_starts.collect { |x| [x, true] }]
+  wsmh = Hash[wsmarks.collect { |x| [x, true] }]
+
+  wsmarks.select! { |x|
+    r = true
+    r = false if lsh[x] or lsh[x - 1] or lsh[x - 2]
+    r
+  }
+
+  linestart_buf = (line_starts).collect { |x| x + visible_range[0] }
+  wsmarks_buf = (wsmarks).collect { |x| x + visible_range[0] }
   
-  $easy_jump_wsmarks.sort_by! { |x| (x - $buffer.pos).abs }
+  # All line starts should be accessible with just two key presses, so put them first in order
+  # Other word start positions ordered by distance from current pos
+  wsmarks_buf.sort_by! { |x| (x - $buffer.pos).abs }
+  $easy_jump_wsmarks = linestart_buf + wsmarks_buf
+
   $jump_sequence = make_jump_sequence($easy_jump_wsmarks.size)
+
   $input_char_call_func = method(:easy_jump_input_char)
   $kbd.set_mode(:readchar)
   $easy_jump_input = ""
 end
 
 def easy_jump_input_char(c)
-  vma.paint_stack=[]
+  vma.paint_stack = []
   puts "EASY JUMP: easy_jump_input_char [#{c}]"
   $easy_jump_input << c.upcase
   if $jump_sequence.include?($easy_jump_input)
@@ -48,7 +64,7 @@ def easy_jump_draw()
   screen_cord.each_with_index { |point, i|
     mark_str = $jump_sequence[i]
     #puts "draw #{point[0]}x#{point[1]}"
-    draw_text(mark_str, point[0], point[1])
+    draw_text(mark_str, point[0] + 3, point[1])
     #break if m > $cpos
   }
 end
@@ -131,4 +147,3 @@ def make_jump_sequence(num_items)
   #puts sequence.inspect
   return sequence
 end
-

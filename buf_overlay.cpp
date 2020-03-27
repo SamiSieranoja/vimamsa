@@ -63,6 +63,8 @@ int Overlay::draw_text(int x, int y, char *text) {
   QFont font = p.font();
   font.setPointSize(c_te->fnt.pointSize()-1);
   font.setWeight(QFont::DemiBold);
+  font.setFamily("Arial");
+  // QFont("Ubuntu Mono", 12))
   QFontMetrics fm(font);
   p.setFont(font);
   QRect qr = fm.tightBoundingRect(text);
