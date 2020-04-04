@@ -49,6 +49,18 @@
 
 using namespace std;
 
+class VmaDoc : public QTextDocument
+{
+    Q_OBJECT
+
+public:
+    VALUE rb_highlight;
+    VALUE need_redraw;
+    Highlighter *highlighter;
+    int continue_hl_batch;
+   
+};
+
 class Editor : public QMainWindow {
   Q_OBJECT
 
@@ -72,7 +84,7 @@ public:
 
   QGridLayout *layout;
   
-  std::map<int,QTextDocument*> buffers;
+  std::map<int,VmaDoc*> buffers;
   int createBuffer(int id);
   int setCurrentBuffer(int id);
 

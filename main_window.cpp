@@ -118,7 +118,7 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
 
   textEdit = new BufferWidget(this);
   c_te = textEdit;
-  
+
   c_te->fnt.setPointSize(12);
   c_te->setFont(QFont("Ubuntu Mono", 12));
   c_te->overlay = new Overlay(c_te);
@@ -157,12 +157,14 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
 }
 
 int Editor::createBuffer(int id) {
-  QTextDocument *qtd = new QTextDocument();
+  // QTextDocument *qtd = new QTextDocument();
+  VmaDoc *qtd = new VmaDoc();
   qtd->setPlainText("");
   qtd->setDefaultFont(QFont("Ubuntu Mono", 12));
   buffers[id] = qtd;
   printf("createBuffer:%d\n", id);
-  
+  buffers[id]->highlighter = NULL;
+
   // qDebug() << buffers[0]->toPlainText();
   // cout << (buffers[0]->toPlainText()).toStdString();
 }
@@ -172,8 +174,12 @@ int Editor::setCurrentBuffer(int id) {
   c_te->setDocument(buffers[id]);
   c_te->fnt.setPointSize(12);
   c_te->setFont(QFont("Ubuntu Mono", 12));
-  
-  c_te->hl = new Highlighter(c_te->document());
+
+  if (buffers[id]->highlighter == NULL) {
+    buffers[id]->highlighter = new Highlighter(c_te->document());
+    // c_te->hl = new Highlighter(c_te->document());
+  }
+  c_te->hl = buffers[id]->highlighter;
   c_te->hl->rb_highlight = rb_eval_string("false");
   c_te->continue_hl_batch = 0;
 
