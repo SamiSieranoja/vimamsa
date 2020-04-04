@@ -109,6 +109,9 @@ bindkey "V , t b", :set_style_bold
 reg_act(:set_style_link, proc { $buffer.style_transform(:link) }, "Set text as link")
 bindkey "V , t l", :set_style_link
 
+reg_act(:V_join_lines, proc { vma.buf.convert_selected_text(:joinlines) }, "Join lines")
+bindkey "V J", :V_join_lines
+
 
 reg_act(:clear_formats, proc { $buffer.style_transform(:clear) }, "Clear style formats")
 bindkey "V , t c", :clear_formats

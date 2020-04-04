@@ -70,24 +70,6 @@ require "vimamsa/profiler"
 require "vimamsa/hyper_plain_text.rb"
 require "vimamsa/binary_tree.rb"
 
-class Converter
-  def initialize(obj, type, id = nil)
-    @obj = obj
-    @type = type
-    if id != nil
-      $vma.reg_conv(self, id)
-    end
-  end
-
-  def apply(txt)
-    if @type == :gsub
-      return txt.gsub(@obj[0], @obj[1])
-    elsif @type == :lambda
-      return @obj.call(txt)
-    end
-  end
-end
-
 # Example:
 # c=Converter.new([/(.*):(\d+)/,'\1 => [\2]'],:gsub)
 # c.apply('foo:23')
@@ -115,16 +97,18 @@ class Editor
 
   def start
     # $highlight = {}
-    
+
     $hook = Hook.new
-    register_plugin(:Hook,$hook)
+    register_plugin(:Hook, $hook)
     $macro = Macro.new
-    register_plugin(:Macro,$macro)
+    register_plugin(:Macro, $macro)
     $search = Search.new
-    register_plugin(:Search,$search)
+    register_plugin(:Search, $search)
 
     $buffers = BufferList.new
     $minibuffer = Buffer.new(">", "")
+
+    require "vimamsa/text_transforms"
 
     debug "ARGV: " + ARGV.inspect
     # build_key_bindings_tree
@@ -194,26 +178,30 @@ class Editor
     @fh = FileHistory.new
     # @_plugins[:FileFinder] = FileFinder.new
     @_plugins[:FileHistory] = @fh
-    
-    register_plugin(:FileHistory,@fh)
-    register_plugin(:FileFinder,FileFinder.new)
+
+    register_plugin(:FileHistory, @fh)
+    register_plugin(:FileFinder, FileFinder.new)
     # To access via vma.FileFinder
     # self.define_singleton_method(:FileFinder) { @_plugins[:FileFinder] }
 
     $hook.call(:after_init)
   end
-  
-  def register_plugin(name,obj)
+
+  def register_plugin(name, obj)
     @_plugins[name] = obj
     # To access via e.g. vma.FileFinder
     self.define_singleton_method(name) { obj }
+  end
+
+  def buf()
+    return $buffer
   end
 
   def marshal_save(varname, vardata)
     save_var_to_file(varname, Marshal.dump(vardata))
   end
 
-  def marshal_load(varname,default_data=nil)
+  def marshal_load(varname, default_data = nil)
     mdata = load_var_from_file(varname)
     if mdata
       return Marshal.load(mdata)
@@ -576,7 +564,6 @@ def new_file_opened(filename, file_contents = "")
     message "Switching to: #{filename}"
     $buffers.set_current_buffer(b)
   else
-
     message "New file opened: #{filename}"
     $fname = filename
     load_buffer($fname)
