@@ -8,7 +8,6 @@
 #include "main_window.h"
 #include "buffer_widget.h"
 
-
 #include "buf_overlay.h"
 #include "highlighter.h"
 #include "config_window.h"
@@ -27,7 +26,7 @@ int Editor::setQtStyle(int style_id) {
     darkPalette.setColor(QPalette::WindowText, Qt::white);
     darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
     darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
-    darkPalette.setColor(QPalette::ToolTipBase, Qt::white); 
+    darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
     darkPalette.setColor(QPalette::ToolTipText, Qt::white);
     darkPalette.setColor(QPalette::Text, Qt::white);
     darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
@@ -119,14 +118,12 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
 
   textEdit = new BufferWidget(this);
   c_te = textEdit;
-  // c_te->fnt.setFamily(f);
-
-
+  
   c_te->fnt.setPointSize(12);
   c_te->setFont(QFont("Ubuntu Mono", 12));
   c_te->overlay = new Overlay(c_te);
-  c_te->hl = new Highlighter(c_te->document());
-  c_te->hl->rb_highlight = rb_eval_string("false");
+  // c_te->hl = new Highlighter(c_te->document());
+  // c_te->hl->rb_highlight = rb_eval_string("false");
   c_te->continue_hl_batch = 0;
 
   QFrame *frame = new QFrame;
@@ -141,12 +138,6 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
 
   rightMiniBuffer = NULL;
   rightBuffer = NULL;
-  // rightBuffer = new BufferWidget(this);
-  // rightMiniBuffer = new BufferWidget(this);
-  // rightMiniBuffer->setMaximumSize(4000, 30); // TODO: resize dynamically
-  // layout->addWidget(rightBuffer, 1, 2);
-  // layout->addWidget(rightMiniBuffer, 2, 2);
-  // setNumColumns(2);
   setNumColumns(1);
   // setNumColumns(2);
 
@@ -165,6 +156,31 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
   textEdit->setFocus();
 }
 
+int Editor::createBuffer(int id) {
+  QTextDocument *qtd = new QTextDocument();
+  qtd->setPlainText("");
+  qtd->setDefaultFont(QFont("Ubuntu Mono", 12));
+  buffers[id] = qtd;
+  printf("createBuffer:%d\n", id);
+  
+  // qDebug() << buffers[0]->toPlainText();
+  // cout << (buffers[0]->toPlainText()).toStdString();
+}
+
+int Editor::setCurrentBuffer(int id) {
+  printf("setCurrentBuffer:%d, count:%d\n", id, buffers.count(id));
+  c_te->setDocument(buffers[id]);
+  c_te->fnt.setPointSize(12);
+  c_te->setFont(QFont("Ubuntu Mono", 12));
+  
+  c_te->hl = new Highlighter(c_te->document());
+  c_te->hl->rb_highlight = rb_eval_string("false");
+  c_te->continue_hl_batch = 0;
+
+  // c_te->overlay = new Overlay(c_te);
+  // c_te->hl = new Highlighter(c_te->document());
+}
+
 int Editor::setNumColumns(int _numColumns) {
   numColumns = _numColumns;
   if (numColumns == 2) {
@@ -180,12 +196,11 @@ int Editor::setNumColumns(int _numColumns) {
       delete rightBuffer;
       rightBuffer = NULL;
     }
-     if (rightMiniBuffer != NULL) {
+    if (rightMiniBuffer != NULL) {
       layout->removeWidget(rightMiniBuffer);
       delete rightMiniBuffer;
       rightMiniBuffer = NULL;
     }
-   
   }
 }
 

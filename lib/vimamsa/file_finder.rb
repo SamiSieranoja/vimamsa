@@ -1,6 +1,5 @@
 require "parallel"
 
-
 class FileFinder
   def initialize()
     $hook.register(:shutdown, self.method("save"))
@@ -8,10 +7,14 @@ class FileFinder
   end
 
   def save()
-    vma.marshal_save("file_index",$dir_list)
+    vma.marshal_save("file_index", $dir_list)
   end
 
   def start_gui()
+    if $search_dirs.empty?
+      message("FileFinder: No $search_dirs defined")
+      return
+    end
     l = []
     $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
     if $dir_list == nil

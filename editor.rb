@@ -23,7 +23,7 @@ $command_history = []
 $clipboard = []
 $register = Hash.new("")
 $cnf = {}
-$search_dirs = ["."]
+$search_dirs = []
 $errors = []
 
 $do_center = 0
@@ -547,6 +547,7 @@ def load_buffer(fname)
   end
   debug("LOAD BUFFER: #{fname}")
   buffer = Buffer.new(read_file("", fname), fname)
+  qt_set_current_buffer(buffer.id)
   debug("DONE LOAD: #{fname}")
   #buf = filter_buffer(buffer)
   #    debug("END FILTER: #{fname}")
@@ -575,12 +576,13 @@ def new_file_opened(filename, file_contents = "")
     message "Switching to: #{filename}"
     $buffers.set_current_buffer(b)
   else
+
     message "New file opened: #{filename}"
     $fname = filename
     load_buffer($fname)
   end
   set_window_title("Vimamsa - #{File.basename(filename)}")
-  render_buffer #TODO: needed?
+  # render_buffer #TODO: needed?
 end
 
 def scan_word_start_marks(search_str)

@@ -6,8 +6,6 @@ VALUE draw_text(VALUE args);
 
 SelectWindow *select_w;
 
-
-
 extern "C" {
 
 #include <stdio.h>
@@ -48,7 +46,7 @@ VALUE method_main_loop(VALUE self) {
   const char *c_str2;
 
   cpp_init_qt();
-  
+
   VALUE do_center;
 
   rb_eval_string("$vma.start");
@@ -203,12 +201,12 @@ VALUE method_render_text(VALUE self, VALUE text, VALUE _pos, VALUE _selection_st
   // Ignore cursor position change events until rendering is over.
 
   // textbuf = text;
-  
+
   int cursor_pos = NUM2INT(_pos);
   int reset_buffer = NUM2INT(_reset);
   int selection_start = NUM2INT(_selection_start);
 
-  render_text(text, cursor_pos,selection_start,reset_buffer);
+  render_text(text, cursor_pos, selection_start, reset_buffer);
 
   return INT2NUM(1);
 }
@@ -378,7 +376,7 @@ VALUE qt_select_update_window(VALUE self, VALUE item_list, VALUE jump_keys, VALU
   select_w = new SelectWindow(g_editor, 1);
   select_w->select_callback = rb_intern_str(select_callback);
   select_w->update_callback = rb_intern_str(update_callback);
-  
+
   // ID id = rb_to_id(update_callback);
   // ID id = rb_intern_str(update_callback);
 
@@ -394,6 +392,10 @@ VALUE qt_popup_window(VALUE self, VALUE params) {
   // select_w->resize(500, 700);
   return INT2NUM(0);
 }
+
+VALUE qt_create_buffer(VALUE self, VALUE id) { g_editor->createBuffer(NUM2INT(id)); }
+
+VALUE qt_set_current_buffer(VALUE self, VALUE id) { g_editor->setCurrentBuffer(NUM2INT(id)); }
 
 VALUE qt_open_url(VALUE self, VALUE url) {
   char *cstr_url = StringValueCStr(url);
@@ -428,7 +430,7 @@ VALUE qt_add_image(VALUE self, VALUE imgfn, VALUE pos) {
   // If does not fit window, make smaller
   if (fit_ratio > 1.0) {
     img_screen_width = img_screen_width / (fit_ratio);
-    img_screen_height = img_screen_height / (fit_ratio );
+    img_screen_height = img_screen_height / (fit_ratio);
   }
   // QImageReader ( fn ).read();
 
@@ -527,7 +529,10 @@ int qt_process_deltas() {
   }
 }
 
-VALUE _qt_process_deltas(VALUE self) { qt_process_deltas(); return INT2NUM(0);}
+VALUE _qt_process_deltas(VALUE self) {
+  qt_process_deltas();
+  return INT2NUM(0);
+}
 
 void _init_ruby(int argc, char *argv[]) {
   ruby_sysinit(&argc, &argv);
@@ -562,6 +567,9 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("qt_select_update_window", qt_select_update_window, 4);
   rb_define_global_function("qt_popup_window", qt_popup_window, 1);
   rb_define_global_function("qt_add_text_format", qt_add_text_format, 4);
+
+  rb_define_global_function("qt_create_buffer", qt_create_buffer, 1);
+  rb_define_global_function("qt_set_current_buffer", qt_set_current_buffer, 1);
 
   rb_define_global_function("qt_add_image", qt_add_image, 2);
 
@@ -622,8 +630,8 @@ VALUE pos_to_viewport_coordinates(VALUE args) {
 
 VALUE draw_text(VALUE args) { c_te->overlay->draw_text("AX", 40, 40); }
 
-int  render_text(VALUE textbuf, int cursor_pos,int selection_start,int reset_buffer) {
-// int render_text(int reset_buffer) {
+int render_text(VALUE textbuf, int cursor_pos, int selection_start, int reset_buffer) {
+  // int render_text(int reset_buffer) {
   // qDebug() << "c:RENDER_TEXT\n";
   // qDebug() << "render_text thread:" <<QThread::currentThreadId();
   VALUE minibuf;

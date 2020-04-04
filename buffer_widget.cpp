@@ -132,7 +132,7 @@ void BufferWidget::processKeyEvent(QKeyEvent *e) {
   QTextCharFormat defaultCharFormat;
   charFormat.setFontWeight(QFont::Black);
 
-  processHighlights();
+  // processHighlights();
 }
 
 void BufferWidget::cursorPositionChanged() { /*qDebug() << "Cursor pos changed"; */

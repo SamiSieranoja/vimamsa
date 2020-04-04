@@ -30,11 +30,16 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <QMainWindow>
+#include <QTextDocument>
+
 #ifndef QT_NO_PRINTER
 #include <QPrintDialog>
 #include <QPrinter>
 #include <QPrintPreviewDialog>
 #endif
+
+#include <map>
+#include <unordered_map>
 
 #include "editor.h"
 #include "buffer_widget.h"
@@ -66,6 +71,10 @@ public:
   BufferWidget *rightMiniBuffer;
 
   QGridLayout *layout;
+  
+  std::map<int,QTextDocument*> buffers;
+  int createBuffer(int id);
+  int setCurrentBuffer(int id);
 
 protected:
   virtual void closeEvent(QCloseEvent *e);

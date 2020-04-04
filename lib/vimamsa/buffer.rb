@@ -48,6 +48,7 @@ class BufferList < Array
     $buffer_history << @current_buf
     @recent_ind = 0
     $hook.call(:change_buffer, $buffer)
+    qt_set_current_buffer($buffer.id)
   end
 
   def switch()
@@ -99,8 +100,9 @@ class BufferList < Array
     $hook.call(:change_buffer, $buffer)
 
     set_window_title("Vimamsa - #{fpath}")
-    $buffer.need_redraw!
+    # $buffer.need_redraw!
     $buffer.reset_highlight
+    qt_set_current_buffer($buffer.id)
     hpt_scan_images() if $debug # experimental
   end
 
@@ -198,17 +200,28 @@ def buf()
   return $buffer
 end
 
+
 class Buffer < String
 
   #attr_reader (:pos, :cpos, :lpos)
 
-  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed
+  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id
   attr_writer :call_func, :update_highlight
   attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler
+  
+   @@num_buffers = 0
+ 
 
   def initialize(str = "\n", fname = nil)
     debug "Buffer.rb: def initialize"
     super(str)
+    
+    
+    @id = @@num_buffers
+    @@num_buffers += 1
+    qt_create_buffer(@id)
+    puts "NEW BUFFER fn=#{fname} ID:#{@id}"
+    
     @crypt = nil
     @update_highlight = true
     @syntax_detect_failed = false
