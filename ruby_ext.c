@@ -4,7 +4,6 @@
 VALUE pos_to_viewport_coordinates(VALUE args);
 VALUE draw_text(VALUE args);
 
-SelectWindow *select_w;
 
 extern "C" {
 
@@ -473,15 +472,6 @@ VALUE qt_set_stylesheet(VALUE self, VALUE css) {
   qt_set_stylesheet_cpp(css);
   return INT2NUM(0);
 }
-
-// VALUE qt_get_buffer(VALUE self) {
-  // // char* cstr_url = StringValueCStr(url);
-  // QString qt_buf = c_te->toPlainText();
-  // char *buf1 = qstring_to_cstr(qt_buf);
-  // VALUE qt_buffer = rb_str_new2(buf1);
-  // free(buf1);
-  // return qt_buffer;
-// }
 
 void srn_dst_wrap(void *y) {
   void **x = (void **)y;

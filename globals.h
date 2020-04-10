@@ -27,6 +27,7 @@ extern BufferWidget *miniEditor;
 extern Editor *g_editor;
 extern int *_argc;
 extern char **_argv;
+extern SelectWindow *select_w;
 
 
 #endif // GLOBALS_H

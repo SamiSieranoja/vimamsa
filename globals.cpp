@@ -14,4 +14,5 @@ BufferWidget *miniEditor;
 Editor *g_editor;
 int *_argc;
 char **_argv;
+SelectWindow *select_w;
 

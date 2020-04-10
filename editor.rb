@@ -18,7 +18,6 @@ Encoding.default_external = Encoding::UTF_8
 Encoding.default_internal = Encoding::UTF_8
 
 # Globals
-# $last_event = []
 $command_history = []
 $clipboard = []
 $register = Hash.new("")
@@ -28,16 +27,9 @@ $errors = []
 
 $do_center = 0
 $cur_register = "a"
-#$cpos = 0
-#$lpos = 0
-#$larger_cpos = 0
-#$cur_line = nil
 $input_char_call_func = nil
-$check_modifiers = false
-$search_indexes = []
 $debuginfo = {}
 
-$paint_stack = []
 $jump_sequence = []
 
 $debug = false
@@ -69,6 +61,9 @@ require "vimamsa/encrypt"
 require "vimamsa/profiler"
 require "vimamsa/hyper_plain_text.rb"
 require "vimamsa/binary_tree.rb"
+
+load "util.rb"
+load "qt_funcs.rb"
 
 # Example:
 # c=Converter.new([/(.*):(\d+)/,'\1 => [\2]'],:gsub)
@@ -134,9 +129,6 @@ class Editor
     end
 
     set_qt_style(1)
-    # load_theme("Amy")
-    # load_theme("Espresso Libre")
-    # load_theme("SovietCockpit")
 
     # Limit file search to these extensions:
     $find_extensions = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb"]
@@ -283,17 +275,6 @@ def _quit()
   exit
 end
 
-def qt_signal(sgnname, param)
-  debug "GOT QT-SIGNAL #{sgnname}: #{param}"
-  if sgnname == "saveas"
-    file_saveas(param)
-  elsif sgnname == "filenew"
-    create_new_file
-    render_buffer
-  elsif sgnname == "save"
-    $buffer.save
-  end
-end
 
 def file_saveas(filename)
   $buffer.set_filename(filename)
@@ -477,36 +458,6 @@ GUESS_ENCODING_ORDER = [
   Encoding::BINARY,
 ]
 
-def read_file(text, path)
-  path = Pathname(path.to_s).expand_path
-  FileUtils.touch(path) unless File.exist?(path)
-  if !File.exist?(path)
-    #TODO: fail gracefully
-    return
-  end
-
-  encoding = text.encoding
-  content = path.open("r:#{encoding.name}") { |io| io.read }
-
-  debug("GUESS ENCODING")
-  unless content.valid_encoding? # take a guess
-    GUESS_ENCODING_ORDER.find { |enc|
-      content.force_encoding(enc)
-      content.valid_encoding?
-    }
-    content.encode!(Encoding::UTF_8)
-  end
-  debug("END GUESS ENCODING")
-
-  #TODO: Should put these as option:
-  content.gsub!(/\r\n/, "\n")
-  content.gsub!(/\t/, "    ")
-  content.gsub!(/\b/, "")
-
-  #    content = filter_buffer(content)
-  debug("END FILTER")
-  return content
-end
 
 def create_new_file(filename = nil, file_contents = "\n")
   debug "NEW FILE CREATED"
@@ -633,24 +584,6 @@ def get_dot_path(sfx)
   return dpath
 end
 
-def is_url(s)
-  return s.match(/(https?|file):\/\/.*/) != nil
-end
-
-def is_existing_file(s)
-  if is_path(s) and File.exist?(File.expand_path(s))
-    return true
-  end
-  return false
-end
-
-def is_path(s)
-  m = s.match(/(~[a-z]*)?\/.*\//)
-  if m != nil
-    return true
-  end
-  return false
-end
 
 def get_file_line_pointer(s)
   #"/code/vimamsa/lib/vimamsa/buffer_select.rb:31:def"
@@ -713,3 +646,4 @@ end
 
 main_loop
 debug("END")
+
