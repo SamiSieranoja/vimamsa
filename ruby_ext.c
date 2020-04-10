@@ -393,9 +393,15 @@ VALUE qt_popup_window(VALUE self, VALUE params) {
   return INT2NUM(0);
 }
 
-VALUE qt_create_buffer(VALUE self, VALUE id) { g_editor->createBuffer(NUM2INT(id)); }
+VALUE qt_create_buffer(VALUE self, VALUE id) {
+  g_editor->createBuffer(NUM2INT(id));
+  return INT2NUM(0);
+}
 
-VALUE qt_set_current_buffer(VALUE self, VALUE id) { g_editor->setCurrentBuffer(NUM2INT(id)); }
+VALUE qt_set_current_buffer(VALUE self, VALUE id) {
+  g_editor->setCurrentBuffer(NUM2INT(id));
+  return INT2NUM(0);
+}
 
 VALUE qt_open_url(VALUE self, VALUE url) {
   char *cstr_url = StringValueCStr(url);
@@ -437,18 +443,19 @@ VALUE qt_add_image(VALUE self, VALUE imgfn, VALUE pos) {
   rb_eval_string("message('Adding image')");
 
   QTextDocument *textDocument = c_te->document();
-  QTextCursor cursor = c_te->textCursor();
+  // QTextCursor cursor = c_te->textCursor();
+  QTextCursor *cursor = new QTextCursor(textDocument);
   textDocument->addResource(QTextDocument::ImageResource, Uri, QVariant(image));
   QTextImageFormat imageFormat;
   imageFormat.setWidth(img_screen_width);
   imageFormat.setHeight(img_screen_height);
 
   imageFormat.setName(Uri.toString());
-  cursor.setPosition(NUM2INT(pos));
-  cursor.setPosition(NUM2INT(pos) + 1, QTextCursor::KeepAnchor);
-  cursor.insertText("");
-  cursor.setPosition(NUM2INT(pos));
-  cursor.insertImage(imageFormat);
+  cursor->setPosition(NUM2INT(pos));
+  cursor->setPosition(NUM2INT(pos) + 1, QTextCursor::KeepAnchor);
+  cursor->insertText("");
+  cursor->setPosition(NUM2INT(pos));
+  cursor->insertImage(imageFormat);
   return INT2NUM(8888);
 }
 
@@ -459,6 +466,7 @@ VALUE qt_add_text_format(VALUE self, VALUE forec, VALUE backc, VALUE fontStyle, 
   int fs = NUM2INT(fontStyle);
   float scale = (float)NUM2DBL(fontScale);
   g_editor->addTextFormat(foregroundColor, backgroundColor, fs, scale);
+  return INT2NUM(0);
 }
 
 VALUE qt_set_stylesheet(VALUE self, VALUE css) {
@@ -466,13 +474,14 @@ VALUE qt_set_stylesheet(VALUE self, VALUE css) {
   return INT2NUM(0);
 }
 
-VALUE qt_get_buffer(VALUE self) {
-  // char* cstr_url = StringValueCStr(url);
-  QString qt_buf = c_te->toPlainText();
-  char *buf1 = qstring_to_cstr(qt_buf);
-  VALUE qt_buffer = rb_str_new2(buf1), free(buf1);
-  return qt_buffer;
-}
+// VALUE qt_get_buffer(VALUE self) {
+  // // char* cstr_url = StringValueCStr(url);
+  // QString qt_buf = c_te->toPlainText();
+  // char *buf1 = qstring_to_cstr(qt_buf);
+  // VALUE qt_buffer = rb_str_new2(buf1);
+  // free(buf1);
+  // return qt_buffer;
+// }
 
 void srn_dst_wrap(void *y) {
   void **x = (void **)y;
@@ -527,6 +536,7 @@ int qt_process_deltas() {
       rb_eval_string("$hook.call(:buffer_changed)");
     }
   }
+  return 0;
 }
 
 VALUE _qt_process_deltas(VALUE self) {
@@ -546,7 +556,6 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("qt_process_deltas", _qt_process_deltas, 0);
 
   rb_define_global_function("scan_indexes", method_scan_indexes, 2);
-  // rb_define_global_function("render_text",method_render_text,-1);
   rb_define_global_function("main_loop", method_main_loop, 0);
   rb_define_global_function("qt_quit", method_qt_quit, 0);
   rb_define_global_function("qt_open_file_dialog", method_open_file_dialog, 1);
@@ -574,7 +583,7 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("qt_add_image", qt_add_image, 2);
 
   rb_define_global_function("qt_open_url", qt_open_url, 1);
-  rb_define_global_function("qt_get_buffer", qt_get_buffer, 0);
+  // rb_define_global_function("qt_get_buffer", qt_get_buffer, 0);
   rb_define_global_function("qt_add_font_style", qt_add_font_style, 1);
   rb_define_global_function("qt_set_stylesheet", qt_set_stylesheet, 1);
 
@@ -643,9 +652,14 @@ int render_text(VALUE textbuf, int cursor_pos, int selection_start, int reset_bu
   delete minibufstr;
 
   if (reset_buffer == 1) {
-    qDebug() << "QT:RESET BUFFER\n";
     stext = new QString(StringValueCStr(textbuf));
-    c_te->setPlainText(*stext);
+    qDebug() << "QT:RESET BUFFER\n";
+    // qDebug() << *stext;
+    // qDebug() << "\n=========A=====\n";
+    // c_te->setPlainText(*stext);
+    c_te->document()->setPlainText(*stext);
+    // qDebug() << c_te->document()->toPlainText();
+    // qDebug() << "\n=========B=====\n";
     delete stext;
   }
 
@@ -671,6 +685,7 @@ int render_text(VALUE textbuf, int cursor_pos, int selection_start, int reset_bu
 
   // Without this draw area is not always updated although
   // Overlay::paintEvent is called
+  
   c_te->overlay->repaint(c_te->overlay->contentsRect());
 
   app->processEvents();

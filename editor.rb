@@ -501,6 +501,7 @@ def read_file(text, path)
   #TODO: Should put these as option:
   content.gsub!(/\r\n/, "\n")
   content.gsub!(/\t/, "    ")
+  content.gsub!(/\b/, "")
 
   #    content = filter_buffer(content)
   debug("END FILTER")
@@ -603,6 +604,7 @@ def render_buffer(buffer = 0, reset = 0)
   pos = $buffer.pos
   selection_start = $buffer.selection_start
 
+
   if $buffer.need_redraw?
     reset = 1
   end
@@ -610,6 +612,7 @@ def render_buffer(buffer = 0, reset = 0)
   hook_draw()
 
   render_text(tmpbuf, pos, selection_start, reset)
+
 
   if $buffer.need_redraw?
     hpt_scan_images() if $debug #experimental

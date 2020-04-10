@@ -118,9 +118,9 @@ class Processor
     if thm
       style = $theme.colors[thm]
       format = style[:qtid]
-      debug("L=#{@lineno} close_tag:#{name} mark:#{mark}, match:#{thm} qtid=#{style[:qtid]} style:#{style}")
+      # debug("L=#{@lineno} close_tag:#{name} mark:#{mark}, match:#{thm} qtid=#{style[:qtid]} style:#{style}")
     else
-      debug("L=#{@lineno} NO THEME FOR close_tag:#{name} mark:#{mark}")
+      # debug("L=#{@lineno} NO THEME FOR close_tag:#{name} mark:#{mark}")
     end
 
     # format = get_format(name)

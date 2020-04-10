@@ -103,7 +103,7 @@ class BufferList < Array
     # $buffer.need_redraw!
     $buffer.reset_highlight
     qt_set_current_buffer($buffer.id)
-    hpt_scan_images() if $debug # experimental
+    # hpt_scan_images() if $debug # experimental
   end
 
   def get_recent_buffers()
@@ -307,6 +307,7 @@ class Buffer < String
   end
 
   def highlight()
+  # return
     # puts "higlight()"
     return if !$cnf[:syntax_highlight]
     return if @syntax_detect_failed

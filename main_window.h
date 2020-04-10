@@ -49,16 +49,16 @@
 
 using namespace std;
 
-class VmaDoc : public QTextDocument
+class VmaDoc 
 {
-    Q_OBJECT
 
 public:
     VALUE rb_highlight;
     VALUE need_redraw;
     Highlighter *highlighter;
     int continue_hl_batch;
-   
+    QTextDocument* qtx;
+    BufferWidget * buf;
 };
 
 class Editor : public QMainWindow {

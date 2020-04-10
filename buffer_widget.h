@@ -85,7 +85,7 @@ protected:
   void mouseReleaseEvent(QMouseEvent *e);
   void cursorPositionChanged();
   void focusOutEvent(QFocusEvent *event);
-  void paintEvent(QPaintEvent *e);
+  // void paintEvent(QPaintEvent *e);
 
 private:
   void handleKeyEvent(QKeyEvent *e);
@@ -107,7 +107,7 @@ public:
   QSize sizeHint() const override { return QSize(codeEditor->lineNumberAreaWidth(), 0); }
 
 protected:
-  void paintEvent(QPaintEvent *event) override { codeEditor->lineNumberAreaPaintEvent(event); }
+  // TODO?: void paintEvent(QPaintEvent *event) override { codeEditor->lineNumberAreaPaintEvent(event); }
 //  void paintEvent(QPaintEvent *event);
 
 private:

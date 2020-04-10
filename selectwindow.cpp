@@ -286,7 +286,7 @@ void SelectWindow::runCallback() {
   rb_eval_string("render_buffer($buffer)"); // HACK
 }
 
-SelectWindow::setItems(VALUE item_list, VALUE jump_keys) {
+void SelectWindow::setItems(VALUE item_list, VALUE jump_keys) {
 
   for (int i = 0; i < RARRAY_LEN(item_list); i++) {
     VALUE d = rb_ary_entry(item_list, i);

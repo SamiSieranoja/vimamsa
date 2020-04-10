@@ -32,7 +32,6 @@ void Overlay::paintEvent(QPaintEvent *e) {
   if (c_te->overlay_paint_cursor) {
     // printf("Overlay:paintEvent x=%d y=%d w=%d h=%d\n",c_te->cursor_x, c_te->cursor_y,
     // c_te->cursor_width,c_te->cursor_height);
-    QColor cursor_color = new QColor("#839496");
     p.fillRect(c_te->cursor_x, c_te->cursor_y, c_te->cursor_width, c_te->cursor_height,
                QColor("#839496"));
   } else {

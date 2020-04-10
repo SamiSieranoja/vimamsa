@@ -24,6 +24,7 @@ void BufferWidget::mouseReleaseEvent(QMouseEvent *event) {
   update(); // TODO: needed?
 }
 
+#ifdef DISABLED
 void BufferWidget::paintEvent(QPaintEvent *e) {
 
   // Q_D(QTextEdit);
@@ -42,6 +43,7 @@ void BufferWidget::paintEvent(QPaintEvent *e) {
     lineNumberArea->repaint();
   }
 }
+#endif
 
 void BufferWidget::handleKeyEvent(QKeyEvent *e) { processKeyEvent(e); }
 
@@ -67,6 +69,9 @@ int BufferWidget::runHighlightBatch() {
 
 int BufferWidget::processHighlights() {
   
+  // return;
+  
+  if(c_te->hl == NULL) {   return ;}
   // If buffer syntax parsing is happening in separate thread,
   // wait til it has finnished
   if(RTEST(rb_eval_string("$buffer.is_parsing_syntax"))) {
@@ -132,7 +137,6 @@ void BufferWidget::processKeyEvent(QKeyEvent *e) {
   QTextCharFormat defaultCharFormat;
   charFormat.setFontWeight(QFont::Black);
 
-  // processHighlights();
 }
 
 void BufferWidget::cursorPositionChanged() { /*qDebug() << "Cursor pos changed"; */

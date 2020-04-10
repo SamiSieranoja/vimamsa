@@ -10,10 +10,16 @@ Highlighter::Highlighter(QTextDocument *parent) : QSyntaxHighlighter(parent) {
 void Highlighter::highlightBlock(const QString &text) {
 
   if(!RTEST(rb_highlight)) {return;}
+  if(c_te->hl == NULL) {return;}
+
   
   int blocknum = currentBlock().blockNumber();
 
   VALUE linetags = rb_hash_lookup(rb_highlight, INT2NUM(blocknum));
+  
+    // QTextCharFormat *newfmt = new QTextCharFormat();
+    // newfmt->setFontWeight(QFont::Bold);
+
 
   if (RTEST(linetags)) {
     for (int i = 0; i < RARRAY_LEN(linetags); i++) {
@@ -23,9 +29,11 @@ void Highlighter::highlightBlock(const QString &text) {
       int format = NUM2INT(rb_ary_entry(hv, 2));
       int length = endpos - startpos + 1;
       // printf("%d ",format);
+       // printf("startpos:%d length:%d  format:%d\n",startpos,endpos,format);
       setFormat(startpos, length, *(g_editor->textFormats[format]));
-
-      //          qDebug()  << "line no:" << currentBlock().blockNumber() << " hashv:" << RTEST(hv);
+      // setFormat(startpos, length, *newfmt);
+      
+               // qDebug()  << "line no:" << currentBlock().blockNumber() << " hashv:" << RTEST(hv);
     }
   }
   // printf("\n");

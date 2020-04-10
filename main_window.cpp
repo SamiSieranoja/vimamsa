@@ -125,6 +125,7 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
   // c_te->hl = new Highlighter(c_te->document());
   // c_te->hl->rb_highlight = rb_eval_string("false");
   c_te->continue_hl_batch = 0;
+  c_te->hl = NULL;
 
   QFrame *frame = new QFrame;
   // QVBoxLayout *layout = new QVBoxLayout(frame);
@@ -143,27 +144,35 @@ Editor::Editor(QWidget *parent = 0) : QMainWindow(parent) {
 
   setCentralWidget(frame);
 
-  connect(textEdit->document(), SIGNAL(modificationChanged(bool)), actionSave,
-          SLOT(setEnabled(bool)));
-  connect(textEdit->document(), SIGNAL(modificationChanged(bool)), this,
-          SLOT(setWindowModified(bool)));
+  // connect(textEdit->document(), SIGNAL(modificationChanged(bool)), actionSave,
+  // SLOT(setEnabled(bool)));
+  // connect(textEdit->document(), SIGNAL(modificationChanged(bool)), this,
+  // SLOT(setWindowModified(bool)));
 
-  setWindowModified(textEdit->document()->isModified());
-  actionSave->setEnabled(textEdit->document()->isModified());
+  // setWindowModified(textEdit->document()->isModified());
+  // actionSave->setEnabled(textEdit->document()->isModified());
 
   connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(clipboardDataChanged()));
 
-  textEdit->setFocus();
+  // textEdit->setFocus();
 }
 
 int Editor::createBuffer(int id) {
+
   // QTextDocument *qtd = new QTextDocument();
   VmaDoc *qtd = new VmaDoc();
-  qtd->setPlainText("");
-  qtd->setDefaultFont(QFont("Ubuntu Mono", 12));
+  qtd->qtx = new QTextDocument();
+  qtd->qtx->setPlainText("");
+  qtd->qtx->setDefaultFont(QFont("Ubuntu Mono", 12));
   buffers[id] = qtd;
   printf("createBuffer:%d\n", id);
   buffers[id]->highlighter = NULL;
+  qtd->buf = new BufferWidget(this);
+  qtd->buf->overlay = new Overlay(qtd->buf);
+
+  buffers[id]->highlighter = new Highlighter(qtd->buf->document());
+  qtd->buf->hl = buffers[id]->highlighter;
+  buffers[id]->highlighter->rb_highlight = rb_eval_string("false");
 
   // qDebug() << buffers[0]->toPlainText();
   // cout << (buffers[0]->toPlainText()).toStdString();
@@ -171,20 +180,63 @@ int Editor::createBuffer(int id) {
 
 int Editor::setCurrentBuffer(int id) {
   printf("setCurrentBuffer:%d, count:%d\n", id, buffers.count(id));
-  c_te->setDocument(buffers[id]);
+
+  if (c_te != NULL) {
+    layout->removeWidget(c_te);
+    c_te->hide();
+  }
+  c_te = buffers[id]->buf;
+  layout->addWidget(c_te, 1, 1);
+  c_te->show();
+  c_te->setFocus();
+
+  qDebug() << "ZZZZZZZZZZZZZZZZZ";
+  qDebug() << c_te->document()->toPlainText();
+  qDebug() << "AAAAAAAAAAAAAAAAAAAAAaa";
+  
   c_te->fnt.setPointSize(12);
   c_te->setFont(QFont("Ubuntu Mono", 12));
 
-  if (buffers[id]->highlighter == NULL) {
-    buffers[id]->highlighter = new Highlighter(c_te->document());
-    // c_te->hl = new Highlighter(c_te->document());
+
+  return;
+
+  c_te->fnt.setPointSize(12);
+  c_te->setFont(QFont("Ubuntu Mono", 12));
+
+  if (c_te->hl != NULL) {
+    delete c_te->hl;
+    c_te->hl = NULL;
   }
-  c_te->hl = buffers[id]->highlighter;
-  c_te->hl->rb_highlight = rb_eval_string("false");
+
+  QTextDocument *tmpt = new QTextDocument();
+  qDebug() << "CONTENTS:";
+  qDebug() << buffers[id]->qtx->toPlainText();
+  qDebug() << "==========";
+  // tmpt->setPlainText("");
+  tmpt->setPlainText(buffers[id]->qtx->toPlainText());
+  buffers[id]->qtx = tmpt;
+
+  c_te->setDocument(tmpt);
+  tmpt->setParent(c_te);
+
+  tmpt->setDefaultFont(QFont("Ubuntu Mono", 12));
+  buffers[id]->highlighter = new Highlighter(tmpt);
+
+  if (buffers[id]->highlighter == NULL) {
+    // buffers[id]->highlighter = new Highlighter(c_te->document());
+
+    // c_te->hl = new Highlighter(c_te->document());
+    // buffers[id]->highlighter = new Highlighter(buffers[id]->qtx);
+  }
+
+  // c_te->setDocument(buffers[id]->qtx);
+
   c_te->continue_hl_batch = 0;
 
   // c_te->overlay = new Overlay(c_te);
-  // c_te->hl = new Highlighter(c_te->document());
+
+  c_te->hl = buffers[id]->highlighter;
+  c_te->hl->rb_highlight = rb_eval_string("false");
 }
 
 int Editor::setNumColumns(int _numColumns) {
@@ -300,7 +352,7 @@ void Editor::initActions() {
 
 void Editor::setCurrentFileName(const QString &fileName) {
   this->fileName = fileName;
-  textEdit->document()->setModified(false);
+  // textEdit->document()->setModified(false);
 
   QString shownName;
   if (fileName.isEmpty())

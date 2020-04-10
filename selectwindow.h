@@ -23,7 +23,7 @@ class SelectWindow : public QWidget
 public:
     SelectWindow(QWidget *parent,int use_filter);
     SelectWindow(QWidget *parent,VALUE params);
-    setItems(VALUE item_list, VALUE jump_keys);
+    void setItems(VALUE item_list, VALUE jump_keys);
     ID callback;
     ID update_callback;
     ID select_callback;
