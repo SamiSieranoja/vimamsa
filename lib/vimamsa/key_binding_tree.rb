@@ -392,12 +392,15 @@ class KeyBindingTree
       end
       @last_event = event #TODO: outside if?
     end
-
+    
+    qt_refresh_cursor
+    
     event_handle_time = Time.now - t1
     debug "RB key event handle time: #{event_handle_time}" if event_handle_time > 1 / 40.0
     render_buffer($buffer)
     end_profiler
   end
+  
 end
 
 $action_list = []

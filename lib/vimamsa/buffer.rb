@@ -200,6 +200,9 @@ def buf()
   return $buffer
 end
 
+def bufs()
+  return $buffers
+end
 
 class Buffer < String
 
@@ -208,25 +211,24 @@ class Buffer < String
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id
   attr_writer :call_func, :update_highlight
   attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler
-  
-   @@num_buffers = 0
- 
+
+  @@num_buffers = 0
 
   def initialize(str = "\n", fname = nil)
     debug "Buffer.rb: def initialize"
     super(str)
-    
-    
+
     @id = @@num_buffers
     @@num_buffers += 1
     qt_create_buffer(@id)
     puts "NEW BUFFER fn=#{fname} ID:#{@id}"
-    
+
     @crypt = nil
     @update_highlight = true
     @syntax_detect_failed = false
     @is_parsing_syntax = false
     @last_update = Time.now - 100
+    @highlights = {}
     if fname != nil
       @fname = File.expand_path(fname)
     else
@@ -307,7 +309,9 @@ class Buffer < String
   end
 
   def highlight()
-  # return
+  
+    # TODO:enable
+    # return
     # puts "higlight()"
     return if !$cnf[:syntax_highlight]
     return if @syntax_detect_failed
@@ -320,7 +324,6 @@ class Buffer < String
       @update_hl_startpos = 0
       @update_hl_endpos = self.size - 1
       add_hl_update(@update_hl_startpos, @update_hl_endpos)
-      debug "@update_hl_endpos = #{@update_hl_endpos}"
     end
 
     if @syntax_parser == nil
@@ -471,7 +474,9 @@ class Buffer < String
     @redo_stack = []
     @edit_pos_history = []
     @edit_pos_history_i = 0
-    @highlights = {}
+    # @highlights = {}
+    @highlights.delete_if { |x| true }
+
 
     @syntax_parser = nil
 
@@ -559,6 +564,8 @@ class Buffer < String
 
   def add_hl_update(startpos, endpos)
     return if @is_highlighted == false
+    
+    debug "@update_hl_endpos = #{endpos}"
     @hl_queue << [startpos, endpos]
   end
 
@@ -591,7 +598,6 @@ class Buffer < String
       @update_hl_startpos = pos - delta[2]
       @update_hl_endpos = pos
       add_hl_update(@update_hl_startpos, @update_hl_endpos)
-      debug "@update_hl_endpos = #{@update_hl_endpos}"
     elsif delta[1] == INSERT
       self.insert(delta[0], delta[3])
       @deltas << delta
@@ -604,7 +610,6 @@ class Buffer < String
       @update_hl_startpos = pos
       @update_hl_endpos = pos + delta[2]
       add_hl_update(@update_hl_startpos, @update_hl_endpos)
-      debug "@update_hl_endpos = #{@update_hl_endpos}"
     end
     debug "DELTA=#{delta.inspect}"
     # sanity_check_line_ends #TODO: enable with debug mode
@@ -667,6 +672,10 @@ class Buffer < String
     center_on_current_line
   end
 
+  def jump_to_random_pos()
+    set_pos(rand(self.size))
+  end
+
   def undo()
     debug @edit_history.inspect
     return if !@edit_history.any?
@@ -682,7 +691,7 @@ class Buffer < String
     else
       return #TODO: assert?
     end
-    @pos = last_delta[0]
+    set_pos(last_delta[0])
     #recalc_line_ends #TODO: optimize?
     calculate_line_and_column_pos
   end
@@ -695,7 +704,7 @@ class Buffer < String
     debug redo_delta.inspect
     run_delta(redo_delta)
     @edit_history << redo_delta
-    @pos = redo_delta[0]
+    set_pos(redo_delta[0])
     #recalc_line_ends #TODO: optimize?
     calculate_line_and_column_pos
   end
@@ -946,11 +955,13 @@ class Buffer < String
   end
 
   def set_pos(new_pos)
+  
     if new_pos >= self.size
       @pos = self.size - 1 # TODO:??right side of last char
     elsif new_pos >= 0
       @pos = new_pos
     end
+    qt_set_cursor_pos(@id,@pos)
     calculate_line_and_column_pos
   end
 
@@ -996,7 +1007,7 @@ class Buffer < String
       @cpos = line(@lpos).size - 1
     end
     new_pos += @cpos
-    @pos = new_pos
+    set_pos(new_pos)
     reset_larger_cpos if reset
   end
 
@@ -1116,13 +1127,10 @@ class Buffer < String
 
     if direction == FORWARD_CHAR
       return if @pos >= self.size - 1
-      @pos += 1
-      puts "FORWARD: #{@pos}"
-      calculate_line_and_column_pos
+      set_pos(@pos + 1)
     end
     if direction == BACKWARD_CHAR
-      @pos -= 1
-      calculate_line_and_column_pos
+      set_pos(@pos - 1)
     end
     if direction == FORWARD_LINE
       if @lpos >= @line_ends.size - 1 # Cursor is on last line
@@ -1604,6 +1612,7 @@ class Buffer < String
   def start_visual_mode()
     @visual_mode = true
     @selection_start = @pos
+    qt_set_selection_start(@id,selection_start)
     $kbd.set_mode(:visual)
   end
 
@@ -1724,6 +1733,7 @@ class Buffer < String
 
     return _start..(_end - 1)
   end
+
 
   def selection_start()
     return -1 if !@visual_mode

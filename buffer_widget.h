@@ -75,6 +75,7 @@ public:
   int loadTheme();
   int processHighlights(); 
   int cursor_pos; 
+  int selection_start; 
 //  void updateLineNumberArea(const QRect &, int);
 
   /*~Editor();*/
@@ -83,6 +84,7 @@ protected:
   void keyPressEvent(QKeyEvent *e);
   void keyReleaseEvent(QKeyEvent *e);
   void mouseReleaseEvent(QMouseEvent *e);
+  void mousePressEvent(QMouseEvent *e);
   void cursorPositionChanged();
   void focusOutEvent(QFocusEvent *event);
   // void paintEvent(QPaintEvent *e);

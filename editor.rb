@@ -495,7 +495,7 @@ def load_buffer(fname)
   #$buffer_history << $buffers.size - 1
 end
 
-def jump_to_file(filename, linenum)
+def jump_to_file(filename, linenum=0)
   new_file_opened(filename)
   if linenum > 0
     $buffer.jump_to_line(linenum)
@@ -521,7 +521,8 @@ def new_file_opened(filename, file_contents = "")
     load_buffer($fname)
   end
   set_window_title("Vimamsa - #{File.basename(filename)}")
-  # render_buffer #TODO: needed?
+  render_buffer #TODO: needed?
+  qt_process_events
 end
 
 def scan_word_start_marks(search_str)
@@ -541,7 +542,7 @@ def get_visible_area()
 end
 
 def center_on_current_line()
-  $do_center = 1
+  center_where_cursor
 end
 
 def hook_draw()

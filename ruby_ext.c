@@ -3,13 +3,18 @@
 // TODO: put to ruby_ext.h
 VALUE pos_to_viewport_coordinates(VALUE args);
 VALUE draw_text(VALUE args);
+VALUE qt_refresh_cursor(VALUE self); 
 
+
+
+VALUE qt_set_selection_start(VALUE self, VALUE BUFID, VALUE cursor_pos);
 
 extern "C" {
 
 #include <stdio.h>
 #include <ruby/defines.h>
 #include <ruby/thread.h>
+
 
 VALUE method_qt_quit(VALUE self) { _quit = 1; }
 
@@ -32,11 +37,72 @@ VALUE method_set_window_title(VALUE self, VALUE new_title) {
   // For some reason program segfaults if we call g_editor->setWindowTitle from here.
   // But from main_loop its ok..
   window_title = new QString(StringValueCStr(new_title));
+  g_editor->setWindowTitle(*window_title); 
 }
 
 int center_where_cursor();
 
 _sleep(void *ptr) { QThread::usleep(2000); }
+
+VALUE qt_set_cursor_pos(VALUE self, VALUE BUFID, VALUE cursor_pos);
+
+
+VALUE qt_update_cursor_pos(VALUE self) {
+  QTextCursor tc = c_te->textCursor();
+  int cursor_pos = c_te->cursor_pos;
+
+  // int cursor_pos = NUM2INT(rb_eval_string("buf.pos()"));
+  int selection_start = NUM2INT(rb_eval_string("buf.selection_start()")); // TODO: fix
+  
+  qDebug() << "sel start:" << selection_start << "\n";
+  // c_te->cursor_pos = cursor_pos;
+  // if (NUM2INT(do_center) == 1) {
+
+  if (selection_start >= 0) {
+    if (cursor_pos < selection_start) {
+      tc.setPosition(selection_start + 1);
+      tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
+    } else {
+      tc.setPosition(selection_start);
+      tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
+    }
+  } else {
+    tc.setPosition(cursor_pos);
+  }
+
+  c_te->setTextCursor(tc);
+}
+
+void qt_draw_cursor() {
+  c_te->drawTextCursor();
+
+  // Without this draw area is not always updated although
+  // Overlay::paintEvent is called
+
+  c_te->overlay->repaint(c_te->overlay->contentsRect());
+}
+VALUE qt_process_events(VALUE self) {
+  app->processEvents();
+  
+  
+  //TODO:enable
+  rb_eval_string("$buffer.highlight()");
+
+
+  qt_draw_cursor();
+  
+  //TODO:enable
+  c_te->processHighlights();
+  
+  // app->processEvents();
+
+  // qt_process_deltas();
+}
+VALUE method_center_where_cursor(VALUE self)
+{
+center_where_cursor();
+qt_process_events(NULL);
+}
 
 VALUE method_main_loop(VALUE self) {
 
@@ -51,22 +117,27 @@ VALUE method_main_loop(VALUE self) {
   rb_eval_string("$vma.start");
   window_title = new QString("Vimamsa");
   while (1) {
-    app->processEvents();
-    rb_eval_string("$buffer.highlight()");
+    qt_process_events(NULL);
+    
+    rb_thread_call_without_gvl(_sleep, NULL, NULL, NULL);
+    // app->processEvents();
+    // rb_eval_string("$buffer.highlight()");
     // rb_thread_schedule(); //TODO if there are plugins with threads?
 
-    g_editor->setWindowTitle(*window_title); // TODO only when changed
-    do_center = rb_eval_string("$do_center");
-    if (NUM2INT(do_center) == 1) {
-      center_where_cursor();
-      rb_eval_string("$do_center=0");
-    }
+    // g_editor->setWindowTitle(*window_title); // TODO only when changed
+    
+    //TODO:
+    // do_center = rb_eval_string("$do_center");
+    // if (NUM2INT(do_center) == 1) {
+      // center_where_cursor();
+      // rb_eval_string("$do_center=0");
+    // }
 
     // Sleep while releasing ruby interpreter lock
-    rb_thread_call_without_gvl(_sleep, NULL, NULL, NULL);
+    // rb_thread_call_without_gvl(_sleep, NULL, NULL, NULL);
     // Could also just run: rb_eval_string("sleep(0.01)");
 
-    c_te->processHighlights();
+    // c_te->processHighlights();
   }
   return INT2NUM(1);
 }
@@ -247,8 +318,8 @@ int center_where_cursor() {
   int scrollbar = c_te->verticalScrollBar()->value();
   int offset_y = scrollbar + cursorY - c_te->size().height() / 2;
 
-  //  qDebug() << "cursorY: " << cursorY << "scrollbar:" << scrollbar << " offset_y:" << offset_y <<
-  //  "size.height:" << c_te->size().height() << endl ;
+  //  qDebug() << "cursorY: " << cursorY << "scrollbar:" << scrollbar << " offset_y:" << offset_y
+  //  << "size.height:" << c_te->size().height() << endl ;
   // Example: cursorY:  15 scrollbar: 2116  offset_y: 1766 size.height: 730
   c_te->verticalScrollBar()->setValue(offset_y);
 }
@@ -268,8 +339,8 @@ VALUE page_up() {
 
   QString evalcmd = QString("$buffer.set_pos(%1);$buffer.jump(BEGINNING_OF_LINE)")
                         .arg(QString::number(new_cursor_pos));
-  // BUG: Sometimes cursorForPosition gives position for end of line.$buffer.jump(BEGINNING_OF_LINE)
-  // used as quick hack.
+  // BUG: Sometimes cursorForPosition gives position for end of
+  // line.$buffer.jump(BEGINNING_OF_LINE) used as quick hack.
 
   rb_eval_string(evalcmd.toLatin1().data());
   return 0;
@@ -576,18 +647,28 @@ void _init_ruby(int argc, char *argv[]) {
   // rb_define_global_function("qt_get_buffer", qt_get_buffer, 0);
   rb_define_global_function("qt_add_font_style", qt_add_font_style, 1);
   rb_define_global_function("qt_set_stylesheet", qt_set_stylesheet, 1);
+  rb_define_global_function("qt_set_cursor_pos", qt_set_cursor_pos, 2);
+  rb_define_global_function("qt_set_selection_start", qt_set_selection_start, 2);
+  rb_define_global_function("qt_refresh_cursor", qt_refresh_cursor, 0);
+  
+  rb_define_global_function("qt_update_cursor_pos", qt_update_cursor_pos, 0);
+  
 
   rb_define_global_function("top_where_cursor", top_where_cursor, 0);
   rb_define_global_function("bottom_where_cursor", bottom_where_cursor, 0);
   rb_define_global_function("page_down", page_down, 0);
   rb_define_global_function("page_up", page_up, 0);
+  
+  rb_define_global_function("center_where_cursor", method_center_where_cursor, 0);
+
+  rb_define_global_function("qt_process_events", qt_process_events, 0);
 
   VALUE qt_module = rb_define_module("Qt");
 #include "qt_keys.h"
 
-  // cat a  | awk '{printf("rb_define_const(qt_module, '"'"'%s'"'"',INT2NUM(Qt::%s));\n",$1,$1)}' |
-  // sed -e "s/'/\"/g" > ../qt_keys.h
-  // rb_define_const(qt_module, "Key_Backspace",INT2NUM(Qt::Key_Context1));
+  // cat a  | awk '{printf("rb_define_const(qt_module, '"'"'%s'"'"',INT2NUM(Qt::%s));\n",$1,$1)}'
+  // | sed -e "s/'/\"/g" > ../qt_keys.h rb_define_const(qt_module,
+  // "Key_Backspace",INT2NUM(Qt::Key_Context1));
 
   ruby_script("vimamsa.rb");
   ruby_run_node(ruby_options(argc, argv));
@@ -595,6 +676,75 @@ void _init_ruby(int argc, char *argv[]) {
 }
 
 } // END of extern "C"
+
+
+VALUE qt_refresh_cursor(VALUE self) {
+  int selection_start = NUM2INT(rb_eval_string("buf.selection_start()")); // TODO: fix
+  // c_te->cursor_pos = cursor_pos;
+  // if (NUM2INT(do_center) == 1) {
+  qDebug() << "sel start:" << selection_start << "\n";
+  
+  
+  QTextCursor tc = c_te->textCursor();
+  // int i_cursor_pos = g_editor->buffers[id]->buf->cursor_pos;
+  int i_cursor_pos = c_te->cursor_pos;
+  if (selection_start >= 0) {
+    if (i_cursor_pos < selection_start) {
+      tc.setPosition(selection_start + 1);
+      tc.setPosition(i_cursor_pos, QTextCursor::KeepAnchor);
+    } else {
+      tc.setPosition(selection_start);
+      tc.setPosition(i_cursor_pos, QTextCursor::KeepAnchor);
+    }
+  } else {
+    tc.setPosition(i_cursor_pos);
+  }
+
+  c_te->setTextCursor(tc);
+}
+
+VALUE qt_set_cursor_pos(VALUE self, VALUE BUFID, VALUE cursor_pos) {
+  int id = NUM2INT(BUFID);
+  int i_cursor_pos = NUM2INT(cursor_pos);
+  // printf("id:%d cps:%d \n",id,cps);
+  g_editor->buffers[id]->buf->cursor_pos = NUM2INT(cursor_pos);
+  // qt_update_cursor_pos(0);
+  
+    QTextCursor tc = g_editor->buffers[id]->buf->textCursor();
+  // int cursor_pos = c_te->cursor_pos;
+
+  // int cursor_pos = NUM2INT(rb_eval_string("buf.pos()"));
+  int selection_start = NUM2INT(rb_eval_string("buf.selection_start()")); // TODO: fix
+  // c_te->cursor_pos = cursor_pos;
+  // if (NUM2INT(do_center) == 1) {
+  qDebug() << "sel start:" << selection_start << "\n";
+  
+  if (selection_start >= 0) {
+    if (i_cursor_pos < selection_start) {
+      tc.setPosition(selection_start + 1);
+      tc.setPosition(i_cursor_pos, QTextCursor::KeepAnchor);
+    } else {
+      tc.setPosition(selection_start);
+      tc.setPosition(i_cursor_pos, QTextCursor::KeepAnchor);
+    }
+  } else {
+    tc.setPosition(i_cursor_pos);
+  }
+
+  c_te->setTextCursor(tc);
+
+
+  // c_te->cursor_pos = cursor_pos;
+  // NUM2INT(id)
+  return 0;
+}
+
+VALUE qt_set_selection_start(VALUE self, VALUE BUFID, VALUE cursor_pos) {
+  int id = NUM2INT(BUFID);
+  int aa = NUM2INT(cursor_pos);
+  g_editor->buffers[id]->buf->selection_start = NUM2INT(cursor_pos);
+  return 0;
+}
 
 VALUE cursor_to_viewport_pos(int cursorpos) {
   // printf("cursorpos:%d ",cursorpos);
@@ -654,28 +804,14 @@ int render_text(VALUE textbuf, int cursor_pos, int selection_start, int reset_bu
   }
 
   qt_process_deltas();
-  QTextCursor tc = c_te->textCursor();
 
-  if (selection_start >= 0) {
-    if (cursor_pos < selection_start) {
-      tc.setPosition(selection_start + 1);
-      tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
-    } else {
-      tc.setPosition(selection_start);
-      tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
-    }
-  } else {
-    tc.setPosition(cursor_pos);
-  }
-  c_te->setTextCursor(tc);
-  c_te->drawTextCursor();
   c_te->cursor_pos = cursor_pos;
 
   // c_te->repaint(c_te->contentsRect());
 
   // Without this draw area is not always updated although
   // Overlay::paintEvent is called
-  
+
   c_te->overlay->repaint(c_te->overlay->contentsRect());
 
   app->processEvents();

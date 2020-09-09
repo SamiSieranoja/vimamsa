@@ -12,7 +12,6 @@ void Highlighter::highlightBlock(const QString &text) {
   if(!RTEST(rb_highlight)) {return;}
   if(c_te->hl == NULL) {return;}
 
-  
   int blocknum = currentBlock().blockNumber();
 
   VALUE linetags = rb_hash_lookup(rb_highlight, INT2NUM(blocknum));
@@ -30,7 +29,10 @@ void Highlighter::highlightBlock(const QString &text) {
       int length = endpos - startpos + 1;
       // printf("%d ",format);
        // printf("startpos:%d length:%d  format:%d\n",startpos,endpos,format);
+       
+       
       setFormat(startpos, length, *(g_editor->textFormats[format]));
+      
       // setFormat(startpos, length, *newfmt);
       
                // qDebug()  << "line no:" << currentBlock().blockNumber() << " hashv:" << RTEST(hv);

@@ -1,4 +1,4 @@
-require 'fileutils'
+require "fileutils"
 
 def debug_print_buffer(c)
   puts $buffer.inspect
@@ -22,15 +22,15 @@ def log_error(message)
   #TODO
 end
 
-def crash(message,e=nil)
+def crash(message, e = nil)
   puts "FATAL ERROR:#{message}"
   puts caller().join("\n")
-  savedebug(message,e)
+  savedebug(message, e)
   _quit()
 end
 
-def savedebug(message,e)
-  FileUtils.mkdir_p('debug')
+def savedebug(message, e)
+  FileUtils.mkdir_p("debug")
   puts "savedebug()"
   dbginfo = {}
   dbginfo["message"] = message
@@ -60,7 +60,6 @@ def savedebug(message,e)
   puts save_fn_json
 end
 
-
 def run_tests()
   run_test("01")
   run_test("02")
@@ -83,7 +82,46 @@ def run_test(test_id)
   $buffer = old_buffer
 end
 
+def qt_sleep(t2)
+  t1 = Time.now()
+  while Time.now < t1 + t2
+    qt_process_events
+    sleep(0.02)
+  end
+end
+
+def run_random_jump_test(test_time = 60 * 60 * 10)
+  new_file_opened("TODO"); qt_sleep(0.1)
+
+  ttstart = Time.now
+  Kernel.srand(1231)
+  step = 0
+  while Time.now < ttstart + test_time
+    debug "step=#{step}"
+    buf.jump_to_random_pos
+    buf.insert_txt("Z") if rand() > 0.25
+    buf.reset_highlight() if rand() > 0.1
+
+    # puts "========line:========="
+    # puts buf.current_line()
+    # puts "======================"
+
+    render_buffer($buffer)
+
+    qt_sleep(rand() / 2)
+    if rand() < (1 / 40.0)
+      buf.revert
+    end
+
+    buf.insert_txt("X") if rand() > 0.25
+    render_buffer($buffer)
+
+    $buffers.set_current_buffer(rand($buffers.size)) if rand > 0.25
+    step += 1
+  end
+end
+
+
 def start_ripl
   Ripl.start :binding => binding
 end
-
