@@ -1,8 +1,15 @@
 require "fileutils"
 
+def debug(message)
+  if $debug
+    puts "[#{DateTime.now().strftime("%H:%M:%S")}] #{message}"
+    $stdout.flush
+  end
+end
+
 def debug_print_buffer(c)
-  puts $buffer.inspect
-  puts $buffer
+  puts buf.inspect
+  puts buf
 end
 
 def debug_dump_clipboard()
@@ -10,7 +17,7 @@ def debug_dump_clipboard()
 end
 
 def debug_dump_deltas()
-  puts $buffer.edit_history.inspect
+  puts buf.edit_history.inspect
 end
 
 def log_error(message)
@@ -38,16 +45,16 @@ def savedebug(message, e)
   dbginfo["trace"] = caller()
   dbginfo["trace"] = e.backtrace() if e
   dbginfo["trace_str"] = dbginfo["trace"].join("\n")
-  dbginfo["edit_history"] = $buffer.edit_history
+  dbginfo["edit_history"] = buf.edit_history
   dbginfo["cnf"] = $cnf
   dbginfo["register"] = $register
   dbginfo["clipboard"] = $clipboard
   # dbginfo["last_event"] = $last_event
   dbginfo["buffer"] = {}
-  dbginfo["buffer"]["str"] = $buffer.to_s
-  dbginfo["buffer"]["lpos"] = $buffer.lpos
-  dbginfo["buffer"]["cpos"] = $buffer.cpos
-  dbginfo["buffer"]["pos"] = $buffer.pos
+  dbginfo["buffer"]["str"] = buf.to_s
+  dbginfo["buffer"]["lpos"] = buf.lpos
+  dbginfo["buffer"]["cpos"] = buf.cpos
+  dbginfo["buffer"]["pos"] = buf.pos
 
   pfxs = DateTime.now().strftime("%d%m%Y_%H%M%S")
   save_fn_dump = sprintf("debug/crash_%s.marshal", pfxs)

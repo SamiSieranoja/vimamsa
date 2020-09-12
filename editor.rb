@@ -1,74 +1,4 @@
 
-#scriptdir=File.expand_path(File.dirname(__FILE__))
-$:.unshift File.dirname(__FILE__) + "/lib"
-require "pathname"
-require "date"
-require "ripl/multi_line"
-require "json"
-
-# require 'benchmark/ips'
-
-load "vendor/ver/lib/ver/vendor/textpow.rb"
-load "vendor/ver/lib/ver/syntax/detector.rb"
-load "vendor/ver/config/detect.rb"
-
-require "differ"
-
-Encoding.default_external = Encoding::UTF_8
-Encoding.default_internal = Encoding::UTF_8
-
-# Globals
-$command_history = []
-$clipboard = []
-$register = Hash.new("")
-$cnf = {}
-$search_dirs = []
-$errors = []
-
-$do_center = 0
-$cur_register = "a"
-$input_char_call_func = nil
-$debuginfo = {}
-
-$jump_sequence = []
-
-$debug = false
-$experimental = false
-
-def debug(message)
-  if $debug
-    puts "[#{DateTime.now().strftime("%H:%M:%S")}] #{message}"
-    $stdout.flush
-  end
-end
-
-require "fileutils"
-require "vimamsa/constants"
-require "vimamsa/macro"
-require "vimamsa/buffer"
-require "vimamsa/search"
-require "vimamsa/key_binding_tree"
-require "vimamsa/buffer_select"
-require "vimamsa/file_finder"
-require "vimamsa/search_replace"
-require "vimamsa/ack"
-require "vimamsa/actions"
-require "vimamsa/hook"
-require "vimamsa/debug"
-require "vimamsa/highlight"
-require "vimamsa/easy_jump"
-require "vimamsa/encrypt"
-require "vimamsa/profiler"
-require "vimamsa/hyper_plain_text.rb"
-require "vimamsa/binary_tree.rb"
-
-load "util.rb"
-load "qt_funcs.rb"
-
-# Example:
-# c=Converter.new([/(.*):(\d+)/,'\1 => [\2]'],:gsub)
-# c.apply('foo:23')
-# "foo => [23]"
 
 def handle_drag_and_drop(fname)
   debug "EDITOR:handle_drag_and_drop"
@@ -143,24 +73,24 @@ class Editor
 
     build_options
 
-    $fname = "test.txt"
+    fname = "test.txt"
     if conf(:startup_file)
       fname_ = File.expand_path(conf(:startup_file))
       if File.exist?(fname_)
-        $fname = fname_
+        fname = fname_
       end
     end
-    $fname = ARGV[1] if ARGV.size >= 2 and File.file?(ARGV[1])
-    $vma.add_content_search_path(Dir.pwd)
+    fname = ARGV[1] if ARGV.size >= 2 and File.file?(ARGV[1])
+    vma.add_content_search_path(Dir.pwd)
     for fn in ARGV
       fn = File.expand_path(fn)
       if File.directory?(fn)
-        $vma.add_content_search_path(fn)
+        vma.add_content_search_path(fn)
         $search_dirs << fn
       end
     end
 
-    buffer = Buffer.new(read_file("", $fname), $fname)
+    buffer = Buffer.new(read_file("", fname), fname)
     $buffers << buffer
 
     load_theme($cnf[:theme])
@@ -277,15 +207,10 @@ class Editor
   
 end
 
-$vma = Editor.new
-
-def vma()
-  return $vma
-end
 
 def _quit()
   # Shut down the Qt thread before the ruby thread
-  $vma.shutdown
+  vma.shutdown
   qt_quit
   exit
 end
@@ -328,7 +253,7 @@ def set_clipboard(s)
 end
 
 def set_cursor_pos(new_pos)
-  $buffer.set_pos(new_pos)
+  buf.set_pos(new_pos)
   #render_buffer($buffer)
   debug "New pos: #{new_pos}lpos:#{$buffer.lpos} cpos:#{$buffer.cpos}"
 end
@@ -531,8 +456,8 @@ def open_new_file(filename, file_contents = "")
     $buffers.set_current_buffer(b)
   else
     message "New file opened: #{filename}"
-    $fname = filename
-    load_buffer($fname)
+    fname = filename
+    load_buffer(fname)
   end
   set_window_title("Vimamsa - #{File.basename(filename)}")
   render_buffer #TODO: needed?
@@ -656,5 +581,3 @@ def find_project_dir_of_cur_buffer()
   return pdir
 end
 
-main_loop
-debug("END")

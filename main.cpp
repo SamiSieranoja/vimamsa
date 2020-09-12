@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
   
 
   char **argv2 = malloc((*_argc + 2) * sizeof(char *));
-  char const *script_name = "editor.rb";
+  char const *script_name = "main.rb";
   argv2[0] = script_name;
   argv2[1] = script_name;
   for (int i = 0; i < *_argc; i++) {

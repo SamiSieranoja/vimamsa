@@ -55,8 +55,6 @@ VALUE qt_update_cursor_pos(VALUE self) {
   int selection_start = NUM2INT(rb_eval_string("buf.selection_start()")); // TODO: fix
   
   qDebug() << "sel start:" << selection_start << "\n";
-  // c_te->cursor_pos = cursor_pos;
-  // if (NUM2INT(do_center) == 1) {
 
   if (selection_start >= 0) {
     if (cursor_pos < selection_start) {
@@ -106,32 +104,11 @@ VALUE method_main_loop(VALUE self) {
 
   cpp_init_qt();
 
-  VALUE do_center;
-
-  rb_eval_string("$vma.start");
+  rb_eval_string("vma.start");
   window_title = new QString("Vimamsa");
   while (1) {
     qt_process_events(NULL);
-    
     rb_thread_call_without_gvl(_sleep, NULL, NULL, NULL);
-    // app->processEvents();
-    // rb_eval_string("$buffer.highlight()");
-    // rb_thread_schedule(); //TODO if there are plugins with threads?
-
-    // g_editor->setWindowTitle(*window_title); // TODO only when changed
-    
-    //TODO:
-    // do_center = rb_eval_string("$do_center");
-    // if (NUM2INT(do_center) == 1) {
-      // center_where_cursor();
-      // rb_eval_string("$do_center=0");
-    // }
-
-    // Sleep while releasing ruby interpreter lock
-    // rb_thread_call_without_gvl(_sleep, NULL, NULL, NULL);
-    // Could also just run: rb_eval_string("sleep(0.01)");
-
-    // c_te->processHighlights();
   }
   return INT2NUM(1);
 }
