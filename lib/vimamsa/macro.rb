@@ -14,19 +14,13 @@ def gui_find_macro_update_callback(search_str = "")
 end
 
 def gui_find_macro_select_callback(search_str, idx)
+  puts "gui_find_macro_select_callback"
   selected = $macro_search_list[idx]
   m = $macro.named_macros[selected[0]].clone
   puts "SELECTED MACRO:#{selected}, #{m}"
   id = $macro.last_macro
   $macro.recorded_macros[id] = m
   $macro.run_macro(id)
-
-  # selected_file = $file_search_list[idx][0]
-  # selected_file = $search_list[idx][0]
-
-  # debug "FILE HISTORY SELECT CALLBACK: s=#{search_str},i=#{idx}: #{selected_file}"
-  # qt_select_window_close(0)
-  # new_file_opened(selected_file)
 end
 
 class Macro
@@ -130,6 +124,7 @@ class Macro
       # Ripl.start :binding => binding
       for a in acts
         ret = exec_action(a)
+        puts ret
         if ret == false
           message("Error while running macro")
           break

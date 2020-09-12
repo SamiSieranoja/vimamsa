@@ -42,7 +42,7 @@ VALUE method_set_window_title(VALUE self, VALUE new_title) {
 
 int center_where_cursor();
 
-_sleep(void *ptr) { QThread::usleep(2000); }
+_sleep(void *ptr) { QThread::usleep(3000); }
 
 VALUE qt_set_cursor_pos(VALUE self, VALUE BUFID, VALUE cursor_pos);
 
@@ -73,6 +73,7 @@ VALUE qt_update_cursor_pos(VALUE self) {
   c_te->setTextCursor(tc);
 }
 
+//TODO: delete?
 void qt_draw_cursor() {
   c_te->drawTextCursor();
 
@@ -84,19 +85,12 @@ void qt_draw_cursor() {
 VALUE qt_process_events(VALUE self) {
   app->processEvents();
   
-  
   //TODO:enable
   rb_eval_string("$buffer.highlight()");
 
-
-  qt_draw_cursor();
   
   //TODO:enable
   c_te->processHighlights();
-  
-  // app->processEvents();
-
-  // qt_process_deltas();
 }
 VALUE method_center_where_cursor(VALUE self)
 {

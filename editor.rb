@@ -70,6 +70,11 @@ load "qt_funcs.rb"
 # c.apply('foo:23')
 # "foo => [23]"
 
+def handle_drag_and_drop(fname)
+  debug "EDITOR:handle_drag_and_drop"
+  buf.handle_drag_and_drop(fname)
+end
+
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths
   attr_accessor :converters, :fh, :paint_stack
@@ -260,6 +265,16 @@ class Editor
     end
     return r
   end
+  
+   def can_open_extension?(filepath)
+    exts = $cnf[:extensions_to_open]
+    extname = Pathname.new(filepath).extname.downcase
+    can_open = exts.include?(extname)
+    puts "CAN OPEN?: #{can_open}"
+    return can_open
+  end
+ 
+  
 end
 
 $vma = Editor.new
@@ -274,7 +289,6 @@ def _quit()
   qt_quit
   exit
 end
-
 
 def file_saveas(filename)
   $buffer.set_filename(filename)
@@ -458,7 +472,6 @@ GUESS_ENCODING_ORDER = [
   Encoding::BINARY,
 ]
 
-
 def create_new_file(filename = nil, file_contents = "\n")
   debug "NEW FILE CREATED"
   buffer = Buffer.new(file_contents)
@@ -495,19 +508,20 @@ def load_buffer(fname)
   #$buffer_history << $buffers.size - 1
 end
 
-def jump_to_file(filename, linenum=0)
-  new_file_opened(filename)
+def jump_to_file(filename, linenum = 0)
+  open_new_file(filename)
   if linenum > 0
     $buffer.jump_to_line(linenum)
     center_on_current_line
   end
 end
 
+#TODO: needed?
 def open_existing_file(filename)
-  new_file_opened(filename)
+  open_new_file(filename)
 end
 
-def new_file_opened(filename, file_contents = "")
+def open_new_file(filename, file_contents = "")
   #TODO: expand path
   filename = File.expand_path(filename)
   b = $buffers.get_buffer_by_filename(filename)
@@ -556,7 +570,6 @@ def render_buffer(buffer = 0, reset = 0)
   pos = $buffer.pos
   selection_start = $buffer.selection_start
 
-
   if $buffer.need_redraw?
     reset = 1
   end
@@ -564,7 +577,6 @@ def render_buffer(buffer = 0, reset = 0)
   hook_draw()
 
   render_text(tmpbuf, pos, selection_start, reset)
-
 
   if $buffer.need_redraw?
     hpt_scan_images() if $debug #experimental
@@ -584,7 +596,6 @@ def get_dot_path(sfx)
   dpath = "#{dot_dir}/#{sfx}"
   return dpath
 end
-
 
 def get_file_line_pointer(s)
   #"/code/vimamsa/lib/vimamsa/buffer_select.rb:31:def"
@@ -647,4 +658,3 @@ end
 
 main_loop
 debug("END")
-

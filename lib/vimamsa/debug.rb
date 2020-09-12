@@ -91,7 +91,7 @@ def qt_sleep(t2)
 end
 
 def run_random_jump_test(test_time = 60 * 60 * 10)
-  new_file_opened("TODO"); qt_sleep(0.1)
+  open_new_file("TODO"); qt_sleep(0.1)
 
   ttstart = Time.now
   Kernel.srand(1231)

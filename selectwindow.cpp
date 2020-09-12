@@ -211,9 +211,9 @@ bool SelectWindow::eventFilter(QObject *obj, QEvent *event) {
     // QKeyEvent *key = static_cast<QKeyEvent *>(event);
     if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
       // qDebug() << "eventFilter: got ENTER";
-      close();
       rb_funcall(INT2NUM(0), select_callback, 2, qstring_to_ruby(filterEdit->text()),
                  INT2NUM(this->selected_row));
+      close();
       return true;
     }
     if (key->key() == Qt::Key_Escape) {

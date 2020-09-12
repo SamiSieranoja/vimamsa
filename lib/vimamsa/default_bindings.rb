@@ -221,6 +221,8 @@ bindkey "C , s a", "buf.save_as()"
 
 reg_act(:show_images, proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")
 
+reg_act(:delete_current_file, proc { bufs.delete_current_buffer() }, "Delete current file")
+
 
 bindkey "C d d", [:delete_line, proc{buf.delete_line}, "Delete current line"]
 bindkey "C enter || C return",  [:line_action,proc{buf.handle_line_action()}, "Line action"]

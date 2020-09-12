@@ -79,5 +79,5 @@ def gui_file_history_select_callback(search_str, idx)
 
   debug "FILE HISTORY SELECT CALLBACK: s=#{search_str},i=#{idx}: #{selected_file}"
   qt_select_window_close(0)
-  new_file_opened(selected_file)
+  open_new_file(selected_file)
 end

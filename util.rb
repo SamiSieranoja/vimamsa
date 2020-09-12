@@ -34,10 +34,25 @@ def is_url(s)
 end
 
 def is_existing_file(s)
+  return false if !s
   if is_path(s) and File.exist?(File.expand_path(s))
     return true
   end
   return false
+end
+
+def is_image_file(fpath)
+  return false if !File.exist?(fpath)
+  return false if !fpath.match(/.(jpg|jpeg|png)$/i)
+  #TODO: check contents of file
+  return true
+end
+
+def is_text_file(fpath)
+  return false if !File.exist?(fpath)
+  return false if !fpath.match(/.(txt|cpp|h|rb|c|php|java|py)$/i)
+  #TODO: check contents of file
+  return true
 end
 
 def is_path(s)
@@ -47,4 +62,5 @@ def is_path(s)
   end
   return false
 end
+
 

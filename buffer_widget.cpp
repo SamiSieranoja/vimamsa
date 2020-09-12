@@ -9,6 +9,45 @@ void BufferWidget::keyReleaseEvent(QKeyEvent *e) {
   return;
 }
 
+void BufferWidget::dragEnterEvent(QDragEnterEvent *event)
+{    
+  // qDebug() << "dragEnterEvent:"
+           // << "\n";
+  // qDebug() << event << "\n";
+
+     event->accept();
+}
+ 
+void BufferWidget::dragMoveEvent(QDragMoveEvent *event)
+{
+  // qDebug() << "dragEnterEvent:"
+           // << "\n";
+  // qDebug() << event << "\n";
+
+     event->accept();
+}
+ 
+
+void BufferWidget::dropEvent(QDropEvent *event) {
+
+
+  qDebug() << "dropEvent:"
+           << "\n";
+  qDebug() << event << "\n";
+
+  if (event->mimeData()->hasFormat("text/uri-list")) {
+    QList<QUrl> urls = event->mimeData()->urls();
+    qDebug() << urls << "\n";
+
+    if (!urls.isEmpty()) {
+      // QString fileName = urls.first().toLocalFile();
+      QString fileName = urls.first().toLocalFile();
+      VALUE rbfname = qstring_to_ruby(fileName);
+      rb_funcall(NULL, rb_intern("handle_drag_and_drop"), 1, rbfname);
+    }
+  }
+}
+
 void BufferWidget::mouseReleaseEvent(QMouseEvent *event) {
   QTextCursor cursor = this->cursorForPosition(event->pos());
 
@@ -16,7 +55,7 @@ void BufferWidget::mouseReleaseEvent(QMouseEvent *event) {
 
   cursor_pos = cursor.position();
   rb_funcall(NULL, rb_intern("set_cursor_pos"), 1, INT2NUM(cursor_pos));
-  // drawTextCursor();
+  drawTextCursor();
   update(); // TODO: needed?
 }
 
@@ -29,7 +68,7 @@ void BufferWidget::mousePressEvent(QMouseEvent *event) {
 
   cursor_pos = cursor.position();
   rb_funcall(NULL, rb_intern("set_cursor_pos"), 1, INT2NUM(cursor_pos));
-  // drawTextCursor();
+  drawTextCursor();
   update(); // TODO: needed?
 }
 
@@ -143,6 +182,7 @@ void BufferWidget::processKeyEvent(QKeyEvent *e) {
                          rb_str_new2(c_str2), INT2NUM(e->modifiers()));
 
   rb_funcall(NULL, handle_key_event, 1, rb_event);
+  drawTextCursor();
 }
 
 void BufferWidget::cursorPositionChanged() { /*qDebug() << "Cursor pos changed"; */
@@ -182,6 +222,8 @@ BufferWidget::BufferWidget(QWidget *parent) {
 
   // TODO: make as option
   setWordWrapMode(QTextOption::WrapAnywhere);
+  
+  setAcceptDrops(true);
 
   //  connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
   //  connect(this, SIGNAL(updateRequest(QRect, int)), this, SLOT(updateLineNumberArea(QRect,

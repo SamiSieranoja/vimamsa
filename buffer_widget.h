@@ -81,6 +81,10 @@ public:
   /*~Editor();*/
 
 protected:
+  void dropEvent(QDropEvent *event);
+  void dragEnterEvent(QDragEnterEvent *event);
+  void dragMoveEvent(QDragMoveEvent *event);
+
   void keyPressEvent(QKeyEvent *e);
   void keyReleaseEvent(QKeyEvent *e);
   void mouseReleaseEvent(QMouseEvent *e);

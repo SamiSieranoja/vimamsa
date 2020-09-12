@@ -319,7 +319,7 @@ void Editor::fileOpen(QString path) {
                                             tr("HTML-Files (* *.htm *.html *.txt);;All Files (*)"));
 
   if (!fn.isEmpty()) {
-    rb_funcall(NULL, rb_intern("new_file_opened"), 2, rb_str_new2(qstring_to_cstr(fn)),
+    rb_funcall(NULL, rb_intern("open_new_file"), 2, rb_str_new2(qstring_to_cstr(fn)),
                rb_str_new2(""));
   }
 

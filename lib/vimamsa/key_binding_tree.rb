@@ -33,7 +33,7 @@ def setcnf(id, val)
 end
 
 setcnf :indent_based_on_last_line, true
-setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd"]
+setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd", ".js"]
 
 class State
   attr_accessor :key_name, :eval_rule, :children, :action, :label

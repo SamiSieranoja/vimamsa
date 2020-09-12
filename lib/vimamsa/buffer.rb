@@ -193,6 +193,16 @@ class BufferList < Array
   def close_current_buffer(from_recent = false)
     close_buffer(@current_buf, from_recent)
   end
+
+  def delete_current_buffer(from_recent = false)
+    fn = buf.fname
+    close_buffer(@current_buf, from_recent)
+    #TODO: confirm with user, "Do you want to delete file X"
+    if is_existing_file(fn)
+      message("Deleting file: #{fn}")
+      File.delete(fn)
+    end
+  end
 end
 
 # Return currently active buffer
@@ -276,6 +286,35 @@ class Buffer < String
     @crypt = nil
   end
 
+  def add_new_line(txt)
+    # buf.jump(END_OF_LINE);buf.insert_txt("\n");
+  end
+
+  def insert_image_after_current_line(fname)
+    lr = current_line_range()
+    a = "⟦img:#{fname}⟧\n"
+    b = " \n"
+    txt = a + b
+    insert_txt_at(txt, lr.end + 1)
+    qt_process_deltas
+    imgpos = lr.end + 1 + a.size
+    add_image(fname, imgpos)
+  end
+
+  def handle_drag_and_drop(fname)
+    debug "[buffer] Dropped file: #{fname}"
+    if is_image_file(fname)
+      debug "Dropped image file"
+      insert_image_after_current_line(fname)
+    elsif vma.can_open_extension?(fname)
+      debug "Dropped text file"
+      open_new_file(fname)
+    else
+      debug "Dropped unknown file format"
+    end
+    # add_image(imgpath, pos)
+  end
+
   def get_file_type()
     # We cant detect syntax if no filename
     if !@fname
@@ -309,7 +348,7 @@ class Buffer < String
   end
 
   def highlight()
-  
+
     # TODO:enable
     # return
     # puts "higlight()"
@@ -477,7 +516,6 @@ class Buffer < String
     # @highlights = {}
     @highlights.delete_if { |x| true }
 
-
     @syntax_parser = nil
 
     @is_highlighted = false
@@ -564,7 +602,7 @@ class Buffer < String
 
   def add_hl_update(startpos, endpos)
     return if @is_highlighted == false
-    
+
     debug "@update_hl_endpos = #{endpos}"
     @hl_queue << [startpos, endpos]
   end
@@ -659,6 +697,7 @@ class Buffer < String
     #        if @edit_pos_history.size >= @edit_pos_history_i
     set_pos(@edit_pos_history[-@edit_pos_history_i])
     center_on_current_line
+    return true
     #        end
   end
 
@@ -670,6 +709,7 @@ class Buffer < String
     debug "@edit_pos_history_i=#{@edit_pos_history_i}"
     set_pos(@edit_pos_history[-@edit_pos_history_i])
     center_on_current_line
+    return true
   end
 
   def jump_to_random_pos()
@@ -955,13 +995,12 @@ class Buffer < String
   end
 
   def set_pos(new_pos)
-  
     if new_pos >= self.size
       @pos = self.size - 1 # TODO:??right side of last char
     elsif new_pos >= 0
       @pos = new_pos
     end
-    qt_set_cursor_pos(@id,@pos)
+    qt_set_cursor_pos(@id, @pos)
     calculate_line_and_column_pos
   end
 
@@ -1216,13 +1255,6 @@ class Buffer < String
     return marks
   end
 
-  def can_open_extension(filepath)
-    exts = $cnf[:extensions_to_open]
-    extname = Pathname.new(filepath).extname
-    can_open = exts.include?(extname)
-    puts "CAN OPEN?: #{can_open}"
-    return can_open
-  end
 
   # Activated when enter/return pressed
   def handle_line_action()
@@ -1258,7 +1290,7 @@ class Buffer < String
       open_url(word)
     elsif is_existing_file(path)
       message("PATH:'#{word}'")
-      if can_open_extension(path)
+      if vma.can_open_extension?(path)
         open_existing_file(path)
       else
         open_url(path)
@@ -1313,6 +1345,7 @@ class Buffer < String
       set_pos(position_of_next_word) if position_of_next_word != nil
     end
     center_on_current_line
+    return true
   end
 
   def jump_word(direction, wordpos)
@@ -1364,6 +1397,7 @@ class Buffer < String
     p = @marks[mark_char]
     set_pos(p) if p
     center_on_current_line
+    return true
   end
 
   def jump(target)
@@ -1612,7 +1646,7 @@ class Buffer < String
   def start_visual_mode()
     @visual_mode = true
     @selection_start = @pos
-    qt_set_selection_start(@id,selection_start)
+    qt_set_selection_start(@id, selection_start)
     $kbd.set_mode(:visual)
   end
 
@@ -1733,7 +1767,6 @@ class Buffer < String
 
     return _start..(_end - 1)
   end
-
 
   def selection_start()
     return -1 if !@visual_mode
