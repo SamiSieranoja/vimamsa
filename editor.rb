@@ -1,3 +1,18 @@
+require 'pty'
+
+def exec_in_terminal(cmd)
+  # puts "CMD:#{cmd}"
+  
+  # as global to prevent garbage collect unlink
+  $initf = Tempfile.new('bashinit')
+  # puts $initf.path
+  $initf.write(cmd)
+  $initf.write("rm #{$initf.path}\n")
+  $initf.write("\nexec bash\n")
+  $initf.close
+  # PTY.spawn("gnome-terminal", "--tab", "--", "bash", "-i", $initf.path, "-c", "exec bash")
+  fork{exec "gnome-terminal", "--tab", "--", "bash", "-i", $initf.path, "-c", "exec bash"}
+end
 
 
 def handle_drag_and_drop(fname)
@@ -537,6 +552,11 @@ end
 def open_url(url)
   system("xdg-open", url)
 end
+
+def open_with_default_program(url)
+  system("xdg-open", url)
+end
+
 
 def run_cmd(cmd)
   tmpf = Tempfile.new("vmarun", "/tmp").path

@@ -9,8 +9,6 @@ $buffer_history = [0]
 
 $update_highlight = true
 
-
-
 class Buffer < String
 
   #attr_reader (:pos, :cpos, :lpos)
@@ -1052,26 +1050,73 @@ class Buffer < String
     return marks
   end
 
+  def handle_word(wnfo)
+    word = wnfo[0]
+    wtype = wnfo[1]
+    if wtype == :url
+      open_url(word)
+    elsif wtype == :linepointer
+      m << ["Jump to line", self.method("handle_word"), [word, wtype]]
+    elsif wtype == :textfile
+      open_existing_file(word)
+    elsif wtype == :file
+      open_with_default_program(word)
+    elsif wtype == :hpt_link
+      open_existing_file(word)
+    else
+      #TODO
+    end
+  end
+
+  def context_menu_items()
+    m = []
+    if @visual_mode
+      seltxt = get_current_selection
+      m << ["Copy", self.method("copy_active_selection"), nil]
+      m << ["Join lines", self.method("convert_selected_text"), :joinlines]
+      # m << ["Sort", self.method("convert_selected_text"), :sortlines]
+      m << ["Sort", method("call"), :sortlines]
+      m << ["Filter: get numbers", method("call"), :getnums_on_lines]
+      m << ["Delete selection", method("call"), :delete_selection]
+      
+      # m << ["Search in dictionary", self.method("handle_word"), nil]
+      # m << ["Search in google", self.method("handle_word"), nil]
+      m << ["Execute in terminal", method("exec_in_terminal"), seltxt]
+    else
+      (word, wtype) = get_cur_nonwhitespace_word()
+      if wtype == :url
+        m << ["Open url", self.method("open_url"), word]
+      elsif wtype == :linepointer
+        m << ["Jump to line", self.method("handle_word"), [word, wtype]]
+      elsif wtype == :textfile
+        m << ["Open text file", self.method("handle_word"), [word, wtype]]
+      elsif wtype == :file
+        m << ["Open file (xdg-open)", self.method("handle_word"), [word, wtype]]
+      elsif wtype == :hpt_link
+        m << ["Jump to file", self.method("handle_word"), [word, wtype]]
+      else
+        # m << ["TODO", self.method("handle_word"), word]
+      m << ["Paste", method("call"), :paste_after]
+      end
+    end
+    return m
+  end
 
   # Activated when enter/return pressed
   def handle_line_action()
     if line_action_handler.class == Proc
-      line_action_handler.call(lpos)
       # Custom handler
+      line_action_handler.call(lpos)
     else
       # Generic default action
-      get_cur_nonwhitespace_word()
+      cur_nonwhitespace_word_action()
     end
   end
 
   def get_cur_nonwhitespace_word()
-
-    #wem = scan_marks(@pos,@pos+200,/(?<=\p{Word})[^\p{Word}]/,-1)
-    #wsm = scan_marks(@pos-200,@pos,/(?<=[^\p{Word}])\p{Word}/)
     wem = scan_marks(@pos, @pos + 200, /(?<=\S)\s/, -1)
     wsm = scan_marks(@pos - 200, @pos, /((?<=\s)\S)|^\S/)
 
-    # Ripl.start :binding => binding
     word_start = wsm[-1]
     word_end = wem[0]
     word_start = pos if word_start == nil
@@ -1082,23 +1127,34 @@ class Buffer < String
     linep = get_file_line_pointer(word)
     puts "linep'#{linep}'"
     path = File.expand_path(word)
+    wtype = nil
     if is_url(word)
-      message("URL:'#{word}'")
-      open_url(word)
+      wtype = :url
     elsif is_existing_file(path)
       message("PATH:'#{word}'")
       if vma.can_open_extension?(path)
-        open_existing_file(path)
+        wtype = :textfile
       else
-        open_url(path)
+        wtype = :file
       end
-    elsif hpt_check_cur_word(word)
-      puts word
+      # elsif hpt_check_cur_word(word) #TODO: check only
+      # puts word
     elsif linep != nil
-      puts linep
-      jump_to_file(linep[0], linep[1].to_i)
+      wtype = :linepointer
+    else
+      fn = hpt_check_cur_word(word)
+      if !fn.nil?
+        return [fn, :hpt_link]
+      end
     end
-    #puts wm
+    return [word, wtype]
+  end
+
+  def cur_nonwhitespace_word_action()
+
+    # (word, wtype) = get_cur_nonwhitespace_word()
+    wnfo = get_cur_nonwhitespace_word()
+    handle_word(wnfo)
   end
 
   def get_cur_word()
@@ -1301,6 +1357,11 @@ class Buffer < String
     calculate_line_and_column_pos
   end
 
+  def execute_current_line_in_terminal()
+    s = get_current_line
+    exec_in_terminal(s)
+  end
+
   def insert_new_line()
     s = get_current_line
     $hook.call(:insert_new_line, s)
@@ -1447,7 +1508,7 @@ class Buffer < String
     $kbd.set_mode(:visual)
   end
 
-  def copy_active_selection()
+  def copy_active_selection(x=nil)
     debug "!COPY SELECTION"
     $paste_lines = false
     return if !@visual_mode
@@ -1544,6 +1605,7 @@ class Buffer < String
   end
 
   def end_visual_mode()
+    debug "End visual mode"
     #TODO:take previous mode (insert|command) from stack?
     $kbd.set_mode(:command)
     @visual_mode = false
@@ -1553,6 +1615,11 @@ class Buffer < String
   def get_visual_mode_range2()
     r = get_visual_mode_range
     return [r.begin, r.end]
+  end
+
+  def get_current_selection()
+    return "" if !@visual_mode
+    return self[get_visual_mode_range]
   end
 
   def get_visual_mode_range()

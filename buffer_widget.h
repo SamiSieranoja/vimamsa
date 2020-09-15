@@ -30,7 +30,6 @@
 #include <QUrl>
 #include <QMainWindow>
 
-
 #include "highlighter.h"
 #include "selectwindow.h"
 // #include "main_window.h"
@@ -40,8 +39,6 @@
 class LineNumberArea;
 class BufferWidget;
 class QPaintEvent;
-
-
 
 class BufferWidget : public QTextEdit {
   Q_OBJECT
@@ -57,13 +54,12 @@ public:
   Overlay *overlay;
   Highlighter *hl;
   QFont fnt;
-  
+
   QTextBlock startblock;
   QTextBlock endblock;
   QTextBlock curblock;
   int continue_hl_batch;
   int runHighlightBatch();
-
 
   void drawTextCursor();
   void processKeyEvent(QKeyEvent *e);
@@ -73,10 +69,10 @@ public:
   void lineNumberAreaPaintEvent(QPaintEvent *event);
   int lineNumberAreaWidth();
   int loadTheme();
-  int processHighlights(); 
-  int cursor_pos; 
-  int selection_start; 
-//  void updateLineNumberArea(const QRect &, int);
+  int processHighlights();
+  int cursor_pos;
+  int selection_start;
+  //  void updateLineNumberArea(const QRect &, int);
 
   /*~Editor();*/
 
@@ -89,6 +85,7 @@ protected:
   void keyReleaseEvent(QKeyEvent *e);
   void mouseReleaseEvent(QMouseEvent *e);
   void mousePressEvent(QMouseEvent *e);
+  void mouseMoveEvent(QMouseEvent *e);
   void cursorPositionChanged();
   void focusOutEvent(QFocusEvent *event);
   // void paintEvent(QPaintEvent *e);
@@ -99,8 +96,9 @@ private:
 
 private slots:
   void updateLineNumberAreaWidth(int newBlockCount);
-//  void updateLineNumberArea(const QRect &, int);
+  //  void updateLineNumberArea(const QRect &, int);
   void updateLineNumberArea();
+  void handleContextMenu(QAction *selectedSignal);
 
 private:
   QWidget *lineNumberArea;
@@ -113,12 +111,12 @@ public:
   QSize sizeHint() const override { return QSize(codeEditor->lineNumberAreaWidth(), 0); }
 
 protected:
-  // TODO?: void paintEvent(QPaintEvent *event) override { codeEditor->lineNumberAreaPaintEvent(event); }
-//  void paintEvent(QPaintEvent *event);
+  // TODO?: void paintEvent(QPaintEvent *event) override {
+  // codeEditor->lineNumberAreaPaintEvent(event); }
+  //  void paintEvent(QPaintEvent *event);
 
 private:
   BufferWidget *codeEditor;
 };
-
 
 #endif

@@ -51,24 +51,28 @@ VALUE qt_update_cursor_pos(VALUE self) {
   QTextCursor tc = c_te->textCursor();
   int cursor_pos = c_te->cursor_pos;
 
-  // int cursor_pos = NUM2INT(rb_eval_string("buf.pos()"));
-  int selection_start = NUM2INT(rb_eval_string("buf.selection_start()")); // TODO: fix
+
+  c_te->drawTextCursor();
+
+// //TODO: delete from here?
+  // // int cursor_pos = NUM2INT(rb_eval_string("buf.pos()"));
+  // int selection_start = NUM2INT(rb_eval_string("buf.selection_start()")); // TODO: fix
   
-  qDebug() << "sel start:" << selection_start << "\n";
+  // qDebug() << "sel start:" << selection_start << "\n";
 
-  if (selection_start >= 0) {
-    if (cursor_pos < selection_start) {
-      tc.setPosition(selection_start + 1);
-      tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
-    } else {
-      tc.setPosition(selection_start);
-      tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
-    }
-  } else {
-    tc.setPosition(cursor_pos);
-  }
+  // if (selection_start >= 0) {
+    // if (cursor_pos < selection_start) {
+      // tc.setPosition(selection_start + 1);
+      // tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
+    // } else {
+      // tc.setPosition(selection_start);
+      // tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
+    // }
+  // } else {
+    // tc.setPosition(cursor_pos);
+  // }
 
-  c_te->setTextCursor(tc);
+  // c_te->setTextCursor(tc);
 }
 
 //TODO: delete?
@@ -285,6 +289,7 @@ VALUE rb_get_visible_area() {
 // edit.
 
 int center_where_cursor() {
+  printf("int center_where_cursor() \n");
   int cursorY = c_te->cursorRect().bottom();
   int scrollbar = c_te->verticalScrollBar()->value();
   int offset_y = scrollbar + cursorY - c_te->size().height() / 2;

@@ -75,6 +75,7 @@ require "vimamsa/macro"
 require "vimamsa/profiler"
 require "vimamsa/search"
 require "vimamsa/search_replace"
+require "vimamsa/menu"
 
 load "util.rb"
 load "qt_funcs.rb"

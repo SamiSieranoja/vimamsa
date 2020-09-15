@@ -127,6 +127,7 @@ class KeyBindingTree
     # Check if label in form :label
     if @modes.has_key?(label)
       @mode_root_state = @modes[label]
+      set_state_to_root
     else
       # Check if label matches mode name in string format
       for mode in @root.children

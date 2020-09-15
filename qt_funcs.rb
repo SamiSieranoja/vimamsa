@@ -7,7 +7,16 @@ def qt_signal(sgnname, param)
     create_new_file
     render_buffer
   elsif sgnname == "save"
-    $buffer.save
+    buf.save
+  elsif sgnname == "mouse_move"
+  elsif sgnname == "mouse_leftbtn_move"
+    if !buf.visual_mode?
+      buf.start_visual_mode
+    end
+  elsif sgnname == "mouse_leftbtn_press"
+    if buf.visual_mode?
+      buf.end_visual_mode
+      qt_process_events
+    end
   end
 end
-

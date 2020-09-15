@@ -27,14 +27,15 @@ def hpt_check_cur_word(w)
 
       if fn
         message "HPT opening file #{fn}"
-        open_existing_file(fn)
-        return true
+        return fn
+        # open_existing_file(fn)
+        # return true
       else
         message "File not found: #{fpfx}"
       end
     end
   end
-  return false
+  return nil
 end
 
 def hpt_scan_images()

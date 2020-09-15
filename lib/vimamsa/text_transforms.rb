@@ -16,5 +16,14 @@ class Converter
   end
 end
 
-c = Converter.new(lambda { |x| x.split("\n").collect{|x|r=x.strip}.select{|y|!y.empty?}.join(" ") +"\n"}, :lambda, :joinlines)
+Converter.new(lambda { |x| x.split("\n").collect{|x|r=x.strip}.select{|y|!y.empty?}.join(" ") +"\n"}, :lambda, :joinlines)
+
+Converter.new(lambda { |x| x.split("\n").sort.join("\n") }, :lambda, :sortlines)
+Converter.new(lambda { |x| x.split(/\s+/).sort.join(" ") }, :lambda, :sortwords)
+Converter.new(lambda { |x| x.split("\n").collect { |b| b.scan(/(\d+(\.\d+)?)/).collect { |c| c[0] }.join(" ") }.join("\n") }, :lambda, :getnums_on_lines)
+
+
+Converter.new(lambda { |x| x+"\n"+x.split("\n").collect { |b| b.scan(/(\d+(\.\d+)?)/).collect { |c| c[0] }.join(" ") }.join("\n") }, :lambda, :getnums_on_lines)
+
+
 

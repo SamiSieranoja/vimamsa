@@ -9,27 +9,23 @@ void BufferWidget::keyReleaseEvent(QKeyEvent *e) {
   return;
 }
 
-void BufferWidget::dragEnterEvent(QDragEnterEvent *event)
-{    
+void BufferWidget::dragEnterEvent(QDragEnterEvent *event) {
   // qDebug() << "dragEnterEvent:"
-           // << "\n";
+  // << "\n";
   // qDebug() << event << "\n";
 
-     event->accept();
+  event->accept();
 }
- 
-void BufferWidget::dragMoveEvent(QDragMoveEvent *event)
-{
+
+void BufferWidget::dragMoveEvent(QDragMoveEvent *event) {
   // qDebug() << "dragEnterEvent:"
-           // << "\n";
+  // << "\n";
   // qDebug() << event << "\n";
 
-     event->accept();
+  event->accept();
 }
- 
 
 void BufferWidget::dropEvent(QDropEvent *event) {
-
 
   qDebug() << "dropEvent:"
            << "\n";
@@ -48,28 +44,46 @@ void BufferWidget::dropEvent(QDropEvent *event) {
   }
 }
 
+void BufferWidget::mouseMoveEvent(QMouseEvent *event) {
+
+  if (event->buttons() & Qt::LeftButton) {
+    QTextCursor cursor = this->cursorForPosition(event->pos());
+    qDebug() << "move event:" << event << "\n";
+    cursor_pos = cursor.position();
+    rb_funcall(NULL, rb_intern("set_cursor_pos"), 1, INT2NUM(cursor_pos));
+    rb_funcall(NULL, rb_intern("qt_signal"), 2, rb_str_new2("mouse_leftbtn_move"), rb_str_new2(""));
+    drawTextCursor();
+  }
+}
+
 void BufferWidget::mouseReleaseEvent(QMouseEvent *event) {
-  QTextCursor cursor = this->cursorForPosition(event->pos());
 
-  rb_funcall(NULL, rb_intern("qt_signal"), 2, rb_str_new2("mouse_release"), rb_str_new2(""));
+  if (event->buttons() & Qt::LeftButton) {
+    QTextCursor cursor = this->cursorForPosition(event->pos());
 
-  cursor_pos = cursor.position();
-  rb_funcall(NULL, rb_intern("set_cursor_pos"), 1, INT2NUM(cursor_pos));
-  drawTextCursor();
-  update(); // TODO: needed?
+    cursor_pos = cursor.position();
+    rb_funcall(NULL, rb_intern("set_cursor_pos"), 1, INT2NUM(cursor_pos));
+    rb_funcall(NULL, rb_intern("qt_signal"), 2, rb_str_new2("mouse_leftbtn_release"), rb_str_new2(""));
+    drawTextCursor();
+    update(); // TODO: needed?
+  }
 }
 
 void BufferWidget::mousePressEvent(QMouseEvent *event) {
 
-  QTextCursor cursor = this->cursorForPosition(event->pos());
-  // qDebug() << "New pos:" << cursor.position() << "\n";
+  if (event->buttons() & Qt::RightButton) {
+  }
 
-  rb_funcall(NULL, rb_intern("qt_signal"), 2, rb_str_new2("mouse_press"), rb_str_new2(""));
+  if (event->buttons() & Qt::LeftButton) {
+    QTextCursor cursor = this->cursorForPosition(event->pos());
+    // qDebug() << "New pos:" << cursor.position() << "\n";
 
-  cursor_pos = cursor.position();
-  rb_funcall(NULL, rb_intern("set_cursor_pos"), 1, INT2NUM(cursor_pos));
-  drawTextCursor();
-  update(); // TODO: needed?
+    cursor_pos = cursor.position();
+    rb_funcall(NULL, rb_intern("set_cursor_pos"), 1, INT2NUM(cursor_pos));
+    rb_funcall(NULL, rb_intern("qt_signal"), 2, rb_str_new2("mouse_leftbtn_press"), rb_str_new2(""));
+    drawTextCursor();
+    update(); // TODO: needed?
+  }
 }
 
 #ifdef DISABLED
@@ -222,7 +236,7 @@ BufferWidget::BufferWidget(QWidget *parent) {
 
   // TODO: make as option
   setWordWrapMode(QTextOption::WrapAnywhere);
-  
+
   setAcceptDrops(true);
 
   //  connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
@@ -263,12 +277,35 @@ void BufferWidget::updateLineNumberArea() {
   //    updateLineNumberAreaWidth(0);
 }
 
+void BufferWidget::handleContextMenu(QAction *act) {
+  ID menu_callback = rb_intern_str(rb_str_new2("context_menu_callback"));
+  int act_id = act->data().toInt();
+  rb_funcall(INT2NUM(0), menu_callback, 1, INT2NUM(act_id));
+
+  // printf("=== handleContextMenu id:%d===\n", act_id);
+}
+
 void BufferWidget::contextMenuEvent(QContextMenuEvent *event) {
   //    QMenu *menu = createStandardContextMenu();
   QMenu *menu = new QMenu(this);
 
-  menu->addAction(tr("TODO"));
-  //  menu->addAction(g_editor->actionSave);
+  QAction *menuEntry;
+
+  ID cm_fun = rb_intern_str(rb_str_new2("generate_context_menu"));
+  VALUE menu_list = rb_funcall(INT2NUM(0), cm_fun, 0);
+
+  for (int i = 0; i < RARRAY_LEN(menu_list); i++) {
+    VALUE d = rb_ary_entry(menu_list, i);
+    VALUE c0 = rb_ary_entry(d, 0);
+    VALUE c1 = rb_ary_entry(d, 3);
+
+    menuEntry = new QAction(tr(StringValueCStr(c0)), this);
+    menuEntry->setData(NUM2INT(c1));
+    menu->addAction(menuEntry);
+  }
+
+  connect(menu, SIGNAL(triggered(QAction *)), this, SLOT(handleContextMenu(QAction *)));
+
   menu->exec(event->globalPos());
   delete menu;
 }
@@ -365,9 +402,32 @@ void BufferWidget::drawTextCursor() {
   //  if(!at_line_end && is_command_mode > 0) {
   // TODO: visual or command mode
 
-  VALUE ivtmp = rb_eval_string("is_visual_mode()");
+  QTextCursor tc = textCursor();
+  // int cursor_pos = c_te->cursor_pos;
+
+  VALUE ivtmp = rb_eval_string("buf.visual_mode?");
+  
+  int selection_start = NUM2INT(rb_eval_string("buf.selection_start()"));
+  
+  qDebug() << "sel start:" << selection_start << "\n";
+
+  if (RTEST(ivtmp) && selection_start >= 0) {
+    if (cursor_pos < selection_start) {
+      tc.setPosition(selection_start + 1);
+      tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
+    } else {
+      tc.setPosition(selection_start);
+      tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
+    }
+  } else {
+    tc.setPosition(cursor_pos);
+  }
+
+  c_te->setTextCursor(tc);
+ 
+
   if (1) {
-    if (!at_line_end && (NUM2INT(ivtmp) == 1 || is_command_mode)) {
+    if (!at_line_end && (RTEST(ivtmp) || is_command_mode)) {
       // qDebug() << "Draw cursor";
 
       selection2.cursor = textCursor();
