@@ -29,7 +29,6 @@ SelectWindow::SelectWindow(QWidget *parent, int use_filter) : QWidget(parent) {
   if (use_filter) {
     filterEdit = new QLineEdit;
     connect(filterEdit, SIGNAL(textEdited(const QString &)), this, SLOT(filterChanged()));
-    connect(filterEdit, SIGNAL(returnPressed()), this, SLOT(returnPressed()));
     filterEdit->installEventFilter(this);
   }
 
