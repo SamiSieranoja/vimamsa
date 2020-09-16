@@ -3,9 +3,7 @@
 // TODO: put to ruby_ext.h
 VALUE pos_to_viewport_coordinates(VALUE args);
 VALUE draw_text(VALUE args);
-VALUE qt_refresh_cursor(VALUE self); 
-
-
+VALUE qt_refresh_cursor(VALUE self);
 
 VALUE qt_set_selection_start(VALUE self, VALUE BUFID, VALUE cursor_pos);
 
@@ -14,7 +12,6 @@ extern "C" {
 #include <stdio.h>
 #include <ruby/defines.h>
 #include <ruby/thread.h>
-
 
 VALUE method_qt_quit(VALUE self) { _quit = 1; }
 
@@ -37,7 +34,7 @@ VALUE method_set_window_title(VALUE self, VALUE new_title) {
   // For some reason program segfaults if we call g_editor->setWindowTitle from here.
   // But from main_loop its ok..
   window_title = new QString(StringValueCStr(new_title));
-  g_editor->setWindowTitle(*window_title); 
+  g_editor->setWindowTitle(*window_title);
 }
 
 int center_where_cursor();
@@ -46,58 +43,27 @@ _sleep(void *ptr) { QThread::usleep(3000); }
 
 VALUE qt_set_cursor_pos(VALUE self, VALUE BUFID, VALUE cursor_pos);
 
-
 VALUE qt_update_cursor_pos(VALUE self) {
   QTextCursor tc = c_te->textCursor();
   int cursor_pos = c_te->cursor_pos;
-
-
-  c_te->drawTextCursor();
-
-// //TODO: delete from here?
-  // // int cursor_pos = NUM2INT(rb_eval_string("buf.pos()"));
-  // int selection_start = NUM2INT(rb_eval_string("buf.selection_start()")); // TODO: fix
-  
-  // qDebug() << "sel start:" << selection_start << "\n";
-
-  // if (selection_start >= 0) {
-    // if (cursor_pos < selection_start) {
-      // tc.setPosition(selection_start + 1);
-      // tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
-    // } else {
-      // tc.setPosition(selection_start);
-      // tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
-    // }
-  // } else {
-    // tc.setPosition(cursor_pos);
-  // }
-
-  // c_te->setTextCursor(tc);
 }
 
-//TODO: delete?
-void qt_draw_cursor() {
-  c_te->drawTextCursor();
-
-  // Without this draw area is not always updated although
-  // Overlay::paintEvent is called
-
-  c_te->overlay->repaint(c_te->overlay->contentsRect());
-}
 VALUE qt_process_events(VALUE self) {
   app->processEvents();
-  
-  //TODO:enable
+
   rb_eval_string("$buffer.highlight()");
 
-  
-  //TODO:enable
   c_te->processHighlights();
+
+  if (c_te->new_event == 1) {
+    c_te->drawTextCursor();
+  }
+  c_te->new_event = 0;
 }
-VALUE method_center_where_cursor(VALUE self)
-{
-center_where_cursor();
-qt_process_events(NULL);
+
+VALUE method_center_where_cursor(VALUE self) {
+  center_where_cursor();
+  qt_process_events(NULL);
 }
 
 VALUE method_main_loop(VALUE self) {
@@ -626,15 +592,14 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("qt_set_cursor_pos", qt_set_cursor_pos, 2);
   rb_define_global_function("qt_set_selection_start", qt_set_selection_start, 2);
   rb_define_global_function("qt_refresh_cursor", qt_refresh_cursor, 0);
-  
+
   rb_define_global_function("qt_update_cursor_pos", qt_update_cursor_pos, 0);
-  
 
   rb_define_global_function("top_where_cursor", top_where_cursor, 0);
   rb_define_global_function("bottom_where_cursor", bottom_where_cursor, 0);
   rb_define_global_function("page_down", page_down, 0);
   rb_define_global_function("page_up", page_up, 0);
-  
+
   rb_define_global_function("center_where_cursor", method_center_where_cursor, 0);
 
   rb_define_global_function("qt_process_events", qt_process_events, 0);
@@ -653,14 +618,12 @@ void _init_ruby(int argc, char *argv[]) {
 
 } // END of extern "C"
 
-
 VALUE qt_refresh_cursor(VALUE self) {
   int selection_start = NUM2INT(rb_eval_string("buf.selection_start()")); // TODO: fix
   // c_te->cursor_pos = cursor_pos;
   // if (NUM2INT(do_center) == 1) {
   qDebug() << "sel start:" << selection_start << "\n";
-  
-  
+
   QTextCursor tc = c_te->textCursor();
   // int i_cursor_pos = g_editor->buffers[id]->buf->cursor_pos;
   int i_cursor_pos = c_te->cursor_pos;
@@ -682,37 +645,9 @@ VALUE qt_refresh_cursor(VALUE self) {
 VALUE qt_set_cursor_pos(VALUE self, VALUE BUFID, VALUE cursor_pos) {
   int id = NUM2INT(BUFID);
   int i_cursor_pos = NUM2INT(cursor_pos);
-  // printf("id:%d cps:%d \n",id,cps);
   g_editor->buffers[id]->buf->cursor_pos = NUM2INT(cursor_pos);
-  // qt_update_cursor_pos(0);
-  
-    QTextCursor tc = g_editor->buffers[id]->buf->textCursor();
-  // int cursor_pos = c_te->cursor_pos;
 
-  // int cursor_pos = NUM2INT(rb_eval_string("buf.pos()"));
-  int selection_start = NUM2INT(rb_eval_string("buf.selection_start()")); // TODO: fix
-  // c_te->cursor_pos = cursor_pos;
-  // if (NUM2INT(do_center) == 1) {
-  qDebug() << "sel start:" << selection_start << "\n";
-  
-  if (selection_start >= 0) {
-    if (i_cursor_pos < selection_start) {
-      tc.setPosition(selection_start + 1);
-      tc.setPosition(i_cursor_pos, QTextCursor::KeepAnchor);
-    } else {
-      tc.setPosition(selection_start);
-      tc.setPosition(i_cursor_pos, QTextCursor::KeepAnchor);
-    }
-  } else {
-    tc.setPosition(i_cursor_pos);
-  }
-
-  c_te->setTextCursor(tc);
-
-
-  // c_te->cursor_pos = cursor_pos;
-  // NUM2INT(id)
-  return 0;
+  return INT2NUM(0);
 }
 
 VALUE qt_set_selection_start(VALUE self, VALUE BUFID, VALUE cursor_pos) {

@@ -51,6 +51,7 @@ public:
   int at_line_end;
   int overlay_paint_cursor;
   int is_command_mode;
+  int new_event;
   Overlay *overlay;
   Highlighter *hl;
   QFont fnt;

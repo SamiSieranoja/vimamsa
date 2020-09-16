@@ -415,6 +415,7 @@ GUESS_ENCODING_ORDER = [
 def create_new_file(filename = nil, file_contents = "\n")
   debug "NEW FILE CREATED"
   buffer = Buffer.new(file_contents)
+  qt_set_current_buffer(buffer.id)
   $buffers << buffer
   return buffer
 end

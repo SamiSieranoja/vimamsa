@@ -63,7 +63,8 @@ void BufferWidget::mouseReleaseEvent(QMouseEvent *event) {
 
     cursor_pos = cursor.position();
     rb_funcall(NULL, rb_intern("set_cursor_pos"), 1, INT2NUM(cursor_pos));
-    rb_funcall(NULL, rb_intern("qt_signal"), 2, rb_str_new2("mouse_leftbtn_release"), rb_str_new2(""));
+    rb_funcall(NULL, rb_intern("qt_signal"), 2, rb_str_new2("mouse_leftbtn_release"),
+               rb_str_new2(""));
     drawTextCursor();
     update(); // TODO: needed?
   }
@@ -80,7 +81,8 @@ void BufferWidget::mousePressEvent(QMouseEvent *event) {
 
     cursor_pos = cursor.position();
     rb_funcall(NULL, rb_intern("set_cursor_pos"), 1, INT2NUM(cursor_pos));
-    rb_funcall(NULL, rb_intern("qt_signal"), 2, rb_str_new2("mouse_leftbtn_press"), rb_str_new2(""));
+    rb_funcall(NULL, rb_intern("qt_signal"), 2, rb_str_new2("mouse_leftbtn_press"),
+               rb_str_new2(""));
     drawTextCursor();
     update(); // TODO: needed?
   }
@@ -134,13 +136,13 @@ int BufferWidget::runHighlightBatch() {
 int BufferWidget::processHighlights() {
 
   if (c_te->hl == NULL) {
-    return;
+    return 0;
   }
   // If buffer syntax parsing is happening in separate thread,
   // wait til it has finnished
   if (RTEST(rb_eval_string("$buffer.is_parsing_syntax"))) {
     continue_hl_batch = 0;
-    return;
+    return 0;
   }
 
   if (RTEST(rb_eval_string("$buffer.qt_reset_highlight"))) {
@@ -152,7 +154,7 @@ int BufferWidget::processHighlights() {
   // Continuing from previous batch
   if (continue_hl_batch) {
     runHighlightBatch();
-    return;
+    return 0;
   }
 
   while (RTEST(rb_eval_string("$cnf[:syntax_highlight]")) &&
@@ -196,7 +198,7 @@ void BufferWidget::processKeyEvent(QKeyEvent *e) {
                          rb_str_new2(c_str2), INT2NUM(e->modifiers()));
 
   rb_funcall(NULL, handle_key_event, 1, rb_event);
-  drawTextCursor();
+  new_event = 1;
 }
 
 void BufferWidget::cursorPositionChanged() { /*qDebug() << "Cursor pos changed"; */
@@ -219,6 +221,7 @@ void BufferWidget::focusOutEvent(QFocusEvent *event) {
 
 BufferWidget::BufferWidget(QWidget *parent) {
 
+  new_event = 1;
   cursorpos = 0;
   at_line_end = 0;
   overlay_paint_cursor = 0;
@@ -281,8 +284,6 @@ void BufferWidget::handleContextMenu(QAction *act) {
   ID menu_callback = rb_intern_str(rb_str_new2("context_menu_callback"));
   int act_id = act->data().toInt();
   rb_funcall(INT2NUM(0), menu_callback, 1, INT2NUM(act_id));
-
-  // printf("=== handleContextMenu id:%d===\n", act_id);
 }
 
 void BufferWidget::contextMenuEvent(QContextMenuEvent *event) {
@@ -382,6 +383,11 @@ void BufferWidget::drawTextCursor() {
   // at_line_end = 0;
   // }
 
+  // VALUE icmtmp = rb_eval_string("is_command_mode()");
+  // c_te->is_command_mode = NUM2INT(icmtmp);
+
+  // is_command_mode = 0;
+
   // Draw line highlight
   // Disable. Triggers segfault occasionally.
   if (0) {
@@ -406,51 +412,51 @@ void BufferWidget::drawTextCursor() {
   // int cursor_pos = c_te->cursor_pos;
 
   VALUE ivtmp = rb_eval_string("buf.visual_mode?");
-  
-  int selection_start = NUM2INT(rb_eval_string("buf.selection_start()"));
-  
-  qDebug() << "sel start:" << selection_start << "\n";
-
-  if (RTEST(ivtmp) && selection_start >= 0) {
-    if (cursor_pos < selection_start) {
-      tc.setPosition(selection_start + 1);
-      tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
-    } else {
-      tc.setPosition(selection_start);
-      tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
-    }
-  } else {
-    tc.setPosition(cursor_pos);
-  }
-
-  c_te->setTextCursor(tc);
- 
+  // VALUE ivtmp = rb_eval_string("is_visual_mode()");
 
   if (1) {
-    if (!at_line_end && (RTEST(ivtmp) || is_command_mode)) {
-      // qDebug() << "Draw cursor";
+    int selection_start = NUM2INT(rb_eval_string("buf.selection_start()"));
 
-      selection2.cursor = textCursor();
-      selection2.cursor.clearSelection();
-      selection2.format.setBackground(QColor("#839496"));
-      selection2.format.setForeground(QColor("#002b36"));
+    // qDebug() << "sel start:" << selection_start << "\n";
 
-      selection2.cursor.setPosition(cursor_pos);
-      selection2.cursor.setPosition(cursor_pos + 1, QTextCursor::KeepAnchor);
-      extraSelections.append(selection2);
+    if (RTEST(ivtmp) && selection_start >= 0) {
+      if (cursor_pos < selection_start) {
+        tc.setPosition(selection_start + 1);
+        tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
+      } else {
+        tc.setPosition(selection_start);
+        tc.setPosition(cursor_pos, QTextCursor::KeepAnchor);
+      }
+    } else {
+      tc.setPosition(cursor_pos);
     }
-    // Command mode at line end
-    else if (is_command_mode > 0) {
-      overlay_paint_cursor = 1;
-      cursor_width = 7;
-      // setCursorWidth(10);
-    } else { // Insert (or visual) mode
-      overlay_paint_cursor = 1;
-      cursor_width = 1;
-    }
+
+    c_te->setTextCursor(tc);
+  }
+
+  if (is_command_mode && at_line_end) {
+    overlay_paint_cursor = 1;
+    cursor_width = 10;
+  }
+  // TODO: visual mode cursor
+  else if (is_command_mode) {
+
+    selection2.cursor = textCursor();
+    selection2.cursor.clearSelection();
+    selection2.format.setBackground(QColor("#839496"));
+    selection2.format.setForeground(QColor("#002b36"));
+
+    selection2.cursor.setPosition(cursor_pos);
+    selection2.cursor.setPosition(cursor_pos + 1, QTextCursor::KeepAnchor);
+    extraSelections.append(selection2);
+  } else { // Insert mode, thin cursor
+    overlay_paint_cursor = 1;
+    cursor_width = 2;
   }
 
   setExtraSelections(extraSelections);
+
+  c_te->overlay->repaint(c_te->overlay->contentsRect());
 
   QRect r = cursorRect();
   cursor_x = r.x();

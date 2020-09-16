@@ -1,5 +1,4 @@
 
-
 def e_move_forward_char
   buf.move(FORWARD_CHAR)
 end

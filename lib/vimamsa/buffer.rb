@@ -37,7 +37,8 @@ class Buffer < String
     if fname != nil
       @fname = File.expand_path(fname)
     else
-      @fname = fname
+      # @fname = fname
+      @fname = "TEST00.txt"
     end
     @hl_queue = []
     @line_action_handler = nil
@@ -1056,7 +1057,8 @@ class Buffer < String
     if wtype == :url
       open_url(word)
     elsif wtype == :linepointer
-      m << ["Jump to line", self.method("handle_word"), [word, wtype]]
+      puts word.inspect
+      jump_to_file(word[0],word[1])
     elsif wtype == :textfile
       open_existing_file(word)
     elsif wtype == :file
@@ -1141,6 +1143,7 @@ class Buffer < String
       # puts word
     elsif linep != nil
       wtype = :linepointer
+      word = linep
     else
       fn = hpt_check_cur_word(word)
       if !fn.nil?
