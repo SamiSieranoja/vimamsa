@@ -73,6 +73,7 @@ public:
   int setNumColumns(int _numColumns); 
   QAction *actionSave;
   int numColumns;
+  int curBuffer;
   
   vector<QTextCharFormat*> textFormats;
 

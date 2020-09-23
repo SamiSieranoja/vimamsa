@@ -97,7 +97,7 @@ def qt_sleep(t2)
   end
 end
 
-def run_random_jump_test(test_time = 60 * 60 * 10)
+def run_random_jump_test__tmpl(test_time = 60 * 60 * 10)
   open_new_file("TODO"); qt_sleep(0.1)
 
   ttstart = Time.now
@@ -108,6 +108,7 @@ def run_random_jump_test(test_time = 60 * 60 * 10)
     buf.jump_to_random_pos
     buf.insert_txt("Z") if rand() > 0.25
     buf.reset_highlight() if rand() > 0.1
+    qt_trigger_event
 
     # puts "========line:========="
     # puts buf.current_line()
@@ -120,6 +121,7 @@ def run_random_jump_test(test_time = 60 * 60 * 10)
       buf.revert
     end
 
+    qt_trigger_event
     buf.insert_txt("X") if rand() > 0.25
     render_buffer($buffer)
 

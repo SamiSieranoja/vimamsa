@@ -218,6 +218,7 @@ bindkey "C , , u", :update_file_index
 bindkey "C , s a", "buf.save_as()"
 
 
+
 reg_act(:execute_current_line_in_terminal, proc { buf.execute_current_line_in_terminal }, "Execute current line in terminal")
 
 reg_act(:show_images, proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")

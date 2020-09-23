@@ -5,9 +5,16 @@ VALUE pos_to_viewport_coordinates(VALUE args);
 VALUE draw_text(VALUE args);
 VALUE qt_refresh_cursor(VALUE self);
 
+
 VALUE qt_set_selection_start(VALUE self, VALUE BUFID, VALUE cursor_pos);
 
+
+
 extern "C" {
+
+int qt_process_deltas(); 
+int center_where_cursor(); 
+
 
 #include <stdio.h>
 #include <ruby/defines.h>
@@ -44,21 +51,40 @@ _sleep(void *ptr) { QThread::usleep(3000); }
 VALUE qt_set_cursor_pos(VALUE self, VALUE BUFID, VALUE cursor_pos);
 
 VALUE qt_update_cursor_pos(VALUE self) {
-  QTextCursor tc = c_te->textCursor();
-  int cursor_pos = c_te->cursor_pos;
+  // QTextCursor tc = c_te->textCursor();
+  // int cursor_pos = c_te->cursor_pos;
 }
+
+
+VALUE qt_trigger_event(VALUE self) {
+c_te->new_event = 1;
+}
+
 
 VALUE qt_process_events(VALUE self) {
   app->processEvents();
+  
+  
+  qt_process_deltas();
+  
+  QTextCursor tc = c_te->textCursor();
+  // tc.setPosition(c_te->cursor_pos);
+  // tc.setPosition(0);
+  // c_te->setTextCursor(tc);
+  // c_te->ensureCursorVisible();
+ 
+  app->processEvents();
+ 
+  
+  if (c_te->new_event == 1) {
+    c_te->drawTextCursor();
+  }
+  c_te->new_event = 0;
 
   rb_eval_string("$buffer.highlight()");
 
   c_te->processHighlights();
 
-  if (c_te->new_event == 1) {
-    c_te->drawTextCursor();
-  }
-  c_te->new_event = 0;
 }
 
 VALUE method_center_where_cursor(VALUE self) {
@@ -66,7 +92,7 @@ VALUE method_center_where_cursor(VALUE self) {
   qt_process_events(NULL);
 }
 
-VALUE method_main_loop(VALUE self) {
+VALUE c_startup(VALUE self) {
 
   printf("Start MAIN LOOP\n");
   QByteArray ba;
@@ -76,6 +102,12 @@ VALUE method_main_loop(VALUE self) {
 
   rb_eval_string("vma.start");
   window_title = new QString("Vimamsa");
+  return INT2NUM(1);
+}
+
+
+VALUE method_main_loop(VALUE self) {
+
   while (1) {
     qt_process_events(NULL);
     rb_thread_call_without_gvl(_sleep, NULL, NULL, NULL);
@@ -410,6 +442,15 @@ VALUE qt_create_buffer(VALUE self, VALUE id) {
   return INT2NUM(0);
 }
 
+VALUE qt_set_buffer_contents(VALUE self, VALUE id, VALUE txt) {
+  char *cstr = StringValueCStr(txt);
+  int i_id = NUM2INT(id);
+  g_editor->buffers[i_id]->buf->setPlainText(cstr);
+  
+  return INT2NUM(0);
+}
+
+
 VALUE qt_set_current_buffer(VALUE self, VALUE id) {
   g_editor->setCurrentBuffer(NUM2INT(id));
   return INT2NUM(0);
@@ -559,11 +600,16 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("qt_process_deltas", _qt_process_deltas, 0);
 
   rb_define_global_function("scan_indexes", method_scan_indexes, 2);
+  
+  rb_define_global_function("c_startup", c_startup, 0);
   rb_define_global_function("main_loop", method_main_loop, 0);
   rb_define_global_function("qt_quit", method_qt_quit, 0);
+  rb_define_global_function("qt_trigger_event", qt_trigger_event, 0);
+  
   rb_define_global_function("qt_open_file_dialog", method_open_file_dialog, 1);
   rb_define_global_function("qt_file_saveas", qt_file_saveas, 1);
   rb_define_global_function("qt_load_theme", qt_load_theme, 1);
+  
 
   rb_define_global_function("restart_application", method_restart, 0);
   rb_define_global_function("cpp_function_wrapper", ruby_cpp_function_wrapper, 2);
@@ -581,6 +627,8 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("qt_add_text_format", qt_add_text_format, 4);
 
   rb_define_global_function("qt_create_buffer", qt_create_buffer, 1);
+  rb_define_global_function("qt_set_buffer_contents", qt_set_buffer_contents, 2);
+  
   rb_define_global_function("qt_set_current_buffer", qt_set_current_buffer, 1);
 
   rb_define_global_function("qt_add_image", qt_add_image, 2);
@@ -691,6 +739,45 @@ VALUE pos_to_viewport_coordinates(VALUE args) {
 VALUE draw_text(VALUE args) { c_te->overlay->draw_text("AX", 40, 40); }
 
 int render_text(VALUE textbuf, int cursor_pos, int selection_start, int reset_buffer) {
+  // int render_text(int reset_buffer) {
+  // qDebug() << "c:RENDER_TEXT\n";
+  // qDebug() << "render_text thread:" <<QThread::currentThreadId();
+  // VALUE minibuf;
+  // minibuf = rb_eval_string("$minibuffer.to_s");
+  // VALUE icmtmp = rb_eval_string("is_command_mode()");
+  // c_te->is_command_mode = NUM2INT(icmtmp);
+  // QString *minibufstr = new QString(StringValueCStr(minibuf));
+  // miniEditor->setPlainText(*minibufstr);
+  // delete minibufstr;
+
+  if (reset_buffer == 1) {
+    // stext = new QString(StringValueCStr(textbuf));
+    // qDebug() << "QT:RESET BUFFER\n";
+    // qDebug() << *stext;
+    // qDebug() << "\n=========A=====\n";
+    // c_te->setPlainText(*stext);
+    // c_te->document()->setPlainText(*stext);
+    // qDebug() << c_te->document()->toPlainText();
+    // qDebug() << "\n=========B=====\n";
+    delete stext;
+  }
+
+  // qt_process_deltas();
+
+  c_te->cursor_pos = cursor_pos;
+
+  // c_te->repaint(c_te->contentsRect());
+
+  // Without this draw area is not always updated although
+  // Overlay::paintEvent is called
+
+  // c_te->overlay->repaint(c_te->overlay->contentsRect());
+
+  // app->processEvents();
+}
+
+
+int render_text_old(VALUE textbuf, int cursor_pos, int selection_start, int reset_buffer) {
   // int render_text(int reset_buffer) {
   // qDebug() << "c:RENDER_TEXT\n";
   // qDebug() << "render_text thread:" <<QThread::currentThreadId();

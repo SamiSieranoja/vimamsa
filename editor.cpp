@@ -59,6 +59,7 @@ void cpp_init_qt() {
   Q_INIT_RESOURCE(vimamsa);
 
   app = new QApplication(*_argc, _argv);
+  app->setCursorFlashTime(0); // Disable blinking of cursor
   app->setWindowIcon(QIcon("./images/icon.png"));
 
   g_editor = new Editor();

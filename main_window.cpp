@@ -159,8 +159,12 @@ int Editor::createBuffer(int id) {
   buffers[id]->highlighter->rb_highlight = rb_eval_string("false");
 }
 
+
+
 int Editor::setCurrentBuffer(int id) {
   printf("setCurrentBuffer:%d, count:%d\n", id, buffers.count(id));
+  if(curBuffer == id) { return;}
+  curBuffer = id;
 
   if (c_te != NULL) {
     layout->removeWidget(c_te);

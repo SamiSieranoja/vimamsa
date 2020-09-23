@@ -2,6 +2,10 @@
 #include "buffer_widget.h"
 #include "globals.h"
 
+extern "C" {
+int center_where_cursor();
+}
+
 #include <QtWidgets>
 
 void BufferWidget::keyReleaseEvent(QKeyEvent *e) {
@@ -388,19 +392,6 @@ void BufferWidget::drawTextCursor() {
 
   // is_command_mode = 0;
 
-  // Draw line highlight
-  // Disable. Triggers segfault occasionally.
-  if (0) {
-    VALUE linehl_color = rb_eval_string("$theme.default[:lineHighlight]");
-    QColor lineColor = QColor(StringValueCStr(linehl_color));
-
-    selection.format.setBackground(lineColor);
-    selection.format.setProperty(QTextFormat::FullWidthSelection, true);
-    selection.cursor = textCursor();
-    selection.cursor.clearSelection();
-    extraSelections.append(selection);
-  }
-
   setCursorWidth(0);
   overlay_paint_cursor = 0;
 
@@ -413,6 +404,8 @@ void BufferWidget::drawTextCursor() {
 
   VALUE ivtmp = rb_eval_string("buf.visual_mode?");
   // VALUE ivtmp = rb_eval_string("is_visual_mode()");
+
+  is_command_mode = NUM2INT(rb_eval_string("is_command_mode()"));
 
   if (1) {
     int selection_start = NUM2INT(rb_eval_string("buf.selection_start()"));
@@ -434,28 +427,50 @@ void BufferWidget::drawTextCursor() {
     c_te->setTextCursor(tc);
   }
 
-  if (is_command_mode && at_line_end) {
-    overlay_paint_cursor = 1;
-    cursor_width = 10;
-  }
-  // TODO: visual mode cursor
-  else if (is_command_mode) {
+  // Draw line highlight
+  if (0) {
+    VALUE linehl_color = rb_eval_string("$theme.default[:lineHighlight]");
+    QColor lineColor = QColor(StringValueCStr(linehl_color));
 
-    selection2.cursor = textCursor();
-    selection2.cursor.clearSelection();
-    selection2.format.setBackground(QColor("#839496"));
-    selection2.format.setForeground(QColor("#002b36"));
+    selection.format.setBackground(lineColor);
+    selection.cursor = textCursor();
+    selection.cursor.clearSelection();
 
-    selection2.cursor.setPosition(cursor_pos);
-    selection2.cursor.setPosition(cursor_pos + 1, QTextCursor::KeepAnchor);
-    extraSelections.append(selection2);
-  } else { // Insert mode, thin cursor
-    overlay_paint_cursor = 1;
-    cursor_width = 2;
+    // selection.cursor.setPosition(cursor_pos);
+    // selection.cursor.setPosition(cursor_pos + 1, QTextCursor::KeepAnchor);
+    // selection.cursor.movePosition(QTextCursor::EndOfLine, QTextCursor::KeepAnchor);
+
+    selection.format.setProperty(QTextFormat::FullWidthSelection, true);
+
+    extraSelections.append(selection);
   }
 
+  if (1) {
+    if (is_command_mode && at_line_end) {
+      overlay_paint_cursor = 1;
+      cursor_width = 10;
+    }
+    // TODO: visual mode cursor
+    else if (is_command_mode) {
+
+      selection2.cursor = textCursor();
+      selection2.cursor.clearSelection();
+      selection2.format.setBackground(QColor("#839496"));
+      selection2.format.setForeground(QColor("#002b36"));
+
+      selection2.cursor.setPosition(cursor_pos);
+
+      selection2.cursor.setPosition(cursor_pos + 1, QTextCursor::KeepAnchor);
+      extraSelections.append(selection2);
+    } else { // Insert mode, thin cursor
+      overlay_paint_cursor = 0;
+      // cursor_width = 2;
+      setCursorWidth(2);
+    }
+  }
   setExtraSelections(extraSelections);
 
+  // TODO:
   c_te->overlay->repaint(c_te->overlay->contentsRect());
 
   QRect r = cursorRect();

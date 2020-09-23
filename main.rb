@@ -85,13 +85,13 @@ def vma()
   return $vma
 end
 
+c_startup
+# run_random_jump_test
 main_loop
+
 debug("END")
 
-# Example:
-# c=Converter.new([/(.*):(\d+)/,'\1 => [\2]'],:gsub)
-# c.apply('foo:23')
-# "foo => [23]"
+
 
 
 

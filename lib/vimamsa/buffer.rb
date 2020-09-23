@@ -318,6 +318,9 @@ class Buffer < String
     @update_highlight = true
     @update_hl_startpos = 0 #TODO
     @update_hl_endpos = self.size - 1
+    
+    qt_set_buffer_contents(@id,self.to_s)
+    
     # add_hl_update(@update_hl_startpos, @update_hl_endpos)
   end
 
