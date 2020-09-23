@@ -37,8 +37,7 @@ class Buffer < String
     if fname != nil
       @fname = File.expand_path(fname)
     else
-      # @fname = fname
-      @fname = "TEST00.txt"
+      @fname = fname
     end
     @hl_queue = []
     @line_action_handler = nil

@@ -382,7 +382,9 @@ end
 
 def message(s)
   s = "[#{DateTime.now().strftime("%H:%M")}] #{s}"
-  $minibuffer = Buffer.new(s, "")
+  # $minibuffer = Buffer.new(s, "")
+  $minibuffer[0..-1] = s
+  #render_minibuffer
 end
 
 GUESS_ENCODING_ORDER = [

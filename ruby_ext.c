@@ -1,14 +1,6 @@
 
 
-// TODO: put to ruby_ext.h
-VALUE pos_to_viewport_coordinates(VALUE args);
-VALUE draw_text(VALUE args);
-VALUE qt_refresh_cursor(VALUE self);
-
-
-VALUE qt_set_selection_start(VALUE self, VALUE BUFID, VALUE cursor_pos);
-
-
+#include "ruby_ext.h"
 
 extern "C" {
 
@@ -36,10 +28,6 @@ VALUE method_restart(VALUE self) {
 }
 
 VALUE method_set_window_title(VALUE self, VALUE new_title) {
-  // g_editor->setWindowTitle(QString(StringValueCStr(new_title)));
-
-  // For some reason program segfaults if we call g_editor->setWindowTitle from here.
-  // But from main_loop its ok..
   window_title = new QString(StringValueCStr(new_title));
   g_editor->setWindowTitle(*window_title);
 }
@@ -64,18 +52,16 @@ c_te->new_event = 1;
 VALUE qt_process_events(VALUE self) {
   app->processEvents();
   
+  render_minibuffer(NULL);
   
   qt_process_deltas();
   
-  QTextCursor tc = c_te->textCursor();
+  // QTextCursor tc = c_te->textCursor();
   // tc.setPosition(c_te->cursor_pos);
   // tc.setPosition(0);
   // c_te->setTextCursor(tc);
   // c_te->ensureCursorVisible();
  
-  app->processEvents();
- 
-  
   if (c_te->new_event == 1) {
     c_te->drawTextCursor();
   }
@@ -588,6 +574,16 @@ VALUE _qt_process_deltas(VALUE self) {
   return INT2NUM(0);
 }
 
+VALUE render_minibuffer(VALUE self) {
+  VALUE minibuf;
+  minibuf = rb_eval_string("$minibuffer.to_s");
+  QString *minibufstr = new QString(StringValueCStr(minibuf));
+  miniEditor->setPlainText(*minibufstr);
+  delete minibufstr;
+  return INT2NUM(0);
+}
+
+
 void _init_ruby(int argc, char *argv[]) {
   ruby_sysinit(&argc, &argv);
   RUBY_INIT_STACK;
@@ -609,6 +605,10 @@ void _init_ruby(int argc, char *argv[]) {
   rb_define_global_function("qt_open_file_dialog", method_open_file_dialog, 1);
   rb_define_global_function("qt_file_saveas", qt_file_saveas, 1);
   rb_define_global_function("qt_load_theme", qt_load_theme, 1);
+  
+  
+  rb_define_global_function("render_minibuffer", render_minibuffer, 0);
+  
   
 
   rb_define_global_function("restart_application", method_restart, 0);
@@ -775,6 +775,7 @@ int render_text(VALUE textbuf, int cursor_pos, int selection_start, int reset_bu
 
   // app->processEvents();
 }
+
 
 
 int render_text_old(VALUE textbuf, int cursor_pos, int selection_start, int reset_buffer) {

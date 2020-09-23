@@ -16,6 +16,7 @@
 #include <QLabel>
 #include <QFrame>
 
+#include "ruby_ext.h"
 #include "buffer_widget.h"
 #include "editor.h"
 #include "main_window.h"
