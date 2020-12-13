@@ -34,6 +34,7 @@ class Macro
     @current_name = nil
     @last_macro = "a"
 
+    #TODO:
     @recorded_macros = vma.marshal_load("macros", {})
     @named_macros = vma.marshal_load("named_macros", {})
     $hook.register(:shutdown, self.method("save"))
@@ -51,6 +52,8 @@ class Macro
   end
 
   def find_macro_gui()
+    # Ripl.start :binding => binding
+
     l = $macro.named_macros.keys.sort.collect { |x| [x, 0] }
     $macro_search_list = l
     $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
@@ -104,6 +107,13 @@ class Macro
     end
   end
 
+  # Allow method to specify the macro action instead of recording from keyboard input
+  def overwrite_current_action(eval_str)
+    if @recording
+      @current_recording[-1] = eval_str
+    end
+  end
+
   def run_last_macro
     run_macro(@last_macro)
   end
@@ -134,6 +144,7 @@ class Macro
       # debug(eval_str)
       # eval(eval_str)
     end
+    buf.set_pos(buf.pos)
   end
 
   def save_macro(name)

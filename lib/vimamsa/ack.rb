@@ -4,6 +4,14 @@ def gui_ack()
   nfo = "<html><h2>Search contents of all files using ack</h2>
   <div style='width:300px'>
   <p>Hint: add empty file named .vma_project to dirs you want to search.</p>\n<p>If .vma_project exists in parent dir of current file, searches within that dir</p></div></html>"
+  
+  nfo = "<span size='x-large'>Search contents of all files using ack</span>
+  
+  <span>Hint: add empty file named .vma_project to directories you want to search in. 
+ If .vma_project exists in parent directory of current file, searches within that directory.
+  </span>"
+ 
+  
   callback = proc{|x| ack_buffer(x)}
   gui_one_input_action(nfo, "Search:", "search", callback)
 end

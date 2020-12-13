@@ -23,7 +23,7 @@ def easy_jump(direction)
 
   linestart_buf = (line_starts).collect { |x| x + visible_range[0] }
   wsmarks_buf = (wsmarks).collect { |x| x + visible_range[0] }
-  
+
   # All line starts should be accessible with just two key presses, so put them first in order
   # Other word start positions ordered by distance from current pos
   wsmarks_buf.sort_by! { |x| (x - $buffer.pos).abs }
@@ -34,29 +34,41 @@ def easy_jump(direction)
   $input_char_call_func = method(:easy_jump_input_char)
   $kbd.set_mode(:readchar)
   $easy_jump_input = ""
+  easy_jump_draw
 end
 
 def easy_jump_input_char(c)
-  vma.paint_stack = []
+  # vma.paint_stack = []
   puts "EASY JUMP: easy_jump_input_char [#{c}]"
   $easy_jump_input << c.upcase
   if $jump_sequence.include?($easy_jump_input)
     jshash = Hash[$jump_sequence.map.with_index.to_a]
-    nthword = jshash[$easy_jump_input] + 1
-    puts "nthword:#{nthword} #{$easy_jump_wsmarks[nthword]}"
+    nthword = jshash[$easy_jump_input]
+    puts "nthword:#{nthword} #{[$easy_jump_wsmarks[nthword],$jump_sequence[nthword]]}"
     $buffer.set_pos($easy_jump_wsmarks[nthword])
     $kbd.set_mode(:command)
     $input_char_call_func = nil
     $jump_sequence = []
+    $vmag.clear_overlay()
   end
   if $easy_jump_input.size > 2
     $kbd.set_mode(:command)
     $input_char_call_func = nil
     $jump_sequence = []
+    $vmag.clear_overlay()
   end
 end
 
 def easy_jump_draw()
+  # puts $jump_sequence.inspect
+  # puts $easy_jump_wsmarks.inspect
+  $vmag.start_overlay_draw
+  for i in 0..($easy_jump_wsmarks.size - 1)
+    $vmag.overlay_draw_text($jump_sequence[i], $easy_jump_wsmarks[i])
+  end
+  $vmag.end_overlay_draw
+  
+  return
   return if $jump_sequence.empty?
   puts "EASY JUMP DRAW"
   screen_cord = cpp_function_wrapper(0, [$easy_jump_wsmarks])

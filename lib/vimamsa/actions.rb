@@ -11,13 +11,31 @@ end
 
 $actions = {}
 
+# def reg_act(id, callfunc, name = "", scope = [])
+  # if callfunc.class == Proc
+    # a = Action.new(id, name, callfunc, scope)
+  # else
+    # a = Action.new(id, name, method(callfunc), scope)
+  # end
+# end
+
 def reg_act(id, callfunc, name = "", scope = [])
   if callfunc.class == Proc
     a = Action.new(id, name, callfunc, scope)
   else
-    a = Action.new(id, name, method(callfunc), scope)
+    begin
+      m = method(callfunc)
+    rescue NameError
+      m = method("missing_callfunc")
+    end
+    a = Action.new(id, name, m, scope)
   end
 end
+
+def missing_callfunc
+  puts "missing_callfunc"
+end
+
 
 def call(id)
   a = $actions[id]

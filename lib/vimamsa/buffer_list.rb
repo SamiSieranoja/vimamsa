@@ -31,6 +31,7 @@ class BufferList < Array
     @recent_ind = 0
     $hook.call(:change_buffer, $buffer)
     qt_set_current_buffer($buffer.id)
+    qt_set_cursor_pos($buffer.id, $buffer.pos)
   end
 
   def switch()
@@ -80,12 +81,30 @@ class BufferList < Array
     end
 
     $hook.call(:change_buffer, $buffer)
+    $buffer.set_active
 
     set_window_title("Vimamsa - #{fpath}")
-    # $buffer.need_redraw!
-    $buffer.reset_highlight
     qt_set_current_buffer($buffer.id)
+
     # hpt_scan_images() if $debug # experimental
+  end
+
+  def get_last_dir
+    lastdir = nil
+    if $buffer.fname
+      lastdir = File.dirname($buffer.fname)
+    else
+      for bufid in $buffer_history.reverse[1..-1]
+        bf = $buffers[bufid]
+        debug "FNAME:#{bf.fname}"
+        if bf.fname
+          lastdir = File.dirname(bf.fname)
+          break
+        end
+      end
+    end
+    lastdir = File.expand_path(".") if lastdir.nil?
+    return lastdir
   end
 
   def get_recent_buffers()
@@ -186,5 +205,3 @@ class BufferList < Array
     end
   end
 end
-
-

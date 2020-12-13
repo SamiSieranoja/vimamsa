@@ -7,15 +7,15 @@ require "ripl/multi_line"
 $paste_lines = false
 $buffer_history = [0]
 
-$update_highlight = true
+$update_highlight = false
 
 class Buffer < String
 
   #attr_reader (:pos, :cpos, :lpos)
 
-  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id
+  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang
   attr_writer :call_func, :update_highlight
-  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler
+  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode
 
   @@num_buffers = 0
 
@@ -23,10 +23,14 @@ class Buffer < String
     debug "Buffer.rb: def initialize"
     super(str)
 
+    @lang = nil
     @id = @@num_buffers
     @@num_buffers += 1
     qt_create_buffer(@id)
     puts "NEW BUFFER fn=#{fname} ID:#{@id}"
+
+    #
+    @module = nil
 
     @crypt = nil
     @update_highlight = true
@@ -36,15 +40,12 @@ class Buffer < String
     @highlights = {}
     if fname != nil
       @fname = File.expand_path(fname)
+      detect_file_language()
     else
       @fname = fname
     end
     @hl_queue = []
     @line_action_handler = nil
-
-    @qt_reset_highlight = true
-
-    @processor = Processor.new
 
     t1 = Time.now
     set_content(str)
@@ -53,6 +54,28 @@ class Buffer < String
     # TODO: add \n when chars are added after last \n
     self << "\n" if self[-1] != "\n"
     @current_word = nil
+    @active_kbd_mode = nil
+  end
+
+  def set_active
+    if !@active_kbd_mode.nil?
+      $kbd.set_mode(@active_kbd_mode)
+    else
+      $kbd.set_mode_to_default
+    end
+    qt_set_current_buffer(@id)
+  end
+
+  def detect_file_language
+    @lang = nil
+    @lang = "c" if @fname.match(/\.(c|h|cpp)$/)
+    @lang = "java" if @fname.match(/\.(java)$/)
+    @lang = "ruby" if @fname.match(/\.(rb)$/)
+    @lang = "hyperplaintext" if @fname.match(/\.(txt)$/)
+    @lang = "php" if @fname.match(/\.(php)$/)
+    if @lang
+      gui_set_file_lang(@id, @lang)
+    end
   end
 
   def add_image(imgpath, pos)
@@ -128,103 +151,12 @@ class Buffer < String
     return @ftype
   end
 
-  def create_syntax_parser()
-    @syntax_detect_failed = false
-    debug("Create @syntax_parser")
-    ft = self.get_file_type()
-    file = "vendor/ver/config/syntax/#{ft}.rb"
-    if File.exist?(file)
-      @syntax_parser = Textpow::SyntaxNode.load(file)
-    else
-      debug "NON-HIGHLIGHTABLE FILE: '#{ft}'"
-      @syntax_detect_failed = true
-      return
-    end
-  end
-
-  def highlight()
-
-    # TODO:enable
-    # return
-    # puts "higlight()"
-    return if !$cnf[:syntax_highlight]
-    return if @syntax_detect_failed
-    return if fname == nil
-    # debug "START HIGHLIGHT"
-
-    if @syntax_parser != nil
-      # Not first time, calculate only for changed part
-    else
-      @update_hl_startpos = 0
-      @update_hl_endpos = self.size - 1
-      add_hl_update(@update_hl_startpos, @update_hl_endpos)
-    end
-
-    if @syntax_parser == nil
-      create_syntax_parser()
-    end
-
-    @is_highlighted = true
-    # debug "@update_highlight=#{@update_highlight}"
-    if @update_highlight and (Time.now - @last_update > 5) and !@is_parsing_syntax
-      @is_parsing_syntax = true
-      @last_update = Time.now
-      # if (Time.now - @last_update > 5)
-      debug "if @update_highlight"
-
-      #            Ripl.start :binding => binding
-      bufstr = $buffer.to_s
-      curbuf = $buffer
-      t1 = Thread.new {
-        debug "START HL parsing #{Time.now}"
-        # sp = Processor.new
-        # curbuf.syntax_parser.parse_from_line(bufstr, @processor,0)
-        if $experimental
-          curbuf.syntax_parser.parse_from_line(@bt, buf, @processor, 0)
-        else
-          curbuf.syntax_parser.parse(bufstr, @processor)
-        end
-
-        #TODO
-        curbuf.highlights.delete_if { |x| true }
-        curbuf.highlights.merge!(@processor.highlights)
-
-        # if doing like this, sometimes segfaults from Highlighter::highlightBlock
-        # which tries to use old $buffer.highlights
-        # curbuf.highlights = sp.highlights
-
-        $update_highlight = true
-
-        @hl_queue.clear
-        add_hl_update(0, self.size - 1)
-        debug "END oF HL parsing"
-        # @last_update = Time.now
-        curbuf.is_parsing_syntax = false
-        @qt_update_highlight = true
-      }
-
-      @update_highlight = false
-    end
-    # puts @highlight
-  end
-
   def revert()
     return if !@fname
     return if !File.exists?(@fname)
     message("Revert buffer #{@fname}")
     str = read_file("", @fname)
     self.set_content(str)
-  end
-
-  def reset_highlight()
-    @update_highlight = true
-    @qt_reset_highlight = true
-    @update_hl_startpos = 0 #TODO
-    @update_hl_endpos = self.size - 1
-    @last_update = Time.now - 10
-    add_hl_update(@update_hl_startpos, @update_hl_endpos)
-    # message("Reset highlight: #{@update_hl_startpos} #{@update_hl_endpos}")
-    # highlight()
   end
 
   def decrypt(password)
@@ -317,9 +249,9 @@ class Buffer < String
     @update_highlight = true
     @update_hl_startpos = 0 #TODO
     @update_hl_endpos = self.size - 1
-    
-    qt_set_buffer_contents(@id,self.to_s)
-    
+
+    qt_set_buffer_contents(@id, self.to_s)
+
     # add_hl_update(@update_hl_startpos, @update_hl_endpos)
   end
 
@@ -327,8 +259,7 @@ class Buffer < String
     @fname = filename
     @pathname = Pathname.new(fname) if @fname
     @basename = @pathname.basename if @fname
-    create_syntax_parser()
-    reset_highlight()
+    detect_file_language
   end
 
   def get_short_path()
@@ -828,8 +759,9 @@ class Buffer < String
     reset_larger_cpos if reset
   end
 
-  # Calculate the one dimensional array index based on column and line positions
-  def calculate_pos_from_cpos_lpos(reset = true)
+  def set_line_and_column_pos(lpos, cpos, _reset_larger_cpos = true)
+    @lpos = lpos if !lpos.nil?
+    @cpos = cpos if !cpos.nil?
     if @lpos > 0
       new_pos = @line_ends[@lpos - 1] + 1
     else
@@ -845,7 +777,12 @@ class Buffer < String
     end
     new_pos += @cpos
     set_pos(new_pos)
-    reset_larger_cpos if reset
+    reset_larger_cpos if _reset_larger_cpos
+  end
+
+  # Calculate the one dimensional array index based on column and line positions
+  def calculate_pos_from_cpos_lpos(reset = true)
+    set_line_and_column_pos(nil, nil)
   end
 
   def delete2(range_id)
@@ -888,6 +825,7 @@ class Buffer < String
     elsif op == FORWARD_CHAR #TODO: ok?
       add_delta([@pos + 1, DELETE, 1], true)
     end
+    set_pos(@pos)
     #recalc_line_ends
     calculate_line_and_column_pos
     #need_redraw!
@@ -1060,7 +998,7 @@ class Buffer < String
       open_url(word)
     elsif wtype == :linepointer
       puts word.inspect
-      jump_to_file(word[0],word[1])
+      jump_to_file(word[0], word[1])
     elsif wtype == :textfile
       open_existing_file(word)
     elsif wtype == :file
@@ -1082,7 +1020,7 @@ class Buffer < String
       m << ["Sort", method("call"), :sortlines]
       m << ["Filter: get numbers", method("call"), :getnums_on_lines]
       m << ["Delete selection", method("call"), :delete_selection]
-      
+
       # m << ["Search in dictionary", self.method("handle_word"), nil]
       # m << ["Search in google", self.method("handle_word"), nil]
       m << ["Execute in terminal", method("exec_in_terminal"), seltxt]
@@ -1100,7 +1038,7 @@ class Buffer < String
         m << ["Jump to file", self.method("handle_word"), [word, wtype]]
       else
         # m << ["TODO", self.method("handle_word"), word]
-      m << ["Paste", method("call"), :paste_after]
+        m << ["Paste", method("call"), :paste_after]
       end
     end
     return m
@@ -1342,7 +1280,7 @@ class Buffer < String
     m = method("jump_to_next_instance_of_char")
     set_last_command({ method: m, params: [char, direction] })
     $last_find_command = { char: char, direction: direction }
-    calculate_line_and_column_pos
+    set_pos(@pos)
   end
 
   def replace_with_char(char)
@@ -1460,12 +1398,21 @@ class Buffer < String
 
   def paste(at = AFTER, register = nil)
     # Paste after current char. Except if at end of line, paste before end of line.
-    return if !$clipboard.any?
-    if register == nil
-      text = $clipboard[-1]
-    else
-      text = $register[register]
+    text = ""
+    if register.nil?
+      text = paste_system_clipboard
     end
+
+    if text == ""
+      return if !$clipboard.any?
+      if register == nil
+        text = $clipboard[-1]
+      else
+        text = $register[register]
+      end
+    end
+    puts "PASTE: #{text}"
+
     return if text == ""
 
     if $paste_lines
@@ -1480,6 +1427,7 @@ class Buffer < String
       insert_txt_at(text, pos)
       set_pos(pos + text.size)
     end
+    set_pos(@pos)
     #TODO: AFTER does not work
     #insert_txt($clipboard[-1],AFTER)
     #recalc_line_ends #TODO: bug when run twice?
@@ -1513,7 +1461,7 @@ class Buffer < String
     $kbd.set_mode(:visual)
   end
 
-  def copy_active_selection(x=nil)
+  def copy_active_selection(x = nil)
     debug "!COPY SELECTION"
     $paste_lines = false
     return if !@visual_mode
@@ -1592,11 +1540,6 @@ class Buffer < String
     $paste_lines = true
   end
 
-  def get_current_line
-    s = self[line_range(@lpos, 1)]
-    return s
-  end
-
   def put_file_path_to_clipboard
     set_clipboard(self.fname)
   end
@@ -1620,6 +1563,11 @@ class Buffer < String
   def get_visual_mode_range2()
     r = get_visual_mode_range
     return [r.begin, r.end]
+  end
+
+  def get_current_line
+    s = self[line_range(@lpos, 1)]
+    return s
   end
 
   def get_current_selection()
@@ -1660,16 +1608,9 @@ class Buffer < String
     # $buffers[$buffer_history.reverse[1]].fname
 
     if @fname
-      savepath = @fname
+      savepath = File.dirname(@fname)
     else
-      for bufid in $buffer_history.reverse[1..-1]
-        buf = $buffers[bufid]
-        debug "FNAME:#{buf.fname}"
-        if buf.fname
-          savepath = File.dirname(buf.fname)
-          break
-        end
-      end
+      savepath = buflist.get_last_dir
     end
     # Ripl.start :binding => binding
     qt_file_saveas(savepath)
@@ -1730,7 +1671,7 @@ class Buffer < String
       system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")
       bufc = IO.read(infile.path)
     elsif get_file_type() == "Javascript"
-      cmd = "/home/samisi/bin/clang-format #{file.path} > #{infile.path}'"
+      cmd = "clang-format #{file.path} > #{infile.path}'"
       debug cmd
       system(cmd)
       bufc = IO.read(infile.path)

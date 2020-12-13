@@ -36,12 +36,13 @@ setcnf :indent_based_on_last_line, true
 setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd", ".js"]
 
 class State
-  attr_accessor :key_name, :eval_rule, :children, :action, :label
+  attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes
 
   def initialize(key_name, eval_rule = "")
     @key_name = key_name
     @eval_rule = eval_rule
     @children = []
+    @major_modes = []
     @action = nil
   end
 
@@ -58,6 +59,7 @@ class KeyBindingTree
     @modes = {}
     @root = State.new("ROOT")
     @cur_state = @root # used for building the tree
+    @default_mode = nil
     @mode_history = []
     @state_trail = []
     @last_action = nil
@@ -67,15 +69,31 @@ class KeyBindingTree
     @last_event = [nil, nil, nil, nil, nil]
   end
 
-  def set_default_mode(id)
-    @match_state = [@modes[id]] # used for matching input
-    @mode_root_state = @modes[id]
+  def set_default_mode(label)
+    @match_state = [@modes[label]] # used for matching input
+    @mode_root_state = @modes[label]
+    @default_mode = label
   end
 
+  def set_mode_to_default()
+    set_mode(@default_mode)
+  end
+
+  # $kbd.add_mode("I", :insert)
   def add_mode(id, label)
     mode = State.new(id)
     @modes[label] = mode
     @root.children << mode
+    if @default_mode == nil
+      set_default_mode(label)
+    end
+  end
+
+  def add_minor_mode(id, label, major_mode_label)
+    mode = State.new(id)
+    @modes[label] = mode
+    @root.children << mode
+    mode.major_modes << major_mode_label
   end
 
   def clear_modifiers()
@@ -136,6 +154,8 @@ class KeyBindingTree
         end
       end
     end
+
+    $view.draw_cursor()
   end
 
   def cur_mode_str()
@@ -152,7 +172,14 @@ class KeyBindingTree
   end
 
   def set_state_to_root
-    @match_state = [@mode_root_state]
+    if @mode_root_state.major_modes.size == 1
+      modelabel = @mode_root_state.major_modes[0]
+      mmode = @modes[modelabel]
+      @match_state = [@mode_root_state, mmode]
+    else
+      @match_state = [@mode_root_state]
+    end
+
     @state_trail = [@mode_root_state]
     # puts get_state_trail_str()
     # $next_command_count = nil # TODO: set somewhere else?
@@ -215,14 +242,17 @@ class KeyBindingTree
     c = c.force_encoding("UTF-8");  # TODO:correct?
 
     eval_s = nil
-    new_state = match(translated_c)
-    if new_state == nil and translated_c.index("shift") == 0
-      new_state = match(c)
-    end
+
+    new_state = match(c)
+    # #TODO:
+    # new_state = match(translated_c)
+    # if new_state == nil and translated_c.index("shift") == 0
+    # new_state = match(c)
+    # end
 
     if new_state == nil
       s1 = match_state[0].children.select { |s| s.key_name.include?("<char>") } # TODO: [0]
-      if s1.any? and (c.size == 1) and event_type == KEY_PRESS
+      if s1.any? and (c.size == 1) and event_type == :key_press
         eval_s = s1.first.action.clone
         # eval_s.gsub!("<char>","'#{c}'") #TODO: remove
         new_state = [s1.first]
@@ -278,13 +308,13 @@ class KeyBindingTree
 
     if new_state == nil
       printf("NO MATCH") if $debug
-      if event_type == KEY_PRESS and c != "shift"
+      if event_type == :key_press and c != "shift"
         # TODO:include other modifiers in addition to shift?
         set_state_to_root
         printf(", BACK TO ROOT") if $debug
       end
 
-      if event_type == KEY_RELEASE and c == "shift!"
+      if event_type == :key_release and c == "shift!"
         # Pressing a modifier key (shift) puts state back to root
         # only on key release when no other key has been pressed
         # after said modifier key (shift).
@@ -393,58 +423,66 @@ class KeyBindingTree
       end
       @last_event = event #TODO: outside if?
     end
-    
+
     # qt_refresh_cursor
-    
+
     event_handle_time = Time.now - t1
     debug "RB key event handle time: #{event_handle_time}" if event_handle_time > 1 / 40.0
     render_buffer($buffer)
     end_profiler
   end
-  
-end
 
-$action_list = []
-
-def bindkey_old(key, action)
-  if key.class != Array
-    key = key.split("||")
-  end
-  key.each { |k| _bindkey(k, action) }
-end
-
-def bindkey(key, action)
-  if key.class != Array
-    key = key.split("||")
-  end
-  
-  a = action
-  if action.class == Array
-    label = a[0]
-    a = label
-    proc = action[1]
-    msg = action[2]
-    reg_act(label, proc, msg)
-  end
-  key.each { |k| _bindkey(k, a) }
-end
-
-def _bindkey(key, action)
-  # if key.class == Array
-  # key.each { |k| bindkey(k, action) }
-  # return
-  # end
-  # $action_list << { :action => action, :key => key }
-  if !$actions.has_key?(action)
-    if action.class == String
-      reg_act(action, proc { eval(action) }, action)
+  def bindkey(key, action)
+    if key.class != Array
+      key = key.split("||")
     end
+
+    a = action
+    if action.class == Array
+      label = a[0]
+      a = label
+      proc = action[1]
+      msg = action[2]
+      reg_act(label, proc, msg)
+    end
+    key.each { |k| _bindkey(k, a) }
   end
 
-  k_arr = key.split
-  modes = k_arr.shift # modes = "C" or "I" or "CI"
-  modes.each_char { |m|
-    $kbd.set_state(m, "") # TODO: check is ok?
+  def _bindkey(key, action)
+    key.strip!
+    key.gsub!(/\s+/, " ")
+
+    # if key.class == Array
+    # key.each { |k| bindkey(k, action) }
+    # return
+    # end
+    # $action_list << { :action => action, :key => key }
+    if !$actions.has_key?(action)
+      if action.class == String
+        reg_act(action, proc { eval(action) }, action)
+      end
+    end
+
+    m = key.match(/^(\S+)\s(\S.*)$/)
+    if m
+      modetmp = m[1]
+      puts [key, modetmp, m].inspect
+      modes = modetmp.split("") if modetmp.match(/^\p{Lu}+$/) # Uppercase
+      modes = [modetmp] if modetmp.match(/^\p{Ll}+$/) # Lowercase
+      keydef = m[2]
+    else
+      fatal_error("Error in keydef #{key.inspect}")
+    end
+
+    modes.each { |mode_id|
+      mode_bind_key(mode_id, keydef, action)
+    }
+  end
+
+  def mode_bind_key(mode_id, keydef, action)
+    set_state(mode_id, "") # TODO: check is ok?
+
+    k_arr = keydef.split
 
     k_arr.each { |i|
       # check if key has rules for context like q has in
@@ -459,71 +497,70 @@ def _bindkey(key, action)
       end
 
       # Create a new state for key if it doesn't exist
-      s1 = $kbd.find_state(key_name, eval_rule)
+      s1 = find_state(key_name, eval_rule)
       if s1 == nil
         new_state = State.new(key_name, eval_rule)
-        $kbd.cur_state.children << new_state
+        @cur_state.children << new_state
       end
 
-      $kbd.set_state(key_name, eval_rule) # TODO: check is ok?
+      set_state(key_name, eval_rule) # TODO: check is ok?
     }
-    $kbd.cur_state.action = action
-    $kbd.cur_state = $kbd.root
-  }
+    @cur_state.action = action
+    @cur_state = @root
+  end
+
+  def handle_key_bindigs_action(action, c)
+    $method_handles_repeat = false #TODO:??
+    n = 1
+    if $next_command_count and !(action.class == String and action.include?("set_next_command_count"))
+      n = $next_command_count
+      # $next_command_count = nil
+      debug("COUNT command #{n} times")
+    end
+
+    begin
+      n.times do
+        ret = exec_action(action)
+
+        if $macro.is_recording and ret != false
+          $macro.record_action(action)
+        end
+        break if $method_handles_repeat
+        # Some methods have specific implementation for repeat,
+        #   like '5yy' => copy next five lines. (copy_line())
+        # By default the same command is just repeated n times
+        #   like '20j' => go to next line 20 times.
+      end
+    rescue SyntaxError
+      debug("SYNTAX ERROR with eval cmd #{action}: " + $!.to_s)
+      # rescue NoMethodError
+      # debug("NoMethodError with eval cmd #{action}: " + $!.to_s)
+      # rescue NameError
+      # debug("NameError with eval cmd #{action}: " + $!.to_s)
+      # raise
+    rescue Exception => e
+      puts "BACKTRACE"
+      puts e.backtrace
+      puts e.inspect
+      puts "BACKTRACE END"
+      if $!.class == SystemExit
+        exit
+      else
+        crash("Error with action: #{action}: ", e)
+      end
+    end
+
+    if action.class == String and !action.include?("set_next_command_count")
+      $next_command_count = nil
+    end
+  end
 end
 
-# ref: http://qt-project.org/doc/qt-5.0/qtcore/qt.html#Key-enum
-# Qt::Key_Enter
-# Qt::Key_Return
-# Qt::Key_Tab
-# Qt::Key_Meta
-$event_keysym_translate_table = {
-  Qt::Key_Backspace => "backspace",
-  Qt::Key_Space => "space",
-  Qt::Key_Control => "ctrl",
-  Qt::Key_Alt => "alt",
-  Qt::Key_Escape => "esc",
-  Qt::Key_Up => "up",
-  Qt::Key_Down => "down",
-  Qt::Key_PageUp => "pageup",
-  Qt::Key_PageDown => "pagedown",
-  Qt::Key_Left => "left",
-  Qt::Key_Right => "right",
-  Qt::Key_Enter => "enter",
-  Qt::Key_Return => "return",
-  Qt::Key_Shift => "shift",
-  Qt::Key_Tab => "tab",
-}
+def bindkey(key, action)
+  $kbd.bindkey(key, action)
+end
 
-$translate_table = {
-  Qt::Key_A => "A",
-  Qt::Key_B => "B",
-  Qt::Key_C => "C",
-  Qt::Key_D => "D",
-  Qt::Key_E => "E",
-  Qt::Key_F => "F",
-  Qt::Key_G => "G",
-  Qt::Key_H => "H",
-  Qt::Key_I => "I",
-  Qt::Key_J => "J",
-  Qt::Key_K => "K",
-  Qt::Key_L => "L",
-  Qt::Key_M => "M",
-  Qt::Key_N => "N",
-  Qt::Key_O => "O",
-  Qt::Key_P => "P",
-  Qt::Key_Q => "Q",
-  Qt::Key_R => "R",
-  Qt::Key_S => "S",
-  Qt::Key_T => "T",
-  Qt::Key_U => "U",
-  Qt::Key_V => "V",
-  Qt::Key_W => "W",
-  Qt::Key_X => "X",
-  Qt::Key_Y => "Y",
-  Qt::Key_Z => "Z",
-
-}
+$action_list = []
 
 def exec_action(action)
   $kbd.last_action = $kbd.cur_action
@@ -534,52 +571,6 @@ def exec_action(action)
     return action.call
   else
     return eval(action)
-  end
-end
-
-def handle_key_bindigs_action(action, c)
-  $method_handles_repeat = false #TODO:??
-  n = 1
-  if $next_command_count and !(action.class == String and action.include?("set_next_command_count"))
-    n = $next_command_count
-    # $next_command_count = nil
-    debug("COUNT command #{n} times")
-  end
-
-  begin
-    n.times do
-      ret = exec_action(action)
-
-      if $macro.is_recording and ret != false
-        $macro.record_action(action)
-      end
-      break if $method_handles_repeat
-      # Some methods have specific implementation for repeat,
-      #   like '5yy' => copy next five lines. (copy_line())
-      # By default the same command is just repeated n times
-      #   like '20j' => go to next line 20 times.
-    end
-  rescue SyntaxError
-    debug("SYNTAX ERROR with eval cmd #{action}: " + $!.to_s)
-    # rescue NoMethodError
-    # debug("NoMethodError with eval cmd #{action}: " + $!.to_s)
-    # rescue NameError
-    # debug("NameError with eval cmd #{action}: " + $!.to_s)
-    # raise
-  rescue Exception => e
-    puts "BACKTRACE"
-    puts e.backtrace
-    puts e.inspect
-    puts "BACKTRACE END"
-    if $!.class == SystemExit
-      exit
-    else
-      crash("Error with action: #{action}: ", e)
-    end
-  end
-
-  if action.class == String and !action.include?("set_next_command_count")
-    $next_command_count = nil
   end
 end
 

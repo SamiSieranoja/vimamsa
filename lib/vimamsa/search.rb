@@ -1,11 +1,20 @@
 
 def execute_search(input_str)
   $search = Search.new
+  eval_str="execute_search(#{input_str.dump})"
+  $macro.overwrite_current_action(eval_str)
   return $search.set(input_str, "simple", $buffer)
 end
 
 def invoke_search()
   start_minibuffer_cmd("", "", :execute_search)
+end
+
+def invoke_search()
+  nfo = ""
+  
+  callback = proc{|x| execute_search(x)}
+  gui_one_input_action(nfo, "Search:", "search", callback)
 end
 
 class Search
