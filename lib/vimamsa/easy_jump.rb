@@ -7,7 +7,7 @@ class EasyJump
 end
 
 def easy_jump(direction)
-  message "EASY JUMP"
+  # message "EASY JUMP"
   visible_range = get_visible_area()
   visible_text = $buffer[visible_range[0]..visible_range[1]]
   wsmarks = scan_word_start_marks(visible_text)

@@ -49,7 +49,7 @@ def buflist()
   return $buffers
 end
 
-load "editor.rb"
+require "vimamsa/editor.rb"
 
 # load "qt_funcs.rb"
 

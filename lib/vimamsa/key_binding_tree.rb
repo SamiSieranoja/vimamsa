@@ -129,6 +129,10 @@ class KeyBindingTree
         end
       }
     }
+    if key_name == "o"
+      # Ripl.start :binding => binding
+    end
+
     if new_state.any? # Match found
       @match_state = new_state
       return new_state
@@ -324,8 +328,12 @@ class KeyBindingTree
 
       printf("\n") if $debug
     else
+    
+      # Don't execute action if one of the states has children
+      state_with_children = new_state.select { |s| s.children.any? }
       s_act = new_state.select { |s| s.action != nil }
-      if s_act.any?
+
+      if s_act.any? and !state_with_children.any?
         eval_s = s_act.first.action if eval_s == nil
         puts "FOUND MATCH:#{eval_s}"
         puts "CHAR: #{c}"
@@ -481,9 +489,12 @@ class KeyBindingTree
 
   def mode_bind_key(mode_id, keydef, action)
     set_state(mode_id, "") # TODO: check is ok?
+    start_state = @cur_state
 
     k_arr = keydef.split
 
+    prev_state = nil
+    s1 = start_state
     k_arr.each { |i|
       # check if key has rules for context like q has in
       # "C q(cntx.recording_macro==true)"
@@ -496,16 +507,22 @@ class KeyBindingTree
         key_name = i
       end
 
+      prev_state = s1
       # Create a new state for key if it doesn't exist
       s1 = find_state(key_name, eval_rule)
       if s1 == nil
         new_state = State.new(key_name, eval_rule)
+        s1 = new_state
         @cur_state.children << new_state
       end
 
       set_state(key_name, eval_rule) # TODO: check is ok?
     }
-    @cur_state.action = action
+    if action == :delete_state
+      prev_state.children.delete(cur_state)
+    else
+      @cur_state.action = action
+    end
     @cur_state = @root
   end
 

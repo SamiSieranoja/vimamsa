@@ -20,6 +20,12 @@ def debug_dump_deltas()
   puts buf.edit_history.inspect
 end
 
+$log_messages = []
+def log_message(message)
+  puts message
+  $log_messages << message
+end
+
 def log_error(message)
   puts "====== ERROR ====="
   puts caller[0]
@@ -32,7 +38,7 @@ end
 def crash(message, e = nil)
   puts "FATAL ERROR:#{message}"
   puts caller().join("\n")
-  savedebug(message, e)
+  # savedebug(message, e)
   _quit()
 end
 
