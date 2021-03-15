@@ -19,7 +19,7 @@ puts scriptdir
   # argexp << Pathname(arg).expand_path.to_s
 # end
 
-Dir.chdir(scriptdir)
+# Dir.chdir(scriptdir)
 # exec(*argexp)
 
 $LOAD_PATH.unshift(File.expand_path("lib")) 

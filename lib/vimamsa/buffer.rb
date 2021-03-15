@@ -73,6 +73,21 @@ class Buffer < String
     @lang = "ruby" if @fname.match(/\.(rb)$/)
     @lang = "hyperplaintext" if @fname.match(/\.(txt)$/)
     @lang = "php" if @fname.match(/\.(php)$/)
+
+    lm = GtkSource::LanguageManager.new
+
+
+    lm.set_search_path(lm.search_path << ppath("lang/"))
+    lang = lm.guess_language(@fname)
+    # lang.get_metadata("line-comment-start")
+    # lang.get_metadata("block-comment-start")
+    # lang.get_metadata("block-comment-end")
+    @lang_nfo = lang
+    if !lang.nil? and !lang.id.nil?
+    puts "Guessed LANG: #{lang.id}"
+      @lang = lang.id
+    end
+
     if @lang
       gui_set_file_lang(@id, @lang)
     end
@@ -134,21 +149,7 @@ class Buffer < String
   end
 
   def get_file_type()
-    # We cant detect syntax if no filename
-    if !@fname
-      @syntax_detect_failed = true
-      return ""
-    end
-    if @ftype == nil
-      @ftype = VER::Syntax::Detector.detect(@fname)
-      if @ftype == nil
-        @syntax_detect_failed = true
-      else
-        @syntax_detect_failed = false
-      end
-    end
-    debug "ftype=#{@ftype.inspect}"
-    return @ftype
+    return @lang
   end
 
   def revert()
@@ -488,16 +489,26 @@ class Buffer < String
   end
 
   def get_com_str()
-    return nil if @syntax_detect_failed
+    # return nil if @syntax_detect_failed
 
     com_str = nil
-    if get_file_type() == "C" or get_file_type() == "Javascript"
-      com_str = "//"
-    elsif get_file_type() == "Ruby"
-      com_str = "#"
-    else
-      com_str = "//"
+    # if get_file_type() == "c" or get_file_type() == "java"
+      # com_str = "//"
+    # elsif get_file_type() == "ruby"
+      # com_str = "#"
+    # else
+      # com_str = "//"
+    # end
+
+    if !@lang_nfo.nil?
+      com_str = @lang_nfo.get_metadata("line-comment-start")
     end
+
+    # lang.get_metadata("block-comment-start")
+    # lang.get_metadata("block-comment-end")
+    
+    com_str = "//" if com_str.nil?
+
     return com_str
   end
 
@@ -1618,12 +1629,7 @@ class Buffer < String
     # TODO:?
   end
 
-  def save()
-    if !@fname
-      save_as()
-      return
-    end
-    message("Saving file #{@fname}")
+  def write_contents_to_file(fpath)
     if @crypt != nil
       mode = "wb+"
       contents = "VMACRYPT001" + @crypt.encrypt(self.to_s)
@@ -1633,7 +1639,7 @@ class Buffer < String
     end
 
     Thread.new {
-      File.open(@fname, mode) do |io|
+      File.open(fpath, mode) do |io|
         #io.set_encoding(self.encoding)
 
         begin
@@ -1653,6 +1659,15 @@ class Buffer < String
     }
   end
 
+  def save()
+    if !@fname
+      save_as()
+      return
+    end
+    message("Saving file #{@fname}")
+    write_contents_to_file(@fname)
+  end
+
   # Indents whole buffer using external program
   def indent()
     file = Tempfile.new("out")
@@ -1665,7 +1680,7 @@ class Buffer < String
 
     message("Auto format #{@fname}")
 
-    if get_file_type() == "C" or get_file_type() == "C++"
+    if get_file_type() == "c" or get_file_type() == "c++"
 
       #C/C++/Java/JavaScript/Objective-C/Protobuf code
       system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")
@@ -1675,7 +1690,7 @@ class Buffer < String
       debug cmd
       system(cmd)
       bufc = IO.read(infile.path)
-    elsif get_file_type() == "Ruby"
+    elsif get_file_type() == "ruby"
       cmd = "rufo #{file.path}"
       debug cmd
       system(cmd)
@@ -1700,13 +1715,14 @@ class Buffer < String
     savepath = "#{spath}/#{spfx}_#{datetime}"
     if is_path_writable(savepath)
       debug "BACKUP BUFFER TO: #{savepath}"
-      IO.write(savepath, self.to_s) if @crypt == nil #TODO: For encrypted
+      write_contents_to_file(savepath)
     else
       message("PATH NOT WRITABLE: #{savepath}")
     end
   end
 end
 
+#TODO
 def write_to_file(savepath, s)
   if is_path_writable(savepath)
     IO.write(savepath, $buffer.to_s)

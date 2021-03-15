@@ -231,9 +231,7 @@ class Editor
 end
 
 def _quit()
-  # Shut down the Qt thread before the ruby thread
   vma.shutdown
-  qt_quit
   exit
 end
 

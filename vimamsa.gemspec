@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["sami.sieranoja@gmail.com"]
 
   spec.summary       = %q{Vimamsa}
-  spec.description   = %q{Vimamsa.}
+  spec.description   = %q{Vi/Vim -inspired experimental GUI-oriented text editor written with Ruby and GTK.}
   spec.homepage = "https://github.com/SamiSieranoja/vimamsa"
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|

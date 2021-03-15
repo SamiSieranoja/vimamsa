@@ -3,10 +3,7 @@
 #include "ruby/ruby.h"
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-
-#warning "C Preprocessor got here!"
 
 typedef struct node {
 int i;
