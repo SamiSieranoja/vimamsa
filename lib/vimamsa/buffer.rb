@@ -1273,6 +1273,7 @@ class Buffer < String
   end
 
   def jump_to_next_instance_of_char(char, direction = FORWARD)
+
     #return if at_end_of_line?
     if direction == FORWARD
       position_of_next_char = self.index(char, @pos + 1)
@@ -1680,7 +1681,7 @@ class Buffer < String
 
     message("Auto format #{@fname}")
 
-    if get_file_type() == "c" or get_file_type() == "c++"
+    if ["chdr","c","cpp"].include?(get_file_type())
 
       #C/C++/Java/JavaScript/Objective-C/Protobuf code
       system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")

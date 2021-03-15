@@ -33,6 +33,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'gtksourceview3', '~> 3.4'
   # spec.add_runtime_dependency 'gtksourceview4'
   spec.add_runtime_dependency 'parallel', '~> 1.14'
+  spec.add_runtime_dependency 'listen', '~> 3.4'
 
   spec.extensions = ["ext/vmaext/extconf.rb"]
   spec.licenses    = ['GPL-3.0+']

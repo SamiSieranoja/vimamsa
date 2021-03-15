@@ -39,6 +39,24 @@ class Editor
     @_plugins = {}
   end
 
+  def open_file_listener(added)
+    if !added.empty?
+      for fp in added
+      	sleep 0.1
+        x = IO.read(fp)
+        File.delete(fp)
+        for f in x.lines
+          f.gsub!("\n", "")
+          if File.exist?(f)
+            if file_is_text_file(f)
+              jump_to_file(f)
+            end
+          end
+        end
+      end
+    end
+  end
+
   def start
     # $highlight = {}
 
@@ -76,6 +94,13 @@ class Editor
 
     dot_dir = File.expand_path("~/.vimamsa")
     Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
+    listen_dir = File.expand_path("~/.vimamsa/listen")
+    Dir.mkdir(listen_dir) unless File.exist?(dot_dir)
+    listener = Listen.to(listen_dir) do |modified, added, removed|
+      puts(modified: modified, added: added, removed: removed)
+      open_file_listener(added)
+    end
+    listener.start
 
     $cnf[:theme] = "Twilight_edit"
     $cnf[:syntax_highlight] = true

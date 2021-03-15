@@ -7,6 +7,7 @@ require "pathname"
 require "date"
 require "ripl/multi_line"
 require "json"
+require "listen"
 
 puts "INIT rbvma"
 
@@ -531,7 +532,7 @@ class VSourceView < GtkSource::View
     keyval_trans[Gdk::Keyval::KEY_Down] = "down"
     keyval_trans[Gdk::Keyval::KEY_Up] = "up"
     keyval_trans[Gdk::Keyval::KEY_space] = "space"
-
+ 
     keyval_trans[Gdk::Keyval::KEY_Shift_L] = "shift"
     keyval_trans[Gdk::Keyval::KEY_Shift_R] = "shift"
     keyval_trans[Gdk::Keyval::KEY_Tab] = "tab"

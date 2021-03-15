@@ -289,6 +289,9 @@ default_keys = {
   #    'C '=> 'buf.jump_word(BACKWARD,END)',#TODO
   "VC f <char>" => "buf.jump_to_next_instance_of_char(<char>)",
   "VC F <char>" => "buf.jump_to_next_instance_of_char(<char>,BACKWARD)",
+  "VC f space" => "buf.jump_to_next_instance_of_char(' ')",
+  "VC F space" => "buf.jump_to_next_instance_of_char(' ',BACKWARD)",
+ 
   "VC /[1-9]/" => "set_next_command_count(<char>)",
   #    'VC number=/[0-9]/+ g'=> 'jump_to_line(<number>)',
   #    'VC X=/[0-9]/+ * Y=/[0-9]/+ '=> 'x_times_y(<X>,<Y>)',
@@ -435,7 +438,7 @@ default_keys = {
   "I alt-f" => "buf.jump_word(FORWARD,WORD_START)",
   "I alt-b" => "buf.jump_word(BACKWARD,WORD_START)",
 
-  "I tab" => 'buf.insert_txt("  ")',
+  "I tab" => 'buf.insert_txt("	")',
   "I space" => 'buf.insert_txt(" ")',
 #  "I return" => 'buf.insert_new_line()',
 }

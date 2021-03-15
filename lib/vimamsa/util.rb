@@ -43,7 +43,7 @@ def read_file(text, path)
 
   #TODO: Should put these as option:
   content.gsub!(/\r\n/, "\n")
-  content.gsub!(/\t/, "    ")
+  # content.gsub!(/\t/, "    ")
   content.gsub!(/\b/, "")
 
   #    content = filter_buffer(content)
