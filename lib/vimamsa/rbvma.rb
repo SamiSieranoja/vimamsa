@@ -327,9 +327,9 @@ end
 def qt_select_window_close(arg = nil)
 end
 
-def set_window_title(str)
-  unimplemented
-end
+# def set_window_title(str)
+  # unimplemented
+# end
 
 def render_text(tmpbuf, pos, selection_start, reset)
   unimplemented
@@ -372,10 +372,14 @@ def qt_set_current_buffer(id)
   # itr = view.buffer.get_iter_at(:offset => 0)
   # view.buffer.place_cursor(itr)
 
-  wtitle = ""
-  wtitle = buf.fname if !buf.fname.nil?
-  $vmag.window.title = wtitle
+  # wtitle = ""
+  # wtitle = buf.fname if !buf.fname.nil?
   $vmag.sw.show_all
+end
+
+def gui_set_window_title(wtitle,subtitle="")
+  $vmag.window.title = wtitle
+  $vmag.window.titlebar.subtitle = subtitle
 end
 
 def unimplemented
@@ -470,6 +474,18 @@ class VSourceView < GtkSource::View
     @last_keyval = nil
     @last_event = [nil, nil]
 
+    signal_connect "button-press-event" do |_widget, event|
+      if event.button == Gdk::BUTTON_PRIMARY
+        # puts "Gdk::BUTTON_PRIMARY"
+        false
+      elsif event.button == Gdk::BUTTON_SECONDARY
+        # puts "Gdk::BUTTON_SECONDARY"
+        true
+      else
+        true
+      end
+    end
+
     signal_connect("key_press_event") do |widget, event|
       handle_key_event(event, :key_press_event)
       true
@@ -532,7 +548,7 @@ class VSourceView < GtkSource::View
     keyval_trans[Gdk::Keyval::KEY_Down] = "down"
     keyval_trans[Gdk::Keyval::KEY_Up] = "up"
     keyval_trans[Gdk::Keyval::KEY_space] = "space"
- 
+
     keyval_trans[Gdk::Keyval::KEY_Shift_L] = "shift"
     keyval_trans[Gdk::Keyval::KEY_Shift_R] = "shift"
     keyval_trans[Gdk::Keyval::KEY_Tab] = "tab"
@@ -944,14 +960,15 @@ class VMAg
   end
 
   def init_header_bar()
-    # @window = Gtk::Window.new(:toplevel)
-    # @window.screen = main_window.screen
-    # @window.set_default_size(600, 400)
 
     header = Gtk::HeaderBar.new
+    @header = header
     header.show_close_button = true
-    header.title = "Welcome to Facebook - Log in, sign up or learn more"
-    header.has_subtitle = false
+    header.title = ""
+    header.has_subtitle = true
+    header.subtitle = ""
+    # Ripl.start :binding => binding
+
 
     # icon = Gio::ThemedIcon.new("mail-send-receive-symbolic")
     # icon = Gio::ThemedIcon.new("document-open-symbolic")
@@ -959,17 +976,43 @@ class VMAg
 
     #edit-redo edit-paste edit-find-replace edit-undo edit-find edit-cut edit-copy
     #document-open document-save document-save-as document-properties document-new
+    # document-revert-symbolic
+    #
+    
+    #TODO:
+    # button = Gtk::Button.new
+    # icon = Gio::ThemedIcon.new("open-menu-symbolic")
+    # image = Gtk::Image.new(:icon => icon, :size => :button)
+    # button.add(image)
+    # header.pack_end(button)
+
     button = Gtk::Button.new
-    icon = Gio::ThemedIcon.new("open-menu-symbolic")
+    icon = Gio::ThemedIcon.new("document-open-symbolic")
     image = Gtk::Image.new(:icon => icon, :size => :button)
     button.add(image)
     header.pack_end(button)
 
+    button.signal_connect "clicked" do |_widget|
+      open_file_dialog
+    end
+
     button = Gtk::Button.new
-    icon = Gio::ThemedIcon.new("document-revert-symbolic")
+    icon = Gio::ThemedIcon.new("document-save-symbolic")
     image = Gtk::Image.new(:icon => icon, :size => :button)
     button.add(image)
     header.pack_end(button)
+    button.signal_connect "clicked" do |_widget|
+      buf.save
+    end
+
+    button = Gtk::Button.new
+    icon = Gio::ThemedIcon.new("document-new-symbolic")
+    image = Gtk::Image.new(:icon => icon, :size => :button)
+    button.add(image)
+    header.pack_end(button)
+    button.signal_connect "clicked" do |_widget|
+      create_new_file
+    end
 
     box = Gtk::Box.new(:horizontal, 0)
     box.style_context.add_class("linked")
@@ -978,11 +1021,26 @@ class VMAg
     image = Gtk::Image.new(:icon_name => "pan-start-symbolic", :size => :button)
     button.add(image)
     box.add(button)
+    button.signal_connect "clicked" do |_widget|
+      history_switch_backwards
+    end
 
     button = Gtk::Button.new
     image = Gtk::Image.new(:icon_name => "pan-end-symbolic", :size => :button)
     button.add(image)
     box.add(button)
+    button.signal_connect "clicked" do |_widget|
+      history_switch_forwards
+    end
+
+    button = Gtk::Button.new
+    icon = Gio::ThemedIcon.new("window-close-symbolic")
+    image = Gtk::Image.new(:icon => icon, :size => :button)
+    button.add(image)
+    box.add(button)
+    button.signal_connect "clicked" do |_widget|
+      bufs.close_current_buffer
+    end
 
     header.pack_start(box)
     @window.titlebar = header

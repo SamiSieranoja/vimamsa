@@ -15,7 +15,7 @@ class Buffer < String
 
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang
   attr_writer :call_func, :update_highlight
-  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode
+  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle
 
   @@num_buffers = 0
 
@@ -29,7 +29,6 @@ class Buffer < String
     qt_create_buffer(@id)
     puts "NEW BUFFER fn=#{fname} ID:#{@id}"
 
-    #
     @module = nil
 
     @crypt = nil
@@ -47,7 +46,21 @@ class Buffer < String
     @hl_queue = []
     @line_action_handler = nil
 
+    @dirname = nil
+    @title = "*buf-#{@id}*"
+    @subtitle = ""
+
+    if @fname
+      @title = File.basename(@fname)
+      @dirname = File.dirname(@fname)
+      userhome = File.expand_path("~")
+      @subtitle = @dirname.gsub(/^#{userhome}/, "~")
+    end
+
     t1 = Time.now
+    qt_set_current_buffer(@id)
+    gui_set_window_title(@title, @subtitle)
+
     set_content(str)
     debug "init time:#{Time.now - t1}"
 
@@ -63,7 +76,7 @@ class Buffer < String
     else
       $kbd.set_mode_to_default
     end
-    qt_set_current_buffer(@id)
+    # qt_set_current_buffer(@id)
   end
 
   def detect_file_language
@@ -76,7 +89,6 @@ class Buffer < String
 
     lm = GtkSource::LanguageManager.new
 
-
     lm.set_search_path(lm.search_path << ppath("lang/"))
     lang = lm.guess_language(@fname)
     # lang.get_metadata("line-comment-start")
@@ -84,7 +96,7 @@ class Buffer < String
     # lang.get_metadata("block-comment-end")
     @lang_nfo = lang
     if !lang.nil? and !lang.id.nil?
-    puts "Guessed LANG: #{lang.id}"
+      puts "Guessed LANG: #{lang.id}"
       @lang = lang.id
     end
 
@@ -493,11 +505,11 @@ class Buffer < String
 
     com_str = nil
     # if get_file_type() == "c" or get_file_type() == "java"
-      # com_str = "//"
+    # com_str = "//"
     # elsif get_file_type() == "ruby"
-      # com_str = "#"
+    # com_str = "#"
     # else
-      # com_str = "//"
+    # com_str = "//"
     # end
 
     if !@lang_nfo.nil?
@@ -506,7 +518,7 @@ class Buffer < String
 
     # lang.get_metadata("block-comment-start")
     # lang.get_metadata("block-comment-end")
-    
+
     com_str = "//" if com_str.nil?
 
     return com_str
@@ -1681,7 +1693,7 @@ class Buffer < String
 
     message("Auto format #{@fname}")
 
-    if ["chdr","c","cpp"].include?(get_file_type())
+    if ["chdr", "c", "cpp"].include?(get_file_type())
 
       #C/C++/Java/JavaScript/Objective-C/Protobuf code
       system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")

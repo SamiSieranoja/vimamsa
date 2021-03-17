@@ -455,7 +455,7 @@ GUESS_ENCODING_ORDER = [
 def create_new_file(filename = nil, file_contents = "\n")
   debug "NEW FILE CREATED"
   buffer = Buffer.new(file_contents)
-  qt_set_current_buffer(buffer.id) #TODO: remove?
+  # qt_set_current_buffer(buffer.id) #TODO: remove?
   $buffers << buffer
   return buffer
 end
@@ -516,7 +516,6 @@ def open_new_file(filename, file_contents = "")
     fname = filename
     load_buffer(fname)
   end
-  set_window_title("Vimamsa - #{File.basename(filename)}")
 end
 
 def scan_word_start_marks(search_str)

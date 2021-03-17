@@ -83,8 +83,8 @@ class BufferList < Array
     $hook.call(:change_buffer, $buffer)
     $buffer.set_active
 
-    set_window_title("Vimamsa - #{fpath}")
     qt_set_current_buffer($buffer.id)
+    gui_set_window_title($buffer.title,$buffer.subtitle)   
 
     # hpt_scan_images() if $debug # experimental
   end
