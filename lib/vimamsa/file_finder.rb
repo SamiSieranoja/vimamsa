@@ -21,7 +21,7 @@ class FileFinder
       Thread.new { recursively_find_files() }
     end
 
-    qt_select_update_window(l, $select_keys.collect { |x| x.upcase },
+    gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
                             "gui_file_finder_select_callback",
                             "gui_file_finder_update_callback")
   end
@@ -83,7 +83,7 @@ end
 def gui_file_finder_select_callback(search_str, idx)
   selected_file = $file_search_list[idx][0]
   debug "FILE FINDER SELECT CALLBACK: s=#{search_str},i=#{idx}: #{selected_file}"
-  qt_select_window_close(0)
+  gui_select_window_close(0)
   open_new_file(selected_file)
 end
 

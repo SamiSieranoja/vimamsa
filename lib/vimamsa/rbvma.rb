@@ -71,7 +71,7 @@ def idle_func
   return true
 end
 
-# qt_select_update_window(l, $select_keys.collect { |x| x.upcase },
+# gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
 # "gui_find_macro_select_callback",
 # "gui_find_macro_update_callback")
 class SelectUpdateWindow
@@ -233,7 +233,7 @@ def center_on_current_line()
   $view.scroll_to_iter(iter, within_margin, use_align, xalign, yalign)
 end
 
-def qt_select_update_window(item_list, jump_keys, select_callback, update_callback)
+def gui_select_update_window(item_list, jump_keys, select_callback, update_callback)
   $selup = SelectUpdateWindow.new(nil, item_list, jump_keys, select_callback, update_callback)
   $selup.run
 end
@@ -241,7 +241,7 @@ end
 # ~/Drive/code/ruby-gnome/gtk3/sample/gtk-demo/search_entry2.rb
 # ~/Drive/code/ruby-gnome/gtk3/sample/gtk-demo/list_store.rb
 
-def qt_open_file_dialog(dirpath)
+def gui_open_file_dialog(dirpath)
   dialog = Gtk::FileChooserDialog.new(:title => "Open file",
                                       :action => :open,
                                       :buttons => [[Gtk::Stock::OPEN, :accept],
@@ -258,7 +258,7 @@ def qt_open_file_dialog(dirpath)
   dialog.run
 end
 
-def qt_file_saveas(dirpath)
+def gui_file_saveas(dirpath)
   dialog = Gtk::FileChooserDialog.new(:title => "Save as",
                                       :action => :save,
                                       :buttons => [[Gtk::Stock::SAVE, :accept],
@@ -274,8 +274,8 @@ def qt_file_saveas(dirpath)
   dialog.run
 end
 
-def qt_create_buffer(id)
-  puts "qt_create_buffer(#{id})"
+def gui_create_buffer(id)
+  puts "gui_create_buffer(#{id})"
   buf1 = GtkSource::Buffer.new()
   view = VSourceView.new()
 
@@ -312,19 +312,19 @@ def gui_set_file_lang(id, lname)
   view.buffer.highlight_syntax = true
 end
 
-def qt_process_deltas
+def gui_process_deltas
 end
 
-def qt_add_image(imgpath, pos)
+def gui_add_image(imgpath, pos)
 end
 
-def qt_process_deltas
+def gui_process_deltas
 end
 
-def qt_process_events
+def gui_process_events
 end
 
-def qt_select_window_close(arg = nil)
+def gui_select_window_close(arg = nil)
 end
 
 # def set_window_title(str)
@@ -335,24 +335,24 @@ def render_text(tmpbuf, pos, selection_start, reset)
   unimplemented
 end
 
-def qt_set_buffer_contents(id, txt)
+def gui_set_buffer_contents(id, txt)
   # $vbuf.set_text(txt)
-  puts "qt_set_buffer_contents(#{id}, txt)"
+  puts "gui_set_buffer_contents(#{id}, txt)"
 
   $vmag.buffers[id].buffer.set_text(txt)
 end
 
-def qt_set_cursor_pos(id, pos)
+def gui_set_cursor_pos(id, pos)
   $view.set_cursor_pos(pos)
   # Ripl.start :binding => binding
 end
 
-def qt_set_selection_start(id, selection_start)
+def gui_set_selection_start(id, selection_start)
 end
 
-def qt_set_current_buffer(id)
+def gui_set_current_buffer(id)
   view = $vmag.buffers[id]
-  puts "qt_set_current_buffer(#{id}), view=#{view}"
+  puts "gui_set_current_buffer(#{id}), view=#{view}"
   buf1 = view.buffer
   $vmag.view = view
   $vmag.buf1 = buf1
@@ -624,7 +624,7 @@ class VSourceView < GtkSource::View
       end
     end
     if any_change
-      qt_set_cursor_pos($buffer.id, $buffer.pos) #TODO: only when necessary
+      gui_set_cursor_pos($buffer.id, $buffer.pos) #TODO: only when necessary
     end
 
     # sanity_check #TODO

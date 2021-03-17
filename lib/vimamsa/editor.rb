@@ -109,7 +109,7 @@ class Editor
       $cnf = eval(IO.read(settings_path))
     end
 
-    # set_qt_style(1)
+    # set_gui_style(1)
 
     # Limit file search to these extensions:
     $find_extensions = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb"]
@@ -273,7 +273,7 @@ end
 def open_file_dialog()
   path = ""
   path = $buffer.fname if $buffer.fname
-  qt_open_file_dialog(File.dirname(path))
+  gui_open_file_dialog(File.dirname(path))
 end
 
 def system_clipboard_changed(clipboard_contents)
@@ -455,7 +455,7 @@ GUESS_ENCODING_ORDER = [
 def create_new_file(filename = nil, file_contents = "\n")
   debug "NEW FILE CREATED"
   buffer = Buffer.new(file_contents)
-  # qt_set_current_buffer(buffer.id) #TODO: remove?
+  # gui_set_current_buffer(buffer.id) #TODO: remove?
   $buffers << buffer
   return buffer
 end
@@ -481,7 +481,7 @@ def load_buffer(fname)
   end
   debug("LOAD BUFFER: #{fname}")
   buffer = Buffer.new(read_file("", fname), fname)
-  # qt_set_current_buffer(buffer.id)
+  # gui_set_current_buffer(buffer.id)
   buffer.set_active
   debug("DONE LOAD: #{fname}")
   #buf = filter_buffer(buffer)

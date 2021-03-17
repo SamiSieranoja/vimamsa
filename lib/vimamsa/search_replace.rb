@@ -115,7 +115,7 @@ def gui_replace_callback(vals)
   search_str = vals["search"]
   replace_str = vals["replace"]
   puts "gui_replace_callback: #{search_str} => #{replace_str}"
-  qt_select_window_close(0)
+  gui_select_window_close(0)
   buf_replace(search_str, replace_str)
 end
 

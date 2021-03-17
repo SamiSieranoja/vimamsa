@@ -95,16 +95,16 @@ def run_test(test_id)
   $buffer = old_buffer
 end
 
-def qt_sleep(t2)
+def gui_sleep(t2)
   t1 = Time.now()
   while Time.now < t1 + t2
-    qt_process_events
+    gui_process_events
     sleep(0.02)
   end
 end
 
 def run_random_jump_test__tmpl(test_time = 60 * 60 * 10)
-  open_new_file("TODO"); qt_sleep(0.1)
+  open_new_file("TODO"); gui_sleep(0.1)
 
   ttstart = Time.now
   Kernel.srand(1231)
@@ -114,7 +114,7 @@ def run_random_jump_test__tmpl(test_time = 60 * 60 * 10)
     buf.jump_to_random_pos
     buf.insert_txt("Z") if rand() > 0.25
     buf.reset_highlight() if rand() > 0.1
-    qt_trigger_event
+    gui_trigger_event
 
     # puts "========line:========="
     # puts buf.current_line()
@@ -122,12 +122,12 @@ def run_random_jump_test__tmpl(test_time = 60 * 60 * 10)
 
     render_buffer($buffer)
 
-    qt_sleep(rand() / 2)
+    gui_sleep(rand() / 2)
     if rand() < (1 / 40.0)
       buf.revert
     end
 
-    qt_trigger_event
+    gui_trigger_event
     buf.insert_txt("X") if rand() > 0.25
     render_buffer($buffer)
 

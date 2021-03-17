@@ -15,7 +15,7 @@ class Buffer < String
 
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang
   attr_writer :call_func, :update_highlight
-  attr_accessor :qt_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :qt_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle
+  attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle
 
   @@num_buffers = 0
 
@@ -26,7 +26,7 @@ class Buffer < String
     @lang = nil
     @id = @@num_buffers
     @@num_buffers += 1
-    qt_create_buffer(@id)
+    gui_create_buffer(@id)
     puts "NEW BUFFER fn=#{fname} ID:#{@id}"
 
     @module = nil
@@ -58,7 +58,7 @@ class Buffer < String
     end
 
     t1 = Time.now
-    qt_set_current_buffer(@id)
+    gui_set_current_buffer(@id)
     gui_set_window_title(@title, @subtitle)
 
     set_content(str)
@@ -76,7 +76,7 @@ class Buffer < String
     else
       $kbd.set_mode_to_default
     end
-    # qt_set_current_buffer(@id)
+    # gui_set_current_buffer(@id)
   end
 
   def detect_file_language
@@ -108,8 +108,8 @@ class Buffer < String
   def add_image(imgpath, pos)
     return if !is_legal_pos(pos)
     # insert_txt_at(" ", pos)
-    qt_process_deltas
-    qt_add_image(imgpath, pos)
+    gui_process_deltas
+    gui_add_image(imgpath, pos)
   end
 
   def is_legal_pos(pos, op = :read)
@@ -141,7 +141,7 @@ class Buffer < String
     b = " \n"
     txt = a + b
     insert_txt_at(txt, lr.end + 1)
-    qt_process_deltas
+    gui_process_deltas
     imgpos = lr.end + 1 + a.size
     add_image(fname, imgpos)
   end
@@ -209,7 +209,7 @@ class Buffer < String
 
   def set_content(str)
     @encrypted_str = nil
-    @qt_update_highlight = true
+    @gui_update_highlight = true
     @ftype = nil
     if str[0..10] == "VMACRYPT001"
       @encrypted_str = str[11..-1]
@@ -263,7 +263,7 @@ class Buffer < String
     @update_hl_startpos = 0 #TODO
     @update_hl_endpos = self.size - 1
 
-    qt_set_buffer_contents(@id, self.to_s)
+    gui_set_buffer_contents(@id, self.to_s)
 
     # add_hl_update(@update_hl_startpos, @update_hl_endpos)
   end
@@ -752,7 +752,7 @@ class Buffer < String
     elsif new_pos >= 0
       @pos = new_pos
     end
-    qt_set_cursor_pos(@id, @pos)
+    gui_set_cursor_pos(@id, @pos)
     calculate_line_and_column_pos
   end
 
@@ -1481,7 +1481,7 @@ class Buffer < String
   def start_visual_mode()
     @visual_mode = true
     @selection_start = @pos
-    qt_set_selection_start(@id, selection_start)
+    gui_set_selection_start(@id, selection_start)
     $kbd.set_mode(:visual)
   end
 
@@ -1637,7 +1637,7 @@ class Buffer < String
       savepath = buflist.get_last_dir
     end
     # Ripl.start :binding => binding
-    qt_file_saveas(savepath)
+    gui_file_saveas(savepath)
     # calls back to file_saveas
     # TODO:?
   end

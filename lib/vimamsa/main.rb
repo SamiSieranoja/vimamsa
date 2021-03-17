@@ -51,7 +51,7 @@ end
 
 require "vimamsa/editor.rb"
 
-# load "qt_funcs.rb"
+# load "gui_funcs.rb"
 
 $vma = Editor.new
 def vma()

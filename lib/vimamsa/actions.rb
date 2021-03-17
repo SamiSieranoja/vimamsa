@@ -48,7 +48,7 @@ end
 def search_actions()
   l = []
   $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
-  qt_select_update_window(l, $select_keys.collect { |x| x.upcase },
+  gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
                           "search_actions_select_callback",
                           "search_actions_update_callback")
 end
@@ -101,7 +101,7 @@ def search_actions_select_callback(search_str, idx)
   acc = item[0][:action]
 
   puts "Selected:" + acc.to_s
-  qt_select_window_close(0)
+  gui_select_window_close(0)
 
   if acc.class == String
     eval(acc)

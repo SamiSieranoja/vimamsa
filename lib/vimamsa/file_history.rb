@@ -55,7 +55,7 @@ class FileHistory
     l = []
     $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
 
-    qt_select_update_window(l, $select_keys.collect { |x| x.upcase },
+    gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
                             "gui_file_history_select_callback",
                             "gui_file_history_update_callback")
   end
@@ -95,6 +95,6 @@ def gui_file_history_select_callback(search_str, idx)
   selected_file = $search_list[idx][0]
 
   debug "FILE HISTORY SELECT CALLBACK: s=#{search_str},i=#{idx}: #{selected_file}"
-  qt_select_window_close(0)
+  gui_select_window_close(0)
   open_new_file(selected_file)
 end

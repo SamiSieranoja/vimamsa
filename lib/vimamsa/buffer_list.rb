@@ -30,8 +30,8 @@ class BufferList < Array
     $buffer_history << @current_buf
     @recent_ind = 0
     $hook.call(:change_buffer, $buffer)
-    qt_set_current_buffer($buffer.id)
-    qt_set_cursor_pos($buffer.id, $buffer.pos)
+    gui_set_current_buffer($buffer.id)
+    gui_set_cursor_pos($buffer.id, $buffer.pos)
   end
 
   def switch()
@@ -83,7 +83,7 @@ class BufferList < Array
     $hook.call(:change_buffer, $buffer)
     $buffer.set_active
 
-    qt_set_current_buffer($buffer.id)
+    gui_set_current_buffer($buffer.id)
     gui_set_window_title($buffer.title,$buffer.subtitle)   
 
     # hpt_scan_images() if $debug # experimental
