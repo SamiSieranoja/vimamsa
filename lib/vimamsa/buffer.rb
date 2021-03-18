@@ -108,7 +108,6 @@ class Buffer < String
   def add_image(imgpath, pos)
     return if !is_legal_pos(pos)
     # insert_txt_at(" ", pos)
-    gui_process_deltas
     gui_add_image(imgpath, pos)
   end
 
@@ -141,7 +140,6 @@ class Buffer < String
     b = " \n"
     txt = a + b
     insert_txt_at(txt, lr.end + 1)
-    gui_process_deltas
     imgpos = lr.end + 1 + a.size
     add_image(fname, imgpos)
   end
@@ -1487,7 +1485,6 @@ class Buffer < String
   def start_visual_mode()
     @visual_mode = true
     @selection_start = @pos
-    gui_set_selection_start(@id, selection_start)
     $kbd.set_mode(:visual)
   end
 

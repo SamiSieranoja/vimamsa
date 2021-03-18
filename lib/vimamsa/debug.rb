@@ -95,10 +95,10 @@ def run_test(test_id)
   $buffer = old_buffer
 end
 
+#TODO: remove?
 def gui_sleep(t2)
   t1 = Time.now()
   while Time.now < t1 + t2
-    gui_process_events
     sleep(0.02)
   end
 end

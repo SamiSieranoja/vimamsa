@@ -528,10 +528,6 @@ def draw_text(str, x, y)
   vma.paint_stack << [4, x, y, str]
 end
 
-def center_on_current_line__2del()
-  center_where_cursor
-end
-
 def hook_draw()
   # TODO: as hook.register
   # easy_jump_draw()
@@ -548,8 +544,6 @@ def render_buffer(buffer = 0, reset = 0)
   end
   t1 = Time.now
   hook_draw()
-
-  render_text(tmpbuf, pos, selection_start, reset) #TODO: remove?
 
   if $buffer.need_redraw?
     hpt_scan_images() if $debug #experimental

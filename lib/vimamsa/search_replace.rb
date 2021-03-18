@@ -152,7 +152,6 @@ def buf_replace(search_str, replace_str)
     else
       $buffer.set_content(repbuf)
       $buffer.set_pos(tmppos)
-      # $do_center = 1 #TODO
       message("Replacing #{search_str} with #{replace_str}.")
     end
   end
