@@ -55,9 +55,14 @@ class FileHistory
     l = []
     $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
 
+    opt = { :title => "File history search",
+            :desc => "Search for previously opened files. Fuzzy search." ,
+            :columns => [{:title=>'Filename',:id=>0}]
+            }
     gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
-                            "gui_file_history_select_callback",
-                            "gui_file_history_update_callback")
+                             "gui_file_history_select_callback",
+                             "gui_file_history_update_callback",
+                             opt)
   end
 end
 
@@ -86,8 +91,10 @@ def gui_file_history_update_callback(search_str = "")
   if (search_str.size > 1)
     files = fuzzy_filter(search_str, $vma.fh.history.keys, 40)
   end
+
   $search_list = files
-  return files
+  ret = files.collect{|x|[x[0]]}
+  return ret
 end
 
 def gui_file_history_select_callback(search_str, idx)

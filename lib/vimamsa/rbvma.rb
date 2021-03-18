@@ -9,16 +9,18 @@ require "ripl/multi_line"
 require "json"
 require "listen"
 
-puts "INIT rbvma"
-
 require "vimamsa/util"
-# require "rbvma/rbvma"
-require "vimamsa/main" #
-require "vimamsa/key_binding_tree" #
-require "vimamsa/actions" #
-require "vimamsa/macro" #
-require "vimamsa/buffer" #
-require "vimamsa/debug" #
+require "vimamsa/main"
+
+require "vimamsa/actions"
+require "vimamsa/key_binding_tree"
+require "vimamsa/key_actions"
+
+require "vimamsa/gui_select_window"
+
+require "vimamsa/macro"
+require "vimamsa/buffer"
+require "vimamsa/debug"
 require "vimamsa/constants"
 require "vimamsa/easy_jump"
 require "vimamsa/hook"
@@ -74,154 +76,7 @@ end
 # gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
 # "gui_find_macro_select_callback",
 # "gui_find_macro_update_callback")
-class SelectUpdateWindow
-  COLUMN_JUMP_KEY = 0
-  COLUMN_DESCRIPTION = 1
 
-  def update_item_list(item_list)
-    # puts item_list.inspect
-    # Ripl.start :binding => binding
-    @model.clear
-    for item in item_list
-      iter = @model.append
-      v = ["", item[0]]
-      puts v.inspect
-      iter.set_values(v)
-    end
-
-    set_selected_row(0)
-  end
-
-  def set_selected_row(rownum)
-    rownum = 0 if rownum < 0
-    @selected_row = rownum
-
-    if @model.count > 0
-      path = Gtk::TreePath.new(@selected_row.to_s)
-      iter = @model.get_iter(path)
-      @tv.selection.select_iter(iter)
-    end
-  end
-
-  def initialize(main_window, item_list, jump_keys, select_callback, update_callback)
-    @window = Gtk::Window.new(:toplevel)
-    # @window.screen = main_window.screen
-    @window.title = "List Store"
-
-    @selected_row = 0
-
-    puts item_list.inspect
-    @update_callback = method(update_callback)
-    @select_callback = method(select_callback)
-    # puts @update_callback_m.call("").inspect
-
-    vbox = Gtk::Box.new(:vertical, 8)
-    vbox.margin = 8
-    @window.add(vbox)
-
-    @entry = Gtk::SearchEntry.new
-    @entry.width_chars = 45
-    container = Gtk::Box.new(:horizontal, 10)
-    # container.halign = :start
-    container.halign = :center
-    container.pack_start(@entry,
-                         :expand => false, :fill => false, :padding => 0)
-
-    # create tree view
-    @model = Gtk::ListStore.new(String, String)
-    treeview = Gtk::TreeView.new(@model)
-    treeview.search_column = COLUMN_DESCRIPTION
-    @tv = treeview
-    # item_list = @update_callback.call("")
-    update_item_list(item_list)
-
-    # Ripl.start :binding => binding
-    @window.signal_connect("key-press-event") do |_widget, event|
-      # puts "KEYPRESS 1"
-      @entry.handle_event(event)
-    end
-
-    @entry.signal_connect("key_press_event") do |widget, event|
-      # puts "KEYPRESS 2"
-      if event.keyval == Gdk::Keyval::KEY_Down
-        puts "DOWN"
-        set_selected_row(@selected_row + 1)
-        # fixed = iter[COLUMN_FIXED]
-
-        true
-      elsif event.keyval == Gdk::Keyval::KEY_Up
-        set_selected_row(@selected_row - 1)
-        puts "UP"
-        true
-      elsif event.keyval == Gdk::Keyval::KEY_Return
-        path = Gtk::TreePath.new(@selected_row.to_s)
-        iter = @model.get_iter(path)
-        ret = iter[1]
-        @select_callback.call(ret, @selected_row)
-        @window.destroy
-        # puts iter[1].inspect
-        true
-      elsif event.keyval == Gdk::Keyval::KEY_Escape
-        @window.destroy
-        true
-      else
-        false
-      end
-    end
-
-    @entry.signal_connect("search-changed") do |widget|
-      puts "search changed: #{widget.text || ""}"
-      item_list = @update_callback.call(widget.text)
-      update_item_list(item_list)
-      # label.text = widget.text || ""
-    end
-    @entry.signal_connect("changed") { puts "[changed] " }
-    @entry.signal_connect("next-match") { puts "[next-match] " }
-
-    label = Gtk::Label.new(<<-EOF)
-    
-    Search:
-EOF
-    vbox.pack_start(label, :expand => false, :fill => false, :padding => 0)
-
-    vbox.pack_start(container, :expand => false, :fill => false, :padding => 0)
-    sw = Gtk::ScrolledWindow.new(nil, nil)
-    sw.shadow_type = :etched_in
-    sw.set_policy(:never, :automatic)
-    vbox.pack_start(sw, :expand => true, :fill => true, :padding => 0)
-
-    sw.add(treeview)
-
-    renderer = Gtk::CellRendererText.new
-    column = Gtk::TreeViewColumn.new("JMP",
-                                     renderer,
-                                     "text" => COLUMN_JUMP_KEY)
-    column.sort_column_id = COLUMN_JUMP_KEY
-    treeview.append_column(column)
-
-    renderer = Gtk::CellRendererText.new
-    column = Gtk::TreeViewColumn.new("Description",
-                                     renderer,
-                                     "text" => COLUMN_DESCRIPTION)
-    column.sort_column_id = COLUMN_DESCRIPTION
-    treeview.append_column(column)
-
-    @window.set_default_size(280, 500)
-    puts "SelectUpdateWindow"
-  end
-
-  def run
-    if !@window.visible?
-      @window.show_all
-      # add_spinner
-    else
-      @window.destroy
-      # GLib::Source.remove(@tiemout) unless @timeout.zero?
-      @timeout = 0
-    end
-    @window
-  end
-end
 
 def center_on_current_line()
   b = $view.buffer
@@ -233,10 +88,7 @@ def center_on_current_line()
   $view.scroll_to_iter(iter, within_margin, use_align, xalign, yalign)
 end
 
-def gui_select_update_window(item_list, jump_keys, select_callback, update_callback)
-  $selup = SelectUpdateWindow.new(nil, item_list, jump_keys, select_callback, update_callback)
-  $selup.run
-end
+
 
 # ~/Drive/code/ruby-gnome/gtk3/sample/gtk-demo/search_entry2.rb
 # ~/Drive/code/ruby-gnome/gtk3/sample/gtk-demo/list_store.rb
@@ -328,7 +180,7 @@ def gui_select_window_close(arg = nil)
 end
 
 # def set_window_title(str)
-  # unimplemented
+# unimplemented
 # end
 
 def render_text(tmpbuf, pos, selection_start, reset)
@@ -377,7 +229,7 @@ def gui_set_current_buffer(id)
   $vmag.sw.show_all
 end
 
-def gui_set_window_title(wtitle,subtitle="")
+def gui_set_window_title(wtitle, subtitle = "")
   $vmag.window.title = wtitle
   $vmag.window.titlebar.subtitle = subtitle
 end
@@ -883,7 +735,9 @@ class VMAg
     $kbd.add_mode("R", :readchar)
     $kbd.add_mode("B", :browse)
     $kbd.set_default_mode(:command)
-    require "default_key_bindings"
+    # require "default_key_bindings"
+
+    require "vimamsa/key_bindings_vimlike"
 
     $macro = Macro.new
 
@@ -960,7 +814,6 @@ class VMAg
   end
 
   def init_header_bar()
-
     header = Gtk::HeaderBar.new
     @header = header
     header.show_close_button = true
@@ -968,7 +821,6 @@ class VMAg
     header.has_subtitle = true
     header.subtitle = ""
     # Ripl.start :binding => binding
-
 
     # icon = Gio::ThemedIcon.new("mail-send-receive-symbolic")
     # icon = Gio::ThemedIcon.new("document-open-symbolic")
@@ -978,7 +830,7 @@ class VMAg
     #document-open document-save document-save-as document-properties document-new
     # document-revert-symbolic
     #
-    
+
     #TODO:
     # button = Gtk::Button.new
     # icon = Gio::ThemedIcon.new("open-menu-symbolic")

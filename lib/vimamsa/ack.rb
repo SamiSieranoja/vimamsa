@@ -16,10 +16,6 @@ def gui_ack()
   gui_one_input_action(nfo, "Search:", "search", callback)
 end
 
-def invoke_ack_search()
-  start_minibuffer_cmd("", "", :ack_buffer)
-end
-
 def ack_buffer(instr, b = nil)
   instr = instr.gsub("'", ".") # TODO
   bufstr = ""

@@ -1,35 +1,30 @@
 class Action
-  attr_accessor :id, :method_name, :method
+  attr_accessor :id, :method_name, :method, :opt
 
-  def initialize(id, method_name, method, scope = [])
+  def initialize(id, method_name, method, opt={})
     @method_name = method_name
     @id = id
     @method = method
+    @opt = opt
+    
     $actions[id] = self
   end
 end
 
 $actions = {}
 
-# def reg_act(id, callfunc, name = "", scope = [])
-  # if callfunc.class == Proc
-    # a = Action.new(id, name, callfunc, scope)
-  # else
-    # a = Action.new(id, name, method(callfunc), scope)
-  # end
-# end
-
-def reg_act(id, callfunc, name = "", scope = [])
+def reg_act(id, callfunc, name = "", opt={})
   if callfunc.class == Proc
-    a = Action.new(id, name, callfunc, scope)
+    a = Action.new(id, name, callfunc, opt)
   else
     begin
       m = method(callfunc)
     rescue NameError
       m = method("missing_callfunc")
     end
-    a = Action.new(id, name, m, scope)
+    a = Action.new(id, name, m, opt)
   end
+  return a
 end
 
 def missing_callfunc
@@ -40,7 +35,6 @@ end
 def call(id)
   a = $actions[id]
   if a
-    #        Ripl.start :binding => binding
     a.method.call()
   end
 end
@@ -56,18 +50,7 @@ end
 $item_list = []
 
 def search_actions_update_callback(search_str = "")
-  #    item_list = $actions.collect {|x| x[1].id.to_s}
   return [] if search_str == ""
-  # item_list = $action_list.collect { |x|
-    # actname = x[:action].to_s
-    # if x[:action].class == Symbol
-      # mn = $actions[x[:action]].method_name
-      # actname = mn if mn.size > 0
-    # end
-    # r = { :str => actname, :key => x[:key], :action => x[:action] }
-  # }
-
-  # => {:str=>"insert_new_line", :key=>"I return", :action=>:insert_new_line}
 
   item_list2 = []
   for act_id in $actions.keys
@@ -81,7 +64,7 @@ def search_actions_update_callback(search_str = "")
     end
     item_list2 << item
   end
-  # Ripl.start :binding => binding
+
   item_list = item_list2
 
   a = filter_items(item_list, 0, search_str)
@@ -90,7 +73,6 @@ def search_actions_update_callback(search_str = "")
   r = a.collect { |x| [x[0][0], 0, x] }
   puts r.inspect
   $item_list = r
-  # Ripl.start :binding => binding
 
   r = a.collect { |x| ["[#{x[0][:key]}] #{x[0][:str]}", 0, x] }
   return r

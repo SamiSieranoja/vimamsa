@@ -272,6 +272,12 @@ class Buffer < String
     @fname = filename
     @pathname = Pathname.new(fname) if @fname
     @basename = @pathname.basename if @fname
+
+    @title = File.basename(@fname)
+    @dirname = File.dirname(@fname)
+    userhome = File.expand_path("~")
+    @subtitle = @dirname.gsub(/^#{userhome}/, "~")
+
     detect_file_language
   end
 
@@ -1639,7 +1645,12 @@ class Buffer < String
     # Ripl.start :binding => binding
     gui_file_saveas(savepath)
     # calls back to file_saveas
-    # TODO:?
+  end
+
+  def save_as_callback(fpath)
+    set_filename(fpath)
+    save()
+    gui_set_window_title(@title, @subtitle) #TODO: if not active buffer?
   end
 
   def write_contents_to_file(fpath)

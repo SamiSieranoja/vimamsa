@@ -228,8 +228,7 @@ class Editor
   # Register converter
   def reg_conv(converter, converter_id)
     @converters[converter_id] = converter
-    reg_act(converter_id, proc { $buffer.convert_selected_text(converter_id) }, "Converter #{converter_id}", [:selection])
-    # reg_act(converter_id, "$buffer.convert_selected_text(:#{converter_id})", "Converter #{converter_id}", [:selection])
+    reg_act(converter_id, proc { $buffer.convert_selected_text(converter_id) }, "Converter #{converter_id}", {:scope => [:selection]})
   end
 
   def apply_conv(converter_id, txt)
@@ -266,8 +265,9 @@ def fatal_error(msg)
 end
 
 def file_saveas(filename)
-  $buffer.set_filename(filename)
-  $buffer.save()
+  buf.save_as_callback(filename)
+  # $buffer.set_filename(filename)
+  # $buffer.save()
 end
 
 def open_file_dialog()
