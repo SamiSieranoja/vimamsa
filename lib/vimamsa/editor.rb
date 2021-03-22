@@ -87,8 +87,9 @@ class Editor
     $kbd.add_mode("R", :readchar)
     $kbd.add_mode("B", :browse)
     $kbd.set_default_mode(:command)
-    require "vimamsa/default_key_bindings"
+    require "vimamsa/key_bindings_vimlike"
     sleep(0.03)
+
 
     FileManager.init
 
@@ -256,7 +257,7 @@ end
 
 def _quit()
   vma.shutdown
-  exit
+  Gtk.main_quit
 end
 
 def fatal_error(msg)

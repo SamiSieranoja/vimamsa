@@ -36,5 +36,5 @@ $LOAD_PATH.unshift(File.expand_path("ext"))
 require "vimamsa"
 # Ilib:ext
 # r rbvma -e "puts VMA.new.run"
-$vmag = VMAg.new()
+$vmag = VMAgui.new()
 $vmag.run
