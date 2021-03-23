@@ -18,6 +18,7 @@ require "vimamsa/key_actions"
 
 
 require "vimamsa/gui"
+require "vimamsa/gui_menu"
 require "vimamsa/gui_select_window"
 require "vimamsa/gui_sourceview"
 

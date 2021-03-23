@@ -368,7 +368,8 @@ class VMAgui
     sw.set_policy(:automatic, :automatic)
     overlay = Gtk::Overlay.new
     overlay.add(sw)
-    @vpaned.pack2(overlay, :resize => false)
+    # @vpaned.pack2(overlay, :resize => false)
+    @vbox.attach(overlay, 0, 2, 1, 1)
     # overlay.set_size_request(-1, 50)
     # $ovrl = overlay
     # $ovrl.set_size_request(-1, 30)
@@ -482,6 +483,31 @@ class VMAgui
     @window.add(Gtk::TextView.new)
   end
 
+  def create_menu_item(label, depth)
+    menuitem = Gtk::MenuItem.new(:label => label)
+    menuitem.submenu = create_menu(depth)
+    @menubar.append(menuitem)
+  end
+
+  def create_menu(depth)
+    return nil if depth < 1
+
+    menu = Gtk::Menu.new
+    last_item = nil
+    (0..5).each do |i|
+      j = i + 1
+      label = "item #{depth} - #{j}"
+      menu_item = Gtk::RadioMenuItem.new(nil, label)
+      menu_item.join_group(last_item) if last_item
+      last_item = menu_item
+      menu.append(menu_item)
+      menu_item.sensitive = false if i == 3
+      menu_item.submenu = create_menu(depth - 1)
+    end
+
+    menu
+  end
+
   def init_window
     @window = Gtk::Window.new(:toplevel)
     @window.set_default_size(650, 850)
@@ -489,21 +515,45 @@ class VMAgui
     @window.show_all
     # vpaned = Gtk::Paned.new(:horizontal)
     @vpaned = Gtk::Paned.new(:vertical)
-    @window.add(@vpaned)
+    #@vpaned = Gtk::Box.new(:vertical, 0)
+    # @vbox = Gtk::Box.new(:vertical, 0)
+    @vbox = Gtk::Grid.new()
+    @window.add(@vbox)
+
+    @menubar = Gtk::MenuBar.new
+    @menubar.expand = false
+    Vimamsa::Menu.new(@menubar)
+    
 
     @sw = Gtk::ScrolledWindow.new
     @sw.set_policy(:automatic, :automatic)
     @overlay = Gtk::Overlay.new
     @overlay.add(@sw)
-    @vpaned.pack1(@overlay, :resize => true)
+
+    # @vpaned.pack1(@overlay, :resize => true)
+    # @vpaned.pack2(@menubar, :resize => false)
+    # @vbox.add(@menubar, :resize => false)
+
+    init_header_bar
+
+    # @window.show_all
+
+    # @vbox.pack_start(@menubar, :expand => false, :fill => false, :padding => 0 )
+    # @vbox.pack_start(@menubar)
+    # @vbox.pack_start(@overlay, :expand => true, :fill => true, :padding => 0 )
+    # @vbox.pack_start(@overlay, :expand => true, :fill => true, :padding => 0 )
+    @vbox.attach(@menubar, 0, 0, 1, 1)
+    @vbox.attach(@overlay, 0, 1, 1, 1)
+    @overlay.vexpand = true
+    @overlay.hexpand = true
+
+    @menubar.vexpand = false
+    @menubar.hexpand = false
 
     init_minibuffer
-    init_header_bar
 
     @window.show_all
 
     vma.start
   end
 end
-
-

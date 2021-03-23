@@ -94,10 +94,38 @@ reg_act(:show_images, proc { hpt_scan_images() }, "Show images inserted with ⟦
 reg_act(:delete_current_file, proc { bufs.delete_current_buffer() }, "Delete current file")
 
 act_list = {
-
   # File handling
   :buf_save => { :proc => proc { buf.save },
                  :desc => "Save buffer", :group => :file },
+
+  :buf_save_as => { :proc => proc { buf.save_as },
+                    :desc => "Save file as", :group => :file },
+  :buf_new => { :proc => proc { create_new_file() }, :desc => "Create a new file", :group => :file },
+  :buf_revert => { :proc => proc { buf.revert },
+                   :desc => "Reload file from disk", :group => :file },
+
+  :edit_redo => { :proc => proc { buf.redo },
+                  :desc => "Redo edit", :group => :edit },
+
+  :edit_undo => { :proc => proc { buf.undo },
+                  :desc => "Undo edit", :group => :edit },
+
+  # { :proc => proc {  },
+  # :desc => "", :group => : },
+
+  :search_actions => { :proc => proc { search_actions },
+                       :desc => "Search actions", :group => :search },
+
+  :quit => { :proc => proc { _quit },
+             :desc => "Quit", :group => :app },
+
+}
+
+for k, v in act_list
+  reg_act(k, v[:proc], v[:desc])
+end
+
+act_list_todo = {
 
   # Buffer handling
   # : =>  {proc => proc {bufs.switch}, :desc => "", :group => :},
@@ -109,9 +137,8 @@ act_list = {
   :buf_close => { :proc => proc { bufs.close_current_buffer },
                   :desc => "Close current file", :group => :file },
   #"C , b" => '$kbd.set_mode("S");gui_select_buffer',
-  :buf_new => { :proc => proc { create_new_file() }, :desc => "Create a new file", :group => :file },
+
   :buf_backup => { :proc => proc { buf.backup() }, :desc => "", :group => :file },
-  "VC , , s" => "search_actions()",
 
   # MOVING
   #    'VC h' => 'buf.move(BACKWARD_CHAR)',
@@ -192,7 +219,6 @@ act_list = {
   "C /[1-9]/" => "set_next_command_count(<char>)",
 
   # Command mode only:
-  "C ctrl-r" => "buf.redo()", # TODO:???
   "C R" => "buf.redo()",
   "C v" => "buf.start_visual_mode",
   "C P" => "buf.paste(BEFORE)", # TODO: implement as replace for visual mode
@@ -264,7 +290,6 @@ act_list = {
 
   "C ." => "repeat_last_action", # TODO
   "VC ;" => "repeat_last_find",
-  "CV Q" => "_quit",
   "CV ctrl-q" => "_quit",
   "CV , R" => "restart_application",
   "I ctrl!" => "$kbd.set_mode(:command)",

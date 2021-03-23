@@ -267,8 +267,6 @@ end
 
 def file_saveas(filename)
   buf.save_as_callback(filename)
-  # $buffer.set_filename(filename)
-  # $buffer.save()
 end
 
 def open_file_dialog()

@@ -1,19 +1,19 @@
 class Action
   attr_accessor :id, :method_name, :method, :opt
 
-  def initialize(id, method_name, method, opt={})
+  def initialize(id, method_name, method, opt = {})
     @method_name = method_name
     @id = id
     @method = method
     @opt = opt
-    
+
     $actions[id] = self
   end
 end
 
 $actions = {}
 
-def reg_act(id, callfunc, name = "", opt={})
+def reg_act(id, callfunc, name = "", opt = {})
   if callfunc.class == Proc
     a = Action.new(id, name, callfunc, opt)
   else
@@ -31,11 +31,17 @@ def missing_callfunc
   puts "missing_callfunc"
 end
 
-
+#TODO: remove
 def call(id)
+  call_action(id)
+end
+
+def call_action(id)
   a = $actions[id]
   if a
     a.method.call()
+  else
+    message("Unknown action: " + id.inspect)
   end
 end
 
@@ -43,8 +49,8 @@ def search_actions()
   l = []
   $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
   gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
-                          "search_actions_select_callback",
-                          "search_actions_update_callback")
+                           "search_actions_select_callback",
+                           "search_actions_update_callback")
 end
 
 $item_list = []

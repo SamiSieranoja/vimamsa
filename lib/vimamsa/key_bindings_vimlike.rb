@@ -33,7 +33,7 @@ bindkey "C , t c", :clear_line_styles
 bindkey "C , b", :gui_select_buffer
 # bindkey "C , f o", :open_file_dialog
 bindkey "CI ctrl-o", :open_file_dialog
-bindkey "M enter", :minibuffer_end
+# bindkey "M enter", :minibuffer_end
 bindkey "C , a", :ack_search
 bindkey  "C d w", :delete_to_word_end
 bindkey  "C d 0", :delete_to_line_start
@@ -62,7 +62,7 @@ bindkey "C , g", :invoke_grep_search
 bindkey "C , v", :auto_indent_buffer
 bindkey "C , , d", :savedebug
 bindkey "C , , u", :update_file_index
-bindkey "C , s a", "buf.save_as()"
+bindkey "C , s a", :buf_save_as 
 bindkey "C d d", [:delete_line, proc{buf.delete_line}, "Delete current line"]
 bindkey "C enter || C return",  [:line_action,proc{buf.handle_line_action()}, "Line action"]
 bindkey  "C p" , [:paste_after,proc{buf.paste(AFTER)},""] # TODO: implement as replace for visual mode
@@ -71,20 +71,18 @@ bindkey  "V d" , [:delete_selection,proc{buf.delete(SELECTION)},""]
 default_keys = {
 
   # File handling
-  "C ctrl-s" => "buf.save",
-  "C W" => "buf.save",
+  "C ctrl-s" => :buf_save,
 
   # Buffer handling
   "C B" => "bufs.switch",
   "C tab" => "bufs.switch_to_last_buf",
   #    'C , s'=> 'gui_select_buffer',
-  "C , r v b" => "buf.revert",
+  "C , r v b" => :buf_revert,
   "C , c b" => "bufs.close_current_buffer",
   #"C , b" => '$kbd.set_mode("S");gui_select_buffer',
-  "C , n b" => "create_new_file()",
-  "C , ." => "buf.backup()",
+  "C , n b" => :buf_new,
   # "C , , ." => "backup_all_buffers()",
-  "VC , , s" => "search_actions()",
+  "VC , , s" => :search_actions,
 
 
   # MOVING
@@ -128,12 +126,12 @@ default_keys = {
   "VC /" => "invoke_search",
   # 'VC :' => 'invoke_command', #TODO
   "C , e" => "invoke_command", # Currently eval
-  "M enter" => "minibuffer_end()",
-  # "M return" => "minibuffer_end()",
-  "M esc" => "minibuffer_cancel()",
-  "M backspace" => "minibuffer_delete()",
-  "M <char>" => "minibuffer_new_char(<char>)",
-  "M ctrl-v" => "$minibuffer.paste(BEFORE)",
+  # "M enter" => "minibuffer_end()",
+  # # "M return" => "minibuffer_end()",
+  # "M esc" => "minibuffer_cancel()",
+  # "M backspace" => "minibuffer_delete()",
+  # "M <char>" => "minibuffer_new_char(<char>)",
+  # "M ctrl-v" => "$minibuffer.paste(BEFORE)",
 
   # READCHAR bindings
 
@@ -236,8 +234,8 @@ default_keys = {
 
   "C ." => "repeat_last_action", # TODO
   "VC ;" => "repeat_last_find",
-  "CV Q" => "_quit",
-  "CV ctrl-q" => "_quit",
+  # "CV Q" => :quit,
+  "CV ctrl-q" => :quit,
   "CV , R" => "restart_application",
   "I ctrl!" => "$kbd.set_mode(:command)",
   "C shift!" => "buf.save",

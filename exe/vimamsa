@@ -16,7 +16,9 @@ listen_dir = File.expand_path("~/.vimamsa/listen")
 if File.exist?(listen_dir) and !ARGV[0].nil?
   tmpf = Tempfile.new("vmarun", listen_dir)
   fp = tmpf.path
-  tmpf.write(ARGV[0])
+  paramfn = File.expand_path(ARGV[0])
+  puts paramfn
+  tmpf.write(paramfn)
   tmpf.close
   tstart = Time.new
   timeout = false
