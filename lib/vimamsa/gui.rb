@@ -522,7 +522,6 @@ class VMAgui
 
     @menubar = Gtk::MenuBar.new
     @menubar.expand = false
-    Vimamsa::Menu.new(@menubar)
     
 
     @sw = Gtk::ScrolledWindow.new
@@ -552,8 +551,11 @@ class VMAgui
 
     init_minibuffer
 
-    @window.show_all
 
+    @window.show_all
     vma.start
+    Vimamsa::Menu.new(@menubar)
+    @window.show_all
+    
   end
 end

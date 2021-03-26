@@ -53,7 +53,7 @@ end
 
 class KeyBindingTree
   attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action
-  attr_reader :mode_root_state, :state_trail
+  attr_reader :mode_root_state, :state_trail, :act_bindings
 
   def initialize()
     @modes = {}
@@ -69,6 +69,8 @@ class KeyBindingTree
     @last_event = [nil, nil, nil, nil, nil]
 
     @override_keyhandling_callback = nil
+    # Allows h["foo"]["faa"]=1
+    @act_bindings = Hash.new { |h, k| h[k] = Hash.new(&h.default_proc) }
   end
 
   def set_default_mode(label)
@@ -139,9 +141,7 @@ class KeyBindingTree
         end
       }
     }
-    if key_name == "o"
-      # Ripl.start :binding => binding
-    end
+
 
     if new_state.any? # Match found
       @match_state = new_state
@@ -252,13 +252,8 @@ class KeyBindingTree
     # $cur_key_dict = $key_bind_dict[$context[:mode]]
     print "MATCH KEY CONF: #{[c, translated_c]}" if $debug
 
-    # Sometimes we get ASCII-8BIT encoding although content actually UTF-8
-    # c = c.force_encoding("UTF-8");  # TODO:correct?
-
     if !@override_keyhandling_callback.nil?
-      puts "if !@override_keyhandling_callback.nil?"
-
-      ret = @override_keyhandling_callback.call(c,event_type)
+      ret = @override_keyhandling_callback.call(c, event_type)
       return if ret
     end
 
@@ -323,7 +318,6 @@ class KeyBindingTree
       # act_s = cstate.action.to_s if cstate.action != nil
       # puts "  #{cstate.to_s} #{act_s}"
       # end
-      # Ripl.start :binding => binding
       # new_state[0].children.collect{|x|x.to_s}
     end
 
@@ -501,6 +495,7 @@ class KeyBindingTree
 
     modes.each { |mode_id|
       mode_bind_key(mode_id, keydef, action)
+      @act_bindings[mode_id][action] = keydef
     }
   end
 
