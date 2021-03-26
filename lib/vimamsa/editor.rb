@@ -19,6 +19,11 @@ def handle_drag_and_drop(fname)
   buf.handle_drag_and_drop(fname)
 end
 
+def mkdir_if_not_exists(_dirpath)
+  dirpath = File.expand_path(_dirpath)
+  Dir.mkdir(dirpath) unless File.exist?(dirpath)
+end
+
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths
   attr_accessor :converters, :fh, :paint_stack
@@ -42,7 +47,7 @@ class Editor
   def open_file_listener(added)
     if !added.empty?
       for fp in added
-      	sleep 0.1
+        sleep 0.1
         x = IO.read(fp)
         File.delete(fp)
         for f in x.lines
@@ -90,13 +95,12 @@ class Editor
     require "vimamsa/key_bindings_vimlike"
     sleep(0.03)
 
-
     FileManager.init
 
-    dot_dir = File.expand_path("~/.vimamsa")
-    Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
-    listen_dir = File.expand_path("~/.vimamsa/listen")
-    Dir.mkdir(listen_dir) unless File.exist?(dot_dir)
+    mkdir_if_not_exists("~/.vimamsa")
+    mkdir_if_not_exists("~/.vimamsa/backup")
+    mkdir_if_not_exists("~/.vimamsa/listen")
+    listen_dir = File.expand_path "~/.vimamsa/listen"
     listener = Listen.to(listen_dir) do |modified, added, removed|
       puts(modified: modified, added: added, removed: removed)
       open_file_listener(added)
@@ -229,7 +233,7 @@ class Editor
   # Register converter
   def reg_conv(converter, converter_id)
     @converters[converter_id] = converter
-    reg_act(converter_id, proc { $buffer.convert_selected_text(converter_id) }, "Converter #{converter_id}", {:scope => [:selection]})
+    reg_act(converter_id, proc { $buffer.convert_selected_text(converter_id) }, "Converter #{converter_id}", { :scope => [:selection] })
   end
 
   def apply_conv(converter_id, txt)

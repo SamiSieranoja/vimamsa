@@ -1728,14 +1728,13 @@ class Buffer < String
   def backup()
     fname = @fname
     return if !@fname
-    message("Backup buffer #{fname}")
     spfx = fname.gsub("=", "==").gsub("/", "=:")
-    spath = File.expand_path("~/autosave")
+    spath = File.expand_path("~/.vimamsa/backup")
     return false if !can_save_to_directory?(spath)
     datetime = DateTime.now().strftime("%d%m%Y:%H%M%S")
     savepath = "#{spath}/#{spfx}_#{datetime}"
+    message("Backup buffer #{fname} TO: #{savepath}")
     if is_path_writable(savepath)
-      debug "BACKUP BUFFER TO: #{savepath}"
       write_contents_to_file(savepath)
     else
       message("PATH NOT WRITABLE: #{savepath}")

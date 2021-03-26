@@ -32,7 +32,7 @@ reg_act(:easy_jump, proc { easy_jump(:visible_area) }, "Easy jump")
 reg_act(:savedebug, "savedebug", "Save debug info", { :group => :debug })
 reg_act(:open_file_dialog, "open_file_dialog", "Open file", { :group => :file })
 reg_act(:create_new_file, "create_new_file", "Create new file", { :group => :file })
-reg_act(:backup_all_buffers, "backup_all_buffers", "Backup all buffers", { :group => :file })
+reg_act(:backup_all_buffers, proc{backup_all_buffers}, "Backup all buffers", { :group => :file })
 reg_act(:e_move_forward_char, "e_move_forward_char", "", { :group => :move })
 reg_act(:e_move_backward_char, "e_move_backward_char", "", { :group => :move })
 reg_act(:history_switch_backwards, "history_switch_backwards", "", { :group => :file })
@@ -103,6 +103,7 @@ act_list = {
   :buf_new => { :proc => proc { create_new_file() }, :desc => "Create a new file", :group => :file },
   :buf_revert => { :proc => proc { buf.revert },
                    :desc => "Reload file from disk", :group => :file },
+  :buf_backup => { :proc => proc { buf.backup() }, :desc => "Backup current file", :group => :file },
 
   :edit_redo => { :proc => proc { buf.redo },
                   :desc => "Redo edit", :group => :edit },
@@ -138,7 +139,6 @@ act_list_todo = {
                   :desc => "Close current file", :group => :file },
   #"C , b" => '$kbd.set_mode("S");gui_select_buffer',
 
-  :buf_backup => { :proc => proc { buf.backup() }, :desc => "", :group => :file },
 
   # MOVING
   #    'VC h' => 'buf.move(BACKWARD_CHAR)',
