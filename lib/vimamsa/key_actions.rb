@@ -28,7 +28,7 @@ def is_visual_mode()
   return 0
 end
 
-reg_act(:easy_jump, proc { easy_jump(:visible_area) }, "Easy jump")
+reg_act(:easy_jump, proc { EasyJump.start }, "Easy jump")
 reg_act(:savedebug, "savedebug", "Save debug info", { :group => :debug })
 reg_act(:open_file_dialog, "open_file_dialog", "Open file", { :group => :file })
 reg_act(:create_new_file, "create_new_file", "Create new file", { :group => :file })

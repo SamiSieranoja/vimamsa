@@ -28,7 +28,6 @@ $search_dirs = []
 $errors = []
 
 $cur_register = "a"
-$input_char_call_func = nil
 $debuginfo = {}
 
 $jump_sequence = []

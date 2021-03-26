@@ -67,6 +67,8 @@ class KeyBindingTree
 
     @modifiers = [] # TODO: create a queue
     @last_event = [nil, nil, nil, nil, nil]
+
+    @override_keyhandling_callback = nil
   end
 
   def set_default_mode(label)
@@ -108,6 +110,14 @@ class KeyBindingTree
       end
     }
     return nil
+  end
+
+  def set_keyhandling_override(_callback)
+    @override_keyhandling_callback = _callback
+  end
+
+  def remove_keyhandling_override()
+    @override_keyhandling_callback = nil
   end
 
   def match(key_name)
@@ -243,7 +253,14 @@ class KeyBindingTree
     print "MATCH KEY CONF: #{[c, translated_c]}" if $debug
 
     # Sometimes we get ASCII-8BIT encoding although content actually UTF-8
-    c = c.force_encoding("UTF-8");  # TODO:correct?
+    # c = c.force_encoding("UTF-8");  # TODO:correct?
+
+    if !@override_keyhandling_callback.nil?
+      puts "if !@override_keyhandling_callback.nil?"
+
+      ret = @override_keyhandling_callback.call(c,event_type)
+      return if ret
+    end
 
     eval_s = nil
 
@@ -328,7 +345,7 @@ class KeyBindingTree
 
       printf("\n") if $debug
     else
-    
+
       # Don't execute action if one of the states has children
       state_with_children = new_state.select { |s| s.children.any? }
       s_act = new_state.select { |s| s.action != nil }

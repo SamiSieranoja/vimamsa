@@ -25,8 +25,8 @@ def mkdir_if_not_exists(_dirpath)
 end
 
 class Editor
-  attr_reader :file_content_search_paths, :file_name_search_paths
-  attr_accessor :converters, :fh, :paint_stack
+  attr_reader :file_content_search_paths, :file_name_search_paths, :gui
+  attr_accessor :converters, :fh, :paint_stack, :kbd 
   #attr_writer :call_func, :update_highlight
 
   def initialize()
@@ -42,6 +42,7 @@ class Editor
     @converters = {}
     @paint_stack = []
     @_plugins = {}
+
   end
 
   def open_file_listener(added)
@@ -70,6 +71,8 @@ class Editor
     # GLib::Idle.add(proc{ puts "IDLEFUNC"})
     # GLib::Idle.add(proc { idle_func })
 
+    @gui = $vmag #TODO
+
     $hook = Hook.new
     register_plugin(:Hook, $hook)
     $macro = Macro.new
@@ -84,7 +87,8 @@ class Editor
 
     debug "ARGV: " + ARGV.inspect
     # build_key_bindings_tree
-    $kbd = KeyBindingTree.new()
+    @kbd = KeyBindingTree.new()
+    $kbd = @kbd
     $kbd.add_mode("C", :command)
     $kbd.add_mode("I", :insert)
     $kbd.add_mode("V", :visual)
@@ -410,9 +414,9 @@ def minibuffer_new_char(c)
   #$buffer = $minibuffer
 end
 
-def readchar_new_char(c)
-  $input_char_call_func.call(c)
-end
+# def readchar_new_char(c)
+  # $input_char_call_func.call(c)
+# end
 
 def minibuffer_delete()
   $minibuffer.delete(BACKWARD_CHAR)
