@@ -148,7 +148,7 @@ class Editor
     if fname
       buffer = Buffer.new(read_file("", fname), fname)
     else
-      buffer = Buffer.new("INIT\n")
+      buffer = Buffer.new(" \n")
     end
     $buffers << buffer
 

@@ -7,10 +7,6 @@ def execute_search(input_str)
 end
 
 def invoke_search()
-  start_minibuffer_cmd("", "", :execute_search)
-end
-
-def invoke_search()
   nfo = ""
   
   callback = proc{|x| execute_search(x)}

@@ -122,16 +122,9 @@ default_keys = {
   #    'VC z z' => 'center_on_current_line',
   "VC *" => "buf.jump_to_next_instance_of_word",
 
-  # MINIBUFFER bindings
-  "VC /" => "invoke_search",
-  # 'VC :' => 'invoke_command', #TODO
   "C , e" => "invoke_command", # Currently eval
-  # "M enter" => "minibuffer_end()",
-  # # "M return" => "minibuffer_end()",
-  # "M esc" => "minibuffer_cancel()",
-  # "M backspace" => "minibuffer_delete()",
-  # "M <char>" => "minibuffer_new_char(<char>)",
-  # "M ctrl-v" => "$minibuffer.paste(BEFORE)",
+
+  "VC /" => :find_in_buffer,
 
   # READCHAR bindings
 
@@ -232,7 +225,7 @@ default_keys = {
   "C , m s" => '$macro.save',
   "C , t r" => "run_tests()",
 
-  "C ." => "repeat_last_action", # TODO
+  # "C ." => "repeat_last_action", # TODO
   "VC ;" => "repeat_last_find",
   # "CV Q" => :quit,
   "CV ctrl-q" => :quit,

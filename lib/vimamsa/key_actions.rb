@@ -111,6 +111,10 @@ act_list = {
   :edit_undo => { :proc => proc { buf.undo },
                   :desc => "Undo edit", :group => :edit },
 
+  :find_in_buffer => { :proc => proc { invoke_search },
+                  :desc => "Find", :group => :edit },
+
+
   # { :proc => proc {  },
   # :desc => "", :group => : },
 
