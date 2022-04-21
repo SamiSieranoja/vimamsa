@@ -48,6 +48,7 @@ reg_act(:put_file_path_to_clipboard, proc { buf.put_file_path_to_clipboard }, "P
 # reg_act(:encrypt_file, proc{buf.set_encrypted},"Set current file to encrypt on save")
 reg_act(:encrypt_file, proc { encrypt_cur_buffer }, "Set current file to encrypt on save")
 reg_act(:set_unencrypted, proc { buf.set_unencrypted }, "Set current file to save unencrypted")
+reg_act(:set_executable, proc { buf.set_executable }, "Set current file permissions to executable")
 reg_act(:close_all_buffers, proc { bufs.close_all_buffers() }, "Close all buffers")
 reg_act(:close_current_buffer, proc { bufs.close_current_buffer(true) }, "Close current buffer")
 reg_act(:comment_selection, proc { buf.comment_selection }, "")
@@ -89,7 +90,8 @@ reg_act :page_up, proc { page_up }
 reg_act :jump_to_start_of_buffer, proc { buf.jump(START_OF_BUFFER) }, "Jump to start of buffer"
 reg_act :jump_to_end_of_buffer, proc { buf.jump(END_OF_BUFFER) }, "Jump to end of buffer"
 reg_act(:auto_indent_buffer, proc { buf.indent }, "Auto format buffer")
-reg_act(:execute_current_line_in_terminal, proc { buf.execute_current_line_in_terminal }, "Execute current line in terminal")
+reg_act(:execute_current_line_in_terminal, proc { buf.execute_current_line_in_terminal }, "Execute current line in terminalL")
+reg_act(:execute_current_line_in_terminal_autoclose, proc { buf.execute_current_line_in_terminal(true) }, "Execute current line in terminal. Close after execution.")
 reg_act(:show_images, proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")
 reg_act(:delete_current_file, proc { bufs.delete_current_buffer() }, "Delete current file")
 
@@ -256,7 +258,7 @@ act_list_todo = {
   # Visual mode only:
   "V esc" => "buf.end_visual_mode",
   "V ctrl!" => "buf.end_visual_mode",
-  "V y" => "buf.copy_active_selection",
+  "V y" => "buf.copy_active_selection(:foo)",
   "V g U" => "buf.transform_selection(:upcase)",
   "V g u" => "buf.transform_selection(:downcase)",
   "V g c" => "buf.transform_selection(:capitalize)",

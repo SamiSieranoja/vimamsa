@@ -1,5 +1,6 @@
 require "digest"
 require "tempfile"
+require "fileutils"
 require "pathname"
 require "openssl"
 require "ripl/multi_line"
@@ -77,6 +78,13 @@ class Buffer < String
       $kbd.set_mode_to_default
     end
     # gui_set_current_buffer(@id)
+  end
+
+  def set_executable
+    if File.exists?(@fname)
+      FileUtils.chmod("+x", @fname)
+      message("Set executable: #{@fname}")
+    end
   end
 
   def detect_file_language
@@ -1328,9 +1336,9 @@ class Buffer < String
     calculate_line_and_column_pos
   end
 
-  def execute_current_line_in_terminal()
+  def execute_current_line_in_terminal(autoclose = false)
     s = get_current_line
-    exec_in_terminal(s)
+    exec_in_terminal(s, autoclose)
   end
 
   def insert_new_line()
@@ -1350,8 +1358,10 @@ class Buffer < String
       # Indent start of new line based on last line
       last_line = line(@lpos)
       m = /^( +)([^ ]+|$)/.match(last_line)
-      debug m.inspect
-      c = c + " " * m[1].size if m
+      if m
+        c = c + " " * m[1].size if m
+      end
+      # debug m.inspect
     end
     if mode == BEFORE
       insert_pos = @pos
@@ -1494,7 +1504,13 @@ class Buffer < String
     return if !@visual_mode
 
     debug "COPY SELECTION"
-    set_clipboard(self[get_visual_mode_range])
+    s = self[get_visual_mode_range]
+    if x == :append
+      puts "APPEND"
+      s += "\n" + get_clipboard()
+    end
+
+    set_clipboard(s)
     end_visual_mode
     return true
   end

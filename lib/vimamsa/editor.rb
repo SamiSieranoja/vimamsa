@@ -1,16 +1,23 @@
 require "pty"
 
-def exec_in_terminal(cmd)
+def exec_in_terminal(cmd, autoclose = false)
   # puts "CMD:#{cmd}"
 
   # global to prevent garbage collect unlink
   $initf = Tempfile.new("bashinit")
   # puts $initf.path
   $initf.write(cmd)
-  $initf.write("rm #{$initf.path}\n")
-  $initf.write("\nexec bash\n")
+  if autoclose
+    $initf.write("\nsleep 10; exit;\n")
+    $initf.write("rm #{$initf.path}\n")
+  else
+    $initf.write("rm #{$initf.path}\n")
+    $initf.write("\nexec bash\n")
+  end
   $initf.close
   # PTY.spawn("gnome-terminal", "--tab", "--", "bash", "-i", $initf.path, "-c", "exec bash")
+  # fork { exec "gnome-terminal", "--tab", "--", "bash", "-i", $initf.path, "-c", "exec bash" }
+  # Just another execution
   fork { exec "gnome-terminal", "--tab", "--", "bash", "-i", $initf.path, "-c", "exec bash" }
 end
 
@@ -26,7 +33,7 @@ end
 
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths, :gui
-  attr_accessor :converters, :fh, :paint_stack, :kbd 
+  attr_accessor :converters, :fh, :paint_stack, :kbd
   #attr_writer :call_func, :update_highlight
 
   def initialize()
@@ -42,7 +49,6 @@ class Editor
     @converters = {}
     @paint_stack = []
     @_plugins = {}
-
   end
 
   def open_file_listener(added)
@@ -294,6 +300,10 @@ def system_clipboard_changed(clipboard_contents)
   $clipboard = $clipboard[-([$clipboard.size, max_clipboard_items].min)..-1]
 end
 
+def get_clipboard()
+  return $clipboard[-1]
+end
+
 def set_clipboard(s)
   if !(s.class <= String) or s.size == 0
     puts s.inspect
@@ -415,7 +425,7 @@ def minibuffer_new_char(c)
 end
 
 # def readchar_new_char(c)
-  # $input_char_call_func.call(c)
+# $input_char_call_func.call(c)
 # end
 
 def minibuffer_delete()

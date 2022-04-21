@@ -189,7 +189,8 @@ default_keys = {
   # Visual mode only:
   "V esc" => "buf.end_visual_mode",
   "V ctrl!" => "buf.end_visual_mode",
-  "V y" => "buf.copy_active_selection",
+  "V y" => "buf.copy_active_selection()",
+  "V a y" => "buf.copy_active_selection(:append)",
   "V g U" => "buf.transform_selection(:upcase)",
   "V g u" => "buf.transform_selection(:downcase)",
   "V g c" => "buf.transform_selection(:capitalize)",
