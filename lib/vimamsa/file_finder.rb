@@ -1,5 +1,4 @@
 require "parallel"
-
 class FileFinder
   def initialize()
     $hook.register(:shutdown, self.method("save"))

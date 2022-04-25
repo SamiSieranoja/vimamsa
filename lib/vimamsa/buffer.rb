@@ -71,6 +71,15 @@ class Buffer < String
     @active_kbd_mode = nil
   end
 
+  def list_str()
+    if @fname.nil?
+      x = @title
+    else
+      x = @fname
+    end
+    return x
+  end
+
   def set_active
     if !@active_kbd_mode.nil?
       $kbd.set_mode(@active_kbd_mode)
@@ -459,7 +468,6 @@ class Buffer < String
     return if @edit_pos_history.empty?
     @edit_pos_history_i -= 1
     @edit_pos_history_i = @edit_pos_history.size - 1 if @edit_pos_history_i < 0
-    #        Ripl.start :binding => binding
     debug "@edit_pos_history_i=#{@edit_pos_history_i}"
     set_pos(@edit_pos_history[-@edit_pos_history_i])
     center_on_current_line
@@ -576,7 +584,6 @@ class Buffer < String
     ls = @line_ends[a] if a != nil
     # if a != nil and ls != @line_ends[a]
     # puts "NO MATCH @line_ends[a]"
-    # Ripl.start :binding => binding
     # end
 
     if ls == nil
@@ -588,7 +595,6 @@ class Buffer < String
   end
 
   def get_line_end(pos)
-    #Ripl.start :binding => binding
     return @line_ends.select { |x| x > pos }.min
   end
 
@@ -1361,6 +1367,13 @@ class Buffer < String
       if m
         c = c + " " * m[1].size if m
       end
+
+      #if tab indent
+      m = /^(\t+)([^\t]+|$)/.match(last_line)
+      if m
+        c = c + "\t" * m[1].size if m
+      end
+
       # debug m.inspect
     end
     if mode == BEFORE
@@ -1655,7 +1668,6 @@ class Buffer < String
     else
       savepath = buflist.get_last_dir
     end
-    # Ripl.start :binding => binding
     gui_file_saveas(savepath)
     # calls back to file_saveas
   end

@@ -1,3 +1,4 @@
+
 class FileManager
   @@cur
 
@@ -28,9 +29,9 @@ class FileManager
     # bindkey "C o", :delete_state
 
     $kbd.add_minor_mode("fexp", :file_exp, :command)
-    
+
     bindkey "fexp o m", :fexp_sort_mtime
-    bindkey "fexp o f", :fexp_sort_fname   
+    bindkey "fexp o f", :fexp_sort_fname
 
     # bindkey "fexp l", [:fexp_right, proc { puts "==fexp_right==" }, ""]
     bindkey "fexp h", :fexp_chdir_parent
@@ -83,7 +84,7 @@ class FileManager
         next
       end
       next if x[0] == "."
-      if File.directory?(fpath) 
+      if File.directory?(fpath)
         # if f.directory?(fpath)
         @cdirs << x
       else

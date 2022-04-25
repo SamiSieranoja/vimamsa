@@ -106,6 +106,7 @@ class Editor
     sleep(0.03)
 
     FileManager.init
+    BufferManager.init
 
     mkdir_if_not_exists("~/.vimamsa")
     mkdir_if_not_exists("~/.vimamsa/backup")
@@ -188,6 +189,11 @@ class Editor
   def buf()
     return $buffer
   end
+  
+  def buffers()
+    return $buffers
+  end
+ 
 
   def marshal_save(varname, vardata)
     save_var_to_file(varname, Marshal.dump(vardata))

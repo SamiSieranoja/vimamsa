@@ -23,6 +23,7 @@ end
 class BufferList < Array
   attr_reader :current_buf
 
+
   def <<(_buf)
     super
     $buffer = _buf
@@ -57,6 +58,12 @@ class BufferList < Array
     buf_idx = self.index { |b| b.fname == fname }
     return buf_idx
   end
+  
+   def get_buffer_by_id(id)
+    buf_idx = self.index { |b| b.id == id }
+    return buf_idx
+  end
+ 
 
   def add_current_buf_to_history()
     @recent_ind = 0
@@ -137,6 +144,22 @@ class BufferList < Array
     bh = $buffer_history.reverse.select { |x| r = h[x] == nil; h[x] = true; r }
     $buffer_history = bh.reverse
   end
+
+
+  # Close buffer in the background
+  # TODO: if open in another widget
+  def close_other_buffer(buffer_i)
+    return if self.size <= buffer_i
+    return if @current_buf == buffer_i
+    
+    bufname = self[buffer_i].basename
+    message("Closed buffer #{bufname}")
+
+    self.slice!(buffer_i)
+    $buffer_history = $buffer_history.collect { |x| r = x; r = x - 1 if x > buffer_i; r = nil if x == buffer_i; r }.compact
+
+  end
+
 
   def close_buffer(buffer_i, from_recent = false)
     return if self.size <= buffer_i
