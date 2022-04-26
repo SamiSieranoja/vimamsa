@@ -28,6 +28,10 @@ def is_visual_mode()
   return 0
 end
 
+
+reg_act(:enable_debug, proc { $debug=true }, "Enable debug")
+reg_act(:disable_debug, proc {$debug=false }, "Disable debug")
+
 reg_act(:easy_jump, proc { EasyJump.start }, "Easy jump")
 reg_act(:savedebug, "savedebug", "Save debug info", { :group => :debug })
 reg_act(:open_file_dialog, "open_file_dialog", "Open file", { :group => :file })

@@ -16,6 +16,8 @@ module Vimamsa
     end
 
     def add_menu_items()
+    
+      add_to_menu "File.Example", { :label => "<span foreground='#888888'>Action, [mode] key binding</span>", :action => nil }
       add_to_menu "File.Save", { :label => "Save", :action => :buf_save }
       add_to_menu "File.Save as", { :label => "Save As...", :action => :buf_save_as }
       add_to_menu "File.Open", { :label => "Open", :action => :open_file_dialog }
@@ -38,6 +40,9 @@ module Vimamsa
       add_to_menu "Actions.FileHistoryFinder", { :label => "Search files in history", :action => :gui_file_history_finder }
 
       add_to_menu "Actions.experimental.Diff", { :label => "Show Diff of\nunsaved changes", :action => :diff_buffer }
+      
+      add_to_menu "Actions.experimental.EnableDebug", { :label => "Enable debug", :action => :enable_debug }
+      add_to_menu "Actions.experimental.DisableDebug", { :label => "Disable debug", :action => :disable_debug }
 
       add_to_menu "Actions.EncryptFile", { :label => "Encrypt file", :action => :encrypt_file }
 

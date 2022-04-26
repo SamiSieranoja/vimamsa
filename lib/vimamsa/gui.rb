@@ -154,7 +154,7 @@ def gui_create_buffer(id)
   # provider.load(data: "textview { font-family: Arial; font-size: 12pt; }")
   view.style_context.add_provider(provider)
   view.wrap_mode = :char
-  view.set_tab_width(4) #TODO:add as setting
+  view.set_tab_width(conf(:tab_width))
 
   $vmag.buffers[id] = view
 end
