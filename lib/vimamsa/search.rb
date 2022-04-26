@@ -32,7 +32,7 @@ class Search
       @reg = Regexp.new(regex, Regexp::IGNORECASE)
     end
     @search_indexes = scan_indexes(buffer, @reg)
-    puts @search_indexes.inspect
+    debug @search_indexes.inspect
     @cur_search_i = -1
     if @search_indexes.any?
       @cur_search_i = 0

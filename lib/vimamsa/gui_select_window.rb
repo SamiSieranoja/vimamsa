@@ -8,7 +8,7 @@ class SelectUpdateWindow
   COLUMN_DESCRIPTION = 1
 
   def update_item_list(item_list)
-    # puts item_list.inspect
+    # debug item_list.inspect
     @model.clear
     for item in item_list
       iter = @model.append
@@ -17,7 +17,7 @@ class SelectUpdateWindow
       else
         v = ["", item[0]]
       end
-      puts v.inspect
+      debug v.inspect
       iter.set_values(v)
     end
 
@@ -46,10 +46,10 @@ class SelectUpdateWindow
     @selected_row = 0
     @opt = opt
 
-    puts item_list.inspect
+    debug item_list.inspect
     @update_callback = method(update_callback)
     @select_callback = method(select_callback)
-    # puts @update_callback_m.call("").inspect
+    # debug @update_callback_m.call("").inspect
 
     vbox = Gtk::Box.new(:vertical, 8)
     vbox.margin = 8
@@ -72,21 +72,21 @@ class SelectUpdateWindow
     update_item_list(item_list)
 
     @window.signal_connect("key-press-event") do |_widget, event|
-      # puts "KEYPRESS 1"
+      # debug "KEYPRESS 1"
       @entry.handle_event(event)
     end
 
     @entry.signal_connect("key_press_event") do |widget, event|
-      # puts "KEYPRESS 2"
+      # debug "KEYPRESS 2"
       if event.keyval == Gdk::Keyval::KEY_Down
-        puts "DOWN"
+        debug "DOWN"
         set_selected_row(@selected_row + 1)
         # fixed = iter[COLUMN_FIXED]
 
         true
       elsif event.keyval == Gdk::Keyval::KEY_Up
         set_selected_row(@selected_row - 1)
-        puts "UP"
+        debug "UP"
         true
       elsif event.keyval == Gdk::Keyval::KEY_Return
         path = Gtk::TreePath.new(@selected_row.to_s)
@@ -94,7 +94,7 @@ class SelectUpdateWindow
         ret = iter[1]
         @select_callback.call(ret, @selected_row)
         @window.destroy
-        # puts iter[1].inspect
+        # debug iter[1].inspect
         true
       elsif event.keyval == Gdk::Keyval::KEY_Escape
         @window.destroy
@@ -105,14 +105,14 @@ class SelectUpdateWindow
     end
 
     @entry.signal_connect("search-changed") do |widget|
-      puts "search changed: #{widget.text || ""}"
+      debug "search changed: #{widget.text || ""}"
       item_list = @update_callback.call(widget.text)
 
       update_item_list(item_list)
       # label.text = widget.text || ""
     end
-    @entry.signal_connect("changed") { puts "[changed] " }
-    @entry.signal_connect("next-match") { puts "[next-match] " }
+    @entry.signal_connect("changed") { debug "[changed] " }
+    @entry.signal_connect("next-match") { debug "[next-match] " }
 
     if !opt[:desc].nil?
       descl = Gtk::Label.new(opt[:desc])
@@ -160,7 +160,7 @@ class SelectUpdateWindow
     end
 
     @window.set_default_size(280, 500)
-    puts "SelectUpdateWindow"
+    debug "SelectUpdateWindow"
   end
 
   def run

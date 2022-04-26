@@ -50,7 +50,7 @@ class FileSelector
     # puts "def select_line"
     fn = fullp(@buf.get_current_line[0..-2])
     if File.directory?(fn)
-      puts "CHDIR: #{fn}"
+      debug "CHDIR: #{fn}"
       dir_to_buf(fn)
     # elsif vma.can_open_extension?(fn) #TODO: remove this check?
       # jump_to_file(fn)
@@ -59,7 +59,6 @@ class FileSelector
     else
       open_with_default_program(fn)
     end
-    # puts l.inspect
   end
 end
 
@@ -91,7 +90,7 @@ def grep_cur_buffer(search_str, b = nil)
   # @current_buf = buffer_i
 
   b.line_action_handler = proc { |lineno|
-    puts "GREP HANDLER:#{lineno}"
+    debug "GREP HANDLER:#{lineno}"
     jumpto = $grep_matches[lineno]
     if jumpto.class == Integer
       $buffers.set_current_buffer($grep_bufid, update_history = true)
@@ -114,7 +113,7 @@ end
 def gui_replace_callback(vals)
   search_str = vals["search"]
   replace_str = vals["replace"]
-  puts "gui_replace_callback: #{search_str} => #{replace_str}"
+  debug "gui_replace_callback: #{search_str} => #{replace_str}"
   gui_select_window_close(0)
   buf_replace(search_str, replace_str)
 end

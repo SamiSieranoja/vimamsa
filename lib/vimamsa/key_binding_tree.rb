@@ -127,16 +127,16 @@ class KeyBindingTree
     @match_state.each { |parent|
       parent.children.each { |c|
         # printf(" KEY MATCH: ")
-        # puts [c.key_name, key_name].inspect
+        # debug [c.key_name, key_name].inspect
         if c.key_name == key_name and c.eval_rule == ""
           new_state << c
         elsif c.key_name == key_name and c.eval_rule != ""
-          puts "CHECK EVAL: #{c.eval_rule}"
+          debug "CHECK EVAL: #{c.eval_rule}"
           if eval(c.eval_rule)
             new_state << c
-            puts "EVAL TRUE"
+            debug "EVAL TRUE"
           else
-            puts "EVAL FALSE"
+            debug "EVAL FALSE"
           end
         end
       }
@@ -195,7 +195,7 @@ class KeyBindingTree
     end
 
     @state_trail = [@mode_root_state]
-    # puts get_state_trail_str()
+    # debug get_state_trail_str()
     # $next_command_count = nil # TODO: set somewhere else?
   end
 
@@ -305,18 +305,18 @@ class KeyBindingTree
 
     if new_state != nil
       @state_trail << new_state
-      puts get_state_trail_str()
-      # # puts "CUR STATE: #{@state_trail.collect{|x| x.to_s}.join}"
+      debug get_state_trail_str()
+      # # debug "CUR STATE: #{@state_trail.collect{|x| x.to_s}.join}"
       # s_trail = ""
       # for st in @state_trail
       # st = st[0] if st.class == Array
       # s_trail << " #{st.to_s}"
       # end
-      # puts "CUR STATE: #{s_trail}"
+      # debug "CUR STATE: #{s_trail}"
       # for cstate in new_state[0].children
       # act_s = "..."
       # act_s = cstate.action.to_s if cstate.action != nil
-      # puts "  #{cstate.to_s} #{act_s}"
+      # debug "  #{cstate.to_s} #{act_s}"
       # end
       # new_state[0].children.collect{|x|x.to_s}
     end
@@ -330,7 +330,7 @@ class KeyBindingTree
       end
 
       if event_type == :key_release and c == "shift!"
-        # Pressing a modifier key (shift) puts state back to root
+        # Pressing a modifier key (shift) sets state back to root
         # only on key release when no other key has been pressed
         # after said modifier key (shift).
         set_state_to_root
@@ -346,14 +346,14 @@ class KeyBindingTree
 
       if s_act.any? and !state_with_children.any?
         eval_s = s_act.first.action if eval_s == nil
-        puts "FOUND MATCH:#{eval_s}"
-        puts "CHAR: #{c}"
+        debug "FOUND MATCH:#{eval_s}"
+        debug "CHAR: #{c}"
         c.gsub!("\\", %q{\\\\} * 4) # Escape \ -chars
         c.gsub!("'", "#{'\\' * 4}'") # Escape ' -chars
 
         eval_s.gsub!("<char>", "'#{c}'") if eval_s.class == String
-        puts eval_s
-        puts c
+        debug eval_s
+        debug c
         handle_key_bindigs_action(eval_s, c)
         set_state_to_root
       end
@@ -365,7 +365,7 @@ class KeyBindingTree
   # Receive keyboard event from Qt
   def handle_key_event(event)
     start_profiler
-    # puts "GOT KEY EVENT: #{key.inspect}"
+    # debug "GOT KEY EVENT: #{key.inspect}"
     debug "GOT KEY EVENT:: #{event} #{event[2]}"
     debug "|#{event.inspect}|"
     $debuginfo["cur_event"] = event
@@ -392,11 +392,11 @@ class KeyBindingTree
       end
     end
 
-    # puts "----D------------"
-    # puts @modifiers.inspect
-    # puts event.inspect
-    # puts event[4] & ALTMODIFIER
-    # puts "-----------------"
+    # debug "----D------------"
+    # debug @modifiers.inspect
+    # debug event.inspect
+    # debug event[4] & ALTMODIFIER
+    # debug "-----------------"
 
     @modifiers.delete(keycode) if event_type == KEY_RELEASE
 
@@ -422,7 +422,7 @@ class KeyBindingTree
     if $translate_table.include?(keycode)
       key_str2 = $translate_table[keycode].downcase
     end
-    # puts "key_str=|#{key_str}| key_str=|#{key_str.inspect}| key_str2=|#{key_str2}|"
+    # debug "key_str=|#{key_str}| key_str=|#{key_str.inspect}| key_str2=|#{key_str2}|"
     prefixed_key_str = key_prefix + key_str2
 
     # Space is only key in $event_keysym_translate_table
@@ -430,7 +430,7 @@ class KeyBindingTree
     key_str = " " if key_str == "space" # HACK
 
     # if keycode == @last_event[0] and event_type == KEY_RELEASE
-    # puts "KEY! key_str=|#{key_str}| prefixed_key_str=|#{prefixed_key_str}|"
+    # debug "KEY! key_str=|#{key_str}| prefixed_key_str=|#{prefixed_key_str}|"
     # end
 
     if key_str != "" or prefixed_key_str != ""
@@ -485,7 +485,7 @@ class KeyBindingTree
     m = key.match(/^(\S+)\s(\S.*)$/)
     if m
       modetmp = m[1]
-      puts [key, modetmp, m].inspect
+      debug [key, modetmp, m].inspect
       modes = modetmp.split("") if modetmp.match(/^\p{Lu}+$/) # Uppercase
       modes = [modetmp] if modetmp.match(/^\p{Ll}+$/) # Lowercase
       keydef = m[2]
@@ -568,10 +568,10 @@ class KeyBindingTree
       # debug("NameError with eval cmd #{action}: " + $!.to_s)
       # raise
     rescue Exception => e
-      puts "BACKTRACE"
-      puts e.backtrace
-      puts e.inspect
-      puts "BACKTRACE END"
+      debug "BACKTRACE"
+      debug e.backtrace
+      debug e.inspect
+      debug "BACKTRACE END"
       if $!.class == SystemExit
         exit
       else

@@ -41,12 +41,12 @@ class EasyJump
   def easy_jump_input_char(c, event_type)
     return true if event_type != :key_press
     # vma.paint_stack = []
-    puts "EASY JUMP: easy_jump_input_char [#{c}]"
+    debug "EASY JUMP: easy_jump_input_char [#{c}]"
     @easy_jump_input << c.upcase
     if @jump_sequence.include?(@easy_jump_input)
       jshash = Hash[@jump_sequence.map.with_index.to_a]
       nthword = jshash[@easy_jump_input]
-      puts "nthword:#{nthword} #{[@easy_jump_wsmarks[nthword], @jump_sequence[nthword]]}"
+      debug "nthword:#{nthword} #{[@easy_jump_wsmarks[nthword], @jump_sequence[nthword]]}"
       buf.set_pos(@easy_jump_wsmarks[nthword])
       # @kbd.set_mode(:command)
       vma.kbd.remove_keyhandling_override
@@ -63,8 +63,8 @@ class EasyJump
   end
 
   def easy_jump_draw()
-    # puts @jump_sequence.inspect
-    # puts @easy_jump_wsmarks.inspect
+    # debug @jump_sequence.inspect
+    # debug @easy_jump_wsmarks.inspect
     vma.gui.start_overlay_draw
     for i in 0..(@easy_jump_wsmarks.size - 1)
       vma.gui.overlay_draw_text(@jump_sequence[i], @easy_jump_wsmarks[i])
@@ -73,12 +73,12 @@ class EasyJump
 
     return
     return if @jump_sequence.empty?
-    puts "EASY JUMP DRAW"
+    debug "EASY JUMP DRAW"
     screen_cord = cpp_function_wrapper(0, [@easy_jump_wsmarks])
     screen_cord = screen_cord[1..@jump_sequence.size]
     screen_cord.each_with_index { |point, i|
       mark_str = @jump_sequence[i]
-      #puts "draw #{point[0]}x#{point[1]}"
+      #debug "draw #{point[0]}x#{point[1]}"
       draw_text(mark_str, point[0] + 3, point[1])
       #break if m > @cpos
     }
@@ -159,7 +159,7 @@ class EasyJump
     }
 
     #printf("Size of sequence: %d\n",sequence.size)
-    #puts sequence.inspect
+    #debug sequence.inspect
     return sequence
   end
 end

@@ -37,6 +37,7 @@ require "vimamsa/hyper_plain_text"
 require "vimamsa/macro"
 require "vimamsa/search"
 require "vimamsa/search_replace"
+require "vimamsa/conf"
 # load "vendor/ver/lib/ver/vendor/textpow.rb"
 # load "vendor/ver/lib/ver/syntax/detector.rb"
 # load "vendor/ver/config/detect.rb"
@@ -48,7 +49,7 @@ def vma()
 end
 
 def unimplemented
-  puts "unimplemented"
+  debug "unimplemented"
 end
 
 

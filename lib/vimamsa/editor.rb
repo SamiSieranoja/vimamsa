@@ -1,11 +1,11 @@
 require "pty"
 
 def exec_in_terminal(cmd, autoclose = false)
-  # puts "CMD:#{cmd}"
+  # debug "CMD:#{cmd}"
 
   # global to prevent garbage collect unlink
   $initf = Tempfile.new("bashinit")
-  # puts $initf.path
+  # debug $initf.path
   $initf.write(cmd)
   if autoclose
     $initf.write("\nsleep 10; exit;\n")
@@ -37,7 +37,7 @@ class Editor
   #attr_writer :call_func, :update_highlight
 
   def initialize()
-    # Thread.new{10000.times{|x|sleep(3);10000.times{|y|y+2};puts "FOOTHREAD #{x}"}}
+    # Thread.new{10000.times{|x|sleep(3);10000.times{|y|y+2};debug "FOOTHREAD #{x}"}}
 
     # Search for content inside files (e.g. using ack/grep) in:
     @file_content_search_paths = []
@@ -74,7 +74,7 @@ class Editor
 
     # GLib::Idle.add
     # Ripl.start :binding => binding
-    # GLib::Idle.add(proc{ puts "IDLEFUNC"})
+    # GLib::Idle.add(proc{ debug "IDLEFUNC"})
     # GLib::Idle.add(proc { idle_func })
 
     @gui = $vmag #TODO
@@ -113,7 +113,7 @@ class Editor
     mkdir_if_not_exists("~/.vimamsa/listen")
     listen_dir = File.expand_path "~/.vimamsa/listen"
     listener = Listen.to(listen_dir) do |modified, added, removed|
-      puts(modified: modified, added: added, removed: removed)
+      debug([modified: modified, added: added, removed: removed])
       open_file_listener(added)
     end
     listener.start
@@ -270,7 +270,7 @@ class Editor
     exts = $cnf[:extensions_to_open]
     extname = Pathname.new(filepath).extname.downcase
     can_open = exts.include?(extname)
-    puts "CAN OPEN?: #{can_open}"
+    debug "CAN OPEN?: #{can_open}"
     return can_open
   end
 end
@@ -281,7 +281,7 @@ def _quit()
 end
 
 def fatal_error(msg)
-  puts msg
+  debug msg
   exit!
 end
 
@@ -302,7 +302,7 @@ def system_clipboard_changed(clipboard_contents)
     $paste_lines = false
   end
   $clipboard << clipboard_contents
-  # puts $clipboard[-1]
+  # debug $clipboard[-1]
   $clipboard = $clipboard[-([$clipboard.size, max_clipboard_items].min)..-1]
 end
 
@@ -312,8 +312,8 @@ end
 
 def set_clipboard(s)
   if !(s.class <= String) or s.size == 0
-    puts s.inspect
-    puts [s, s.class, s.size]
+    debug s.inspect
+    debug [s, s.class, s.size]
     log_error("s.class != String or s.size == 0")
     Ripl.start :binding => binding
     return
@@ -384,9 +384,9 @@ def diff_buffer()
   infile.write($buffer.to_s)
   infile.flush
   cmd = "diff -w '#{orig_path}' #{infile.path}"
-  # puts cmd
+  # debug cmd
   bufstr << run_cmd(cmd)
-  # puts bufstr
+  # debug bufstr
   infile.close; infile.unlink
   create_new_file(nil, bufstr)
 end
@@ -440,7 +440,7 @@ end
 
 def message(s)
   s = "[#{DateTime.now().strftime("%H:%M")}] #{s}"
-  puts s
+  debug s
 
   $vmag.add_to_minibuf(s)
   # $minibuffer = Buffer.new(s, "")
@@ -610,7 +610,7 @@ end
 def run_cmd(cmd)
   tmpf = Tempfile.new("vmarun", "/tmp").path
   cmd = "#{cmd} > #{tmpf}"
-  puts "CMD:\n#{cmd}"
+  debug "CMD:\n#{cmd}"
   system("bash", "-c", cmd)
   res_str = File.read(tmpf)
   return res_str
@@ -639,11 +639,11 @@ def exec_cmd(bin_name, arg1 = nil, arg2 = nil, arg3 = nil, arg4 = nil, arg5 = ni
 end
 
 def file_is_text_file(fpath)
-  puts "file_is_text_file(#{fpath})"
+  debug "file_is_text_file(#{fpath})"
   fpath = File.expand_path(fpath)
   return false if !File.exist?(fpath)
   r = exec_cmd("file", fpath)
-  puts "DEBUG:#{r}"
+  debug "DEBUG:#{r}"
   return true if r.match(/UTF-8.*text/)
   return true if r.match(/ASCII.*text/)
   return false
@@ -679,6 +679,6 @@ def find_project_dir_of_cur_buffer()
   if $buffer.fname
     pdir = find_project_dir_of_fn($buffer.fname)
   end
-  # puts "Proj dir of current file: #{pdir}"
+  # debug "Proj dir of current file: #{pdir}"
   return pdir
 end

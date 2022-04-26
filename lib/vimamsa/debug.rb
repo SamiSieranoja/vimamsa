@@ -21,8 +21,9 @@ def debug_dump_deltas()
 end
 
 $log_messages = []
-def log_message(message)
-  puts message
+
+def log_message(message,vlevel)
+  puts message if conf("log.verbose") >= vlevel
   $log_messages << message
 end
 

@@ -28,7 +28,7 @@ def reg_act(id, callfunc, name = "", opt = {})
 end
 
 def missing_callfunc
-  puts "missing_callfunc"
+  debug "missing_callfunc"
 end
 
 #TODO: remove
@@ -74,10 +74,10 @@ def search_actions_update_callback(search_str = "")
   item_list = item_list2
 
   a = filter_items(item_list, 0, search_str)
-  puts a.inspect
+  debug a.inspect
 
   r = a.collect { |x| [x[0][0], 0, x] }
-  puts r.inspect
+  debug r.inspect
   $item_list = r
 
   r = a.collect { |x| ["[#{x[0][:key]}] #{x[0][:str]}", 0, x] }
@@ -88,13 +88,13 @@ def search_actions_select_callback(search_str, idx)
   item = $item_list[idx][2]
   acc = item[0][:action]
 
-  puts "Selected:" + acc.to_s
+  debug "Selected:" + acc.to_s
   gui_select_window_close(0)
 
   if acc.class == String
     eval(acc)
   elsif acc.class == Symbol
-    puts "Symbol"
+    debug "Symbol"
     call(acc)
   end
 end
@@ -106,7 +106,7 @@ def filter_items(item_list, item_key, search_str)
     [item, srn_dst(search_str, item[:str])]
   end
   scores.sort_by! { |x| -x[1] }
-  puts scores.inspect
+  debug scores.inspect
   scores = scores[0..30]
 
   return scores

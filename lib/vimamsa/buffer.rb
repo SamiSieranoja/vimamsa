@@ -28,7 +28,7 @@ class Buffer < String
     @id = @@num_buffers
     @@num_buffers += 1
     gui_create_buffer(@id)
-    puts "NEW BUFFER fn=#{fname} ID:#{@id}"
+    debug "NEW BUFFER fn=#{fname} ID:#{@id}"
 
     @module = nil
 
@@ -113,7 +113,7 @@ class Buffer < String
     # lang.get_metadata("block-comment-end")
     @lang_nfo = lang
     if !lang.nil? and !lang.id.nil?
-      puts "Guessed LANG: #{lang.id}"
+      debug "Guessed LANG: #{lang.id}"
       @lang = lang.id
     end
 
@@ -206,20 +206,20 @@ class Buffer < String
     ok = true
     @bt.each_line { |r|
       if lines[i] != r #or true
-        puts "NO MATCH FOR LINE:"
-        puts "i=#{i}["
-        # puts "[orig]pos=#{leaf.pos} |#{leaf.data}|"
-        # puts "spos=#{spos} nchar=#{leaf.nchar} epos=#{epos} a[]=\nr=|#{r}|"
-        puts "fromtree:|#{r}|"
-        puts "frombuf:|#{lines[i]}"
-        puts "]"
+        debug "NO MATCH FOR LINE:"
+        debug "i=#{i}["
+        # debug "[orig]pos=#{leaf.pos} |#{leaf.data}|"
+        # debug "spos=#{spos} nchar=#{leaf.nchar} epos=#{epos} a[]=\nr=|#{r}|"
+        debug "fromtree:|#{r}|"
+        debug "frombuf:|#{lines[i]}"
+        debug "]"
         ok = false
       end
       i += 1
     }
 
-    puts "BT: NO ERRORS" if ok
-    puts "BT: ERRORS" if !ok
+    debug "BT: NO ERRORS" if ok
+    debug "BT: ERRORS" if !ok
   end
 
   def set_content(str)
@@ -438,11 +438,11 @@ class Buffer < String
   end
 
   def update_index(pos, changeamount)
-    # puts "pos #{pos}, changeamount #{changeamount}, @pos #{@pos}"
+    # debug "pos #{pos}, changeamount #{changeamount}, @pos #{@pos}"
     @edit_pos_history.collect! { |x| r = x if x <= pos; r = x + changeamount if x > pos; r }
     # TODO: handle between removal case
     for k in @marks.keys
-      #            puts "change(?): pos=#{pos}, k=#{k}, #{@marks[k]}, #{changeamount}"
+      #            debug "change(?): pos=#{pos}, k=#{k}, #{@marks[k]}, #{changeamount}"
       if @marks[k] > pos
         @marks[k] = @marks[k] + changeamount
       end
@@ -583,7 +583,7 @@ class Buffer < String
     ls = nil
     ls = @line_ends[a] if a != nil
     # if a != nil and ls != @line_ends[a]
-    # puts "NO MATCH @line_ends[a]"
+    # debug "NO MATCH @line_ends[a]"
     # end
 
     if ls == nil
@@ -688,7 +688,7 @@ class Buffer < String
     end
 
     debug "Scan line_end time: #{Time.now - t1}"
-    #puts @line_ends
+    #debug @line_ends
   end
 
   def sanity_check_line_ends()
@@ -705,7 +705,7 @@ class Buffer < String
   end
 
   def update_bufpos_on_change(positions, xpos, changeamount)
-    # puts "xpos=#{xpos} changeamount=#{changeamount}"
+    # debug "xpos=#{xpos} changeamount=#{changeamount}"
     positions.collect { |x|
       r = nil
       r = x if x < xpos
@@ -740,7 +740,7 @@ class Buffer < String
       i_nl = scan_indexes(changestr, /\n/)
       i_nl.collect! { |x| x + pos }
     end
-    #    puts "change:#{changeamount}"
+    #    debug "change:#{changeamount}"
     #TODO: this is the bottle neck in insert_txt action
     @line_ends.collect! { |x|
       r = nil
@@ -888,10 +888,10 @@ class Buffer < String
         range = @pos..wmarks[0]
       end
     elsif range_id == :to_line_end
-      puts "TO LINE END"
+      debug "TO LINE END"
       range = @pos..(@line_ends[@lpos] - 1)
     elsif range_id == :to_line_start
-      puts "TO LINE START: #{@lpos}"
+      debug "TO LINE START: #{@lpos}"
 
       if @cpos == 0
         range = nil
@@ -927,15 +927,15 @@ class Buffer < String
   end
 
   def move(direction)
-    puts "cpos:#{@cpos} lpos:#{@lpos} @larger_cpos:#{@larger_cpos}"
+    debug "cpos:#{@cpos} lpos:#{@lpos} @larger_cpos:#{@larger_cpos}"
     if direction == :forward_page
-      puts "FORWARD PAGE"
+      debug "FORWARD PAGE"
       visible_range = get_visible_area()
       set_pos(visible_range[1])
       top_where_cursor()
     end
     if direction == :backward_page
-      puts "backward PAGE"
+      debug "backward PAGE"
       visible_range = get_visible_area()
       set_pos(visible_range[0])
       bottom_where_cursor()
@@ -1038,7 +1038,7 @@ class Buffer < String
     if wtype == :url
       open_url(word)
     elsif wtype == :linepointer
-      puts word.inspect
+      debug word.inspect
       jump_to_file(word[0], word[1])
     elsif wtype == :textfile
       open_existing_file(word)
@@ -1105,10 +1105,10 @@ class Buffer < String
     word_start = pos if word_start == nil
     word_end = pos if word_end == nil
     word = self[word_start..word_end]
-    puts "'WORD: #{word}'"
+    debug "'WORD: #{word}'"
     message("'#{word}'")
     linep = get_file_line_pointer(word)
-    puts "linep'#{linep}'"
+    debug "linep'#{linep}'"
     path = File.expand_path(word)
     wtype = nil
     if is_url(word)
@@ -1121,7 +1121,7 @@ class Buffer < String
         wtype = :file
       end
       # elsif hpt_check_cur_word(word) #TODO: check only
-      # puts word
+      # debug word
     elsif linep != nil
       wtype = :linepointer
       word = linep
@@ -1149,14 +1149,14 @@ class Buffer < String
     word_start = pos if word_start == nil
     word_end = pos if word_end == nil
     word = self[word_start..word_end]
-    puts "'#{word}'"
+    debug "'#{word}'"
     message("'#{word}'")
-    #puts wm
+    #debug wm
   end
 
   def jump_to_next_instance_of_word()
     if $kbd.last_action == $kbd.cur_action and @current_word != nil
-      # puts "REPEATING *"
+      # debug "REPEATING *"
     else
       start_search = [@pos - 150, 0].max
 
@@ -1255,10 +1255,10 @@ class Buffer < String
 
     if target == FIRST_NON_WHITESPACE
       l = current_line()
-      puts l.inspect
+      debug l.inspect
       @cpos = line(@lpos).size - 1
       a = scan_indexes(l, /\S/)
-      puts a.inspect
+      debug a.inspect
       if a.any?
         @cpos = a[0]
       else
@@ -1387,8 +1387,8 @@ class Buffer < String
 
     #self.insert(insert_pos,c)
     add_delta([insert_pos, INSERT, c.size, c], true)
-    #puts("encoding: #{c.encoding}")
-    #puts "c.size: #{c.size}"
+    #debug("encoding: #{c.encoding}")
+    #debug "c.size: #{c.size}"
     #recalc_line_ends #TODO: optimize?
     calculate_line_and_column_pos
     #need_redraw!
@@ -1462,7 +1462,7 @@ class Buffer < String
         text = $register[register]
       end
     end
-    puts "PASTE: #{text}"
+    debug "PASTE: #{text}"
 
     return if text == ""
 
@@ -1519,7 +1519,7 @@ class Buffer < String
     debug "COPY SELECTION"
     s = self[get_visual_mode_range]
     if x == :append
-      puts "APPEND"
+      debug "APPEND"
       s += "\n" + get_clipboard()
     end
 

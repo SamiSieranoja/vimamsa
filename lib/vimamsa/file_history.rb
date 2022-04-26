@@ -21,7 +21,7 @@ class FileHistory
   # end
 
   def update(buf)
-    puts "FileHistory.update(buf=#{buf.fname})"
+    debug "FileHistory.update(buf=#{buf.fname})"
     return if !buf.fname
     @history[buf.fname] if !@history[buf.fname]
     if !@history[buf.fname]
@@ -29,7 +29,7 @@ class FileHistory
     else
       @history[buf.fname] += 1
     end
-    puts @history
+    debug @history
 
     # puts "FileHistory.update(buf=#{buf})"
   end
@@ -83,7 +83,7 @@ def fuzzy_filter(search_str, list, maxfinds)
 end
 
 def gui_file_history_update_callback(search_str = "")
-  puts "gui_file_history_update_callback: #{search_str}"
+  debug "gui_file_history_update_callback: #{search_str}"
   return [] if $vma.fh.history.empty?
   $search_list = []
   files = $vma.fh.history.keys.sort.collect { |x| [x, 0] }

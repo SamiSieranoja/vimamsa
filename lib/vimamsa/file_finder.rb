@@ -58,22 +58,22 @@ def filter_files(search_str)
   for s in scores
     dir_hash[s[0]] = s[1] if s[1] > 0
   end
-  # puts scores
+  # debug scores
   dir_hash = dir_hash.sort_by { |k, v| -v }
   dir_hash = dir_hash[0..20]
   dir_hash.map do |file, d|
-    puts "D:#{d} #{file}"
+    debug "D:#{d} #{file}"
   end
   return dir_hash
 end
 
 def gui_file_finder_update_callback(search_str = "")
-  puts "FILE FINDER UPDATE CALLBACK: #{search_str}"
+  debug "FILE FINDER UPDATE CALLBACK: #{search_str}"
   if (search_str.size > 1)
     files = filter_files(search_str)
     $file_search_list = files
     return files
-    #puts files.inspect
+    #debug files.inspect
     #return files.values
   end
   return []
@@ -87,7 +87,7 @@ def gui_file_finder_select_callback(search_str, idx)
 end
 
 def gui_file_finder_handle_char(c)
-  puts "BUFFER SELECTOR INPUT CHAR: #{c}"
+  debug "BUFFER SELECTOR INPUT CHAR: #{c}"
   buffer_i = $select_keys.index(c)
   if buffer_i != nil
     gui_file_finder_callback(buffer_i)

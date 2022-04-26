@@ -33,7 +33,7 @@ class FileManager
     bindkey "fexp o m", :fexp_sort_mtime
     bindkey "fexp o f", :fexp_sort_fname
 
-    # bindkey "fexp l", [:fexp_right, proc { puts "==fexp_right==" }, ""]
+    # bindkey "fexp l", [:fexp_right, proc { debug "==fexp_right==" }, ""]
     bindkey "fexp h", :fexp_chdir_parent
     bindkey "fexp esc", [:fexp_quit, proc { $kbd.set_mode(:command) }, ""]
     bindkey "fexp enter", :fexp_select
@@ -50,7 +50,7 @@ class FileManager
     @@cur = self
     ld = buflist.get_last_dir
     dir_to_buf(ld)
-    # puts "ld=#{ld}"
+    # debug "ld=#{ld}"
     # dlist = Dir["#{ld}/*"]
   end
 
@@ -127,10 +127,10 @@ class FileManager
 
   def select_line
     return if @buf.lpos < @header.size
-    # puts "def select_line"
+    # debug "def select_line"
     fn = fullp(@buf.get_current_line[0..-2])
     if File.directory?(fn)
-      puts "CHDIR: #{fn}"
+      debug "CHDIR: #{fn}"
       dir_to_buf(fn)
       # elsif vma.can_open_extension?(fn)
       # jump_to_file(fn)
@@ -140,6 +140,6 @@ class FileManager
     else
       open_with_default_program(fn)
     end
-    # puts l.inspect
+    # debug l.inspect
   end
 end

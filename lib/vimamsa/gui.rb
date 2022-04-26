@@ -10,7 +10,7 @@ def gui_open_file_dialog(dirpath)
   dialog.signal_connect("response") do |dialog, response_id|
     if response_id == Gtk::ResponseType::ACCEPT
       open_new_file(dialog.filename)
-      # puts "uri = #{dialog.uri}"
+      # debug "uri = #{dialog.uri}"
     end
     dialog.destroy
   end
@@ -34,7 +34,7 @@ def gui_file_saveas(dirpath)
 end
 
 def idle_func
-  # puts "IDLEFUNC"
+  # debug "IDLEFUNC"
   if $idle_scroll_to_mark
     # Ripl.start :binding => binding
     # $view.get_visible_rect
@@ -45,7 +45,7 @@ def idle_func
     b = $view.buffer
     iter = b.get_iter_at(:offset => b.cursor_position)
     iterxy = $view.get_iter_location(iter)
-    # puts "ITERXY" + iterxy.inspect
+    # debug "ITERXY" + iterxy.inspect
     # Ripl.start :binding => binding
 
     intr = iterxy.intersect(vr)
@@ -103,7 +103,7 @@ def paste_system_clipboard()
 
   # clipboard.request_contents(target_string) do |_clipboard, selection_data|
   # received_text = selection_data.text
-  # puts "received_text=#{received_text}"
+  # debug "received_text=#{received_text}"
   # end
   if clipboard.wait_is_text_available?
     received_text = clipboard.wait_for_text
@@ -116,7 +116,7 @@ def paste_system_clipboard()
       $paste_lines = false
     end
     $clipboard << received_text
-    # puts $clipboard[-1]
+    # debug $clipboard[-1]
     $clipboard = $clipboard[-([$clipboard.size, max_clipboard_items].min)..-1]
   end
   return received_text
@@ -132,7 +132,7 @@ def set_system_clipboard(arg)
 end
 
 def gui_create_buffer(id)
-  puts "gui_create_buffer(#{id})"
+  debug "gui_create_buffer(#{id})"
   buf1 = GtkSource::Buffer.new()
   view = VSourceView.new()
 
@@ -144,7 +144,7 @@ def gui_create_buffer(id)
   ssm.set_search_path(ssm.search_path << ppath("styles/"))
   #  sty = ssm.get_scheme("dark")
   sty = ssm.get_scheme("molokai_edit")
-  # puts ssm.scheme_ids
+  # debug ssm.scheme_ids
 
   view.buffer.highlight_matching_brackets = true
   view.buffer.style_scheme = sty
@@ -183,7 +183,7 @@ end
 
 def gui_set_buffer_contents(id, txt)
   # $vbuf.set_text(txt)
-  puts "gui_set_buffer_contents(#{id}, txt)"
+  debug "gui_set_buffer_contents(#{id}, txt)"
 
   $vmag.buffers[id].buffer.set_text(txt)
 end
@@ -195,7 +195,7 @@ end
 
 def gui_set_current_buffer(id)
   view = $vmag.buffers[id]
-  puts "gui_set_current_buffer(#{id}), view=#{view}"
+  debug "gui_set_current_buffer(#{id}), view=#{view}"
   buf1 = view.buffer
   $vmag.view = view
   $vmag.buf1 = buf1
@@ -263,9 +263,9 @@ class VMAgui
   end
 
   def overlay_draw_text(text, textpos)
-    # puts "overlay_draw_text #{[x,y]}"
+    # debug "overlay_draw_text #{[x,y]}"
     (x, y) = @view.pos_to_coord(textpos)
-    # puts "overlay_draw_text #{[x,y]}"
+    # debug "overlay_draw_text #{[x,y]}"
     label = Gtk::Label.new("<span background='#00000088' foreground='#ff0000' weight='ultrabold'>#{text}</span>")
     label.use_markup = true
     @da.put(label, x, y)
@@ -301,7 +301,7 @@ class VMAgui
     # istart = @view.get_iter_at_y(vr.y)
     # startpos = @view.get_iter_at_position_raw(vr.x,vr.y)[1].offset
     # endpos = @view.get_iter_at_position_raw(vr.x+vr.width,vr.y+vr.height)[1].offset
-    # puts "startpos,endpos:#{[startpos, endpos]}"
+    # debug "startpos,endpos:#{[startpos, endpos]}"
 
     da = @da
     if false
@@ -335,7 +335,7 @@ class VMAgui
       da.put(label, x, y)
     end
 
-    # puts @view.pos_to_coord(300).inspect
+    # debug @view.pos_to_coord(300).inspect
 
     @da.show_all
   end

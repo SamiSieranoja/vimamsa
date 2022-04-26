@@ -4,7 +4,7 @@ def hpt_open_link()
 end
 
 def hpt_check_cur_word(w)
-  puts "check_cur_word(w)"
+  debug "check_cur_word(w)"
   m = w.match(/⟦(.*)⟧/)
   if m
     fpfx = m[1]

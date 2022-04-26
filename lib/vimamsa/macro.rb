@@ -1,6 +1,6 @@
 
 def gui_find_macro_update_callback(search_str = "")
-  puts "gui_find_macro_update_callback: #{search_str}"
+  debug "gui_find_macro_update_callback: #{search_str}"
   heystack = $macro.named_macros
   return [] if heystack.empty?
   $macro_search_list = []
@@ -14,10 +14,10 @@ def gui_find_macro_update_callback(search_str = "")
 end
 
 def gui_find_macro_select_callback(search_str, idx)
-  puts "gui_find_macro_select_callback"
+  debug "gui_find_macro_select_callback"
   selected = $macro_search_list[idx]
   m = $macro.named_macros[selected[0]].clone
-  puts "SELECTED MACRO:#{selected}, #{m}"
+  debug "SELECTED MACRO:#{selected}, #{m}"
   id = $macro.last_macro
   $macro.recorded_macros[id] = m
   $macro.run_macro(id)
@@ -64,7 +64,7 @@ class Macro
   end
 
   def name_macro(name, id = nil)
-    puts "NAME MACRO #{name}"
+    debug "NAME MACRO #{name}"
     if id.nil?
       id = @last_macro
     end
@@ -134,7 +134,7 @@ class Macro
       # Ripl.start :binding => binding
       for a in acts
         ret = exec_action(a)
-        puts ret
+        debug ret
         if ret == false
           message("Error while running macro")
           break

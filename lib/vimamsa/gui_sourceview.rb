@@ -3,16 +3,16 @@ class VSourceView < GtkSource::View
   def initialize(title = nil)
     # super(:toplevel)
     super()
-    puts "vsource init"
+    debug "vsource init"
     @last_keyval = nil
     @last_event = [nil, nil]
 
     signal_connect "button-press-event" do |_widget, event|
       if event.button == Gdk::BUTTON_PRIMARY
-        # puts "Gdk::BUTTON_PRIMARY"
+        # debug "Gdk::BUTTON_PRIMARY"
         false
       elsif event.button == Gdk::BUTTON_SECONDARY
-        # puts "Gdk::BUTTON_SECONDARY"
+        # debug "Gdk::BUTTON_SECONDARY"
         true
       else
         true
@@ -44,14 +44,14 @@ class VSourceView < GtkSource::View
   def handle_key_event(event, sig)
     if $update_cursor
       curpos = buffer.cursor_position
-      puts "MOVE CURSOR: #{curpos}"
+      debug "MOVE CURSOR: #{curpos}"
       buf.set_pos(curpos)
       $update_cursor = false
     end
-    puts $view.visible_rect.inspect
+    debug $view.visible_rect.inspect
 
-    puts "key event"
-    puts event
+    debug "key event"
+    debug event
 
     key_name = event.string
     if event.state.control_mask?
@@ -98,9 +98,9 @@ class VSourceView < GtkSource::View
     key_str_parts << key_name
     key_str = key_str_parts.join("-")
     keynfo = { :key_str => key_str, :key_name => key_name, :keyval => event.keyval }
-    puts keynfo.inspect
+    debug keynfo.inspect
     # $kbd.match_key_conf(key_str, nil, :key_press)
-    # puts "key_str=#{key_str} key_"
+    # debug "key_str=#{key_str} key_"
 
     if key_str != "" # or prefixed_key_str != ""
       if sig == :key_release_event and event.keyval == @last_keyval
@@ -132,7 +132,7 @@ class VSourceView < GtkSource::View
     y = iterxy.y
 
     # buffer_to_window_coords(Gtk::TextWindowType::TEXT, iterxy.x, iterxy.y).inspect
-    # puts buffer_to_window_coords(Gtk::TextWindowType::TEXT, x, y).inspect
+    # debug buffer_to_window_coords(Gtk::TextWindowType::TEXT, x, y).inspect
     (x, y) = buffer_to_window_coords(Gtk::TextWindowType::TEXT, x, y)
     # Ripl.start :binding => binding
 
@@ -166,15 +166,15 @@ class VSourceView < GtkSource::View
   def sanity_check()
     a = buffer.text
     b = buf.to_s
-    # puts "===================="
-    # puts a.lines[0..10].join()
-    # puts "===================="
-    # puts b.lines[0..10].join()
-    # puts "===================="
+    # debug "===================="
+    # debug a.lines[0..10].join()
+    # debug "===================="
+    # debug b.lines[0..10].join()
+    # debug "===================="
     if a == b
-      puts "Buffers match"
+      debug "Buffers match"
     else
-      puts "ERROR: Buffer's don't match."
+      debug "ERROR: Buffer's don't match."
     end
   end
 
@@ -210,7 +210,7 @@ class VSourceView < GtkSource::View
   end
 
   def cursor_visible_idle_func
-    puts "cursor_visible_idle_func"
+    debug "cursor_visible_idle_func"
     # From https://picheta.me/articles/2013/08/gtk-plus--a-method-to-guarantee-scrolling.html
     # vr = visible_rect
 
@@ -247,8 +247,8 @@ class VSourceView < GtkSource::View
 
     intr = iterxy.intersect(vr)
     if intr.nil?
-      puts iterxy.inspect
-      puts vr.inspect
+      debug iterxy.inspect
+      debug vr.inspect
       # Ripl.start :binding => binding
 
       # exit!
@@ -273,16 +273,16 @@ class VSourceView < GtkSource::View
       itr2 = buffer.get_iter_at(:offset => buf.pos + 1)
       $view.buffer.select_range(itr, itr2)
     elsif buf.visual_mode?
-      puts "VISUAL MODE"
+      debug "VISUAL MODE"
       (_start, _end) = buf.get_visual_mode_range2
-      puts "#{_start}, #{_end}"
+      debug "#{_start}, #{_end}"
       itr = buffer.get_iter_at(:offset => _start)
       itr2 = buffer.get_iter_at(:offset => _end + 1)
       $view.buffer.select_range(itr, itr2)
     else # Insert mode
       itr = buffer.get_iter_at(:offset => buf.pos)
       $view.buffer.select_range(itr, itr)
-      puts "INSERT MODE"
+      debug "INSERT MODE"
     end
   end
 

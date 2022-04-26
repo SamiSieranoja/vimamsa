@@ -4,7 +4,7 @@ module Vimamsa
       mpath = _mpath.split(".")
       curnfo = @nfo
       for y in mpath
-        puts curnfo.inspect
+        debug(curnfo.inspect)
         if y.equal?(mpath.last)
           curnfo[y] = x
         elsif curnfo[y].nil?
@@ -22,6 +22,7 @@ module Vimamsa
 
       add_to_menu "File.New", { :label => "New file", :action => :buf_new }
       add_to_menu "File.Revert", { :label => "Reload file from disk", :action => :buf_revert }
+      add_to_menu "File.List", { :label => "List open files", :action => :start_buf_manager }
 
       add_to_menu "File.Quit", { :label => "Quit", :action => :quit }
 

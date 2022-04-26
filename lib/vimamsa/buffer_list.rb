@@ -162,6 +162,7 @@ class BufferList < Array
 
 
   def close_buffer(buffer_i, from_recent = false)
+    return if buffer_i.nil?
     return if self.size <= buffer_i
     
     bufname = self[buffer_i].basename
