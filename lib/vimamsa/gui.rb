@@ -156,6 +156,7 @@ def gui_create_buffer(id)
   view.wrap_mode = :char
   view.set_tab_width(conf(:tab_width))
 
+
   $vmag.buffers[id] = view
 end
 
@@ -523,7 +524,6 @@ class VMAgui
 
     @menubar = Gtk::MenuBar.new
     @menubar.expand = false
-    
 
     @sw = Gtk::ScrolledWindow.new
     @sw.set_policy(:automatic, :automatic)
@@ -552,11 +552,9 @@ class VMAgui
 
     init_minibuffer
 
-
     @window.show_all
     vma.start
     Vimamsa::Menu.new(@menubar)
     @window.show_all
-    
   end
 end

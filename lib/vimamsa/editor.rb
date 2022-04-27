@@ -556,6 +556,7 @@ def hook_draw()
   # easy_jump_draw()
 end
 
+#TODO: delete this
 def render_buffer(buffer = 0, reset = 0)
   tmpbuf = $buffer.to_s
   debug "pos:#{$buffer.pos} L:#{$buffer.lpos} C:#{$buffer.cpos}"

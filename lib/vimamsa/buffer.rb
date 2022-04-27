@@ -122,10 +122,32 @@ class Buffer < String
     end
   end
 
+  def view()
+  	# Get the VSourceView < GtkSource::View object corresponding to this buffer
+    return vma.gui.buffers[@id]
+  end
+
   def add_image(imgpath, pos)
     return if !is_legal_pos(pos)
-    # insert_txt_at(" ", pos)
-    gui_add_image(imgpath, pos)
+
+    pixbuf = GdkPixbuf::Pixbuf.new(:file => imgpath)
+
+    #  puts GdkPixbuf::InterpType.constants
+    # GdkPixbuf::InterpType::HYPER
+    # https://docs.gtk.org/gdk-pixbuf/enum.InterpType.html#bilinear
+    # https://docs.gtk.org/gdk-pixbuf/method.Pixbuf.scale_simple.html
+    imglimit = view.visible_rect.width - 5
+    if pixbuf.width > imglimit
+      nwidth = imglimit
+      nheight = (pixbuf.height * (imglimit.to_f / pixbuf.width)).to_i
+      pixbuf = pixbuf.scale_simple(nwidth, nheight, GdkPixbuf::InterpType::HYPER)
+    end
+
+    vbuf = view.buffer
+    itr = vbuf.get_iter_at(:offset => pos)
+    itr2 = vbuf.get_iter_at(:offset => pos + 1)
+    vbuf.delete(itr, itr2)
+    vbuf.insert(itr, pixbuf)
   end
 
   def is_legal_pos(pos, op = :read)
