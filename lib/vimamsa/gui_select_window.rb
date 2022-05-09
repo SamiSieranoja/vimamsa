@@ -1,6 +1,9 @@
 def gui_select_update_window(item_list, jump_keys, select_callback, update_callback, opt={})
   $selup = SelectUpdateWindow.new(nil, item_list, jump_keys, select_callback, update_callback, opt)
   $selup.run
+  # opt fields:
+  # :title
+  # :desc
 end
 
 class SelectUpdateWindow

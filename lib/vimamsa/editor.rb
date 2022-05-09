@@ -189,11 +189,10 @@ class Editor
   def buf()
     return $buffer
   end
-  
+
   def buffers()
     return $buffers
   end
- 
 
   def marshal_save(varname, vardata)
     save_var_to_file(varname, Marshal.dump(vardata))
@@ -256,13 +255,18 @@ class Editor
     @converters[converter_id].apply(txt)
   end
 
+  # Used only by ack module at the moment
   def get_content_search_paths()
     r = @file_content_search_paths.clone
     p = find_project_dir_of_cur_buffer()
+    if p.nil?
+      p = buf.dirname # Search dir of current file by default
+    end
 
     if p and !@file_content_search_paths.include?(p)
       r.insert(0, p)
     end
+
     return r
   end
 
@@ -451,6 +455,7 @@ end
 GUESS_ENCODING_ORDER = [
   Encoding::US_ASCII,
   Encoding::UTF_8,
+  Encoding::ISO_8859_1,
   Encoding::Shift_JIS,
   Encoding::EUC_JP,
   Encoding::EucJP_ms,
@@ -513,11 +518,19 @@ def load_buffer(fname)
   #$buffer_history << $buffers.size - 1
 end
 
-def jump_to_file(filename, linenum = 0)
+def jump_to_file(filename, linenum = nil, charn = nil)
   open_new_file(filename)
-  if linenum > 0
-    $buffer.jump_to_line(linenum)
+
+  if !charn.nil?
+    buf.jump_to_pos(linenum)
     center_on_current_line
+    return
+  end
+
+  if !linenum.nil?
+    buf.jump_to_line(linenum)
+    center_on_current_line
+    return
   end
 end
 
@@ -591,10 +604,10 @@ end
 def get_file_line_pointer(s)
   #"/code/vimamsa/lib/vimamsa/buffer_select.rb:31:def"
   #    m = s.match(/(~[a-z]*)?\/.*\//)
-  m = s.match(/((~[a-z]*)?\/.*\/\S+):(\d+)/)
+  m = s.match(/((~[a-z]*)?\/.*\/\S+):(c?)(\d+)/)
   if m != nil
     if File.exist?(File.expand_path(m[1]))
-      return [m[1], m[3].to_i]
+      return [m[1], m[4].to_i, m[3]]
     end
   end
   return nil

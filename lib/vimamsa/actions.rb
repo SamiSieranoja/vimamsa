@@ -47,10 +47,12 @@ end
 
 def search_actions()
   l = []
+  opt = { :title => "Search actions.", :desc => "Fuzzy search for actions. <up> or <down> to change selcted. <enter> to select current." }
   $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
   gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
                            "search_actions_select_callback",
-                           "search_actions_update_callback")
+                           "search_actions_update_callback",
+                           opt)
 end
 
 $item_list = []
@@ -63,6 +65,16 @@ def search_actions_update_callback(search_str = "")
     act = $actions[act_id]
     item = {}
     item[:key] = ""
+
+    for mode_str in ["C", "V"]
+      c_kbd = vma.kbd.act_bindings[mode_str][act_id]
+      if c_kbd.class == String
+        item[:key] = "[#{mode_str} #{c_kbd}] "
+        break
+      end
+    end
+    # c_kbd = vma.kbd.act_bindings[mode_str][nfo[:action]]
+    # Ripl.start :binding => binding
     item[:action] = act_id
     item[:str] = act_id.to_s
     if $actions[act_id].method_name != ""
@@ -80,7 +92,9 @@ def search_actions_update_callback(search_str = "")
   debug r.inspect
   $item_list = r
 
-  r = a.collect { |x| ["[#{x[0][:key]}] #{x[0][:str]}", 0, x] }
+  # Ripl.start :binding => binding
+
+  r = a.collect { |x| ["#{x[0][:key]}#{x[0][:str]}", 0, x] }
   return r
 end
 
@@ -102,7 +116,12 @@ end
 def filter_items(item_list, item_key, search_str)
   #    Ripl.start :binding => binding
   item_hash = {}
+  puts item_list.inspect
   scores = Parallel.map(item_list, in_threads: 8) do |item|
+    if item[:str].class != String
+      puts item.inspect
+      exit!
+    end
     [item, srn_dst(search_str, item[:str])]
   end
   scores.sort_by! { |x| -x[1] }

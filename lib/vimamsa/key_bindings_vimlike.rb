@@ -1,9 +1,8 @@
-
-bindkey ["VCB M","B m"], :run_last_macro
+bindkey ["VCB M", "B m"], :run_last_macro
 
 bindkey "VC s", :easy_jump
-bindkey "VC , m f", [:find_macro_gui, proc{$macro.find_macro_gui}, "Find named macro"]
-bindkey "C , m n", [:gui_name_macro, proc{$macro.gui_name_macro}, "Name last macro"]
+bindkey "VC , m f", [:find_macro_gui, proc { $macro.find_macro_gui }, "Find named macro"]
+bindkey "C , m n", [:gui_name_macro, proc { $macro.gui_name_macro }, "Name last macro"]
 bindkey "C , j r", :jump_to_random
 bindkey "I enter", :insert_new_line
 bindkey "C , ; s k", :show_key_bindings #TODO: better binding
@@ -35,8 +34,8 @@ bindkey "C , b", :start_buf_manager
 bindkey "CI ctrl-o", :open_file_dialog
 # bindkey "M enter", :minibuffer_end
 bindkey "C , a", :ack_search
-bindkey  "C d w", :delete_to_word_end
-bindkey  "C d 0", :delete_to_line_start
+bindkey "C d w", :delete_to_word_end
+bindkey "C d 0", :delete_to_line_start
 bindkey "C , , f", :file_finder
 bindkey "VC h", :e_move_backward_char
 bindkey "C , , .", :backup_all_buffers
@@ -62,11 +61,11 @@ bindkey "C , g", :invoke_grep_search
 bindkey "C , v", :auto_indent_buffer
 bindkey "C , , d", :savedebug
 bindkey "C , , u", :update_file_index
-bindkey "C , s a", :buf_save_as 
-bindkey "C d d", [:delete_line, proc{buf.delete_line}, "Delete current line"]
-bindkey "C enter || C return",  [:line_action,proc{buf.handle_line_action()}, "Line action"]
-bindkey  "C p" , [:paste_after,proc{buf.paste(AFTER)},""] # TODO: implement as replace for visual mode
-bindkey  "V d" , [:delete_selection,proc{buf.delete(SELECTION)},""]
+bindkey "C , s a", :buf_save_as
+bindkey "C d d", [:delete_line, proc { buf.delete_line }, "Delete current line"]
+bindkey "C enter || C return", [:line_action, proc { buf.handle_line_action() }, "Line action"]
+bindkey "C p", [:paste_after, proc { buf.paste(AFTER) }, ""] # TODO: implement as replace for visual mode
+bindkey "V d", [:delete_selection, proc { buf.delete(SELECTION) }, ""]
 
 default_keys = {
 
@@ -83,7 +82,6 @@ default_keys = {
   "C , n b" => :buf_new,
   # "C , , ." => "backup_all_buffers()",
   "VC , , s" => :search_actions,
-
 
   # MOVING
   #    'VC h' => 'buf.move(BACKWARD_CHAR)',
@@ -107,7 +105,7 @@ default_keys = {
   "VC F <char>" => "buf.jump_to_next_instance_of_char(<char>,BACKWARD)",
   "VC f space" => "buf.jump_to_next_instance_of_char(' ')",
   "VC F space" => "buf.jump_to_next_instance_of_char(' ',BACKWARD)",
- 
+
   "VC /[1-9]/" => "set_next_command_count(<char>)",
   #    'VC number=/[0-9]/+ g'=> 'jump_to_line(<number>)',
   #    'VC X=/[0-9]/+ * Y=/[0-9]/+ '=> 'x_times_y(<X>,<Y>)',
@@ -132,6 +130,9 @@ default_keys = {
 
   "C n" => "$search.jump_to_next()",
   "C N" => "$search.jump_to_previous()",
+
+
+  "C C" => :content_search,
 
   # Debug
   "C , d r p" => "start_ripl",
@@ -191,11 +192,14 @@ default_keys = {
   "V ctrl!" => "buf.end_visual_mode",
   "V y" => "buf.copy_active_selection()",
   "V a y" => "buf.copy_active_selection(:append)",
-  "V g U" => "buf.transform_selection(:upcase)",
-  "V g u" => "buf.transform_selection(:downcase)",
-  "V g c" => "buf.transform_selection(:capitalize)",
-  "V g s" => "buf.transform_selection(:swapcase)",
-  "V g r" => "buf.transform_selection(:reverse)",
+  "V g U" => :selection_upcase,
+  "V g u" => :selection_downcase,
+  "V g c" => :selection_capitalize,
+  "V g s" => :selection_swapcase,
+  "V g r" => :selection_reverse,
+  
+  "VC j" => :forward_line,
+  "VC k" => :backward_line,
 
   "V x" => "buf.delete(SELECTION)",
   # "V ctrl-c" => "buf.comment_selection",
@@ -215,15 +219,15 @@ default_keys = {
   # Macros
   # (experimental, may not work correctly)
   # "C q a" => '$macro.start_recording("a")',
-  "VC q <char>" => '$macro.start_recording(<char>)',
+  "VC q <char>" => "$macro.start_recording(<char>)",
   "VC q($macro.is_recording==true) " => "$macro.end_recording", # TODO
   # 'C q'=> '$macro.end_recording', #TODO
   "C q v" => "$macro.end_recording",
   # 'C v'=> '$macro.end_recording',
   # "C M" => '$macro.run_last_macro',
-  "C @ <char>" => '$macro.run_macro(<char>)',
+  "C @ <char>" => "$macro.run_macro(<char>)",
   "C , m S" => '$macro.save_macro("a")',
-  "C , m s" => '$macro.save',
+  "C , m s" => "$macro.save",
   "C , t r" => "run_tests()",
 
   # "C ." => "repeat_last_action", # TODO
@@ -256,5 +260,3 @@ default_keys = {
 default_keys.each { |key, value|
   bindkey(key, value)
 }
-
-

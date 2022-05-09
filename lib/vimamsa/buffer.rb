@@ -14,7 +14,7 @@ class Buffer < String
 
   #attr_reader (:pos, :cpos, :lpos)
 
-  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang
+  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang
   attr_writer :call_func, :update_highlight
   attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle
 
@@ -123,7 +123,7 @@ class Buffer < String
   end
 
   def view()
-  	# Get the VSourceView < GtkSource::View object corresponding to this buffer
+    # Get the VSourceView < GtkSource::View object corresponding to this buffer
     return vma.gui.buffers[@id]
   end
 
@@ -786,6 +786,10 @@ class Buffer < String
     return @pos == self.size
   end
 
+  def jump_to_pos(new_pos)
+    set_pos(new_pos)
+  end
+
   def set_pos(new_pos)
     if new_pos >= self.size
       @pos = self.size - 1 # TODO:??right side of last char
@@ -1061,7 +1065,8 @@ class Buffer < String
       open_url(word)
     elsif wtype == :linepointer
       debug word.inspect
-      jump_to_file(word[0], word[1])
+      # Ripl.start :binding => binding
+      jump_to_file(word[0], word[1],word[2])
     elsif wtype == :textfile
       open_existing_file(word)
     elsif wtype == :file
@@ -1161,19 +1166,6 @@ class Buffer < String
     # (word, wtype) = get_cur_nonwhitespace_word()
     wnfo = get_cur_nonwhitespace_word()
     handle_word(wnfo)
-  end
-
-  def get_cur_word()
-    wem = get_word_end_marks(@pos, @pos + 200)
-    wsm = get_word_start_marks(@pos - 200, @pos)
-    word_start = wsm[-1]
-    word_end = wem[0]
-    word_start = pos if word_start == nil
-    word_end = pos if word_end == nil
-    word = self[word_start..word_end]
-    debug "'#{word}'"
-    message("'#{word}'")
-    #debug wm
   end
 
   def jump_to_next_instance_of_word()

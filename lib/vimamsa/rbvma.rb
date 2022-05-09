@@ -1,13 +1,14 @@
+#require "gtksourceview4"
+require "date"
+require "fileutils"
 require "gtk3"
 require "gtksourceview3"
-#require "gtksourceview4"
-require "ripl"
-require "fileutils"
-require "pathname"
-require "date"
-require "ripl/multi_line"
 require "json"
 require "listen"
+require "pathname"
+require "ripl"
+require "ripl/multi_line"
+require "shellwords"
 
 require "vimamsa/util"
 require "vimamsa/main"
@@ -57,7 +58,7 @@ $debug = false
 
 def scan_indexes(txt, regex)
   # indexes = txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0) + 1 }
-  indexes = txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0) }
+  indexes = txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0)  }
   return indexes
 end
 

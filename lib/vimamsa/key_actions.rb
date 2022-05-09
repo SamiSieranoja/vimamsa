@@ -28,17 +28,16 @@ def is_visual_mode()
   return 0
 end
 
-
-reg_act(:enable_debug, proc { $debug=true }, "Enable debug")
-reg_act(:disable_debug, proc {$debug=false }, "Disable debug")
+reg_act(:enable_debug, proc { $debug = true }, "Enable debug")
+reg_act(:disable_debug, proc { $debug = false }, "Disable debug")
 
 reg_act(:easy_jump, proc { EasyJump.start }, "Easy jump")
 reg_act(:savedebug, "savedebug", "Save debug info", { :group => :debug })
 reg_act(:open_file_dialog, "open_file_dialog", "Open file", { :group => :file })
 reg_act(:create_new_file, "create_new_file", "Create new file", { :group => :file })
-reg_act(:backup_all_buffers, proc{backup_all_buffers}, "Backup all buffers", { :group => :file })
-reg_act(:e_move_forward_char, "e_move_forward_char", "", { :group => :move })
-reg_act(:e_move_backward_char, "e_move_backward_char", "", { :group => :move })
+reg_act(:backup_all_buffers, proc { backup_all_buffers }, "Backup all buffers", { :group => :file })
+reg_act(:e_move_forward_char, "e_move_forward_char", "", { :group => [:move,:basic] })
+reg_act(:e_move_backward_char, "e_move_backward_char", "", { :group => [:move,:basic] })
 reg_act(:history_switch_backwards, "history_switch_backwards", "", { :group => :file })
 reg_act(:history_switch_forwards, "history_switch_forwards", "", { :group => :file })
 reg_act(:center_on_current_line, "center_on_current_line", "", { :group => :view })
@@ -56,7 +55,7 @@ reg_act(:set_executable, proc { buf.set_executable }, "Set current file permissi
 reg_act(:close_all_buffers, proc { bufs.close_all_buffers() }, "Close all buffers")
 reg_act(:close_current_buffer, proc { bufs.close_current_buffer(true) }, "Close current buffer")
 reg_act(:comment_selection, proc { buf.comment_selection }, "")
-reg_act(:delete_char_forward, proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward")
+reg_act(:delete_char_forward, proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward", { :group => [:edit,:basic] })
 reg_act(:load_theme, proc { load_theme }, "Load theme")
 reg_act(:gui_file_finder, proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
 reg_act(:gui_file_history_finder, proc { vma.FileHistory.start_gui }, "Fuzzy file history finder")
@@ -82,19 +81,19 @@ reg_act(:diff_buffer, "diff_buffer", "")
 reg_act(:invoke_grep_search, proc { gui_grep }, "Grep current buffer")
 reg_act(:ack_search, proc { gui_ack }, "") #invoke_ack_search
 reg_act :update_file_index, proc { update_file_index }, "Update file index"
-reg_act :delete_to_word_end, proc { buf.delete2(:to_word_end) }, "Delete to file end"
-reg_act :delete_to_line_start, proc { buf.delete2(:to_line_start) }, "Delete to line start"
+reg_act :delete_to_word_end, proc { buf.delete2(:to_word_end) }, "Delete to file end", { :group => [:edit,:basic] }
+reg_act :delete_to_line_start, proc { buf.delete2(:to_line_start) }, "Delete to line start", { :group => [:edit,:basic] }
 reg_act :start_browse_mode, proc { $kbd.set_mode(:browse); $kbd.set_default_mode(:browse) }, "Start browse mode"
 reg_act :exit_browse_mode, proc {
   bufs.add_current_buf_to_history(); $kbd.set_mode(:command); $kbd.set_default_mode(:command)
 }, "Exit browse mode"
 
-reg_act :page_down, proc { page_down }
-reg_act :page_up, proc { page_up }
+reg_act :page_down, proc { page_down }, "Page down", :group => [:move,:basic] 
+reg_act :page_up, proc { page_up }, "Page up", :group => [:move,:basic] 
 reg_act :jump_to_start_of_buffer, proc { buf.jump(START_OF_BUFFER) }, "Jump to start of buffer"
 reg_act :jump_to_end_of_buffer, proc { buf.jump(END_OF_BUFFER) }, "Jump to end of buffer"
 reg_act(:auto_indent_buffer, proc { buf.indent }, "Auto format buffer")
-reg_act(:execute_current_line_in_terminal, proc { buf.execute_current_line_in_terminal }, "Execute current line in terminalL")
+reg_act(:execute_current_line_in_terminal, proc { buf.execute_current_line_in_terminal }, "Execute current line in terminal")
 reg_act(:execute_current_line_in_terminal_autoclose, proc { buf.execute_current_line_in_terminal(true) }, "Execute current line in terminal. Close after execution.")
 reg_act(:show_images, proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")
 reg_act(:delete_current_file, proc { bufs.delete_current_buffer() }, "Delete current file")
@@ -118,14 +117,38 @@ act_list = {
                   :desc => "Undo edit", :group => :edit },
 
   :find_in_buffer => { :proc => proc { invoke_search },
-                  :desc => "Find", :group => :edit },
+                       :desc => "Find", :group => :edit },
 
+  :selection_upcase => { :proc => proc { buf.transform_selection(:upcase) },
+                         :desc => "Transform text: upcase", :group => :edit },
+
+  :selection_downcase => { :proc => proc { buf.transform_selection(:downcase) },
+                           :desc => "Transform text: downcase", :group => :edit },
+
+  :selection_capitalize => { :proc => proc { buf.transform_selection(:capitalize) },
+                             :desc => "Transform text: capitalize", :group => :edit },
+
+  :selection_swapcase => { :proc => proc { buf.transform_selection(:swapcase) },
+                           :desc => "Transform text: swapcase", :group => :edit },
+
+  :selection_reverse => { :proc => proc { buf.transform_selection(:reverse) },
+                          :desc => "Transform text: reverse", :group => :edit },
+                          
+  :forward_line => { :proc => proc { buf.move(FORWARD_LINE) },
+                          :desc => "Move one line forward", :group => [:move,:basic] },                         
+                          
+  :backward_line => { :proc => proc { buf.move(BACKWARD_LINE) },
+                          :desc => "Move one line backward", :group => [:move,:basic] }, 
+                         
 
   # { :proc => proc {  },
   # :desc => "", :group => : },
 
   :search_actions => { :proc => proc { search_actions },
                        :desc => "Search actions", :group => :search },
+                       
+  :content_search => { :proc => proc { FileContentSearch.start_gui },
+                       :desc => "Search content of files", :group => :search },
 
   :quit => { :proc => proc { _quit },
              :desc => "Quit", :group => :app },
@@ -149,14 +172,13 @@ act_list_todo = {
                   :desc => "Close current file", :group => :file },
   #"C , b" => '$kbd.set_mode("S");gui_select_buffer',
 
-
   # MOVING
   #    'VC h' => 'buf.move(BACKWARD_CHAR)',
   :m_forward_char => { :proc => proc { buf.move(FORWARD_CHAR) },
                        :desc => "Move cursor one char forward",
                        :group => :move },
-  "VC j" => "buf.move(FORWARD_LINE)",
-  "VC k" => "buf.move(BACKWARD_LINE)",
+  # "VC j" => "buf.move(FORWARD_LINE)",
+  # "VC k" => "buf.move(BACKWARD_LINE)",
 
   "VC pagedown" => "page_down",
   "VC pageup" => "page_up",
