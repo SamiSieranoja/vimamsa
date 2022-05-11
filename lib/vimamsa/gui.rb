@@ -131,10 +131,10 @@ def set_system_clipboard(arg)
   clipboard.text = arg
 end
 
-def gui_create_buffer(id)
+def gui_create_buffer(id, bufo)
   debug "gui_create_buffer(#{id})"
   buf1 = GtkSource::Buffer.new()
-  view = VSourceView.new()
+  view = VSourceView.new(nil, bufo)
 
   view.set_highlight_current_line(true)
   view.set_show_line_numbers(true)
@@ -142,20 +142,16 @@ def gui_create_buffer(id)
 
   ssm = GtkSource::StyleSchemeManager.new
   ssm.set_search_path(ssm.search_path << ppath("styles/"))
-  #  sty = ssm.get_scheme("dark")
   sty = ssm.get_scheme("molokai_edit")
-  # debug ssm.scheme_ids
 
   view.buffer.highlight_matching_brackets = true
   view.buffer.style_scheme = sty
 
   provider = Gtk::CssProvider.new
   provider.load(data: "textview { font-family: Monospace; font-size: 11pt; }")
-  # provider.load(data: "textview { font-family: Arial; font-size: 12pt; }")
   view.style_context.add_provider(provider)
   view.wrap_mode = :char
   view.set_tab_width(conf(:tab_width))
-
 
   $vmag.buffers[id] = view
 end
@@ -178,20 +174,13 @@ end
 def gui_select_window_close(arg = nil)
 end
 
-# def set_window_title(str)
-# unimplemented
-# end
-
 def gui_set_buffer_contents(id, txt)
-  # $vbuf.set_text(txt)
   debug "gui_set_buffer_contents(#{id}, txt)"
-
-  $vmag.buffers[id].buffer.set_text(txt)
+  vma.gui.buffers[id].buffer.set_text(txt)
 end
 
 def gui_set_cursor_pos(id, pos)
-  $view.set_cursor_pos(pos)
-  # Ripl.start :binding => binding
+  vma.buf.view.set_cursor_pos(pos)
 end
 
 def gui_set_current_buffer(id)
@@ -207,17 +196,9 @@ def gui_set_current_buffer(id)
   $vmag.sw.add(view)
 
   view.grab_focus
-  #view.set_focus(10)
   view.set_cursor_visible(true)
-  #view.move_cursor(1, 1, false)
   view.place_cursor_onscreen
-
-  #TODO:
-  # itr = view.buffer.get_iter_at(:offset => 0)
-  # view.buffer.place_cursor(itr)
-
-  # wtitle = ""
-  # wtitle = buf.fname if !buf.fname.nil?
+  
   $vmag.sw.show_all
 end
 
@@ -227,7 +208,7 @@ def gui_set_window_title(wtitle, subtitle = "")
 end
 
 class VMAgui
-  attr_accessor :buffers, :sw, :view, :buf1, :window
+  attr_accessor :buffers, :sw, :view, :buf1, :window, :delex
 
   VERSION = "1.0"
 
@@ -243,12 +224,52 @@ class VMAgui
     @buffers = {}
     @view = nil
     @buf1 = nil
+    @img_resizer_active = false
+    imgproc = proc { GLib::Idle.add(proc { vma.gui.scale_all_images;
+    
+    w = Gtk::Window.new(:toplevel)
+    w.set_default_size(1,1)
+    w.show_all
+    Thread.new{sleep 0.1; w.destroy}
+     
+       false }) }
+    @delex = DelayExecutioner.new(1, imgproc)
   end
 
   def run
     init_window
     # init_rtext
     Gtk.main
+  end
+
+  def delay_scale()
+    if Time.now - @dtime > 2.0
+    end
+  end
+
+  def scale_all_images
+    # puts "scale all"
+    for img in buf.images
+      img[:obj].scale_image
+    end
+  end
+
+  def handle_image_resize
+    return if @img_resizer_active == true
+    @dtime = Time.now
+
+    $gcrw = 0
+    vma.gui.window.signal_connect "configure-event" do |widget, cr|
+      # Ripl.start :binding => binding
+
+      if $gcrw != cr.width
+        @delex.run
+      end
+      $gcrw = cr.width
+      false
+    end
+
+    @img_resizer_active = true
   end
 
   def start_overlay_draw()
@@ -385,7 +406,7 @@ class VMAgui
     ssm = GtkSource::StyleSchemeManager.new
     ssm.set_search_path(ssm.search_path << ppath("styles/"))
     sty = ssm.get_scheme("molokai_edit")
-    view.buffer.highlight_matching_brackets = false
+    view.buffer.highlight_matching_brackets = false #TODO
     view.buffer.style_scheme = sty
     provider = Gtk::CssProvider.new
     # provider.load(data: "textview { font-family: Monospace; font-size: 11pt; }")

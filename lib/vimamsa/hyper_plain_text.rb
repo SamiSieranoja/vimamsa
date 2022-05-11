@@ -35,12 +35,15 @@ def hpt_check_cur_word(w)
   return nil
 end
 
+
 # Scan images inserted with ⟦img:filepath⟧ syntax
-def hpt_scan_images()
-  return if !buf.fname
-  return if !buf.fname.match(/.*txt$/)
-  imgpos = scan_indexes(buf, /⟦img:.+?⟧/)
-  imgtags = buf.scan(/(⟦img:(.+?)⟧)/)
+def hpt_scan_images(bf=nil)
+  bf = buf() if bf.nil?
+  return if bf.nil?
+  return if !bf.fname
+  return if !bf.fname.match(/.*txt$/)
+  imgpos = scan_indexes(bf, /⟦img:.+?⟧/)
+  imgtags = bf.scan(/(⟦img:(.+?)⟧)/)
   c = 0
   imgpos.each.with_index { |x, i|
     a = imgpos[i]
@@ -49,11 +52,14 @@ def hpt_scan_images()
     imgfn = File.expand_path(t[1])
     next if !File.exist?(imgfn)
     # Show as image in gui, handle as empty space in txt file
-    if buf[insert_pos..(insert_pos + 2)] != "\n \n"
-      buf.insert_txt_at("\n \n", insert_pos)
-      buf.view.handle_deltas
+    puts imgfn
+    
+    if bf[insert_pos..(insert_pos + 2)] != "\n \n"
+      bf.insert_txt_at("\n \n", insert_pos)
+      bf.view.handle_deltas
       c += 3
     end
-    buf.add_image(imgfn, insert_pos + 1)
+    bf.add_image(imgfn, insert_pos + 1)
   }
+  vma.gui.delex.run
 end

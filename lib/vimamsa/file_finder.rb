@@ -41,9 +41,7 @@ def recursively_find_files()
   for d in $search_dirs
     debug("FIND FILEs IN #{d}")
     dlist = dlist + Dir.glob("#{d}/**/*").select { |e| File.file?(e) and $find_extensions.include?(File.extname(e)) }
-    debug("FIND FILEs IN #{d} END")
-  end
-  #$dir_list = Dir.glob('./**/*').select { |e| File.file? e }
+         debug("FIND FILEs IN #{d} END")   end   #$dir_list = Dir.glob('./**/*').select { |e| File.file? e }
   debug("END find files2")
   $dir_list = dlist
   debug("END find files")

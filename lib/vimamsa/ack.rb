@@ -29,7 +29,6 @@ Will search the following directories:
     end
     bufstr = "Results:\n\n"
     for fp in dlist
-      puts fp
       txt = read_file("",fp)
       ind = scan_indexes(txt, /#{instr}/i)
       if !ind.empty?
@@ -105,7 +104,7 @@ def ack_buffer(instr, b = nil)
   instr = Shellwords.escape(instr)
   bufstr = ""
   for path in vma.get_content_search_paths
-    bufstr += run_cmd("ack -Q --type-add=gd=.gd -k --nohtml --nojs --nojson '#{instr}' #{path}")
+    bufstr += run_cmd("ack -Q --type-add=gd=.gd -ki --nohtml --nojs --nojson #{instr} #{path}")
   end
   if bufstr.size > 5
     create_new_file(nil, bufstr)

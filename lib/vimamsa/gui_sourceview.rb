@@ -1,11 +1,30 @@
 
+
+# class VSourceView < Gtk::TextView
 class VSourceView < GtkSource::View
-  def initialize(title = nil)
+  attr_accessor :bufo 
+  # :highlight_matching_brackets
+  
+  # def set_highlight_current_line(vbool)
+  # end
+  
+  # def set_show_line_numbers(vbool)
+  # end
+  
+  # def highlight_matching_brackets=(vbool)
+  # end
+  
+
+  def initialize(title = nil,bufo=nil)
     # super(:toplevel)
+    @highlight_matching_brackets = true
     super()
+    @bufo = bufo #object of Buffer class buffer.rb
     debug "vsource init"
     @last_keyval = nil
     @last_event = [nil, nil]
+    self.drag_dest_add_image_targets
+    self.drag_dest_add_uri_targets
 
     signal_connect "button-press-event" do |_widget, event|
       if event.button == Gdk::BUTTON_PRIMARY
@@ -17,6 +36,20 @@ class VSourceView < GtkSource::View
       else
         true
       end
+    end
+
+    signal_connect("drag-data-received") do |widget, event, x, y, data, info, time|
+      puts "drag-data-received"
+      puts
+      if data.uris.size >= 1
+        imgpath = CGI.unescape(data.uris[0])
+        m = imgpath.match(/^file:\/\/(.*)/)
+        if m
+          fp = m[1]
+          handle_drag_and_drop(fp)
+        end
+      end
+      true
     end
 
     signal_connect("key_press_event") do |widget, event|
@@ -141,7 +174,7 @@ class VSourceView < GtkSource::View
 
   def handle_deltas()
     any_change = false
-    while d = buf.deltas.shift
+    while d = @bufo.deltas.shift
       any_change = true
       pos = d[0]
       op = d[1]
@@ -157,7 +190,7 @@ class VSourceView < GtkSource::View
       end
     end
     if any_change
-      gui_set_cursor_pos($buffer.id, $buffer.pos) #TODO: only when necessary
+      gui_set_cursor_pos(@bufo.id, @bufo.pos) #TODO: only when necessary
     end
 
     # sanity_check #TODO
@@ -269,26 +302,20 @@ class VSourceView < GtkSource::View
 
   def draw_cursor
     if is_command_mode
-      itr = buffer.get_iter_at(:offset => buf.pos)
-      itr2 = buffer.get_iter_at(:offset => buf.pos + 1)
+      itr = buffer.get_iter_at(:offset => @bufo.pos)
+      itr2 = buffer.get_iter_at(:offset => @bufo.pos + 1)
       $view.buffer.select_range(itr, itr2)
-    elsif buf.visual_mode?
+    elsif @bufo.visual_mode?
       debug "VISUAL MODE"
-      (_start, _end) = buf.get_visual_mode_range2
+      (_start, _end) = @bufo.get_visual_mode_range2
       debug "#{_start}, #{_end}"
       itr = buffer.get_iter_at(:offset => _start)
       itr2 = buffer.get_iter_at(:offset => _end + 1)
       $view.buffer.select_range(itr, itr2)
     else # Insert mode
-      itr = buffer.get_iter_at(:offset => buf.pos)
+      itr = buffer.get_iter_at(:offset => @bufo.pos)
       $view.buffer.select_range(itr, itr)
       debug "INSERT MODE"
     end
   end
-
-  # def quit
-  # destroy
-  # true
-  # end
 end
-

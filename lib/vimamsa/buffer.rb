@@ -10,11 +10,14 @@ $buffer_history = [0]
 
 $update_highlight = false
 
+$ifuncon = false
+
+
 class Buffer < String
 
   #attr_reader (:pos, :cpos, :lpos)
 
-  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang
+  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images
   attr_writer :call_func, :update_highlight
   attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle
 
@@ -24,10 +27,11 @@ class Buffer < String
     debug "Buffer.rb: def initialize"
     super(str)
 
+    @images = []
     @lang = nil
     @id = @@num_buffers
     @@num_buffers += 1
-    gui_create_buffer(@id)
+    gui_create_buffer(@id, self)
     debug "NEW BUFFER fn=#{fname} ID:#{@id}"
 
     @module = nil
@@ -130,24 +134,25 @@ class Buffer < String
   def add_image(imgpath, pos)
     return if !is_legal_pos(pos)
 
-    pixbuf = GdkPixbuf::Pixbuf.new(:file => imgpath)
-
-    #  puts GdkPixbuf::InterpType.constants
-    # GdkPixbuf::InterpType::HYPER
-    # https://docs.gtk.org/gdk-pixbuf/enum.InterpType.html#bilinear
-    # https://docs.gtk.org/gdk-pixbuf/method.Pixbuf.scale_simple.html
-    imglimit = view.visible_rect.width - 5
-    if pixbuf.width > imglimit
-      nwidth = imglimit
-      nheight = (pixbuf.height * (imglimit.to_f / pixbuf.width)).to_i
-      pixbuf = pixbuf.scale_simple(nwidth, nheight, GdkPixbuf::InterpType::HYPER)
-    end
-
     vbuf = view.buffer
     itr = vbuf.get_iter_at(:offset => pos)
     itr2 = vbuf.get_iter_at(:offset => pos + 1)
     vbuf.delete(itr, itr2)
-    vbuf.insert(itr, pixbuf)
+    anchor = vbuf.create_child_anchor(itr)
+
+
+    da = ResizableImage.new(imgpath, view)
+    view.add_child_at_anchor(da, anchor)
+    da.signal_connect "draw" do |widget, cr|
+      da.do_draw(widget, cr)
+    end
+
+    da.scale_image
+
+    vma.gui.handle_image_resize
+    @images << { :path => imgpath, :obj => da }
+
+    gui_set_current_buffer(@id)
   end
 
   def is_legal_pos(pos, op = :read)
@@ -179,6 +184,7 @@ class Buffer < String
     b = " \n"
     txt = a + b
     insert_txt_at(txt, lr.end + 1)
+    buf.view.handle_deltas
     imgpos = lr.end + 1 + a.size
     add_image(fname, imgpos)
   end
@@ -301,6 +307,8 @@ class Buffer < String
     @update_hl_endpos = self.size - 1
 
     gui_set_buffer_contents(@id, self.to_s)
+    @images = [] #TODO: if reload
+    hpt_scan_images(self)
 
     # add_hl_update(@update_hl_startpos, @update_hl_endpos)
   end
@@ -1066,7 +1074,7 @@ class Buffer < String
     elsif wtype == :linepointer
       debug word.inspect
       # Ripl.start :binding => binding
-      jump_to_file(word[0], word[1],word[2])
+      jump_to_file(word[0], word[1], word[2])
     elsif wtype == :textfile
       open_existing_file(word)
     elsif wtype == :file

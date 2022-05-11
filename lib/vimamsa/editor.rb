@@ -70,13 +70,6 @@ class Editor
   end
 
   def start
-    # $highlight = {}
-
-    # GLib::Idle.add
-    # Ripl.start :binding => binding
-    # GLib::Idle.add(proc{ debug "IDLEFUNC"})
-    # GLib::Idle.add(proc { idle_func })
-
     @gui = $vmag #TODO
 
     $hook = Hook.new
@@ -319,7 +312,7 @@ def set_clipboard(s)
     debug s.inspect
     debug [s, s.class, s.size]
     log_error("s.class != String or s.size == 0")
-    Ripl.start :binding => binding
+    # Ripl.start :binding => binding
     return
   end
   $clipboard << s
@@ -521,12 +514,16 @@ end
 def jump_to_file(filename, linenum = nil, charn = nil)
   open_new_file(filename)
 
+  # Link to character position
   if !charn.nil?
-    buf.jump_to_pos(linenum)
-    center_on_current_line
-    return
+    if charn == "c"
+      buf.jump_to_pos(linenum)
+      center_on_current_line
+      return
+    end
   end
-
+  
+  # Link to line
   if !linenum.nil?
     buf.jump_to_line(linenum)
     center_on_current_line
@@ -567,31 +564,6 @@ end
 def hook_draw()
   # TODO: as hook.register
   # easy_jump_draw()
-end
-
-#TODO: delete this
-def render_buffer(buffer = 0, reset = 0)
-  tmpbuf = $buffer.to_s
-  debug "pos:#{$buffer.pos} L:#{$buffer.lpos} C:#{$buffer.cpos}"
-  pos = $buffer.pos
-  selection_start = $buffer.selection_start
-
-  if $buffer.need_redraw?
-    reset = 1
-  end
-  t1 = Time.now
-  hook_draw()
-
-  if $buffer.need_redraw?
-    hpt_scan_images() if $debug #experimental
-  end
-
-  $buffer.highlight
-  if Time.now - t1 > 1 / 100.0
-    debug "SLOW render"
-    debug "Render time: #{Time.now - t1}"
-  end
-  $buffer.set_redrawed if reset == 1
 end
 
 def get_dot_path(sfx)

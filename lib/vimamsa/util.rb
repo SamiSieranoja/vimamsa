@@ -3,6 +3,40 @@
 # Cross-platform way of finding an executable in the $PATH.
 #
 #   which('ruby') #=> /usr/bin/ruby
+
+
+# Execute proc after wait_time seconds after last .run call.
+# Used for image scaling after window resize
+class DelayExecutioner
+  def initialize(wait_time, _proc)
+    @wait_time = wait_time
+    @proc = _proc
+    @lastt = Time.now
+    @thread_running = false
+  end
+
+  def start_thread
+    Thread.new {
+      while true
+        sleep 0.1
+        if Time.now - @lastt > @wait_time
+          @proc.call
+          @thread_running = false
+          break
+        end
+      end
+    }
+  end
+
+  def run()
+    @lastt = Time.now
+    if @thread_running == false
+      @thread_running = true
+      start_thread
+    end
+  end
+end
+
 def which(cmd)
   exts = ENV["PATHEXT"] ? ENV["PATHEXT"].split(";") : [""]
   ENV["PATH"].split(File::PATH_SEPARATOR).each do |path|
