@@ -36,7 +36,7 @@ setcnf :indent_based_on_last_line, true
 setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd", ".js"]
 
 class State
-  attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes
+  attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level
 
   def initialize(key_name, eval_rule = "")
     @key_name = key_name
@@ -44,6 +44,7 @@ class State
     @children = []
     @major_modes = []
     @action = nil
+    @level = 0
   end
 
   def to_s()
@@ -86,6 +87,7 @@ class KeyBindingTree
   # $kbd.add_mode("I", :insert)
   def add_mode(id, label)
     mode = State.new(id)
+    mode.level = 1
     @modes[label] = mode
     @root.children << mode
     if @default_mode == nil
@@ -209,6 +211,7 @@ class KeyBindingTree
     # @cur_state = @root
     stack = [[@root, ""]]
     lines = []
+
     while stack.any?
       t, p = *stack.pop # t = current state, p = current path
       if t.children.any?
@@ -216,14 +219,27 @@ class KeyBindingTree
           if c.eval_rule.size > 0
             new_p = "#{p} #{c.key_name}(#{c.eval_rule})"
           else
-            new_p = "#{p} #{c.key_name}"
+            if c.level == 1
+              new_p = "#{p} [#{c.key_name}]"
+            else
+              new_p = "#{p} #{c.key_name}"
+            end
           end
           stack << [c, new_p]
         }
         # stack.concat[t.children]
       else
-        # s += p + " : #{t.action}\n"
-        lines << p + " : #{t.action}"
+        method_desc = t.action
+        if t.action.class == Symbol
+          if !$actions[t.action].nil?
+            a = $actions[t.action].method_name
+            if !a.nil? and !a.empty?
+              method_desc = a
+            end
+          end
+        end
+
+        lines << p + " : #{method_desc}"
       end
     end
     s = lines.sort.join("\n")

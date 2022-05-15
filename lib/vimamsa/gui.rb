@@ -136,16 +136,16 @@ def gui_create_buffer(id, bufo)
   buf1 = GtkSource::Buffer.new()
   view = VSourceView.new(nil, bufo)
 
-  view.set_highlight_current_line(true)
-  view.set_show_line_numbers(true)
-  view.set_buffer(buf1)
-
   ssm = GtkSource::StyleSchemeManager.new
   ssm.set_search_path(ssm.search_path << ppath("styles/"))
   sty = ssm.get_scheme("molokai_edit")
 
-  view.buffer.highlight_matching_brackets = true
-  view.buffer.style_scheme = sty
+  buf1.highlight_matching_brackets = true
+  buf1.style_scheme = sty
+
+  view.set_highlight_current_line(true)
+  view.set_show_line_numbers(true)
+  view.set_buffer(buf1)
 
   provider = Gtk::CssProvider.new
   provider.load(data: "textview { font-family: Monospace; font-size: 11pt; }")
@@ -256,7 +256,9 @@ class VMAgui
   def scale_all_images
     # puts "scale all"
     for img in buf.images
-      img[:obj].scale_image
+      if !img[:obj].destroyed?
+        img[:obj].scale_image
+      end
     end
   end
 

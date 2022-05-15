@@ -22,7 +22,7 @@ end
 
 $log_messages = []
 
-def log_message(message,vlevel)
+def log_message(message,vlevel=1)
   puts message if conf("log.verbose") >= vlevel
   $log_messages << message
 end

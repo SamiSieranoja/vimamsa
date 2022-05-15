@@ -44,6 +44,6 @@
   <style name="def:heading4"                scale="1.175" bold="true" foreground="heading" />
   <style name="def:heading5"                scale="1.1" bold="true" foreground="heading" />
   <style name="def:heading6"                scale="1.0" bold="true" foreground="heading" />
- 
+  <style name="def:bold"                bold="true" />
 </style-scheme>
 

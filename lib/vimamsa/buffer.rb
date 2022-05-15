@@ -12,7 +12,6 @@ $update_highlight = false
 
 $ifuncon = false
 
-
 class Buffer < String
 
   #attr_reader (:pos, :cpos, :lpos)
@@ -140,7 +139,6 @@ class Buffer < String
     vbuf.delete(itr, itr2)
     anchor = vbuf.create_child_anchor(itr)
 
-
     da = ResizableImage.new(imgpath, view)
     view.add_child_at_anchor(da, anchor)
     da.signal_connect "draw" do |widget, cr|
@@ -257,7 +255,7 @@ class Buffer < String
     if str[0..10] == "VMACRYPT001"
       @encrypted_str = str[11..-1]
       callback = proc { |x| decrypt_cur_buffer(x) }
-      gui_one_input_action("Decrypt", "Password:", "decrypt", callback)
+      gui_one_input_action("Decrypt", "Password:", "decrypt", callback, { :hide => true })
       str = "ENCRYPTED"
     else
       # @crypt = nil
@@ -1072,8 +1070,6 @@ class Buffer < String
     if wtype == :url
       open_url(word)
     elsif wtype == :linepointer
-      debug word.inspect
-      # Ripl.start :binding => binding
       jump_to_file(word[0], word[1], word[2])
     elsif wtype == :textfile
       open_existing_file(word)
@@ -1081,6 +1077,10 @@ class Buffer < String
       open_with_default_program(word)
     elsif wtype == :hpt_link
       open_existing_file(word)
+    elsif wtype == :help
+      if word == "keybindings"
+        call_action(:show_key_bindings)
+      end
     else
       #TODO
     end
@@ -1141,7 +1141,7 @@ class Buffer < String
     word_end = pos if word_end == nil
     word = self[word_start..word_end]
     debug "'WORD: #{word}'"
-    message("'#{word}'")
+    # message("Open link #{word}")
     linep = get_file_line_pointer(word)
     debug "linep'#{linep}'"
     path = File.expand_path(word)
@@ -1160,6 +1160,8 @@ class Buffer < String
     elsif linep != nil
       wtype = :linepointer
       word = linep
+    elsif m = word.match(/⟦help:(.*)⟧/)
+      return [m[1], :help]
     else
       fn = hpt_check_cur_word(word)
       if !fn.nil?
@@ -1710,21 +1712,22 @@ class Buffer < String
     end
 
     Thread.new {
-      File.open(fpath, mode) do |io|
+      begin
+        io = File.open(fpath, mode)
         #io.set_encoding(self.encoding)
 
-        begin
-          io.write(contents)
-        rescue Encoding::UndefinedConversionError => ex
-          # this might happen when trying to save UTF-8 as US-ASCII
-          # so just warn, try to save as UTF-8 instead.
-          warn("Saving as UTF-8 because of: #{ex.class}: #{ex}")
-          io.rewind
+        io.write(contents)
+      rescue Encoding::UndefinedConversionError => ex
+        # this might happen when trying to save UTF-8 as US-ASCII
+        # so just warn, try to save as UTF-8 instead.
+        warn("Saving as UTF-8 because of: #{ex.class}: #{ex}")
+        io.rewind
 
-          io.set_encoding(Encoding::UTF_8)
-          io.write(contents)
-          #self.encoding = Encoding::UTF_8
-        end
+        io.set_encoding(Encoding::UTF_8)
+        io.write(contents)
+      rescue Errno::EACCES => ex
+        message("File #{fpath} not writeable")
+        #TODO: show message box
       end
       sleep 3
     }

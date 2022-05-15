@@ -52,7 +52,7 @@ class FileSelector
     if File.directory?(fn)
       debug "CHDIR: #{fn}"
       dir_to_buf(fn)
-    # elsif vma.can_open_extension?(fn) #TODO: remove this check?
+      # elsif vma.can_open_extension?(fn) #TODO: remove this check?
       # jump_to_file(fn)
     elsif file_is_text_file(fn)
       jump_to_file(fn)
@@ -103,8 +103,8 @@ def invoke_grep_search()
   start_minibuffer_cmd("", "", :grep_cur_buffer)
 end
 
-def gui_one_input_action(title, field_label, button_title, callback)
-  a = OneInputAction.new(nil, title, field_label, button_title, callback)
+def gui_one_input_action(title, field_label, button_title, callback,opt={})
+  a = OneInputAction.new(nil, title, field_label, button_title, callback,opt)
   a.run
   return
 end
@@ -262,7 +262,7 @@ class PopupFormGenerator
 end
 
 class OneInputAction
-  def initialize(main_window, title, field_label, button_title, callback)
+  def initialize(main_window, title, field_label, button_title, callback, opt = {})
     @window = Gtk::Window.new(:toplevel)
     # @window.screen = main_window.screen
     # @window.title = title
@@ -290,6 +290,10 @@ class OneInputAction
     label = Gtk::Label.new(field_label)
 
     @entry1 = Gtk::Entry.new
+
+    if opt[:hide]
+      @entry1.visibility = false
+    end
 
     button.signal_connect "clicked" do
       callback.call(@entry1.text)

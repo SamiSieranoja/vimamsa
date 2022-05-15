@@ -136,6 +136,8 @@ class Editor
       if File.exist?(fname_)
         fname = fname_
       end
+    else
+    fname = ppath('demo.txt')
     end
     fname = ARGV[0] if ARGV.size >= 1 and File.file?(File.expand_path(ARGV[0]))
     # vma.add_content_search_path(Dir.pwd)
@@ -369,10 +371,17 @@ end
 
 def show_key_bindings()
   kbd_s = "❙Key bindings❙\n"
-  kbd_s << "=======================================\n"
+  kbd_s << "\n⦁[Mode] keys : action⦁\n"
+  
+  kbd_s << "[B]=Browse, [C]=Command, [I]=Insert, [V]=Visual\n"
+  kbd_s << "key!: Press key once, release before pressing any other keys\n"
+  
+  kbd_s << "===============================================\n"
   kbd_s << $kbd.to_s
-  kbd_s << "\n=======================================\n"
-  create_new_file(nil, kbd_s)
+  kbd_s << "===============================================\n"
+  b = create_new_file(nil, kbd_s)
+  gui_set_file_lang(b.id, "hyperplaintext")
+  # 
 end
 
 def diff_buffer()

@@ -35,9 +35,24 @@ def hpt_check_cur_word(w)
   return nil
 end
 
+def translate_path(fn, bf)
+  if File.exist?(fn)
+    outfn = fn
+  elsif fn[0] == "$"
+    outfn = ppath(fn[1..-1]) # Path to source location
+  elsif fn[0] == "~"
+    outfn = File.expand_path(fn)
+  elsif !bf.fname.nil?
+    pd = File.dirname(bf.fname)
+    outfn = "#{pd}/#{fn}"
+  else
+    outfn = File.expand_path(fn)
+  end
+  return outfn
+end
 
 # Scan images inserted with ⟦img:filepath⟧ syntax
-def hpt_scan_images(bf=nil)
+def hpt_scan_images(bf = nil)
   bf = buf() if bf.nil?
   return if bf.nil?
   return if !bf.fname
@@ -49,11 +64,11 @@ def hpt_scan_images(bf=nil)
     a = imgpos[i]
     t = imgtags[i]
     insert_pos = a + t[0].size + c
-    imgfn = File.expand_path(t[1])
+    fn = t[1]
+    imgfn = translate_path(fn, bf)
     next if !File.exist?(imgfn)
     # Show as image in gui, handle as empty space in txt file
-    puts imgfn
-    
+
     if bf[insert_pos..(insert_pos + 2)] != "\n \n"
       bf.insert_txt_at("\n \n", insert_pos)
       bf.view.handle_deltas

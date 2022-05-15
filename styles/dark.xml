@@ -136,6 +136,7 @@
   <style name="def:heading5"                scale="1.1" bold="true" foreground="heading" />
   <style name="def:heading6"                scale="1.0" bold="true" foreground="heading" />
  
+  <style name="def:bold"                scale="1.5" bold="true" foreground="heading" />
 
   <!-- Language specific -->
   <style name="diff:added-line"             foreground="butter2"/>

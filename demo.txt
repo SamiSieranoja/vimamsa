@@ -3,6 +3,10 @@
 ◼ General
 Links: press ⦁enter⦁  while cursor on
 ⟦README.md⟧
+
+Extension .txt can be omitted:
+⟦demo⟧
+
 ◼◼ Level 2
 ◼◼◼ Level 3
 ◼◼◼◼ Level 4
@@ -10,12 +14,11 @@ Links: press ⦁enter⦁  while cursor on
 ⟦help:keybindings⟧
 
 Customizations:
-⟦~/.vimamsarc⟧
+⟦~/.vimamsa/custom.rb⟧
 
 ◼ Images
-Images can be added in .txt-files by drag&drop. (experimental)
-($ prefix is for source location)
-⟦img:$sheep.jpg⟧
+Images work in .txt-files by drag&drop. (experimental)
+⟦img:sheep.jpg⟧
  
  
  
