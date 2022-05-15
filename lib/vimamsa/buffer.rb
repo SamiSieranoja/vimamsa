@@ -1714,10 +1714,11 @@ class Buffer < String
     Thread.new {
       begin
         io = File.open(fpath, mode)
-        #io.set_encoding(self.encoding)
-
+        io.set_encoding(self.encoding)
         io.write(contents)
+        io.close
       rescue Encoding::UndefinedConversionError => ex
+        puts "Encoding::UndefinedConversionError"
         # this might happen when trying to save UTF-8 as US-ASCII
         # so just warn, try to save as UTF-8 instead.
         warn("Saving as UTF-8 because of: #{ex.class}: #{ex}")

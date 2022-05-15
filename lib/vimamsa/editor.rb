@@ -113,6 +113,14 @@ class Editor
     end
     listener.start
 
+    custom_fn = File.expand_path("~/.vimamsa/custom.rb")
+    if !File.exist?(custom_fn)
+      example_custom = IO.read(ppath("custom_example.rb"))
+      IO.write(custom_fn, example_custom)
+    end
+
+    mkdir_if_not_exists("~/.vimamsa/custom.rb")
+
     $cnf[:theme] = "Twilight_edit"
     $cnf[:syntax_highlight] = true
     settings_path = get_dot_path("settings.rb")
@@ -127,6 +135,9 @@ class Editor
 
     dotfile = read_file("", "~/.vimamsarc")
     eval(dotfile) if dotfile
+    
+    custom_script = read_file("", custom_fn)
+    eval(custom_script) if custom_script
 
     # build_options
 
@@ -137,7 +148,7 @@ class Editor
         fname = fname_
       end
     else
-    fname = ppath('demo.txt')
+      fname = ppath("demo.txt")
     end
     fname = ARGV[0] if ARGV.size >= 1 and File.file?(File.expand_path(ARGV[0]))
     # vma.add_content_search_path(Dir.pwd)
@@ -372,16 +383,16 @@ end
 def show_key_bindings()
   kbd_s = "❙Key bindings❙\n"
   kbd_s << "\n⦁[Mode] keys : action⦁\n"
-  
+
   kbd_s << "[B]=Browse, [C]=Command, [I]=Insert, [V]=Visual\n"
   kbd_s << "key!: Press key once, release before pressing any other keys\n"
-  
+
   kbd_s << "===============================================\n"
   kbd_s << $kbd.to_s
   kbd_s << "===============================================\n"
   b = create_new_file(nil, kbd_s)
   gui_set_file_lang(b.id, "hyperplaintext")
-  # 
+  #
 end
 
 def diff_buffer()
@@ -533,7 +544,7 @@ def jump_to_file(filename, linenum = nil, charn = nil)
       return
     end
   end
-  
+
   # Link to line
   if !linenum.nil?
     buf.jump_to_line(linenum)

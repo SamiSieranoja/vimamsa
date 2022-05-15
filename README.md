@@ -26,11 +26,16 @@ Packages for optional features:
 sudo apt install ack-grep clang-format
 ```
 
-For customization, edit dot_vimamsarc.rb and copy to ~/.vimamsarc
+For customization, edit ~/.vimamsa/custom.rb
+
+## Screenshots
+
+<a href="https://samiddhi.net/vimamsa/screenshot1.png" target="_blank"><img src="https://samiddhi.net/vimamsa/screenshot1.png" width="400"/></a>
+<a href="https://samiddhi.net/vimamsa/screenshot2.png" target="_blank"><img src="https://samiddhi.net/vimamsa/screenshot2.png" width="400"/></a>
 
 ## Key bindings
 
-Key bindings are very much like in VIm. For details, see file lib/vimamsa/key_bindings.rb and lib/vimamsa/default_bindings.rb
+Key bindings are very much like in VIm. For details, see file lib/vimamsa/key_bindings.rb and lib/vimamsa/key_bindings_vimlike.rb
 
 Keys that work somewhat similarly as in Vim:
 
@@ -72,7 +77,7 @@ ctrl-x means press and hold ctrl key, press x
 </td></tr>
 <tr> <td style="text-align:center;">,b</td> <td style="text-align:left;"> Switch buffer (jump to other open file)</td></tr>
 <tr> <td style="text-align:center;">,g</td> <td style="text-align:left;">search for input string inside current buffer</td></tr>
-<tr> <td style="text-align:center;">,f</td> <td style="text-align:left;">Fuzzy filename search</td></tr>
+<tr> <td style="text-align:center;">,f</td> <td style="text-align:left;">File finder</td></tr>
 <tr> <td style="text-align:center;">space c</td> <td style="text-align:left;">insert character "c"</td></tr>
 </tbody>
 </table>
@@ -116,7 +121,7 @@ ctrl-x means press and hold ctrl key, press x
 </tbody>
 </table>
 
-Bindings can be customized in ~/.vimamsarc  
+Bindings can be customized in ~/.vimamsa/custom.rb
 For example, to bind ctrl-n to action "create new file":  
 ```
 bindkey 'C ctrl-n',  'create_new_file()'

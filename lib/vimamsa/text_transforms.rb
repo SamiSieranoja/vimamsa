@@ -30,3 +30,5 @@ Converter.new(lambda { |x|
   x + "\n" + nums.join("+") + "=#{sum}"
 }, :lambda, :sum_of_numbers)
 
+c = Converter.new(lambda { |x| x.scan(/[\w\.]+@[\w\.]+/).join("\n") }, :lambda, :get_emails)
+
