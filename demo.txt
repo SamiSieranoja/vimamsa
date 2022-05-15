@@ -1,0 +1,22 @@
+❙Demo❙
+
+◼ General
+Links: press ⦁enter⦁  while cursor on
+⟦README.md⟧
+◼◼ Level 2
+◼◼◼ Level 3
+◼◼◼◼ Level 4
+◼ Help
+⟦help:keybindings⟧
+
+Customizations:
+⟦~/.vimamsarc⟧
+
+◼ Images
+Images can be added in .txt-files by drag&drop. (experimental)
+($ prefix is for source location)
+⟦img:$sheep.jpg⟧
+ 
+ 
+ 
+ 
