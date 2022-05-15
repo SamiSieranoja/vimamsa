@@ -9,7 +9,6 @@ class EasyJump
   end
 
   def initialize()
-    # message "EASY JUMP"
     visible_range = get_visible_area()
     visible_text = buf[visible_range[0]..visible_range[1]]
     wsmarks = scan_word_start_marks(visible_text)
@@ -17,11 +16,23 @@ class EasyJump
     lsh = Hash[line_starts.collect { |x| [x, true] }]
     wsmh = Hash[wsmarks.collect { |x| [x, true] }]
 
+    # Exclude work starts that are too close to start of line
     wsmarks.select! { |x|
       r = true
       r = false if lsh[x] or lsh[x - 1] or lsh[x - 2]
       r
     }
+
+    # Exclude those word start positions that are too close to each other
+    wsmarks.sort!
+    wsm2 = [wsmarks[0]]
+    for i in 1..(wsmarks.size - 1)
+      if (wsmarks[i] - wsm2[-1]) >= 4 or visible_text[wsm2[-1]..wsmarks[i]].include?("\n")
+
+        wsm2 << wsmarks[i]
+      end
+    end
+    wsmarks = wsm2
 
     linestart_buf = (line_starts).collect { |x| x + visible_range[0] }
     wsmarks_buf = (wsmarks).collect { |x| x + visible_range[0] }
@@ -63,25 +74,11 @@ class EasyJump
   end
 
   def easy_jump_draw()
-    # debug @jump_sequence.inspect
-    # debug @easy_jump_wsmarks.inspect
     vma.gui.start_overlay_draw
     for i in 0..(@easy_jump_wsmarks.size - 1)
-      vma.gui.overlay_draw_text(@jump_sequence[i], @easy_jump_wsmarks[i])
+      vma.gui.overlay_draw_text(@jump_sequence[i], @easy_jump_wsmarks[i]) 
     end
     vma.gui.end_overlay_draw
-
-    return
-    return if @jump_sequence.empty?
-    debug "EASY JUMP DRAW"
-    screen_cord = cpp_function_wrapper(0, [@easy_jump_wsmarks])
-    screen_cord = screen_cord[1..@jump_sequence.size]
-    screen_cord.each_with_index { |point, i|
-      mark_str = @jump_sequence[i]
-      #debug "draw #{point[0]}x#{point[1]}"
-      draw_text(mark_str, point[0] + 3, point[1])
-      #break if m > @cpos
-    }
   end
 
   def make_jump_sequence(num_items)
@@ -158,8 +155,6 @@ class EasyJump
       }
     }
 
-    #printf("Size of sequence: %d\n",sequence.size)
-    #debug sequence.inspect
     return sequence
   end
 end

@@ -198,7 +198,7 @@ def gui_set_current_buffer(id)
   view.grab_focus
   view.set_cursor_visible(true)
   view.place_cursor_onscreen
-  
+
   $vmag.sw.show_all
 end
 
@@ -208,7 +208,7 @@ def gui_set_window_title(wtitle, subtitle = "")
 end
 
 class VMAgui
-  attr_accessor :buffers, :sw, :view, :buf1, :window, :delex
+  attr_accessor :buffers, :sw, :view, :buf1, :window, :delex, :statnfo
 
   VERSION = "1.0"
 
@@ -225,14 +225,20 @@ class VMAgui
     @view = nil
     @buf1 = nil
     @img_resizer_active = false
-    imgproc = proc { GLib::Idle.add(proc { vma.gui.scale_all_images;
-    
-    w = Gtk::Window.new(:toplevel)
-    w.set_default_size(1,1)
-    w.show_all
-    Thread.new{sleep 0.1; w.destroy}
-     
-       false }) }
+    imgproc = proc {
+      GLib::Idle.add(proc {
+        if !buf.images.empty?
+          vma.gui.scale_all_images
+
+          w = Gtk::Window.new(:toplevel)
+          w.set_default_size(1, 1)
+          w.show_all
+          Thread.new { sleep 0.1; w.destroy }
+        end
+
+        false
+      })
+    }
     @delex = DelayExecutioner.new(1, imgproc)
   end
 
@@ -288,7 +294,7 @@ class VMAgui
     # debug "overlay_draw_text #{[x,y]}"
     (x, y) = @view.pos_to_coord(textpos)
     # debug "overlay_draw_text #{[x,y]}"
-    label = Gtk::Label.new("<span background='#00000088' foreground='#ff0000' weight='ultrabold'>#{text}</span>")
+    label = Gtk::Label.new("<span background='#000000ff' foreground='#ff0000' weight='ultrabold'>#{text}</span>")
     label.use_markup = true
     @da.put(label, x, y)
   end
@@ -392,7 +398,7 @@ class VMAgui
     overlay = Gtk::Overlay.new
     overlay.add(sw)
     # @vpaned.pack2(overlay, :resize => false)
-    @vbox.attach(overlay, 0, 2, 1, 1)
+    @vbox.attach(overlay, 0, 2, 2, 1)
     # overlay.set_size_request(-1, 50)
     # $ovrl = overlay
     # $ovrl.set_size_request(-1, 30)
@@ -427,7 +433,6 @@ class VMAgui
     header.title = ""
     header.has_subtitle = true
     header.subtitle = ""
-    # Ripl.start :binding => binding
 
     # icon = Gio::ThemedIcon.new("mail-send-receive-symbolic")
     # icon = Gio::ThemedIcon.new("document-open-symbolic")
@@ -503,32 +508,7 @@ class VMAgui
 
     header.pack_start(box)
     @window.titlebar = header
-    @window.add(Gtk::TextView.new)
-  end
-
-  def create_menu_item(label, depth)
-    menuitem = Gtk::MenuItem.new(:label => label)
-    menuitem.submenu = create_menu(depth)
-    @menubar.append(menuitem)
-  end
-
-  def create_menu(depth)
-    return nil if depth < 1
-
-    menu = Gtk::Menu.new
-    last_item = nil
-    (0..5).each do |i|
-      j = i + 1
-      label = "item #{depth} - #{j}"
-      menu_item = Gtk::RadioMenuItem.new(nil, label)
-      menu_item.join_group(last_item) if last_item
-      last_item = menu_item
-      menu.append(menu_item)
-      menu_item.sensitive = false if i == 3
-      menu_item.submenu = create_menu(depth - 1)
-    end
-
-    menu
+    # @window.add(Gtk::TextView.new)
   end
 
   def init_window
@@ -536,10 +516,8 @@ class VMAgui
     @window.set_default_size(650, 850)
     @window.title = "Multiple Views"
     @window.show_all
-    # vpaned = Gtk::Paned.new(:horizontal)
     @vpaned = Gtk::Paned.new(:vertical)
-    #@vpaned = Gtk::Box.new(:vertical, 0)
-    # @vbox = Gtk::Box.new(:vertical, 0)
+
     @vbox = Gtk::Grid.new()
     @window.add(@vbox)
 
@@ -551,20 +529,21 @@ class VMAgui
     @overlay = Gtk::Overlay.new
     @overlay.add(@sw)
 
-    # @vpaned.pack1(@overlay, :resize => true)
-    # @vpaned.pack2(@menubar, :resize => false)
-    # @vbox.add(@menubar, :resize => false)
-
     init_header_bar
 
-    # @window.show_all
+    @statnfo = Gtk::Label.new
+    provider = Gtk::CssProvider.new
+    provider.load(data: "textview {   background-color:#353535; font-family: Monospace; font-size: 10pt; margin-top:4px;}")
+    @statnfo.style_context.add_provider(provider)
 
-    # @vbox.pack_start(@menubar, :expand => false, :fill => false, :padding => 0 )
-    # @vbox.pack_start(@menubar)
-    # @vbox.pack_start(@overlay, :expand => true, :fill => true, :padding => 0 )
-    # @vbox.pack_start(@overlay, :expand => true, :fill => true, :padding => 0 )
+    # Deprecated, but found no other way to do it. css doesn't work.
+    # TODO: should select color automatically from theme
+    @statnfo.override_background_color(Gtk::StateFlags::NORMAL, "#353535")
+
+    # column, row, width height
     @vbox.attach(@menubar, 0, 0, 1, 1)
-    @vbox.attach(@overlay, 0, 1, 1, 1)
+    @vbox.attach(@statnfo, 1, 0, 1, 1)
+    @vbox.attach(@overlay, 0, 1, 2, 1)
     @overlay.vexpand = true
     @overlay.hexpand = true
 
@@ -576,6 +555,7 @@ class VMAgui
     @window.show_all
     vma.start
     Vimamsa::Menu.new(@menubar)
+
     @window.show_all
   end
 end

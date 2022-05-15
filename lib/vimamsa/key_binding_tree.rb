@@ -142,7 +142,6 @@ class KeyBindingTree
       }
     }
 
-
     if new_state.any? # Match found
       @match_state = new_state
       return new_state
@@ -151,6 +150,11 @@ class KeyBindingTree
       # @match_state = [@C] #TODO
       return nil
     end
+  end
+
+  def show_state_trail
+    (st, children) = get_state_trail_str()
+    vma.gui.statnfo.markup = "<span weight='ultrabold'>#{st}</span>"
   end
 
   def set_mode(label)
@@ -227,21 +231,26 @@ class KeyBindingTree
   end
 
   def get_state_trail_str
-    s = ""
     s_trail = ""
     last_state = @state_trail.last
     last_state = last_state[0] if last_state.class == Array
+    first = true
     for st in @state_trail
       st = st[0] if st.class == Array
-      s_trail << " #{st.to_s}"
+      if first
+        s_trail << "[#{st.to_s}]"
+      else
+        s_trail << " #{st.to_s}"
+      end
+      first = false
     end
-    s << "CUR STATE: #{s_trail}\n"
+    children = ""
     for cstate in last_state.children
       act_s = "..."
       act_s = cstate.action.to_s if cstate.action != nil
-      s << "  #{cstate.to_s} #{act_s}\n"
+      children << "  #{cstate.to_s} #{act_s}\n"
     end
-    return s
+    return [s_trail, children]
   end
 
   # Modifies state of key binding tree (move to new state) based on received event
@@ -305,20 +314,6 @@ class KeyBindingTree
 
     if new_state != nil
       @state_trail << new_state
-      debug get_state_trail_str()
-      # # debug "CUR STATE: #{@state_trail.collect{|x| x.to_s}.join}"
-      # s_trail = ""
-      # for st in @state_trail
-      # st = st[0] if st.class == Array
-      # s_trail << " #{st.to_s}"
-      # end
-      # debug "CUR STATE: #{s_trail}"
-      # for cstate in new_state[0].children
-      # act_s = "..."
-      # act_s = cstate.action.to_s if cstate.action != nil
-      # debug "  #{cstate.to_s} #{act_s}"
-      # end
-      # new_state[0].children.collect{|x|x.to_s}
     end
 
     if new_state == nil
@@ -359,9 +354,10 @@ class KeyBindingTree
       end
     end
 
+    show_state_trail #TODO: check if changed
+
     return true
   end
-
 
   def bindkey(key, action)
     if key.class != Array
