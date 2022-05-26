@@ -320,6 +320,7 @@ class Buffer < String
     @dirname = File.dirname(@fname)
     userhome = File.expand_path("~")
     @subtitle = @dirname.gsub(/^#{userhome}/, "~")
+    vma.buffers.last_dir = @dirname
 
     detect_file_language
   end

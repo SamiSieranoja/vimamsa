@@ -15,7 +15,8 @@ class VSourceView < GtkSource::View
   # end
   
 
-  def initialize(title = nil,bufo=nil)
+  # def initialize(title = nil,bufo=nil)
+  def initialize(title,bufo)
     # super(:toplevel)
     @highlight_matching_brackets = true
     super()

@@ -485,17 +485,17 @@ class KeyBindingTree
         #   like '20j' => go to next line 20 times.
       end
     rescue SyntaxError
-      debug("SYNTAX ERROR with eval cmd #{action}: " + $!.to_s)
+      message("SYNTAX ERROR with eval cmd #{action}: " + $!.to_s)
       # rescue NoMethodError
       # debug("NoMethodError with eval cmd #{action}: " + $!.to_s)
       # rescue NameError
       # debug("NameError with eval cmd #{action}: " + $!.to_s)
       # raise
     rescue Exception => e
-      debug "BACKTRACE"
-      debug e.backtrace
-      debug e.inspect
-      debug "BACKTRACE END"
+      puts "BACKTRACE"
+      puts e.backtrace
+      puts e.inspect
+      puts "BACKTRACE END"
       if $!.class == SystemExit
         exit
       else

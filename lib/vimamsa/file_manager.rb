@@ -66,6 +66,8 @@ class FileManager
 
   def dir_to_buf(dirpath, b = nil)
     # File.stat("testfile").mtime
+    
+    vma.buffers.last_dir = dirpath
     dirpath = File.expand_path(dirpath)
     @header = []
     @header << "#{dirpath}"

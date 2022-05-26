@@ -407,7 +407,7 @@ class VMAgui
     $sw2 = sw
     sw.set_size_request(-1, 12)
 
-    view = VSourceView.new()
+    view = VSourceView.new(nil, nil)
     view.set_highlight_current_line(false)
     view.set_show_line_numbers(false)
     # view.set_buffer(buf1)
@@ -515,7 +515,11 @@ class VMAgui
 
   def init_window
     @window = Gtk::Window.new(:toplevel)
-    @window.set_default_size(650, 850)
+    sh = @window.screen.height
+    sw = @window.screen.width
+    # TODO:Maximise vertically
+    @window.set_default_size((sw * 0.45).to_i, sh - 20)
+
     @window.title = "Multiple Views"
     @window.show_all
     @vpaned = Gtk::Paned.new(:vertical)

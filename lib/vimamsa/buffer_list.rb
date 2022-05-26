@@ -1,4 +1,3 @@
-
 def save_buffer_list()
   message("Save buffer list")
   buffn = get_dot_path("buffers.txt")
@@ -21,9 +20,14 @@ def load_buffer_list()
 end
 
 class BufferList < Array
-  attr_reader :current_buf
+  attr_reader :current_buf, :last_dir
 
+  def initialize()
+    @last_dir = File.expand_path(".")
+    super
+  end
 
+  # lastdir = File.expand_path(".") if lastdir.nil?
   def <<(_buf)
     super
     vma.buf = _buf
@@ -58,12 +62,11 @@ class BufferList < Array
     buf_idx = self.index { |b| b.fname == fname }
     return buf_idx
   end
-  
-   def get_buffer_by_id(id)
+
+  def get_buffer_by_id(id)
     buf_idx = self.index { |b| b.id == id }
     return buf_idx
   end
- 
 
   def add_current_buf_to_history()
     @recent_ind = 0
@@ -91,27 +94,21 @@ class BufferList < Array
     vma.buf.set_active
 
     gui_set_current_buffer(vma.buf.id)
-    gui_set_window_title(vma.buf.title,vma.buf.subtitle)   
+    gui_set_window_title(vma.buf.title, vma.buf.subtitle)
+
+    if vma.buf.fname
+      @last_dir = File.dirname(vma.buf.fname)
+    end
 
     # hpt_scan_images() if $debug # experimental
   end
 
+  def last_dir=(d)
+    @last_dir = d
+  end
+
   def get_last_dir
-    lastdir = nil
-    if vma.buf.fname
-      lastdir = File.dirname(vma.buf.fname)
-    else
-      for bufid in $buffer_history.reverse[1..-1]
-        bf = vma.buffers[bufid]
-        debug "FNAME:#{bf.fname}"
-        if bf.fname
-          lastdir = File.dirname(bf.fname)
-          break
-        end
-      end
-    end
-    lastdir = File.expand_path(".") if lastdir.nil?
-    return lastdir
+    return @last_dir
   end
 
   def get_recent_buffers()
@@ -145,26 +142,23 @@ class BufferList < Array
     $buffer_history = bh.reverse
   end
 
-
   # Close buffer in the background
   # TODO: if open in another widget
   def close_other_buffer(buffer_i)
     return if self.size <= buffer_i
     return if @current_buf == buffer_i
-    
+
     bufname = self[buffer_i].basename
     message("Closed buffer #{bufname}")
 
     self.slice!(buffer_i)
     $buffer_history = $buffer_history.collect { |x| r = x; r = x - 1 if x > buffer_i; r = nil if x == buffer_i; r }.compact
-
   end
-
 
   def close_buffer(buffer_i, from_recent = false)
     return if buffer_i.nil?
     return if self.size <= buffer_i
-    
+
     bufname = self[buffer_i].basename
     message("Closed buffer #{bufname}")
     recent = get_recent_buffers

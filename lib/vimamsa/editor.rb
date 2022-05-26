@@ -272,7 +272,7 @@ class Editor
     r = @file_content_search_paths.clone
     p = find_project_dir_of_cur_buffer()
     if p.nil?
-      p = buf.dirname # Search dir of current file by default
+      p = vma.buffers.last_dir 
     end
 
     if p and !@file_content_search_paths.include?(p)
@@ -504,6 +504,7 @@ def create_new_file(filename = nil, file_contents = "\n")
   buffer = Buffer.new(file_contents)
   # gui_set_current_buffer(buffer.id) #TODO: remove?
   vma.buffers << buffer
+  vma.kbd.set_mode_to_default
   return buffer
 end
 
