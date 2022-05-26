@@ -3,7 +3,7 @@ def save_buffer_list()
   message("Save buffer list")
   buffn = get_dot_path("buffers.txt")
   f = File.open(buffn, "w")
-  bufstr = $buffers.collect { |buf| buf.fname }.inspect
+  bufstr = vma.buffers.collect { |buf| buf.fname }.inspect
   f.write(bufstr)
   f.close()
 end
@@ -26,13 +26,13 @@ class BufferList < Array
 
   def <<(_buf)
     super
-    $buffer = _buf
+    vma.buf = _buf
     @current_buf = self.size - 1
     $buffer_history << @current_buf
     @recent_ind = 0
-    $hook.call(:change_buffer, $buffer)
-    gui_set_current_buffer($buffer.id)
-    gui_set_cursor_pos($buffer.id, $buffer.pos)
+    $hook.call(:change_buffer, vma.buf)
+    gui_set_current_buffer(vma.buf.id)
+    gui_set_cursor_pos(vma.buf.id, vma.buf.pos)
   end
 
   def switch()
@@ -74,11 +74,11 @@ class BufferList < Array
   def set_current_buffer(buffer_i, update_history = true)
     buffer_i = self.size -1 if buffer_i > self.size
     buffer_i = 0 if buffer_i < 0
-    $buffer = self[buffer_i]
-    return if !$buffer
+    vma.buf = self[buffer_i]
+    return if !vma.buf
     @current_buf = buffer_i
     debug "SWITCH BUF2. bufsize:#{self.size}, curbuf: #{@current_buf}"
-    fpath = $buffer.fname
+    fpath = vma.buf.fname
     if fpath and fpath.size > 50
       fpath = fpath[-50..-1]
     end
@@ -87,22 +87,22 @@ class BufferList < Array
       add_current_buf_to_history
     end
 
-    $hook.call(:change_buffer, $buffer)
-    $buffer.set_active
+    $hook.call(:change_buffer, vma.buf)
+    vma.buf.set_active
 
-    gui_set_current_buffer($buffer.id)
-    gui_set_window_title($buffer.title,$buffer.subtitle)   
+    gui_set_current_buffer(vma.buf.id)
+    gui_set_window_title(vma.buf.title,vma.buf.subtitle)   
 
     # hpt_scan_images() if $debug # experimental
   end
 
   def get_last_dir
     lastdir = nil
-    if $buffer.fname
-      lastdir = File.dirname($buffer.fname)
+    if vma.buf.fname
+      lastdir = File.dirname(vma.buf.fname)
     else
       for bufid in $buffer_history.reverse[1..-1]
-        bf = $buffers[bufid]
+        bf = vma.buffers[bufid]
         debug "FNAME:#{bf.fname}"
         if bf.fname
           lastdir = File.dirname(bf.fname)

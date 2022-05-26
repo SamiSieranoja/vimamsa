@@ -33,7 +33,7 @@ class Encrypt
 end
 
 def decrypt_cur_buffer(password, b = nil)
-  $buffer.decrypt(password)
+  vma.buf.decrypt(password)
 end
 
 def encrypt_cur_buffer()
@@ -42,6 +42,6 @@ def encrypt_cur_buffer()
 end
 
 def encrypt_cur_buffer_callback(password,b=nil)
-  $buffer.set_encrypted(password)
+  vma.buf.set_encrypted(password)
 end
 

@@ -574,8 +574,7 @@ class Buffer < String
 
   def comment_linerange(r)
     com_str = get_com_str()
-    #lines = $buffer[r].split(/(\n)/).each_slice(2).map { |x| x[0] }
-    lines = $buffer[r].lines
+    lines = self[r].lines
     mod = ""
     lines.each { |line|
       m = line.match(/^(\s*)(\S.*)/)
@@ -637,14 +636,14 @@ class Buffer < String
       elsif op == :uncomment
         uncomment_linerange(first..last)
       end
-      $buffer.end_visual_mode
+      self.end_visual_mode
     end
   end
 
   def uncomment_linerange(r)
     com_str = get_com_str()
-    #r=$buffer.line_range($buffer.lpos, 2)
-    lines = $buffer[r].split(/(\n)/).each_slice(2).map { |x| x[0] }
+    #r=self.line_range(self.lpos, 2)
+    lines = self[r].split(/(\n)/).each_slice(2).map { |x| x[0] }
     mod = lines.collect { |x| x.sub(/^(\s*)(#{com_str}\s?)/, '\1') + "\n" }.join()
     replace_range(r, mod)
   end
@@ -1356,7 +1355,7 @@ class Buffer < String
     d2 = [@pos, INSERT, 1, char]
     add_delta(d1, true)
     add_delta(d2, true)
-    debug "DELTAS:#{$buffer.deltas.inspect} "
+    debug "DELTAS:#{self.deltas.inspect} "
   end
 
   def insert_txt_at(c, pos)
@@ -1449,7 +1448,6 @@ class Buffer < String
     for d in deltas
       add_delta(d, true, true)
     end
-    # $buffer.update_content(IO.read('test.txt'))
   end
 
   def need_redraw!
@@ -1685,7 +1683,7 @@ class Buffer < String
     # If current file has fname, save to that fname
     # Else search for previously open files and save to the directory of
     # the last viewed file that has a filename
-    # $buffers[$buffer_history.reverse[1]].fname
+    # selffers[$buffer_history.reverse[1]].fname
 
     if @fname
       savepath = File.dirname(@fname)
@@ -1747,7 +1745,7 @@ class Buffer < String
   def indent()
     file = Tempfile.new("out")
     infile = Tempfile.new("in")
-    file.write($buffer.to_s)
+    file.write(self.to_s)
     file.flush
     bufc = "FOO"
 
@@ -1773,7 +1771,7 @@ class Buffer < String
     else
       return
     end
-    $buffer.update_content(bufc)
+    self.update_content(bufc)
     center_on_current_line #TODO: needed?
     file.close; file.unlink
     infile.close; infile.unlink
@@ -1799,7 +1797,7 @@ end
 #TODO
 def write_to_file(savepath, s)
   if is_path_writable(savepath)
-    IO.write(savepath, $buffer.to_s)
+    IO.write(savepath, self.to_s)
   else
     message("PATH NOT WRITABLE: #{savepath}")
   end
@@ -1814,7 +1812,7 @@ def is_path_writable(fpath)
 end
 
 def backup_all_buffers()
-  for buf in $buffers
+  for buf in selffers
     buf.backup
   end
   message("Backup all buffers")

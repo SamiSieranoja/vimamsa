@@ -81,19 +81,19 @@ end
 
 def run_test(test_id)
   target_results = read_file("", "tests/test_#{test_id}_output.txt")
-  old_buffer = $buffer
-  $buffer = Buffer.new("", "")
+  old_buffer = vma.buf
+  vma.buf = Buffer.new("", "")
   load "tests/test_#{test_id}.rb"
-  test_ok = $buffer.to_s.strip == target_results.strip
+  test_ok = vma.buf.to_s.strip == target_results.strip
   puts "##################"
   puts target_results
   puts "##################"
-  puts $buffer.to_s
+  puts vma.buf.to_s
   puts "##################"
   puts "TEST OK" if test_ok
   puts "TEST FAILED" if !test_ok
   puts "##################"
-  $buffer = old_buffer
+  vma.buf = old_buffer
 end
 
 #TODO: remove?
@@ -121,7 +121,7 @@ def run_random_jump_test__tmpl(test_time = 60 * 60 * 10)
     # puts buf.current_line()
     # puts "======================"
 
-    render_buffer($buffer)
+    render_buffer(vma.buf)
 
     gui_sleep(rand() / 2)
     if rand() < (1 / 40.0)
@@ -130,9 +130,9 @@ def run_random_jump_test__tmpl(test_time = 60 * 60 * 10)
 
     gui_trigger_event
     buf.insert_txt("X") if rand() > 0.25
-    render_buffer($buffer)
+    render_buffer(vma.buf)
 
-    $buffers.set_current_buffer(rand($buffers.size)) if rand > 0.25
+    vma.buffers.set_current_buffer(rand(vma.buffers.size)) if rand > 0.25
     step += 1
   end
 end

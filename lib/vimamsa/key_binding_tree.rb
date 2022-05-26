@@ -15,7 +15,7 @@
 # 'C , r v b'=> 'revert_buffer',
 #
 # In insert mode: press and hold ctrl, press "a"
-# 'I ctrl-a'=> '$buffer.jump(BEGINNING_OF_LINE)',
+# 'I ctrl-a'=> 'vma.buf.jump(BEGINNING_OF_LINE)',
 #
 
 $cnf = {} # TODO

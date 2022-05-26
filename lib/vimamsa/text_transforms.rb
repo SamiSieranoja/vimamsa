@@ -3,7 +3,7 @@ class Converter
     @obj = obj
     @type = type
     if id != nil
-      $vma.reg_conv(self, id)
+      vma.reg_conv(self, id)
     end
   end
 

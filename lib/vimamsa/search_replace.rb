@@ -70,10 +70,10 @@ end
 
 def grep_cur_buffer(search_str, b = nil)
   debug "grep_cur_buffer(search_str)"
-  lines = $buffer.split("\n")
+  lines = vma.buf.split("\n")
   r = Regexp.new(Regexp.escape(search_str), Regexp::IGNORECASE)
   fpath = ""
-  fpath = $buffer.pathname.expand_path.to_s + ":" if $buffer.pathname
+  fpath = vma.buf.pathname.expand_path.to_s + ":" if vma.buf.pathname
   res_str = ""
 
   $grep_matches = []
@@ -84,7 +84,7 @@ def grep_cur_buffer(search_str, b = nil)
       $grep_matches << i + 1 # Lines start from index 1
     end
   }
-  $grep_bufid = $buffers.current_buf
+  $grep_bufid = vma.buffers.current_buf
   b = create_new_file(nil, res_str)
   # set_current_buffer(buffer_i, update_history = true)
   # @current_buf = buffer_i
@@ -93,7 +93,7 @@ def grep_cur_buffer(search_str, b = nil)
     debug "GREP HANDLER:#{lineno}"
     jumpto = $grep_matches[lineno]
     if jumpto.class == Integer
-      $buffers.set_current_buffer($grep_bufid, update_history = true)
+      vma.buffers.set_current_buffer($grep_bufid, update_history = true)
       buf.jump_to_line(jumpto)
     end
   }
@@ -136,21 +136,21 @@ def invoke_replace()
 end
 
 def buf_replace(search_str, replace_str)
-  if $buffer.visual_mode?
-    r = $buffer.get_visual_mode_range
-    txt = $buffer[r]
+  if vma.buf.visual_mode?
+    r = vma.buf.get_visual_mode_range
+    txt = vma.buf[r]
     txt.gsub!(search_str, replace_str)
-    $buffer.replace_range(r, txt)
-    $buffer.end_visual_mode
+    vma.buf.replace_range(r, txt)
+    vma.buf.end_visual_mode
   else
-    repbuf = $buffer.to_s.clone
+    repbuf = vma.buf.to_s.clone
     repbuf.gsub!(search_str, replace_str)
-    tmppos = $buffer.pos
-    if repbuf == $buffer.to_s.clone
+    tmppos = vma.buf.pos
+    if repbuf == vma.buf.to_s.clone
       message("NO CHANGE. Replacing #{search_str} with #{replace_str}.")
     else
-      $buffer.set_content(repbuf)
-      $buffer.set_pos(tmppos)
+      vma.buf.set_content(repbuf)
+      vma.buf.set_pos(tmppos)
       message("Replacing #{search_str} with #{replace_str}.")
     end
   end

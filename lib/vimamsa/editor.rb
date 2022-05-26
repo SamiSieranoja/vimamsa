@@ -165,11 +165,11 @@ class Editor
     else
       buffer = Buffer.new(" \n")
     end
-    $buffers << buffer
+    vma.buffers << buffer
 
     # load_theme($cnf[:theme])
 
-    # render_buffer($buffer, 1) #TODO
+    # render_buffer(vma.buf, 1) #TODO
 
     # gui_select_buffer_init #TODO
     # gui_file_finder_init #TODO
@@ -197,6 +197,10 @@ class Editor
   def buf()
     return $buffer
   end
+  def buf=(aa)
+    $buffer=aa
+  end
+
 
   def buffers()
     return $buffers
@@ -256,7 +260,7 @@ class Editor
   # Register converter
   def reg_conv(converter, converter_id)
     @converters[converter_id] = converter
-    reg_act(converter_id, proc { $buffer.convert_selected_text(converter_id) }, "Converter #{converter_id}", { :scope => [:selection] })
+    reg_act(converter_id, proc { vma.buf.convert_selected_text(converter_id) }, "Converter #{converter_id}", { :scope => [:selection] })
   end
 
   def apply_conv(converter_id, txt)
@@ -303,7 +307,7 @@ end
 
 def open_file_dialog()
   path = ""
-  path = $buffer.fname if $buffer.fname
+  path = vma.buf.fname if vma.buf.fname
   gui_open_file_dialog(File.dirname(path))
 end
 
@@ -339,8 +343,8 @@ end
 
 def set_cursor_pos(new_pos)
   buf.set_pos(new_pos)
-  #render_buffer($buffer)
-  debug "New pos: #{new_pos}lpos:#{$buffer.lpos} cpos:#{$buffer.cpos}"
+  #render_buffer(vma.buf)
+  debug "New pos: #{new_pos}lpos:#{vma.buf.lpos} cpos:#{vma.buf.cpos}"
 end
 
 def set_last_command(cmd)
@@ -361,7 +365,7 @@ end
 
 def repeat_last_find()
   return if !defined? $last_find_command
-  $buffer.jump_to_next_instance_of_char($last_find_command[:char],
+  vma.buf.jump_to_next_instance_of_char($last_find_command[:char],
                                         $last_find_command[:direction])
 end
 
@@ -397,10 +401,10 @@ end
 
 def diff_buffer()
   bufstr = ""
-  orig_path = $buffer.fname
+  orig_path = vma.buf.fname
   infile = Tempfile.new("out")
   infile = Tempfile.new("in")
-  infile.write($buffer.to_s)
+  infile.write(vma.buf.to_s)
   infile.flush
   cmd = "diff -w '#{orig_path}' #{infile.path}"
   # debug cmd
@@ -446,7 +450,7 @@ def minibuffer_new_char(c)
     $minibuffer.insert_txt(c)
     debug "MINIBUFFER: #{c}"
   end
-  #$buffer = $minibuffer
+  #vma.buf = $minibuffer
 end
 
 # def readchar_new_char(c)
@@ -499,7 +503,7 @@ def create_new_file(filename = nil, file_contents = "\n")
   debug "NEW FILE CREATED"
   buffer = Buffer.new(file_contents)
   # gui_set_current_buffer(buffer.id) #TODO: remove?
-  $buffers << buffer
+  vma.buffers << buffer
   return buffer
 end
 
@@ -517,7 +521,7 @@ end
 
 def load_buffer(fname)
   return if !File.exist?(fname)
-  existing_buffer = $buffers.get_buffer_by_filename(fname)
+  existing_buffer = vma.buffers.get_buffer_by_filename(fname)
   if existing_buffer != nil
     $buffer_history << existing_buffer
     return
@@ -529,8 +533,8 @@ def load_buffer(fname)
   debug("DONE LOAD: #{fname}")
   #buf = filter_buffer(buffer)
   #    debug("END FILTER: #{fname}")
-  $buffers << buffer
-  #$buffer_history << $buffers.size - 1
+  vma.buffers << buffer
+  #$buffer_history << vma.buffers.size - 1
 end
 
 def jump_to_file(filename, linenum = nil, charn = nil)
@@ -561,11 +565,11 @@ end
 def open_new_file(filename, file_contents = "")
   #TODO: expand path
   filename = File.expand_path(filename)
-  b = $buffers.get_buffer_by_filename(filename)
+  b = vma.buffers.get_buffer_by_filename(filename)
   # File is already opened to existing buffer
   if b != nil
     message "Switching to: #{filename}"
-    $buffers.set_current_buffer(b)
+    vma.buffers.set_current_buffer(b)
   else
     message "New file opened: #{filename}"
     fname = filename
@@ -680,8 +684,8 @@ end
 def find_project_dir_of_cur_buffer()
   # Find "project dir" of current file. If currently editing file in path "/foo/bar/baz/fn.txt" and file named "/foo/bar/.vma_project" exists, then dir /foo/bar is treated as project dir and subject to e.g. ack search.
   pdir = nil
-  if $buffer.fname
-    pdir = find_project_dir_of_fn($buffer.fname)
+  if vma.buf.fname
+    pdir = find_project_dir_of_fn(vma.buf.fname)
   end
   # debug "Proj dir of current file: #{pdir}"
   return pdir

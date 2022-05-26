@@ -3,8 +3,8 @@ def hpt_check_cur_word(w)
   m = w.match(/⟦(.*)⟧/)
   if m
     fpfx = m[1]
-    if $buffer.fname
-      dn = File.dirname($buffer.fname)
+    if vma.buf.fname
+      dn = File.dirname(vma.buf.fname)
 
       fcands = []
       if fpfx[0] != "/"

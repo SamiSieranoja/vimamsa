@@ -3,7 +3,7 @@ def execute_search(input_str)
   $search = Search.new
   eval_str="execute_search(#{input_str.dump})"
   $macro.overwrite_current_action(eval_str)
-  return $search.set(input_str, "simple", $buffer)
+  return $search.set(input_str, "simple", vma.buf)
 end
 
 def invoke_search()

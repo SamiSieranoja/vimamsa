@@ -37,15 +37,15 @@ $experimental = false
 
 # Return currently active buffer
 def buf()
-  return $buffer
+  return vma.buf
 end
 
 def bufs()
-  return $buffers
+  return vma.buffers
 end
 
 def buflist()
-  return $buffers
+  return vma.buffers
 end
 
 require "vimamsa/editor.rb"

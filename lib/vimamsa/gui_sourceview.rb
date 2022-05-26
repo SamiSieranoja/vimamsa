@@ -68,7 +68,7 @@ class VSourceView < GtkSource::View
     end
 
     signal_connect "button-release-event" do |widget, event|
-      $buffer.set_pos(buffer.cursor_position)
+      vma.buf.set_pos(buffer.cursor_position)
       false
     end
     @curpos_mark = nil
