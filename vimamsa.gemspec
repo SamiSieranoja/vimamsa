@@ -30,8 +30,8 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'gdk3', '~> 3.4'
   spec.add_runtime_dependency 'gtk3', '~> 3.4'
   spec.add_runtime_dependency 'differ', '~> 0.1'
-  spec.add_runtime_dependency 'gtksourceview3', '~> 3.4'
-  # spec.add_runtime_dependency 'gtksourceview4'
+  # spec.add_runtime_dependency 'gtksourceview3', '~> 3.4'
+  spec.add_runtime_dependency 'gtksourceview4'
   spec.add_runtime_dependency 'parallel', '~> 1.14'
   spec.add_runtime_dependency 'listen', '~> 3.4'
 

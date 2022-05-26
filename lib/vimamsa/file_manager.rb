@@ -1,4 +1,3 @@
-
 class FileManager
   @@cur
 
@@ -35,7 +34,7 @@ class FileManager
 
     # bindkey "fexp l", [:fexp_right, proc { debug "==fexp_right==" }, ""]
     bindkey "fexp h", :fexp_chdir_parent
-    bindkey "fexp esc", [:fexp_quit, proc { $kbd.set_mode(:command) }, ""]
+    bindkey "fexp esc", [:fexp_quit, proc { FileManager.cur.quit }, ""]
     bindkey "fexp enter", :fexp_select
     bindkey "fexp l", :fexp_select
 
@@ -66,7 +65,7 @@ class FileManager
 
   def dir_to_buf(dirpath, b = nil)
     # File.stat("testfile").mtime
-    
+
     vma.buffers.last_dir = dirpath
     dirpath = File.expand_path(dirpath)
     @header = []
@@ -94,9 +93,7 @@ class FileManager
       end
     end
 
-    # sort_by = :mtime
-    # sort_by = :name
-    # Ripl.start :binding => binding
+
     @cfiles.sort_by! { |x| x[1].mtime }.reverse! if @sort_by == :mtime
     @cfiles.sort_by! { |x| x[1].size }.reverse! if @sort_by == :size
     @cfiles.sort_by! { |x| x[0] } if @sort_by == :name
@@ -142,6 +139,9 @@ class FileManager
     else
       open_with_default_program(fn)
     end
-    # debug l.inspect
+  end
+
+  def quit
+    @buf.close
   end
 end

@@ -1778,6 +1778,11 @@ class Buffer < String
     infile.close; infile.unlink
   end
 
+  def close()
+    idx = vma.buffers.get_buffer_by_id(@id)
+    vma.buffers.close_buffer(idx)
+  end
+
   def backup()
     fname = @fname
     return if !@fname
