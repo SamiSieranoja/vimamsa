@@ -28,6 +28,9 @@ def is_visual_mode()
   return 0
 end
 
+
+reg_act(:lsp_goto_definition, proc { vma.buf.lsp_get_def }, "LSP go to definition")
+
 reg_act(:enable_debug, proc { $debug = true }, "Enable debug")
 reg_act(:disable_debug, proc { $debug = false }, "Disable debug")
 

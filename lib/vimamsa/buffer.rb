@@ -72,6 +72,9 @@ class Buffer < String
     self << "\n" if self[-1] != "\n"
     @current_word = nil
     @active_kbd_mode = nil
+    if conf(:enable_lsp)
+      init_lsp
+    end
   end
 
   def list_str()
@@ -99,6 +102,26 @@ class Buffer < String
     end
   end
 
+  def lsp_get_def()
+    if !@lsp.nil?
+      fpuri = URI.join("file:///", @fname).to_s
+      @lsp.get_definition(fpuri, @lpos, @cpos)
+    end
+  end
+
+  def add_to_lsp()
+    if !@lsp.nil?
+      @lsp.open_file(@fname, self.to_s)
+    end
+  end
+
+  def init_lsp()
+    if @lang == "cpp" and !vma.langsrv["cpp"].nil?
+      @lsp = vma.langsrv["cpp"]
+      add_to_lsp()
+    end
+  end
+
   def detect_file_language
     @lang = nil
     @lang = "c" if @fname.match(/\.(c|h|cpp)$/)
@@ -106,6 +129,7 @@ class Buffer < String
     @lang = "ruby" if @fname.match(/\.(rb)$/)
     @lang = "hyperplaintext" if @fname.match(/\.(txt)$/)
     @lang = "php" if @fname.match(/\.(php)$/)
+    @lsp = nil
 
     lm = GtkSource::LanguageManager.new
 
@@ -119,10 +143,12 @@ class Buffer < String
       debug "Guessed LANG: #{lang.id}"
       @lang = lang.id
     end
+    puts @lang.inspect
 
     if @lang
       gui_set_file_lang(@id, @lang)
     end
+    return @lang
   end
 
   def view()

@@ -10,6 +10,7 @@ require "ripl"
 require "ripl/multi_line"
 require "shellwords"
 require "cgi"
+require "uri"
 
 require "vimamsa/util"
 require "vimamsa/main"

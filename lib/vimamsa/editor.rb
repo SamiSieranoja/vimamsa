@@ -33,7 +33,7 @@ end
 
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths, :gui
-  attr_accessor :converters, :fh, :paint_stack, :kbd
+  attr_accessor :converters, :fh, :paint_stack, :kbd, :langsrv
   #attr_writer :call_func, :update_highlight
 
   def initialize()
@@ -81,6 +81,7 @@ class Editor
 
     $buffers = BufferList.new
     $minibuffer = Buffer.new(">", "")
+    @langsrv = {}
 
     require "vimamsa/text_transforms"
 
@@ -133,11 +134,17 @@ class Editor
     # Limit file search to these extensions:
     $find_extensions = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb"]
 
+    #TODO: remove
     dotfile = read_file("", "~/.vimamsarc")
     eval(dotfile) if dotfile
-    
+
     custom_script = read_file("", custom_fn)
     eval(custom_script) if custom_script
+
+    if conf(:enable_lsp)
+      require "vimamsa/langservp"
+      @langsrv["cpp"] = ClangLangsrv.new()
+    end
 
     # build_options
 
@@ -197,10 +204,10 @@ class Editor
   def buf()
     return $buffer
   end
-  def buf=(aa)
-    $buffer=aa
-  end
 
+  def buf=(aa)
+    $buffer = aa
+  end
 
   def buffers()
     return $buffers
@@ -272,7 +279,7 @@ class Editor
     r = @file_content_search_paths.clone
     p = find_project_dir_of_cur_buffer()
     if p.nil?
-      p = vma.buffers.last_dir 
+      p = vma.buffers.last_dir
     end
 
     if p and !@file_content_search_paths.include?(p)

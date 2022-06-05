@@ -18,4 +18,5 @@ setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", 
 
 setcnf "log.verbose", 1
 setcnf :tab_width, 4
+setcnf :enable_lsp, false
 
