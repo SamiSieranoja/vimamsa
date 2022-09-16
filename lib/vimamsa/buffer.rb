@@ -1844,8 +1844,8 @@ def is_path_writable(fpath)
 end
 
 def backup_all_buffers()
-  for buf in selffers
-    buf.backup
+  for b in bufs
+    b.backup
   end
   message("Backup all buffers")
 end

@@ -37,6 +37,7 @@ class BufferList < Array
     $hook.call(:change_buffer, vma.buf)
     gui_set_current_buffer(vma.buf.id)
     gui_set_cursor_pos(vma.buf.id, vma.buf.pos)
+    update_last_dir(_buf)
   end
 
   def switch()
@@ -101,6 +102,12 @@ class BufferList < Array
     end
 
     # hpt_scan_images() if $debug # experimental
+  end
+
+  def update_last_dir(buf)
+    if buf.fname
+      @last_dir = File.dirname(buf.fname)
+    end
   end
 
   def last_dir=(d)
