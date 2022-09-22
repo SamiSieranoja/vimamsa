@@ -1721,7 +1721,34 @@ class Buffer < String
     # calls back to file_saveas
   end
 
-  def save_as_callback(fpath)
+  def save_as_check_callback(vals)
+    if vals["yes_btn"] == "submit"
+      save_as_callback(@unconfirmed_path, true)
+    end
+  end
+
+  def save_as_callback(fpath, confirmed = false)
+    if !confirmed
+      @unconfirmed_path = fpath
+      if File.exists?(fpath) and File.file?(fpath) 
+        params = {}
+        params["title"] = "The file already exists, overwrite? \r #{fpath}"
+        params["inputs"] = {}
+        params["inputs"]["yes_btn"] = { :label => "Yes", :type => :button, :default_focus => true }
+        callback = proc { |x| save_as_check_callback(x) }
+        params[:callback] = callback
+        PopupFormGenerator.new(params).run
+        return
+      elsif File.exists?(fpath) #and File.directory?(fpath)
+        params = {}
+        params["title"] = "Can't write to the destination.\r #{fpath}"
+        params["inputs"] = {}
+        params["inputs"]["ok_btn"] = { :label => "Ok", :type => :button, :default_focus => true }
+        PopupFormGenerator.new(params).run
+        return
+      end
+    end
+
     set_filename(fpath)
     save()
     gui_set_window_title(@title, @subtitle) #TODO: if not active buffer?

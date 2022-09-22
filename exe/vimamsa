@@ -5,11 +5,11 @@ require "tempfile"
 require "pathname"
 
 ENV["GTK_THEME"] = "Adwaita:dark"
+# ENV["GTK_THEME"] = "Adwaita:light"
 
 selfpath = __FILE__
 selfpath = File.readlink(selfpath) if File.lstat(selfpath).symlink?
 scriptdir = File.expand_path(File.dirname(selfpath) + "/..")
-
 
 # If process is already running, open the parameter file in the running process and exit.
 listen_dir = File.expand_path("~/.vimamsa/listen")

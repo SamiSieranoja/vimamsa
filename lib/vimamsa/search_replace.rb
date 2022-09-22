@@ -103,8 +103,8 @@ def invoke_grep_search()
   start_minibuffer_cmd("", "", :grep_cur_buffer)
 end
 
-def gui_one_input_action(title, field_label, button_title, callback,opt={})
-  a = OneInputAction.new(nil, title, field_label, button_title, callback,opt)
+def gui_one_input_action(title, field_label, button_title, callback, opt = {})
+  a = OneInputAction.new(nil, title, field_label, button_title, callback, opt)
   a.run
   return
 end
@@ -171,15 +171,17 @@ end
 # PopupFormGenerator.new().run
 class PopupFormGenerator
   def submit()
-    ret = {}
     for id, entry in @vals
-      ret[id] = entry.text
+      @ret[id] = entry.text
     end
-    @callback.call(ret)
+    if !@callback.nil?
+      @callback.call(@ret)
+    end
     @window.destroy
   end
 
   def initialize(params = nil)
+    @ret = {}
     @window = Gtk::Window.new(:toplevel)
     # @window.screen = main_window.screen
     # @window.title = title
@@ -201,22 +203,29 @@ class PopupFormGenerator
 
     # @callback = params["callback"]
 
-    infolabel = Gtk::Label.new
-    # infolabel.markup = params["title"]
-
     vbox = Gtk::Box.new(:vertical, 8)
     vbox.margin = 8
     frame.add(vbox)
 
+    if params.has_key?("title")
+      infolabel = Gtk::Label.new
+      infolabel.markup = params["title"]
+      vbox.pack_start(infolabel, :expand => false, :fill => false, :padding => 0)
+    end
+
     hbox = Gtk::Box.new(:horizontal, 8)
-    # @window.add(hbox)
     @vals = {}
+    @default_button = nil
 
     for id, elem in params["inputs"]
       if elem[:type] == :button
         button = Gtk::Button.new(:label => elem[:label])
         hbox.pack_start(button, :expand => false, :fill => false, :padding => 0)
+        if elem[:default_focus] == true
+          @default_button = button
+        end
         button.signal_connect "clicked" do
+          @ret[id] = "submit"
           submit
         end
       elsif elem[:type] == :entry
@@ -247,7 +256,7 @@ class PopupFormGenerator
       @window.destroy
     end
     hbox.pack_start(cancel_button, :expand => false, :fill => false, :padding => 0)
-
+    @cancel_button = cancel_button
     return
   end
 
@@ -257,6 +266,13 @@ class PopupFormGenerator
     else
       @window.destroy
     end
+    if !@default_button.nil?
+      # @default_button.grab_focus
+      # @default_button.set_has_focus(true)
+      # @default_button.has_focus = true
+      @default_button.focus = true
+    end
+    @window.set_focus_visible(true)
     @window
   end
 end
