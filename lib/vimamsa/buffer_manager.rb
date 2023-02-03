@@ -54,6 +54,7 @@ class BufferManager
       buf_i = vma.buffers.get_buffer_by_id(@@cur.buf.id)
       vma.buffers.close_buffer(buf_i)
     end
+    # Ripl.start :binding => binding
     @@cur = self
     @header = []
     @header << "Current buffers:"
@@ -64,7 +65,12 @@ class BufferManager
     s << @header.join("\n")
     s << "\n"
     i = 0
+    jump_to_line = 0
     for b in vma.buffers.sort_by { |x| x.list_str }
+      if b.id == vma.buf.id # current file
+      # s << "   "
+      jump_to_line = i
+      end
       x = b.list_str
       s << "#{x}\n"
       @line_to_id[i] = b.id
@@ -78,6 +84,7 @@ class BufferManager
     else
       @buf.set_content(s)
     end
-    @buf.set_line_and_column_pos(@header.size, 0)
+    # Position on the line of the active buffer
+    @buf.set_line_and_column_pos(@header.size+jump_to_line, 0)
   end
 end

@@ -897,12 +897,12 @@ class Buffer < String
     set_pos(pos)
   end
 
-  def delete(op)
+  def delete(op, x = nil)
     $paste_lines = false
     # Delete selection
     if op == SELECTION && visual_mode?
       (startpos, endpos) = get_visual_mode_range2
-      delete_range(startpos, endpos)
+      delete_range(startpos, endpos, x)
       @pos = [@pos, @selection_start].min
       end_visual_mode
       #return
@@ -930,9 +930,16 @@ class Buffer < String
     #need_redraw!
   end
 
-  def delete_range(startpos, endpos)
-    #s = self.slice!(startpos..endpos)
-    set_clipboard(self[startpos..endpos])
+  def delete_range(startpos, endpos, x)
+    s = self[startpos..endpos]
+    if startpos == endpos or s == ""
+      return
+    end
+    if x == :append
+      debug "APPEND"
+      s += "\n" + get_clipboard()
+    end
+    set_clipboard(s)
     add_delta([startpos, DELETE, (endpos - startpos + 1)], true)
     #recalc_line_ends
     calculate_line_and_column_pos
@@ -1730,7 +1737,7 @@ class Buffer < String
   def save_as_callback(fpath, confirmed = false)
     if !confirmed
       @unconfirmed_path = fpath
-      if File.exists?(fpath) and File.file?(fpath) 
+      if File.exists?(fpath) and File.file?(fpath)
         params = {}
         params["title"] = "The file already exists, overwrite? \r #{fpath}"
         params["inputs"] = {}

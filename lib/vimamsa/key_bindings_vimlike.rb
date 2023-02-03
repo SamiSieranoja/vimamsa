@@ -66,6 +66,7 @@ bindkey "C d d", [:delete_line, proc { buf.delete_line }, "Delete current line"]
 bindkey "C enter || C return", [:line_action, proc { buf.handle_line_action() }, "Line action"]
 bindkey "C p", [:paste_after, proc { buf.paste(AFTER) }, ""] # TODO: implement as replace for visual mode
 bindkey "V d", [:delete_selection, proc { buf.delete(SELECTION) }, ""]
+bindkey "V a d", [:delete_append_selection, proc { buf.delete(SELECTION,:append) }, "Delete and append selection"]
 
 default_keys = {
 

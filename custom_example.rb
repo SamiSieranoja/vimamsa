@@ -23,10 +23,20 @@ end
 def collect_c_header()
   # Matches e.g.:
   # static void funcname(parameters)
-  s = buf.scan(/^(([\w]+\s*){1,3} \w+\((.|\n)+?\))/).collect { |x| x[0] + ";" }.join("\n")
+  s = buf.scan(/^(
+  ([\w\*\:&]+\s*){1,3}
+  [\*?\w\:&]+
+  \(
+     ([^\)]|\n)*?
+  \)
+  )
+  /x
+  ).collect { |x| x[0] + ";" }.join("\n")
   buf.insert_txt(s)
 end
+
 reg_act(:collect_c_header, proc { collect_c_header }, "Collect function definitions for c header file")
+
 
 # Extract all numbers from txt selection
 c = Converter.new(lambda { |x| x.scan(/([\+\-]?\d+(\.\d+)?)/).collect { |x| x[0] }.join(" ") }, :lambda, :getnums)
