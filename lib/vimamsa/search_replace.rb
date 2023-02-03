@@ -231,6 +231,9 @@ class PopupFormGenerator
       elsif elem[:type] == :entry
         label = Gtk::Label.new(elem[:label])
         entry = Gtk::Entry.new
+        if elem.has_key?(:initial_text)
+          entry.text = elem[:initial_text]
+        end
         hbox.pack_start(label, :expand => false, :fill => false, :padding => 0)
         hbox.pack_start(entry, :expand => false, :fill => false, :padding => 0)
         @vals[id] = entry

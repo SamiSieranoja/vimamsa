@@ -14,6 +14,7 @@ end
 
 setcnf :indent_based_on_last_line, true
 setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd", ".js"]
+setcnf :default_search_extensions, ["txt", "rb"]
 
 
 setcnf "log.verbose", 1

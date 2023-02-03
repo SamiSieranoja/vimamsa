@@ -930,7 +930,7 @@ class Buffer < String
     #need_redraw!
   end
 
-  def delete_range(startpos, endpos, x)
+  def delete_range(startpos, endpos, x=nil)
     s = self[startpos..endpos]
     if startpos == endpos or s == ""
       return
@@ -1398,6 +1398,13 @@ class Buffer < String
     add_delta([pos, INSERT, c.size, c], true)
     calculate_line_and_column_pos
   end
+  
+  def append(c)
+    pos = self.size - 1
+    add_delta([pos, INSERT, c.size, c], true)
+    calculate_line_and_column_pos
+  end
+ 
 
   def execute_current_line_in_terminal(autoclose = false)
     s = get_current_line

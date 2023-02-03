@@ -37,7 +37,6 @@ end
 
 reg_act(:collect_c_header, proc { collect_c_header }, "Collect function definitions for c header file")
 
-
 # Extract all numbers from txt selection
 c = Converter.new(lambda { |x| x.scan(/([\+\-]?\d+(\.\d+)?)/).collect { |x| x[0] }.join(" ") }, :lambda, :getnums)
 # (find converter using action search input:"conv getnum")
@@ -48,6 +47,7 @@ def insert_lorem_ipsum()
 
 Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida. Duis ac tellus et risus vulputate vehicula. Donec lobortis risus a elit. Etiam tempor. Ut ullamcorper, ligula eu tempor congue, eros est euismod turpis, id tincidunt sapien risus a quam. Maecenas fermentum consequat mi. Donec fermentum. Pellentesque malesuada nulla a mi. Duis sapien sem, aliquet nec, commodo eget, consequat quis, neque. Aliquam faucibus, elit ut dictum aliquet, felis nisl adipiscing sapien, sed malesuada diam lacus eget erat. Cras mollis scelerisque nunc. Nullam arcu. Aliquam consequat. Curabitur augue lorem, dapibus quis, laoreet et, pretium ac, nisi. Aenean magna nisl, mollis quis, molestie eu, feugiat in, orci. In hac habitasse platea dictumst."
 
+  # Insert to current position
   vma.buf.insert_txt(lorem_ipsum)
 end
 
