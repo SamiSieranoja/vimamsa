@@ -1183,7 +1183,8 @@ class Buffer < String
       wtype = :url
     elsif is_existing_file(path)
       message("PATH:'#{word}'")
-      if vma.can_open_extension?(path)
+      # if vma.can_open_extension?(path)
+      if file_is_text_file(path)
         wtype = :textfile
       else
         wtype = :file
@@ -1821,22 +1822,25 @@ class Buffer < String
 
     message("Auto format #{@fname}")
 
-    if ["chdr", "c", "cpp"].include?(get_file_type())
+	ftype = get_file_type()
+    if ["chdr", "c", "cpp", "cpphdr"].include?(ftype)
 
       #C/C++/Java/JavaScript/Objective-C/Protobuf code
       system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")
       bufc = IO.read(infile.path)
-    elsif get_file_type() == "Javascript"
+
+    elsif ftype == "Javascript"
       cmd = "clang-format #{file.path} > #{infile.path}'"
       debug cmd
       system(cmd)
       bufc = IO.read(infile.path)
-    elsif get_file_type() == "ruby"
+    elsif ftype == "ruby"
       cmd = "rufo #{file.path}"
       debug cmd
       system(cmd)
       bufc = IO.read(file.path)
     else
+      message("No auto-format handler for file of type: #{ftype}")
       return
     end
     self.update_content(bufc)
