@@ -1,5 +1,37 @@
 ❙Demo❙
 
+s = "zzzzzzzzz\n"*300
+b = create_new_file(nil, s)
+b.set_pos(200*10)
+
+b.set_line_and_column_pos(200, 0)
+
+0
+
+// vma.buffers.set_current_buffer(vma.buffers.get_buffer_by_id(b.id))
+b.set_line_and_column_pos(200, 0)
+center_on_current_line
+
+true
+
+true
+
+0
+
+Thread.new{sleep 0.1; b.set_line_and_column_pos(200, 0)}
+#<Thread:0x0000557b9b04fd28 (eval):3 run>
+
+
+Thread.new{sleep 0.1; b.set_pos(200)}
+
+
+#<Thread:0x0000557b9a21c6e8 (eval):3 run>
+
+
+5
+
+jump_to_file('/home/samsam/Drive/notes/grimoire.txt', 200)
+
 ◼ General
 Links: press ⦁enter⦁  while cursor on
 ⟦README.md⟧

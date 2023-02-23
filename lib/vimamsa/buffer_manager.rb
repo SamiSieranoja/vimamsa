@@ -85,6 +85,14 @@ class BufferManager
       @buf.set_content(s)
     end
     # Position on the line of the active buffer
-    @buf.set_line_and_column_pos(@header.size+jump_to_line, 0)
+    # @buf.set_content(s)
+    newlpos=@header.size+jump_to_line
+    # vma.buffers.set_current_buffer(vma.buffers.get_buffer_by_id(@buf.id))
+    # @buf.set_pos(newlpos)
+    # center_on_current_line
+    @buf.set_line_and_column_pos(newlpos, 0)
+    # Thread.new{sleep 0.1; gui_set_cursor_pos(@buf.id, @buf.pos)}
+    # gui_set_cursor_pos(@buf.id, @buf.pos)
+    # Thread.new{sleep 0.1; center_on_current_line()} # TODO
   end
 end

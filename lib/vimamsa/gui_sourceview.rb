@@ -1,22 +1,19 @@
-
-
 # class VSourceView < Gtk::TextView
 class VSourceView < GtkSource::View
-  attr_accessor :bufo 
+  attr_accessor :bufo
   # :highlight_matching_brackets
-  
+
   # def set_highlight_current_line(vbool)
   # end
-  
+
   # def set_show_line_numbers(vbool)
   # end
-  
+
   # def highlight_matching_brackets=(vbool)
   # end
-  
 
   # def initialize(title = nil,bufo=nil)
-  def initialize(title,bufo)
+  def initialize(title, bufo)
     # super(:toplevel)
     @highlight_matching_brackets = true
     super()
@@ -24,35 +21,36 @@ class VSourceView < GtkSource::View
     debug "vsource init"
     @last_keyval = nil
     @last_event = [nil, nil]
-    self.drag_dest_add_image_targets
-    self.drag_dest_add_uri_targets
+    #    self.drag_dest_add_image_targets #TODO:gtk4
+    #    self.drag_dest_add_uri_targets #TODO:gtk4
 
-    signal_connect "button-press-event" do |_widget, event|
-      if event.button == Gdk::BUTTON_PRIMARY
-        # debug "Gdk::BUTTON_PRIMARY"
-        false
-      elsif event.button == Gdk::BUTTON_SECONDARY
-        # debug "Gdk::BUTTON_SECONDARY"
-        true
-      else
-        true
-      end
-    end
+    #    signal_connect "button-press-event" do |_widget, event| #TODO:gtk4
+    # if event.button == Gdk::BUTTON_PRIMARY
+    # # debug "Gdk::BUTTON_PRIMARY"
+    # false
+    # elsif event.button == Gdk::BUTTON_SECONDARY
+    # # debug "Gdk::BUTTON_SECONDARY"
+    # true
+    # else
+    # true
+    # end
+    # end
 
-    signal_connect("drag-data-received") do |widget, event, x, y, data, info, time|
-      puts "drag-data-received"
-      puts
-      if data.uris.size >= 1
-        imgpath = CGI.unescape(data.uris[0])
-        m = imgpath.match(/^file:\/\/(.*)/)
-        if m
-          fp = m[1]
-          handle_drag_and_drop(fp)
-        end
-      end
-      true
-    end
+    #    signal_connect("drag-data-received") do |widget, event, x, y, data, info, time| #TODO:gtk4
+    # puts "drag-data-received"
+    # puts
+    # if data.uris.size >= 1
+    # imgpath = CGI.unescape(data.uris[0])
+    # m = imgpath.match(/^file:\/\/(.*)/)
+    # if m
+    # fp = m[1]
+    # handle_drag_and_drop(fp)
+    # end
+    # end
+    # true
+    # end
 
+    return
     signal_connect("key_press_event") do |widget, event|
       handle_key_event(event, :key_press_event)
       true

@@ -192,19 +192,25 @@ def gui_set_current_buffer(id)
   $view = view
   $vbuf = buf1
 
-  $vmag.sw.remove($vmag.sw.child) if !$vmag.sw.child.nil?
-  $vmag.sw.add(view)
+  if !$vmag.sw.child.nil?
+    # Ripl.start :binding => binding
+    #  $vmag.sw.remove($vmag.sw.child)  #TODO:gtk4
+  end
+
+  # $vmag.sw.add(view)
+  $vmag.sw.set_child(view)
 
   view.grab_focus
   view.set_cursor_visible(true)
   view.place_cursor_onscreen
 
-  $vmag.sw.show_all
+  # $vmag.sw.show_all
+  $vmag.sw.show
 end
 
 def gui_set_window_title(wtitle, subtitle = "")
   $vmag.window.title = wtitle
-  $vmag.window.titlebar.subtitle = subtitle
+  #  $vmag.window.titlebar.subtitle = subtitle #TODO:gtk4
 end
 
 class VMAgui
@@ -245,7 +251,7 @@ class VMAgui
   def run
     init_window
     # init_rtext
-    Gtk.main
+    # Gtk.main
   end
 
   def delay_scale()
@@ -398,9 +404,9 @@ class VMAgui
     sw = Gtk::ScrolledWindow.new
     sw.set_policy(:automatic, :automatic)
     overlay = Gtk::Overlay.new
-    overlay.add(sw)
+    #    overlay.add(sw) #TODO:gtk4
     # @vpaned.pack2(overlay, :resize => false)
-    @vbox.attach(overlay, 0, 2, 2, 1)
+    #    @vbox.attach(overlay, 0, 2, 2, 1) #TODO:gtk4
     # overlay.set_size_request(-1, 50)
     # $ovrl = overlay
     # $ovrl.set_size_request(-1, 30)
@@ -514,54 +520,77 @@ class VMAgui
   end
 
   def init_window
-    @window = Gtk::Window.new(:toplevel)
-    sh = @window.screen.height
-    sw = @window.screen.width
-    # TODO:Maximise vertically
-    @window.set_default_size((sw * 0.45).to_i, sh - 20)
+    app = Gtk::Application.new("org.gtk.example", :flags_none)
 
-    @window.title = "Multiple Views"
-    @window.show_all
-    @vpaned = Gtk::Paned.new(:vertical)
+    app.signal_connect "activate" do
 
-    @vbox = Gtk::Grid.new()
-    @window.add(@vbox)
+      # @window = Gtk::Window.new(:toplevel)
+      @window = Gtk::Window.new()
+      @window.set_application(app)
 
-    @menubar = Gtk::MenuBar.new
-    @menubar.expand = false
 
-    @sw = Gtk::ScrolledWindow.new
-    @sw.set_policy(:automatic, :automatic)
-    @overlay = Gtk::Overlay.new
-    @overlay.add(@sw)
+      #    sh = @window.screen.height #TODO:gtk4
+      #    sw = @window.screen.width #TODO:gtk4
+      # TODO:Maximise vertically
+      #    @window.set_default_size((sw * 0.45).to_i, sh - 20) #TODO:gtk4
+         @window.set_default_size(800,600) #TODO:gtk4
 
-    init_header_bar
+      @window.title = "Multiple Views"
+      #    @window.show_all #TODO:gtk4
+      @vpaned = Gtk::Paned.new(:vertical)
 
-    @statnfo = Gtk::Label.new
-    provider = Gtk::CssProvider.new
-    provider.load(data: "textview {   background-color:#353535; font-family: Monospace; font-size: 10pt; margin-top:4px;}")
-    @statnfo.style_context.add_provider(provider)
+      @vbox = Gtk::Grid.new()
+      @window.add(@vbox)
 
-    # Deprecated, but found no other way to do it. css doesn't work.
-    # TODO: should select color automatically from theme
-    @statnfo.override_background_color(Gtk::StateFlags::NORMAL, "#353535")
+      #    @menubar = Gtk::MenuBar.new #TODO:gtk4
+      #    @menubar.expand = false #TODO:gtk4
 
-    # column, row, width height
-    @vbox.attach(@menubar, 0, 0, 1, 1)
-    @vbox.attach(@statnfo, 1, 0, 1, 1)
-    @vbox.attach(@overlay, 0, 1, 2, 1)
-    @overlay.vexpand = true
-    @overlay.hexpand = true
+      @sw = Gtk::ScrolledWindow.new
+      @sw.set_policy(:automatic, :automatic)
+      @overlay = Gtk::Overlay.new
+      #    @overlay.add(@sw) #TODO:gtk4
 
-    @menubar.vexpand = false
-    @menubar.hexpand = false
+      #    init_header_bar #TODO:gtk4
 
-    init_minibuffer
+      @statnfo = Gtk::Label.new
+      provider = Gtk::CssProvider.new
+      provider.load(data: "textview {   background-color:#353535; font-family: Monospace; font-size: 10pt; margin-top:4px;}")
+      @statnfo.style_context.add_provider(provider)
 
-    @window.show_all
-    vma.start
-    Vimamsa::Menu.new(@menubar)
+      # Deprecated, but found no other way to do it. css doesn't work.
+      # TODO: should select color automatically from theme
+      #    @statnfo.override_background_color(Gtk::StateFlags::NORMAL, "#353535") #TODO:gtk4
 
-    @window.show_all
+         @vbox.attach(@sw, 0, 0, 1, 1) #TODO:gtk4
+                  @sw.vexpand = true #TODO:gtk4
+         @sw.hexpand = true #TODO:gtk4
+
+         # Ripl.start :binding => binding
+
+      # column, row, width height
+      #    @vbox.attach(@menubar, 0, 0, 1, 1) #TODO:gtk4
+      #    @vbox.attach(@statnfo, 1, 0, 1, 1) #TODO:gtk4
+      #    @vbox.attach(@overlay, 0, 1, 2, 1) #TODO:gtk4
+      #    @overlay.vexpand = true #TODO:gtk4
+      #    @overlay.hexpand = true #TODO:gtk4
+
+      #    @menubar.vexpand = false #TODO:gtk4
+      #    @menubar.hexpand = false #TODO:gtk4
+
+      # init_minibuffer
+
+      # Ripl.start :binding => binding
+      # @window.show_all
+      @window.show
+
+      vma.start
+    end
+
+    app.run
+
+    #    Vimamsa::Menu.new(@menubar) #TODO:gtk4
+
+    # @window.show_all
+    # @window.show
   end
 end

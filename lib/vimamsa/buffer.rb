@@ -157,6 +157,7 @@ class Buffer < String
   end
 
   def add_image(imgpath, pos)
+    return # gtk4
     return if !is_legal_pos(pos)
 
     vbuf = view.buffer

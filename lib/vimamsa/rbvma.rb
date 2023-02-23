@@ -1,8 +1,13 @@
 #require "gtksourceview4"
 require "date"
 require "fileutils"
-require "gtk3"
-require "gtksourceview4"
+
+# require "gtk3"
+# require "gtksourceview4"
+
+require "gtk4"
+require "gtksourceview5"
+
 require "json"
 require "listen"
 require "pathname"
@@ -11,9 +16,10 @@ require "ripl/multi_line"
 require "shellwords"
 require "cgi"
 require "uri"
-
 require "vimamsa/util"
+# exit!
 require "vimamsa/main"
+require "vimamsa/form_generator"
 
 require "vimamsa/actions"
 require "vimamsa/key_binding_tree"
