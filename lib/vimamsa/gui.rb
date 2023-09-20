@@ -135,6 +135,35 @@ def gui_create_buffer(id, bufo)
   debug "gui_create_buffer(#{id})"
   buf1 = GtkSource::Buffer.new()
   view = VSourceView.new(nil, bufo)
+  
+          # press = Gtk::GestureClick.new
+          press = Gtk::EventControllerKey.new
+          
+  # press.button = Gdk::BUTTON_SECONDARY
+  view.add_controller(press)
+  # press.signal_connect "pressed" do |gesture, n_press, x, y|
+  press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
+  name =  Gdk::Keyval.to_name(keyval)
+  uki = Gdk::Keyval.to_unicode(keyval)
+  keystr = uki.chr("UTF-8")
+  # uk = "%4.4x" % keyval
+# Gdk::Keyval.methods.sort
+  puts "FOOBARpressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
+  if name == "adiaeresis"
+  # Ripl.start :binding => binding
+  end
+  true
+  # https://docs.gtk.org/gtk4/signal.EventControllerKey.key-pressed.html
+    # GtkEventControllerKey* self,
+  # guint keyval,
+  # guint keycode,
+  # GdkModifierType state,
+  # gpointer user_data
+
+  end
+
+  
+
 
   ssm = GtkSource::StyleSchemeManager.new
   ssm.set_search_path(ssm.search_path << ppath("styles/"))
@@ -541,12 +570,19 @@ class VMAgui
 
       @vbox = Gtk::Grid.new()
       @window.add(@vbox)
+      
+      # @window.signal_connect("key-pressed") { puts "Hello World!" }
+      # @window.signal_connect("clicked") { puts "Hello World!" }
+
 
       #    @menubar = Gtk::MenuBar.new #TODO:gtk4
       #    @menubar.expand = false #TODO:gtk4
 
       @sw = Gtk::ScrolledWindow.new
       @sw.set_policy(:automatic, :automatic)
+      
+      # @sw.signal_connect("clicked") { puts "Hello World!" }
+      # @sw.signal_connect("key-pressed") { puts "Hello World!" }
       @overlay = Gtk::Overlay.new
       #    @overlay.add(@sw) #TODO:gtk4
 
@@ -582,9 +618,22 @@ class VMAgui
       # Ripl.start :binding => binding
       # @window.show_all
       @window.show
+      
+        press = Gtk::GestureClick.new
+  press.button = Gdk::BUTTON_SECONDARY
+  @window.add_controller(press)
+  press.signal_connect "pressed" do |gesture, n_press, x, y|
+  puts "FOOBARpressed"
+    # clear_surface(surface)
+    # drawing_area.queue_draw
+  end
 
+
+  # Ripl.start :binding => binding
       vma.start
     end
+    
+    
 
     app.run
 
