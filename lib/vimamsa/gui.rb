@@ -135,35 +135,59 @@ def gui_create_buffer(id, bufo)
   debug "gui_create_buffer(#{id})"
   buf1 = GtkSource::Buffer.new()
   view = VSourceView.new(nil, bufo)
-  
-          # press = Gtk::GestureClick.new
-          press = Gtk::EventControllerKey.new
-          
+
+  # press = Gtk::GestureClick.new
+  press = Gtk::EventControllerKey.new
+
   # press.button = Gdk::BUTTON_SECONDARY
   view.add_controller(press)
+  $debug = true
   # press.signal_connect "pressed" do |gesture, n_press, x, y|
   press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
-  name =  Gdk::Keyval.to_name(keyval)
-  uki = Gdk::Keyval.to_unicode(keyval)
-  keystr = uki.chr("UTF-8")
-  # uk = "%4.4x" % keyval
-# Gdk::Keyval.methods.sort
-  puts "FOOBARpressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
-  if name == "adiaeresis"
-  # Ripl.start :binding => binding
-  end
-  true
-  # https://docs.gtk.org/gtk4/signal.EventControllerKey.key-pressed.html
-    # GtkEventControllerKey* self,
-  # guint keyval,
-  # guint keycode,
-  # GdkModifierType state,
-  # gpointer user_data
+    name = Gdk::Keyval.to_name(keyval)
+    uki = Gdk::Keyval.to_unicode(keyval)
+    keystr = uki.chr("UTF-8")
+    puts "FOOBARpressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
 
+    if keystr == "q"
+      # Ripl.start :binding => binding
+    end
+    # vma.kbd.match_key_conf(keystr, nil, :key_press)
+    # buf.view.handle_deltas
+    buf.view.handle_key_event(keyval, keystr, :key_press)
+    true
   end
 
-  
+  press.signal_connect "modifiers" do |eventctr, modtype|
+  # eventctr: Gtk::EventControllerKey
+  # modtype: Gdk::ModifierType
+    debug "modifier change"
+    vma.kbd.modifiers[:ctrl] = modtype.control_mask?
+    vma.kbd.modifiers[:alt] = modtype.alt_mask?
+    vma.kbd.modifiers[:hyper] = modtype.hyper_mask?
+    vma.kbd.modifiers[:lock] = modtype.lock_mask?
+    vma.kbd.modifiers[:meta] = modtype.meta_mask?
+    vma.kbd.modifiers[:shift] = modtype.shift_mask?
+    vma.kbd.modifiers[:super] = modtype.super_mask?
 
+    #TODO:?
+    # button1_mask?
+    # ...
+    # button5_mask?
+    true
+  end
+
+  press.signal_connect "key-released" do |gesture, keyval, keycode, y|
+    name = Gdk::Keyval.to_name(keyval)
+    uki = Gdk::Keyval.to_unicode(keyval)
+    keystr = uki.chr("UTF-8")
+    puts "key released #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
+    buf.view.handle_key_event(keyval, keystr, :key_release)
+    # vma.kbd.match_key_conf(keystr, nil, :key_press)
+    # buf.view.handle_deltas
+    # buf.view.handle_key_event(keyval, keystr, :key_press)
+    true
+  end
 
   ssm = GtkSource::StyleSchemeManager.new
   ssm.set_search_path(ssm.search_path << ppath("styles/"))
@@ -280,7 +304,10 @@ class VMAgui
   def run
     init_window
     # init_rtext
-    # Gtk.main
+  end
+  
+  def quit
+    @window.destroy
   end
 
   def delay_scale()
@@ -423,6 +450,7 @@ class VMAgui
   end
 
   def add_to_minibuf(msg)
+    return #TODO:gtk4
     startiter = @minibuf.buffer.get_iter_at(:offset => 0)
     @minibuf.buffer.insert(startiter, "#{msg}\n")
     @minibuf.signal_emit("move-cursor", Gtk::MovementStep.new(:PAGES), -1, false)
@@ -557,12 +585,11 @@ class VMAgui
       @window = Gtk::Window.new()
       @window.set_application(app)
 
-
       #    sh = @window.screen.height #TODO:gtk4
       #    sw = @window.screen.width #TODO:gtk4
       # TODO:Maximise vertically
       #    @window.set_default_size((sw * 0.45).to_i, sh - 20) #TODO:gtk4
-         @window.set_default_size(800,600) #TODO:gtk4
+      @window.set_default_size(800, 600) #TODO:gtk4
 
       @window.title = "Multiple Views"
       #    @window.show_all #TODO:gtk4
@@ -570,17 +597,16 @@ class VMAgui
 
       @vbox = Gtk::Grid.new()
       @window.add(@vbox)
-      
+
       # @window.signal_connect("key-pressed") { puts "Hello World!" }
       # @window.signal_connect("clicked") { puts "Hello World!" }
-
 
       #    @menubar = Gtk::MenuBar.new #TODO:gtk4
       #    @menubar.expand = false #TODO:gtk4
 
       @sw = Gtk::ScrolledWindow.new
       @sw.set_policy(:automatic, :automatic)
-      
+
       # @sw.signal_connect("clicked") { puts "Hello World!" }
       # @sw.signal_connect("key-pressed") { puts "Hello World!" }
       @overlay = Gtk::Overlay.new
@@ -597,11 +623,11 @@ class VMAgui
       # TODO: should select color automatically from theme
       #    @statnfo.override_background_color(Gtk::StateFlags::NORMAL, "#353535") #TODO:gtk4
 
-         @vbox.attach(@sw, 0, 0, 1, 1) #TODO:gtk4
-                  @sw.vexpand = true #TODO:gtk4
-         @sw.hexpand = true #TODO:gtk4
+      @vbox.attach(@sw, 0, 0, 1, 1) #TODO:gtk4
+      @sw.vexpand = true #TODO:gtk4
+      @sw.hexpand = true #TODO:gtk4
 
-         # Ripl.start :binding => binding
+      # Ripl.start :binding => binding
 
       # column, row, width height
       #    @vbox.attach(@menubar, 0, 0, 1, 1) #TODO:gtk4
@@ -618,22 +644,19 @@ class VMAgui
       # Ripl.start :binding => binding
       # @window.show_all
       @window.show
-      
-        press = Gtk::GestureClick.new
-  press.button = Gdk::BUTTON_SECONDARY
-  @window.add_controller(press)
-  press.signal_connect "pressed" do |gesture, n_press, x, y|
-  puts "FOOBARpressed"
-    # clear_surface(surface)
-    # drawing_area.queue_draw
-  end
 
+      press = Gtk::GestureClick.new
+      press.button = Gdk::BUTTON_SECONDARY
+      @window.add_controller(press)
+      press.signal_connect "pressed" do |gesture, n_press, x, y|
+        puts "FOOBARpressed"
+        # clear_surface(surface)
+        # drawing_area.queue_draw
+      end
 
-  # Ripl.start :binding => binding
+      # Ripl.start :binding => binding
       vma.start
     end
-    
-    
 
     app.run
 

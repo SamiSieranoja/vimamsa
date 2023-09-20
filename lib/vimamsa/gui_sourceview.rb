@@ -73,7 +73,8 @@ class VSourceView < GtkSource::View
     @curpos_mark = nil
   end
 
-  def handle_key_event(event, sig)
+  # def handle_key_event(event, sig)
+  def handle_key_event(keyval, keyname, sig)
     if $update_cursor
       curpos = buffer.cursor_position
       debug "MOVE CURSOR: #{curpos}"
@@ -83,13 +84,14 @@ class VSourceView < GtkSource::View
     debug $view.visible_rect.inspect
 
     debug "key event"
-    debug event
+    # debug event
 
-    key_name = event.string
-    if event.state.control_mask?
-      key_name = Gdk::Keyval.to_name(event.keyval)
-      # Gdk::Keyval.to_name()
-    end
+    # key_name = event.string
+    #TODO:??
+    # if event.state.control_mask?
+    # key_name = Gdk::Keyval.to_name(event.keyval)
+    # Gdk::Keyval.to_name()
+    # end
 
     keyval_trans = {}
     keyval_trans[Gdk::Keyval::KEY_Control_L] = "ctrl"
@@ -120,29 +122,37 @@ class VSourceView < GtkSource::View
 
     key_trans = {}
     key_trans["\e"] = "esc"
-    tk = keyval_trans[event.keyval]
-    key_name = tk if !tk.nil?
+    tk = keyval_trans[keyval]
+    keyname = tk if !tk.nil?
 
     key_str_parts = []
-    key_str_parts << "ctrl" if event.state.control_mask? and key_name != "ctrl"
-    key_str_parts << "alt" if event.state.mod1_mask? and key_name != "alt"
-
-    key_str_parts << key_name
+    key_str_parts << "ctrl" if vma.kbd.modifiers[:ctrl]
+    key_str_parts << "alt" if vma.kbd.modifiers[:alt]
+    key_str_parts << "shift" if vma.kbd.modifiers[:shift]
+    key_str_parts << "meta" if vma.kbd.modifiers[:meta]
+    key_str_parts << "super" if vma.kbd.modifiers[:super]
+    key_str_parts << keyname
+    
+    if key_str_parts[0] == key_str_parts[1]
+      # We don't want "ctrl-ctrl" or "alt-alt"
+      # TODO:There should be a better way to do this
+      key_str_parts.delete_at(0)
+    end
     key_str = key_str_parts.join("-")
-    keynfo = { :key_str => key_str, :key_name => key_name, :keyval => event.keyval }
+    keynfo = { :key_str => key_str, :key_name => keyname, :keyval => keyval }
     debug keynfo.inspect
     # $kbd.match_key_conf(key_str, nil, :key_press)
     # debug "key_str=#{key_str} key_"
 
     if key_str != "" # or prefixed_key_str != ""
-      if sig == :key_release_event and event.keyval == @last_keyval
+      if sig == :key_release and keyval == @last_keyval
         $kbd.match_key_conf(key_str + "!", nil, :key_release)
-        @last_event = [event, :key_release]
-      elsif sig == :key_press_event
+        @last_event = [keynfo, :key_release]
+      elsif sig == :key_press
         $kbd.match_key_conf(key_str, nil, :key_press)
-        @last_event = [event, key_str, :key_press]
+        @last_event = [keynfo, key_str, :key_press]
       end
-      @last_keyval = event.keyval #TODO: outside if?
+      @last_keyval = keyval #TODO: outside if?
     end
 
     handle_deltas

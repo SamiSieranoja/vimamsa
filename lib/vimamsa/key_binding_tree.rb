@@ -53,7 +53,7 @@ class State
 end
 
 class KeyBindingTree
-  attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action
+  attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action, :modifiers
   attr_reader :mode_root_state, :state_trail, :act_bindings
 
   def initialize()
@@ -66,7 +66,7 @@ class KeyBindingTree
     @last_action = nil
     @cur_action = nil
 
-    @modifiers = [] # TODO: create a queue
+    @modifiers = {:ctrl =>false, :shift=>false, :alt=>false} # TODO: create a queue
     @last_event = [nil, nil, nil, nil, nil]
 
     @override_keyhandling_callback = nil
@@ -103,7 +103,7 @@ class KeyBindingTree
   end
 
   def clear_modifiers()
-    @modifiers = []
+    # @modifiers = [] #TODO:remove?
   end
 
   def find_state(key_name, eval_rule)
@@ -274,8 +274,7 @@ class KeyBindingTree
   # if yes, change state to child
   # if no, go back to root
   def match_key_conf(c, translated_c, event_type)
-    # $cur_key_dict = $key_bind_dict[$context[:mode]]
-    print "MATCH KEY CONF: #{[c, translated_c]}" if $debug
+    debug "MATCH KEY CONF: #{[c, translated_c]}"
 
     if !@override_keyhandling_callback.nil?
       ret = @override_keyhandling_callback.call(c, event_type)
@@ -333,7 +332,7 @@ class KeyBindingTree
     end
 
     if new_state == nil
-      printf("NO MATCH") if $debug
+      debug("NO MATCH")
       if event_type == :key_press and c != "shift"
         # TODO:include other modifiers in addition to shift?
         set_state_to_root

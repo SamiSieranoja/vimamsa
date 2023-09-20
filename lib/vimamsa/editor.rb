@@ -252,6 +252,7 @@ class Editor
   def shutdown()
     $hook.call(:shutdown)
     save_state
+    $vmag.quit
   end
 
   def save_state
@@ -300,7 +301,7 @@ end
 
 def _quit()
   vma.shutdown
-  Gtk.main_quit
+  # Gtk.main_quit
 end
 
 def fatal_error(msg)
@@ -516,20 +517,19 @@ def create_new_file(filename = nil, file_contents = "\n")
 end
 
 # def open_new_file(filename, file_contents = "")
-  # #TODO: expand path
-  # filename = File.expand_path(filename)
-  # b = vma.buffers.get_buffer_by_filename(filename)
-  # # File is already opened to existing buffer
-  # if b != nil
-    # message "Switching to: #{filename}"
-    # vma.buffers.set_current_buffer(b)
-  # else
-    # message "New file opened: #{filename}"
-    # fname = filename
-    # load_buffer(fname)
-  # end
+# #TODO: expand path
+# filename = File.expand_path(filename)
+# b = vma.buffers.get_buffer_by_filename(filename)
+# # File is already opened to existing buffer
+# if b != nil
+# message "Switching to: #{filename}"
+# vma.buffers.set_current_buffer(b)
+# else
+# message "New file opened: #{filename}"
+# fname = filename
+# load_buffer(fname)
 # end
-
+# end
 
 def filter_buffer(buf)
   i = 0
@@ -560,9 +560,6 @@ def load_buffer(fname)
   vma.buffers << buffer
   #$buffer_history << vma.buffers.size - 1
 end
-
-
-
 
 def jump_to_file(filename, linenum = nil, charn = nil)
   open_new_file(filename)
