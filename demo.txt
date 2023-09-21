@@ -1,4 +1,5 @@
 ❙Demo❙
+i
 
 s = "zzzzzzzzz\n"*300
 b = create_new_file(nil, s)

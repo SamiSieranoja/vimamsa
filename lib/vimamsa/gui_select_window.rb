@@ -1,4 +1,4 @@
-def gui_select_update_window(item_list, jump_keys, select_callback, update_callback, opt={})
+def gui_select_update_window(item_list, jump_keys, select_callback, update_callback, opt = {})
   $selup = SelectUpdateWindow.new(nil, item_list, jump_keys, select_callback, update_callback, opt)
   $selup.run
   # opt fields:
@@ -39,7 +39,7 @@ class SelectUpdateWindow
   end
 
   def initialize(main_window, item_list, jump_keys, select_callback, update_callback, opt = {})
-    @window = Gtk::Window.new(:toplevel)
+    @window = Gtk::Window.new()
     # @window.screen = main_window.screen
     @window.title = ""
     if !opt[:title].nil?
@@ -55,7 +55,9 @@ class SelectUpdateWindow
     # debug @update_callback_m.call("").inspect
 
     vbox = Gtk::Box.new(:vertical, 8)
-    vbox.margin = 8
+    vbox.margin_bottom = 8
+    vbox.margin_top = 8
+
     @window.add(vbox)
 
     @entry = Gtk::SearchEntry.new
@@ -74,24 +76,36 @@ class SelectUpdateWindow
     # item_list = @update_callback.call("")
     update_item_list(item_list)
 
-    @window.signal_connect("key-press-event") do |_widget, event|
-      # debug "KEYPRESS 1"
-      @entry.handle_event(event)
-    end
+    # @window.signal_connect("key-press-event") do |_widget, event| #TODO:gtk4
+    # debug "KEYPRESS 1"
+    # @entry.handle_event(event)
+    # end
 
-    @entry.signal_connect("key_press_event") do |widget, event|
-      # debug "KEYPRESS 2"
-      if event.keyval == Gdk::Keyval::KEY_Down
+    press = Gtk::EventControllerKey.new
+    # ectr = Gtk::EventController.new
+
+# Ripl.start :binding => binding
+
+    press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
+
+    # @entry.signal_handler_disconnect
+    @entry.add_controller(press)
+    # @window.add_controller(press)
+    press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
+      name = Gdk::Keyval.to_name(keyval)
+      uki = Gdk::Keyval.to_unicode(keyval)
+      keystr = uki.chr("UTF-8")
+      debug "keyval=#{keyval}"
+
+      if keyval == Gdk::Keyval::KEY_Down
         debug "DOWN"
         set_selected_row(@selected_row + 1)
-        # fixed = iter[COLUMN_FIXED]
-
         true
-      elsif event.keyval == Gdk::Keyval::KEY_Up
+      elsif keyval == Gdk::Keyval::KEY_Up
         set_selected_row(@selected_row - 1)
         debug "UP"
         true
-      elsif event.keyval == Gdk::Keyval::KEY_Return
+      elsif keyval == Gdk::Keyval::KEY_Return
         path = Gtk::TreePath.new(@selected_row.to_s)
         iter = @model.get_iter(path)
         ret = iter[1]
@@ -99,7 +113,7 @@ class SelectUpdateWindow
         @window.destroy
         # debug iter[1].inspect
         true
-      elsif event.keyval == Gdk::Keyval::KEY_Escape
+      elsif keyval == Gdk::Keyval::KEY_Escape
         @window.destroy
         true
       else
@@ -131,11 +145,12 @@ class SelectUpdateWindow
 
     vbox.pack_start(container, :expand => false, :fill => false, :padding => 0)
     sw = Gtk::ScrolledWindow.new(nil, nil)
-    sw.shadow_type = :etched_in
+    # sw.shadow_type = :etched_in #TODO:gtk4
     sw.set_policy(:never, :automatic)
-    vbox.pack_start(sw, :expand => true, :fill => true, :padding => 0)
+    vbox.pack_end(sw, :expand => true, :fill => true, :padding => 0)
 
-    sw.add(treeview)
+    # sw.add(treeview) #TODO:gtk4
+    sw.set_child(treeview)
 
     if !opt[:columns].nil?
       for col in opt[:columns]
@@ -168,7 +183,7 @@ class SelectUpdateWindow
 
   def run
     if !@window.visible?
-      @window.show_all
+      @window.show
       # add_spinner
     else
       @window.destroy

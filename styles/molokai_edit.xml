@@ -8,6 +8,8 @@
     </_description>
 
   <color name="heading"                       value="#CF6A4C"/>
+<style name="selection" foreground="#ffffff" background="#15539e"/>
+
     <style foreground="#AE81FF" name="def:boolean"/>
     <style foreground="#AE81FF" name="def:number"/>
     <style foreground="#E6DB74" name="def:string"/>

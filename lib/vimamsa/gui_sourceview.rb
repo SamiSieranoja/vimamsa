@@ -21,6 +21,9 @@ class VSourceView < GtkSource::View
     debug "vsource init"
     @last_keyval = nil
     @last_event = [nil, nil]
+    self.highlight_current_line=true
+    # Ripl.start :binding => binding
+
     #    self.drag_dest_add_image_targets #TODO:gtk4
     #    self.drag_dest_add_uri_targets #TODO:gtk4
 

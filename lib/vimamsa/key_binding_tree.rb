@@ -84,7 +84,6 @@ class KeyBindingTree
     set_mode(@default_mode)
   end
 
-  # $kbd.add_mode("I", :insert)
   def add_mode(id, label)
     mode = State.new(id)
     mode.level = 1
@@ -175,7 +174,7 @@ class KeyBindingTree
       end
     end
 
-    $view.draw_cursor()
+    $view.draw_cursor() #TODO: handle outside this class
   end
 
   def cur_mode_str()
@@ -201,8 +200,6 @@ class KeyBindingTree
     end
 
     @state_trail = [@mode_root_state]
-    # debug get_state_trail_str()
-    # $next_command_count = nil # TODO: set somewhere else?
   end
 
   # Print key bindings to show as documentation or for debugging

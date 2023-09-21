@@ -90,6 +90,16 @@ def page_down
 end
 
 def paste_system_clipboard()
+  # vma.gui.window.display.clipboard.read_text_finish(GLib::Type::STRING)
+
+  # vma.gui.window.display.clipboard.read_text_async { |x, y, z, h, w|
+    # puts x
+
+    # Ripl.start :binding => binding
+  # }
+  return "aa"
+
+  vma.gui.window.display.clipboard.set(arg)
   # clipboard = $vmag.window.get_clipboard(Gdk::Selection::CLIPBOARD)
   utf8_string = Gdk::Atom.intern("UTF8_STRING")
   # x = clipboard.request_contents(utf8_string)
@@ -123,12 +133,7 @@ def paste_system_clipboard()
 end
 
 def set_system_clipboard(arg)
-  # return if arg.class != String
-  # return if s.size < 1
-  # utf8_string = Gdk::Atom.intern("UTF8_STRING")
-  widget = Gtk::Invisible.new
-  clipboard = Gtk::Clipboard.get_default($vmag.window.display)
-  clipboard.text = arg
+  vma.gui.window.display.clipboard.set(arg)
 end
 
 def gui_create_buffer(id, bufo)
@@ -159,8 +164,8 @@ def gui_create_buffer(id, bufo)
   end
 
   press.signal_connect "modifiers" do |eventctr, modtype|
-  # eventctr: Gtk::EventControllerKey
-  # modtype: Gdk::ModifierType
+    # eventctr: Gtk::EventControllerKey
+    # modtype: Gdk::ModifierType
     debug "modifier change"
     vma.kbd.modifiers[:ctrl] = modtype.control_mask?
     vma.kbd.modifiers[:alt] = modtype.alt_mask?
@@ -305,7 +310,7 @@ class VMAgui
     init_window
     # init_rtext
   end
-  
+
   def quit
     @window.destroy
   end

@@ -12,7 +12,7 @@ class PopupFormGenerator
 
   def initialize(params = nil)
     @ret = {}
-    @window = Gtk::Window.new(:toplevel)
+    @window = Gtk::Window.new()
     # @window.screen = main_window.screen
     # @window.title = title
     # params = {}
@@ -26,21 +26,31 @@ class PopupFormGenerator
     @window.title = ""
 
     frame = Gtk::Frame.new()
-    frame.margin = 8
-    @window.add(frame)
+    frame.margin_bottom = 8
+    frame.margin_top = 8
+    frame.margin_end = 8
+    frame.margin_start = 8
+
+    @window.set_child(frame)
 
     # @window.title = params["title"]
 
     # @callback = params["callback"]
 
     vbox = Gtk::Box.new(:vertical, 8)
-    vbox.margin = 8
-    frame.add(vbox)
+    vbox.margin_bottom = 8
+    vbox.margin_top = 8
+    vbox.margin_end = 8
+    vbox.margin_start = 8
+
+    frame.set_child(vbox)
 
     if params.has_key?("title")
       infolabel = Gtk::Label.new
       infolabel.markup = params["title"]
-      vbox.pack_start(infolabel, :expand => false, :fill => false, :padding => 0)
+      #TODO:gtk4
+      # vbox.pack_start(infolabel, :expand => false, :fill => false, :padding => 0)
+      vbox.prepend(infolabel, :expand => false, :fill => false, :padding => 0)
     end
 
     hbox = Gtk::Box.new(:horizontal, 8)
@@ -68,11 +78,14 @@ class PopupFormGenerator
         hbox.pack_start(entry, :expand => false, :fill => false, :padding => 0)
         @vals[id] = entry
 
-        entry.signal_connect("key_press_event") do |widget, event|
-          if event.keyval == Gdk::Keyval::KEY_Return
+        press = Gtk::EventControllerKey.new
+        press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
+        entry.add_controller(press)
+        press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
+          if keyval == Gdk::Keyval::KEY_Return
             submit
             true
-          elsif event.keyval == Gdk::Keyval::KEY_Escape
+          elsif keyval == Gdk::Keyval::KEY_Escape
             @window.destroy
             true
           else
@@ -95,7 +108,7 @@ class PopupFormGenerator
 
   def run
     if !@window.visible?
-      @window.show_all
+      @window.show
     else
       @window.destroy
     end
@@ -109,4 +122,3 @@ class PopupFormGenerator
     @window
   end
 end
-
