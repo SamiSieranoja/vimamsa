@@ -74,7 +74,6 @@ def search_actions_update_callback(search_str = "")
       end
     end
     # c_kbd = vma.kbd.act_bindings[mode_str][nfo[:action]]
-    # Ripl.start :binding => binding
     item[:action] = act_id
     item[:str] = act_id.to_s
     if $actions[act_id].method_name != ""

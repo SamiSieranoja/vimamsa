@@ -22,7 +22,6 @@ class VSourceView < GtkSource::View
     @last_keyval = nil
     @last_event = [nil, nil]
     self.highlight_current_line = true
-    # Ripl.start :binding => binding
 
     #    self.drag_dest_add_image_targets #TODO:gtk4
     #    self.drag_dest_add_uri_targets #TODO:gtk4
@@ -185,7 +184,6 @@ class VSourceView < GtkSource::View
     # buffer_to_window_coords(Gtk::TextWindowType::TEXT, iterxy.x, iterxy.y).inspect
     # debug buffer_to_window_coords(Gtk::TextWindowType::TEXT, x, y).inspect
     (x, y) = buffer_to_window_coords(Gtk::TextWindowType::TEXT, x, y)
-    # Ripl.start :binding => binding
 
     return [x, y]
   end
@@ -254,7 +252,6 @@ class VSourceView < GtkSource::View
     # scroll_to_iter(itr, within_margin, use_align, xalign, yalign)
 
     # $view.signal_emit("extend-selection", Gtk::TextExtendSelection.new, itr,itr,itr2)
-    # Ripl.start :binding => binding
     draw_cursor
 
     return true
@@ -300,9 +297,6 @@ class VSourceView < GtkSource::View
     if intr.nil?
       debug iterxy.inspect
       debug vr.inspect
-      # Ripl.start :binding => binding
-
-      # exit!
       return false
     else
       return true

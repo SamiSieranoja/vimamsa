@@ -82,13 +82,8 @@ class SelectUpdateWindow
     # end
 
     press = Gtk::EventControllerKey.new
-    # ectr = Gtk::EventController.new
-
-# Ripl.start :binding => binding
-
     press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
 
-    # @entry.signal_handler_disconnect
     @entry.add_controller(press)
     # @window.add_controller(press)
     press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|

@@ -22,6 +22,7 @@ class PopupFormGenerator
     # params["inputs"]["btn1"] = { :label => "Replace all", :type => :button }
     # params[:callback] = proc { |x| puts "====="; puts x.inspect; puts "=====" }
 
+
     @callback = params[:callback]
     @window.title = ""
 
@@ -50,7 +51,7 @@ class PopupFormGenerator
       infolabel.markup = params["title"]
       #TODO:gtk4
       # vbox.pack_start(infolabel, :expand => false, :fill => false, :padding => 0)
-      vbox.prepend(infolabel, :expand => false, :fill => false, :padding => 0)
+      vbox.pack_end(infolabel, :expand => false, :fill => false, :padding => 0)
     end
 
     hbox = Gtk::Box.new(:horizontal, 8)
@@ -60,7 +61,7 @@ class PopupFormGenerator
     for id, elem in params["inputs"]
       if elem[:type] == :button
         button = Gtk::Button.new(:label => elem[:label])
-        hbox.pack_start(button, :expand => false, :fill => false, :padding => 0)
+        hbox.pack_end(button, :expand => false, :fill => false, :padding => 0)
         if elem[:default_focus] == true
           @default_button = button
         end
@@ -74,8 +75,8 @@ class PopupFormGenerator
         if elem.has_key?(:initial_text)
           entry.text = elem[:initial_text]
         end
-        hbox.pack_start(label, :expand => false, :fill => false, :padding => 0)
-        hbox.pack_start(entry, :expand => false, :fill => false, :padding => 0)
+        hbox.pack_end(label, :expand => false, :fill => false, :padding => 0)
+        hbox.pack_end(entry, :expand => false, :fill => false, :padding => 0)
         @vals[id] = entry
 
         press = Gtk::EventControllerKey.new
@@ -95,13 +96,13 @@ class PopupFormGenerator
       end
     end
 
-    vbox.pack_start(hbox, :expand => false, :fill => false, :padding => 0)
+    vbox.pack_end(hbox, :expand => false, :fill => false, :padding => 0)
 
     cancel_button = Gtk::Button.new(:label => "Cancel")
     cancel_button.signal_connect "clicked" do
       @window.destroy
     end
-    hbox.pack_start(cancel_button, :expand => false, :fill => false, :padding => 0)
+    hbox.pack_end(cancel_button, :expand => false, :fill => false, :padding => 0)
     @cancel_button = cancel_button
     return
   end
@@ -113,10 +114,7 @@ class PopupFormGenerator
       @window.destroy
     end
     if !@default_button.nil?
-      # @default_button.grab_focus
-      # @default_button.set_has_focus(true)
-      # @default_button.has_focus = true
-      @default_button.focus = true
+      @default_button.grab_focus
     end
     @window.set_focus_visible(true)
     @window

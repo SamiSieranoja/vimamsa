@@ -99,9 +99,9 @@ def grep_cur_buffer(search_str, b = nil)
   }
 end
 
-def invoke_grep_search()
-  start_minibuffer_cmd("", "", :grep_cur_buffer)
-end
+# def invoke_grep_search()
+# start_minibuffer_cmd("", "", :grep_cur_buffer)
+# end
 
 def gui_one_input_action(title, field_label, button_title, callback, opt = {})
   a = OneInputAction.new(nil, title, field_label, button_title, callback, opt)
@@ -168,29 +168,48 @@ def buf_replace_string(instr)
   buf_replace(a[0], a[1])
 end
 
+module Gtk
+  class Frame
+    def margin=(a)
+      self.margin_bottom = a
+      self.margin_top = a
+      self.margin_end = a
+      self.margin_start = a
+    end
+  end
+
+  class Box
+    def margin=(a)
+      self.margin_bottom = a
+      self.margin_top = a
+      self.margin_end = a
+      self.margin_start = a
+    end
+  end
+end
 
 class OneInputAction
   def initialize(main_window, title, field_label, button_title, callback, opt = {})
-    @window = Gtk::Window.new(:toplevel)
+    @window = Gtk::Window.new()
     # @window.screen = main_window.screen
     # @window.title = title
     @window.title = ""
 
     frame = Gtk::Frame.new()
-    frame.margin = 8
-    @window.add(frame)
+    # frame.margin = 20
+    @window.set_child(frame)
 
     infolabel = Gtk::Label.new
     infolabel.markup = title
 
     vbox = Gtk::Box.new(:vertical, 8)
-    vbox.margin = 8
-    frame.add(vbox)
+    vbox.margin = 10
+    frame.set_child(vbox)
 
     hbox = Gtk::Box.new(:horizontal, 8)
     # @window.add(hbox)
-    vbox.pack_start(infolabel, :expand => false, :fill => false, :padding => 0)
-    vbox.pack_start(hbox, :expand => false, :fill => false, :padding => 0)
+    vbox.pack_end(infolabel, :expand => false, :fill => false, :padding => 0)
+    vbox.pack_end(hbox, :expand => false, :fill => false, :padding => 0)
 
     button = Gtk::Button.new(:label => button_title)
     cancel_button = Gtk::Button.new(:label => "Cancel")
@@ -212,12 +231,15 @@ class OneInputAction
       @window.destroy
     end
 
-    @entry1.signal_connect("key_press_event") do |widget, event|
-      if event.keyval == Gdk::Keyval::KEY_Return
+    press = Gtk::EventControllerKey.new
+    press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
+    @window.add_controller(press)
+    press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
+      if keyval == Gdk::Keyval::KEY_Return
         callback.call(@entry1.text)
         @window.destroy
         true
-      elsif event.keyval == Gdk::Keyval::KEY_Escape
+      elsif keyval == Gdk::Keyval::KEY_Escape
         @window.destroy
         true
       else
@@ -225,16 +247,16 @@ class OneInputAction
       end
     end
 
-    hbox.pack_start(label, :expand => false, :fill => false, :padding => 0)
-    hbox.pack_start(@entry1, :expand => false, :fill => false, :padding => 0)
-    hbox.pack_start(button, :expand => false, :fill => false, :padding => 0)
-    hbox.pack_start(cancel_button, :expand => false, :fill => false, :padding => 0)
+    hbox.pack_end(label, :expand => false, :fill => false, :padding => 0)
+    hbox.pack_end(@entry1, :expand => false, :fill => false, :padding => 0)
+    hbox.pack_end(button, :expand => false, :fill => false, :padding => 0)
+    hbox.pack_end(cancel_button, :expand => false, :fill => false, :padding => 0)
     return
   end
 
   def run
     if !@window.visible?
-      @window.show_all
+      @window.show
     else
       @window.destroy
     end

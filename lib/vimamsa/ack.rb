@@ -80,7 +80,6 @@ Will search all .txt files in the following directories:
           jump_to_file(lp[:fname], lp[:ind], "c")
         end
       end
-      # Ripl.start :binding => binding
 
       # jumpto = $grep_matches[lineno]
       # if jumpto.class == Integer

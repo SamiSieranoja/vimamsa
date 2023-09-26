@@ -54,7 +54,6 @@ class BufferManager
       buf_i = vma.buffers.get_buffer_by_id(@@cur.buf.id)
       vma.buffers.close_buffer(buf_i)
     end
-    # Ripl.start :binding => binding
     @@cur = self
     @header = []
     @header << "Current buffers:"

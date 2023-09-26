@@ -3,40 +3,54 @@ $idle_scroll_to_mark = false
 def gui_open_file_dialog(dirpath)
   dialog = Gtk::FileChooserDialog.new(:title => "Open file",
                                       :action => :open,
-                                      :buttons => [[Gtk::Stock::OPEN, :accept],
-                                                   [Gtk::Stock::CANCEL, :cancel]])
-  dialog.set_current_folder(dirpath)
+                                      :buttons => [["Open", :accept],
+                                                   ["Cancel", :cancel]])
+  dialog.set_current_folder(Gio::File.new_for_path(dirpath))
+  # dialog.set_current_folder(Gio::File.new_for_path("/tmp"))
+  
 
   dialog.signal_connect("response") do |dialog, response_id|
     if response_id == Gtk::ResponseType::ACCEPT
-      open_new_file(dialog.filename)
-      # debug "uri = #{dialog.uri}"
+    
+      open_new_file(dialog.file.parse_name)
     end
     dialog.destroy
   end
-  dialog.run
+  
+  dialog.modal=true
+  dialog.show
 end
 
 def gui_file_saveas(dirpath)
   dialog = Gtk::FileChooserDialog.new(:title => "Save as",
                                       :action => :save,
-                                      :buttons => [[Gtk::Stock::SAVE, :accept],
-                                                   [Gtk::Stock::CANCEL, :cancel]])
-  dialog.set_current_folder(dirpath)
+                                      # :buttons => [[Gtk::Stock::SAVE, :accept],
+                                                   # [Gtk::Stock::CANCEL, :cancel]]
+                                       :buttons => [["Save", :accept],
+                                                   ["Cancel", :cancel]]
+                                                   #TODO:gtk4
+                                                  
+                                                   )
+  # dialog.set_current_folder(dirpath) #TODO:gtk4
   dialog.signal_connect("response") do |dialog, response_id|
     if response_id == Gtk::ResponseType::ACCEPT
-      file_saveas(dialog.filename)
+
+	  # dialog.file.uri
+      file_saveas(dialog.file.parse_name)
     end
     dialog.destroy
   end
 
-  dialog.run
+  dialog.modal=true
+  dialog.show
+  # dialog.run
+  # 'Gtk::Dialog#run' has been deprecated. Use Gtk::Window#set_modal and 'response' signal instead.>
+
 end
 
 def idle_func
   # debug "IDLEFUNC"
   if $idle_scroll_to_mark
-    # Ripl.start :binding => binding
     # $view.get_visible_rect
     vr = $view.visible_rect
 
@@ -46,7 +60,6 @@ def idle_func
     iter = b.get_iter_at(:offset => b.cursor_position)
     iterxy = $view.get_iter_location(iter)
     # debug "ITERXY" + iterxy.inspect
-    # Ripl.start :binding => binding
 
     intr = iterxy.intersect(vr)
     if intr.nil?
@@ -128,6 +141,8 @@ def gui_create_buffer(id, bufo)
 
   # press = Gtk::GestureClick.new
   press = Gtk::EventControllerKey.new
+  # to prevent SourceView key handler capturing any keypresses
+  press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
 
   # press.button = Gdk::BUTTON_SECONDARY
   view.add_controller(press)
@@ -137,13 +152,7 @@ def gui_create_buffer(id, bufo)
     name = Gdk::Keyval.to_name(keyval)
     uki = Gdk::Keyval.to_unicode(keyval)
     keystr = uki.chr("UTF-8")
-    puts "FOOBARpressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
-
-    if keystr == "q"
-      # Ripl.start :binding => binding
-    end
-    # vma.kbd.match_key_conf(keystr, nil, :key_press)
-    # buf.view.handle_deltas
+    puts "key-pressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
     buf.view.handle_key_event(keyval, keystr, :key_press)
     true
   end
@@ -236,7 +245,6 @@ def gui_set_current_buffer(id)
   $vbuf = buf1
 
   if !$vmag.sw.child.nil?
-    # Ripl.start :binding => binding
     #  $vmag.sw.remove($vmag.sw.child)  #TODO:gtk4
   end
 
@@ -320,7 +328,6 @@ class VMAgui
 
     $gcrw = 0
     vma.gui.window.signal_connect "configure-event" do |widget, cr|
-      # Ripl.start :binding => binding
 
       if $gcrw != cr.width
         @delex.run
@@ -475,7 +482,6 @@ class VMAgui
     view.style_context.add_provider(provider)
     view.wrap_mode = :char
     @minibuf = view
-    # Ripl.start :binding => binding
     # startiter = view.buffer.get_iter_at(:offset => 0)
     message("STARTUP")
     sw.add(view)
@@ -617,8 +623,6 @@ class VMAgui
       @sw.vexpand = true #TODO:gtk4
       @sw.hexpand = true #TODO:gtk4
 
-      # Ripl.start :binding => binding
-
       # column, row, width height
       #    @vbox.attach(@menubar, 0, 0, 1, 1) #TODO:gtk4
       #    @vbox.attach(@statnfo, 1, 0, 1, 1) #TODO:gtk4
@@ -631,7 +635,6 @@ class VMAgui
 
       # init_minibuffer
 
-      # Ripl.start :binding => binding
       # @window.show_all
       @window.show
 
@@ -644,7 +647,6 @@ class VMAgui
         # drawing_area.queue_draw
       end
 
-      # Ripl.start :binding => binding
       vma.start
     end
 

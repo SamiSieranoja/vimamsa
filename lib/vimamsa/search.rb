@@ -54,7 +54,6 @@ class Search
     if startpos != nil
       @cur_search_i = @search_indexes.find_index(startpos)
     end
-    # Ripl.start :binding => binding
   end
 
   def jump_to_next()

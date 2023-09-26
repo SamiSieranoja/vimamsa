@@ -52,7 +52,6 @@ class Macro
   end
 
   def find_macro_gui()
-    # Ripl.start :binding => binding
 
     l = $macro.named_macros.keys.sort.collect { |x| [x, 0] }
     $macro_search_list = l
@@ -131,7 +130,6 @@ class Macro
     if acts.kind_of?(Array) and acts.any?
       set_last_command({ method: $macro.method("run_macro"), params: [name] })
       #
-      # Ripl.start :binding => binding
       for a in acts
         ret = exec_action(a)
         debug ret
