@@ -24,11 +24,8 @@ end
 def gui_file_saveas(dirpath)
   dialog = Gtk::FileChooserDialog.new(:title => "Save as",
                                       :action => :save,
-                                      # :buttons => [[Gtk::Stock::SAVE, :accept],
-                                                   # [Gtk::Stock::CANCEL, :cancel]]
                                        :buttons => [["Save", :accept],
                                                    ["Cancel", :cancel]]
-                                                   #TODO:gtk4
                                                   
                                                    )
   # dialog.set_current_folder(dirpath) #TODO:gtk4
@@ -342,12 +339,14 @@ class VMAgui
   def start_overlay_draw()
     @da = Gtk::Fixed.new
     @overlay.add_overlay(@da)
-    @overlay.set_overlay_pass_through(@da, true)
+
+    # @overlay.set_overlay_pass_through(@da, true) #TODO:gtk4
   end
 
   def clear_overlay()
     if @da != nil
-      @overlay.remove(@da)
+      # @overlay.remove(@da)
+      @overlay.remove_overlay(@da)
     end
   end
 
@@ -361,7 +360,7 @@ class VMAgui
   end
 
   def end_overlay_draw()
-    @da.show_all
+    @da.show
   end
 
   def toggle_overlay
@@ -426,7 +425,7 @@ class VMAgui
 
     # debug @view.pos_to_coord(300).inspect
 
-    @da.show_all
+    @da.show
   end
 
   def handle_deltas()
@@ -588,7 +587,6 @@ class VMAgui
       @window.set_default_size(800, 600) #TODO:gtk4
 
       @window.title = "Multiple Views"
-      #    @window.show_all #TODO:gtk4
       @vpaned = Gtk::Paned.new(:vertical)
 
       @vbox = Gtk::Grid.new()
@@ -606,7 +604,8 @@ class VMAgui
       # @sw.signal_connect("clicked") { puts "Hello World!" }
       # @sw.signal_connect("key-pressed") { puts "Hello World!" }
       @overlay = Gtk::Overlay.new
-      #    @overlay.add(@sw) #TODO:gtk4
+      # @overlay.add(@sw) #TODO:gtk4
+      @overlay.add_overlay(@sw) #TODO:gtk4
 
       #    init_header_bar #TODO:gtk4
 
@@ -619,16 +618,19 @@ class VMAgui
       # TODO: should select color automatically from theme
       #    @statnfo.override_background_color(Gtk::StateFlags::NORMAL, "#353535") #TODO:gtk4
 
-      @vbox.attach(@sw, 0, 0, 1, 1) #TODO:gtk4
+      # @vbox.attach(@sw, 0, 0, 1, 1) #TODO:gtk4
+      @vbox.attach(@overlay, 0, 0, 1, 1) #TODO:gtk4
       @sw.vexpand = true #TODO:gtk4
       @sw.hexpand = true #TODO:gtk4
+      
+
 
       # column, row, width height
       #    @vbox.attach(@menubar, 0, 0, 1, 1) #TODO:gtk4
       #    @vbox.attach(@statnfo, 1, 0, 1, 1) #TODO:gtk4
       #    @vbox.attach(@overlay, 0, 1, 2, 1) #TODO:gtk4
-      #    @overlay.vexpand = true #TODO:gtk4
-      #    @overlay.hexpand = true #TODO:gtk4
+         @overlay.vexpand = true #TODO:gtk4
+         @overlay.hexpand = true #TODO:gtk4
 
       #    @menubar.vexpand = false #TODO:gtk4
       #    @menubar.hexpand = false #TODO:gtk4

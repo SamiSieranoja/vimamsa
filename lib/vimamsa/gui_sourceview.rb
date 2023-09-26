@@ -174,7 +174,9 @@ class VSourceView < GtkSource::View
     b = buffer
     iter = b.get_iter_at(:offset => i)
     iterxy = get_iter_location(iter)
-    winw = parent_window.width
+    # winw = parent_window.width #TODO:gtk4
+    winw = width #TODO
+
     view_width = visible_rect.width
     gutter_width = winw - view_width
 
