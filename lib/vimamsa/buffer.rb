@@ -931,7 +931,7 @@ class Buffer < String
     #need_redraw!
   end
 
-  def delete_range(startpos, endpos, x=nil)
+  def delete_range(startpos, endpos, x = nil)
     s = self[startpos..endpos]
     if startpos == endpos or s == ""
       return
@@ -1400,13 +1400,12 @@ class Buffer < String
     add_delta([pos, INSERT, c.size, c], true)
     calculate_line_and_column_pos
   end
-  
+
   def append(c)
     pos = self.size - 1
     add_delta([pos, INSERT, c.size, c], true)
     calculate_line_and_column_pos
   end
- 
 
   def execute_current_line_in_terminal(autoclose = false)
     s = get_current_line
@@ -1512,21 +1511,24 @@ class Buffer < String
     set_pos(l.end + 1)
   end
 
-  def paste(at = AFTER, register = nil)
-    # Paste after current char. Except if at end of line, paste before end of line.
-    text = ""
-    if register.nil?
-      text = paste_system_clipboard
+  # Start asynchronous read of system clipboard
+  def paste_start(at, register)
+    clipboard = vma.gui.window.display.clipboard
+    clipboard.read_text_async do |_clipboard, result|
+      text = clipboard.read_text_finish(result)
+      paste_finish(text, at, register)
     end
+  end
 
-    if text == ""
-      return if !$clipboard.any?
-      if register == nil
-        text = $clipboard[-1]
-      else
-        text = $register[register]
-      end
-    end
+  def paste_finish(text, at, register)
+    # if text == ""
+      # return if !$clipboard.any?
+      # if register == nil
+        # text = $clipboard[-1]
+      # else
+        # text = $register[register]
+      # end
+    # end
     debug "PASTE: #{text}"
 
     return if text == ""
@@ -1544,9 +1546,23 @@ class Buffer < String
       set_pos(pos + text.size)
     end
     set_pos(@pos)
-    #TODO: AFTER does not work
-    #insert_txt($clipboard[-1],AFTER)
-    #recalc_line_ends #TODO: bug when run twice?
+  end
+
+  def paste(at = AFTER, register = nil)
+    paste_start(at,register)
+    #TODO:
+    # if register.nil?
+      # text = paste_system_clipboard
+    # end
+
+    # if text == ""
+      # return if !$clipboard.any?
+      # if register == nil
+        # text = $clipboard[-1]
+      # else
+        # text = $register[register]
+      # end
+    # end
   end
 
   def delete_line()
@@ -1823,13 +1839,12 @@ class Buffer < String
 
     message("Auto format #{@fname}")
 
-	ftype = get_file_type()
+    ftype = get_file_type()
     if ["chdr", "c", "cpp", "cpphdr"].include?(ftype)
 
       #C/C++/Java/JavaScript/Objective-C/Protobuf code
       system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")
       bufc = IO.read(infile.path)
-
     elsif ftype == "Javascript"
       cmd = "clang-format #{file.path} > #{infile.path}'"
       debug cmd

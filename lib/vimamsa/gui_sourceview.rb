@@ -21,7 +21,7 @@ class VSourceView < GtkSource::View
     debug "vsource init"
     @last_keyval = nil
     @last_event = [nil, nil]
-    self.highlight_current_line=true
+    self.highlight_current_line = true
     # Ripl.start :binding => binding
 
     #    self.drag_dest_add_image_targets #TODO:gtk4
@@ -135,12 +135,18 @@ class VSourceView < GtkSource::View
     key_str_parts << "meta" if vma.kbd.modifiers[:meta]
     key_str_parts << "super" if vma.kbd.modifiers[:super]
     key_str_parts << keyname
-    
+
     if key_str_parts[0] == key_str_parts[1]
       # We don't want "ctrl-ctrl" or "alt-alt"
       # TODO:There should be a better way to do this
       key_str_parts.delete_at(0)
     end
+    
+    if key_str_parts[0] == "shift" and key_str_parts[1].class == String
+      #"shift-P" to just "P"
+      key_str_parts.delete_at(0) if key_str_parts[1].match(/^[[:upper:]]$/)
+    end
+
     key_str = key_str_parts.join("-")
     keynfo = { :key_str => key_str, :key_name => keyname, :keyval => keyval }
     debug keynfo.inspect

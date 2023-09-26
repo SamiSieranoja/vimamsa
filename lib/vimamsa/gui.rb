@@ -90,31 +90,16 @@ def page_down
 end
 
 def paste_system_clipboard()
-  # vma.gui.window.display.clipboard.read_text_finish(GLib::Type::STRING)
 
-  # vma.gui.window.display.clipboard.read_text_async { |x, y, z, h, w|
-    # puts x
-
-    # Ripl.start :binding => binding
-  # }
-  return "aa"
-
-  vma.gui.window.display.clipboard.set(arg)
-  # clipboard = $vmag.window.get_clipboard(Gdk::Selection::CLIPBOARD)
+  #TODO: Check if something useful in this old GTK3 code.
   utf8_string = Gdk::Atom.intern("UTF8_STRING")
-  # x = clipboard.request_contents(utf8_string)
 
-  widget = Gtk::Invisible.new
   clipboard = Gtk::Clipboard.get_default($vmag.window.display)
   received_text = ""
 
   target_string = Gdk::Selection::TARGET_STRING
   ti = clipboard.request_contents(target_string)
 
-  # clipboard.request_contents(target_string) do |_clipboard, selection_data|
-  # received_text = selection_data.text
-  # debug "received_text=#{received_text}"
-  # end
   if clipboard.wait_is_text_available?
     received_text = clipboard.wait_for_text
   end
