@@ -51,6 +51,8 @@ reg_act(:jump_to_random, proc { buf.jump_to_random_pos }, "")
 reg_act(:insert_new_line, proc { buf.insert_new_line() }, "")
 reg_act(:show_key_bindings, proc { show_key_bindings }, "Show key bindings")
 reg_act(:put_file_path_to_clipboard, proc { buf.put_file_path_to_clipboard }, "Put file path of current file to clipboard")
+reg_act(:put_file_ref_to_clipboard, proc { buf.put_file_ref_to_clipboard }, "Put file ref of current file to clipboard")
+
 # reg_act(:encrypt_file, proc{buf.set_encrypted},"Set current file to encrypt on save")
 reg_act(:encrypt_file, proc { encrypt_cur_buffer }, "Set current file to encrypt on save")
 reg_act(:set_unencrypted, proc { buf.set_unencrypted }, "Set current file to save unencrypted")

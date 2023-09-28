@@ -16,7 +16,7 @@ class Buffer < String
 
   #attr_reader (:pos, :cpos, :lpos)
 
-  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images
+  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images, :last_save
   attr_writer :call_func, :update_highlight
   attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle
 
@@ -35,6 +35,7 @@ class Buffer < String
 
     @module = nil
 
+    @last_save = Time.now
     @crypt = nil
     @update_highlight = true
     @syntax_detect_failed = false
@@ -428,7 +429,7 @@ class Buffer < String
 
   def run_delta(delta, auto_update_cpos = false)
     # auto_update_cpos: In some cases position of cursor should be updated automatically based on change to buffer (delta). In other cases this is handled by the action that creates the delta.
-
+    
     if $experimental
       @bt.handle_delta(Delta.new(delta[0], delta[1], delta[2], delta[3]))
     end
@@ -1680,6 +1681,11 @@ class Buffer < String
   def put_file_path_to_clipboard
     set_clipboard(self.fname)
   end
+  
+  def put_file_ref_to_clipboard
+    set_clipboard(self.fname+":#{@lpos}")
+  end
+ 
 
   def delete_active_selection() #TODO: remove this function
     return if !@visual_mode #TODO: this should not happen
@@ -1816,6 +1822,8 @@ class Buffer < String
         message("File #{fpath} not writeable")
         #TODO: show message box
       end
+      @last_save = Time.now
+      puts "file saved on #{@last_save}"
       sleep 3
     }
   end

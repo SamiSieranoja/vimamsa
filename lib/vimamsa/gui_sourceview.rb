@@ -143,7 +143,8 @@ class VSourceView < GtkSource::View
     
     if key_str_parts[0] == "shift" and key_str_parts[1].class == String
       #"shift-P" to just "P"
-      key_str_parts.delete_at(0) if key_str_parts[1].match(/^[[:upper:]]$/)
+      # key_str_parts.delete_at(0) if key_str_parts[1].match(/^[[:upper:]]$/)
+      key_str_parts.delete_at(0)
     end
 
     key_str = key_str_parts.join("-")
