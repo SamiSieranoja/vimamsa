@@ -74,7 +74,8 @@ module Vimamsa
     end
 
     def build_menu(nfo, parent)
-      menu = Gtk::Menu.new
+      # menu = Gtk::Menu.new
+      menu = Gtk::PopoverMenu.new
       if nfo[:action]
         kbd_str = ""
         for mode_str in ["C", "V"]

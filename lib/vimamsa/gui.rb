@@ -395,7 +395,7 @@ class VMAgui
   end
 
   def add_to_minibuf(msg)
-    return #TODO:gtk4
+    # return #TODO:gtk4
     startiter = @minibuf.buffer.get_iter_at(:offset => 0)
     @minibuf.buffer.insert(startiter, "#{msg}\n")
     @minibuf.signal_emit("move-cursor", Gtk::MovementStep.new(:PAGES), -1, false)
@@ -406,12 +406,8 @@ class VMAgui
     sw = Gtk::ScrolledWindow.new
     sw.set_policy(:automatic, :automatic)
     overlay = Gtk::Overlay.new
-    #    overlay.add(sw) #TODO:gtk4
-    # @vpaned.pack2(overlay, :resize => false)
-    #    @vbox.attach(overlay, 0, 2, 2, 1) #TODO:gtk4
-    # overlay.set_size_request(-1, 50)
-    # $ovrl = overlay
-    # $ovrl.set_size_request(-1, 30)
+    overlay.set_child(sw) #TODO:gtk4
+    @vbox.attach(overlay, 0, 2, 2, 1) #TODO:gtk4
     $sw2 = sw
     sw.set_size_request(-1, 12)
 
@@ -426,21 +422,21 @@ class VMAgui
     view.buffer.style_scheme = sty
     provider = Gtk::CssProvider.new
     # provider.load(data: "textview { font-family: Monospace; font-size: 11pt; }")
-    provider.load(data: "textview { font-family: Arial; font-size: 10pt; color:#ff0000}")
+    provider.load(data: "textview { font-family: Arial; font-size: 10pt; color:#eeeeee}")
     view.style_context.add_provider(provider)
     view.wrap_mode = :char
     @minibuf = view
     # startiter = view.buffer.get_iter_at(:offset => 0)
     message("STARTUP")
-    sw.add(view)
+    sw.set_child(view)
   end
 
   def init_header_bar()
     header = Gtk::HeaderBar.new
     @header = header
     header.show_close_button = true
-    header.title = ""
-    header.has_subtitle = true
+    # header.title = ""#TODO:gtk4
+    # header.has_subtitle = true#TODO:gtk4
     header.subtitle = ""
 
     # icon = Gio::ThemedIcon.new("mail-send-receive-symbolic")
@@ -521,7 +517,7 @@ class VMAgui
   end
 
   def init_window
-    app = Gtk::Application.new("org.gtk.example", :flags_none)
+    app = Gtk::Application.new("net.samiddhi.vimamsa", :flags_none)
 
     app.signal_connect "activate" do
 
@@ -590,7 +586,7 @@ class VMAgui
       # @window.signal_connect("key-pressed") { puts "Hello World!" }
       # @window.signal_connect("clicked") { puts "Hello World!" }
 
-      #    @menubar = Gtk::MenuBar.new #TODO:gtk4
+      # @menubar = Gtk::PopoverMenuBar.new #TODO:gtk4
       #    @menubar.expand = false #TODO:gtk4
 
       @sw = Gtk::ScrolledWindow.new
@@ -602,11 +598,11 @@ class VMAgui
       # @overlay.add(@sw) #TODO:gtk4
       @overlay.add_overlay(@sw) #TODO:gtk4
 
-      #    init_header_bar #TODO:gtk4
+      # init_header_bar #TODO:gtk4
 
       @statnfo = Gtk::Label.new
       provider = Gtk::CssProvider.new
-      provider.load(data: "textview {   background-color:#353535; font-family: Monospace; font-size: 10pt; margin-top:4px;}")
+      provider.load(data: "textview {   background-color:#353535; font-family: Monospace; font-size: 10pt; margin-top:4px; align:right;}")
       @statnfo.style_context.add_provider(provider)
 
       # Deprecated, but found no other way to do it. css doesn't work.
@@ -614,13 +610,17 @@ class VMAgui
       #    @statnfo.override_background_color(Gtk::StateFlags::NORMAL, "#353535") #TODO:gtk4
 
       # @vbox.attach(@sw, 0, 0, 1, 1) #TODO:gtk4
-      @vbox.attach(@overlay, 0, 0, 1, 1) #TODO:gtk4
+
+      # numbers: left, top, width, height
+      @vbox.attach(@overlay, 0, 1, 2, 1) #TODO:gtk4
+      # @vbox.attach(@menubar, 0, 0, 1, 1) #TODO:gtk4
+
       @sw.vexpand = true #TODO:gtk4
       @sw.hexpand = true #TODO:gtk4
 
       # column, row, width height
-      #    @vbox.attach(@menubar, 0, 0, 1, 1) #TODO:gtk4
-      #    @vbox.attach(@statnfo, 1, 0, 1, 1) #TODO:gtk4
+      # @vbox.attach(@menubar, 0, 0, 1, 1) #TODO:gtk4
+      @vbox.attach(@statnfo, 1, 0, 1, 1) #TODO:gtk4
       #    @vbox.attach(@overlay, 0, 1, 2, 1) #TODO:gtk4
       @overlay.vexpand = true #TODO:gtk4
       @overlay.hexpand = true #TODO:gtk4
@@ -628,7 +628,7 @@ class VMAgui
       #    @menubar.vexpand = false #TODO:gtk4
       #    @menubar.hexpand = false #TODO:gtk4
 
-      # init_minibuffer
+      init_minibuffer
 
       # @window.show_all
       @window.show
@@ -645,9 +645,8 @@ class VMAgui
       vma.start
     end
 
+    # Vimamsa::Menu.new(@menubar) #TODO:gtk4
     app.run
-
-    #    Vimamsa::Menu.new(@menubar) #TODO:gtk4
 
     # @window.show_all
     # @window.show
