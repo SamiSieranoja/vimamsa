@@ -7,38 +7,34 @@ def gui_open_file_dialog(dirpath)
                                                    ["Cancel", :cancel]])
   dialog.set_current_folder(Gio::File.new_for_path(dirpath))
   # dialog.set_current_folder(Gio::File.new_for_path("/tmp"))
-  
 
   dialog.signal_connect("response") do |dialog, response_id|
     if response_id == Gtk::ResponseType::ACCEPT
-    
       open_new_file(dialog.file.parse_name)
     end
     dialog.destroy
   end
-  
-  dialog.modal=true
+
+  dialog.modal = true
   dialog.show
 end
 
 def gui_file_saveas(dirpath)
   dialog = Gtk::FileChooserDialog.new(:title => "Save as",
                                       :action => :save,
-                                       :buttons => [["Save", :accept],
-                                                   ["Cancel", :cancel]]
-                                                  
-                                                   )
+                                      :buttons => [["Save", :accept],
+                                                   ["Cancel", :cancel]])
   # dialog.set_current_folder(dirpath) #TODO:gtk4
   dialog.signal_connect("response") do |dialog, response_id|
     if response_id == Gtk::ResponseType::ACCEPT
 
-	  # dialog.file.uri
+      # dialog.file.uri
       file_saveas(dialog.file.parse_name)
     end
     dialog.destroy
   end
 
-  dialog.modal=true
+  dialog.modal = true
   dialog.show
   # dialog.run
   # 'Gtk::Dialog#run' has been deprecated. Use Gtk::Window#set_modal and 'response' signal instead.>
@@ -136,8 +132,7 @@ def gui_create_buffer(id, bufo)
   buf1 = GtkSource::Buffer.new()
   view = VSourceView.new(nil, bufo)
 
-  # press = Gtk::GestureClick.new
-
+  view.register_signals()
   $debug = true
 
   ssm = GtkSource::StyleSchemeManager.new
@@ -280,7 +275,6 @@ class VMAgui
 
     $gcrw = 0
     vma.gui.window.signal_connect "configure-event" do |widget, cr|
-
       if $gcrw != cr.width
         @delex.run
       end
@@ -546,55 +540,52 @@ class VMAgui
 
       @vbox = Gtk::Grid.new()
       @window.add(@vbox)
-      
-        # press = Gtk::GestureClick.new
-  press = Gtk::EventControllerKey.new
-  # to prevent SourceView key handler capturing any keypresses
-  press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
 
-  # press.button = Gdk::BUTTON_SECONDARY
-  @window.add_controller(press)
-  # press.signal_connect "pressed" do |gesture, n_press, x, y|
-  press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
-    name = Gdk::Keyval.to_name(keyval)
-    uki = Gdk::Keyval.to_unicode(keyval)
-    keystr = uki.chr("UTF-8")
-    puts "key-pressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
-    buf.view.handle_key_event(keyval, keystr, :key_press)
-    true
-  end
+      # press = Gtk::GestureClick.new
+      press = Gtk::EventControllerKey.new
+      # to prevent SourceView key handler capturing any keypresses
+      press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
 
-  press.signal_connect "modifiers" do |eventctr, modtype|
-    # eventctr: Gtk::EventControllerKey
-    # modtype: Gdk::ModifierType
-    debug "modifier change"
-    vma.kbd.modifiers[:ctrl] = modtype.control_mask?
-    vma.kbd.modifiers[:alt] = modtype.alt_mask?
-    vma.kbd.modifiers[:hyper] = modtype.hyper_mask?
-    vma.kbd.modifiers[:lock] = modtype.lock_mask?
-    vma.kbd.modifiers[:meta] = modtype.meta_mask?
-    vma.kbd.modifiers[:shift] = modtype.shift_mask?
-    vma.kbd.modifiers[:super] = modtype.super_mask?
+      @window.add_controller(press)
+      press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
+        name = Gdk::Keyval.to_name(keyval)
+        uki = Gdk::Keyval.to_unicode(keyval)
+        keystr = uki.chr("UTF-8")
+        puts "key-pressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
+        buf.view.handle_key_event(keyval, keystr, :key_press)
+        true
+      end
 
-    #TODO:?
-    # button1_mask?
-    # ...
-    # button5_mask?
-    true
-  end
+      press.signal_connect "modifiers" do |eventctr, modtype|
+        # eventctr: Gtk::EventControllerKey
+        # modtype: Gdk::ModifierType
+        debug "modifier change"
+        vma.kbd.modifiers[:ctrl] = modtype.control_mask?
+        vma.kbd.modifiers[:alt] = modtype.alt_mask?
+        vma.kbd.modifiers[:hyper] = modtype.hyper_mask?
+        vma.kbd.modifiers[:lock] = modtype.lock_mask?
+        vma.kbd.modifiers[:meta] = modtype.meta_mask?
+        vma.kbd.modifiers[:shift] = modtype.shift_mask?
+        vma.kbd.modifiers[:super] = modtype.super_mask?
 
-  press.signal_connect "key-released" do |gesture, keyval, keycode, y|
-    name = Gdk::Keyval.to_name(keyval)
-    uki = Gdk::Keyval.to_unicode(keyval)
-    keystr = uki.chr("UTF-8")
-    puts "key released #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
-    buf.view.handle_key_event(keyval, keystr, :key_release)
-    # vma.kbd.match_key_conf(keystr, nil, :key_press)
-    # buf.view.handle_deltas
-    # buf.view.handle_key_event(keyval, keystr, :key_press)
-    true
-  end
+        #TODO:?
+        # button1_mask?
+        # ...
+        # button5_mask?
+        true
+      end
 
+      press.signal_connect "key-released" do |gesture, keyval, keycode, y|
+        name = Gdk::Keyval.to_name(keyval)
+        uki = Gdk::Keyval.to_unicode(keyval)
+        keystr = uki.chr("UTF-8")
+        puts "key released #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
+        buf.view.handle_key_event(keyval, keystr, :key_release)
+        # vma.kbd.match_key_conf(keystr, nil, :key_press)
+        # buf.view.handle_deltas
+        # buf.view.handle_key_event(keyval, keystr, :key_press)
+        true
+      end
 
       # @window.signal_connect("key-pressed") { puts "Hello World!" }
       # @window.signal_connect("clicked") { puts "Hello World!" }
@@ -626,15 +617,13 @@ class VMAgui
       @vbox.attach(@overlay, 0, 0, 1, 1) #TODO:gtk4
       @sw.vexpand = true #TODO:gtk4
       @sw.hexpand = true #TODO:gtk4
-      
-
 
       # column, row, width height
       #    @vbox.attach(@menubar, 0, 0, 1, 1) #TODO:gtk4
       #    @vbox.attach(@statnfo, 1, 0, 1, 1) #TODO:gtk4
       #    @vbox.attach(@overlay, 0, 1, 2, 1) #TODO:gtk4
-         @overlay.vexpand = true #TODO:gtk4
-         @overlay.hexpand = true #TODO:gtk4
+      @overlay.vexpand = true #TODO:gtk4
+      @overlay.hexpand = true #TODO:gtk4
 
       #    @menubar.vexpand = false #TODO:gtk4
       #    @menubar.hexpand = false #TODO:gtk4

@@ -26,18 +26,6 @@ class VSourceView < GtkSource::View
     #    self.drag_dest_add_image_targets #TODO:gtk4
     #    self.drag_dest_add_uri_targets #TODO:gtk4
 
-    #    signal_connect "button-press-event" do |_widget, event| #TODO:gtk4
-    # if event.button == Gdk::BUTTON_PRIMARY
-    # # debug "Gdk::BUTTON_PRIMARY"
-    # false
-    # elsif event.button == Gdk::BUTTON_SECONDARY
-    # # debug "Gdk::BUTTON_SECONDARY"
-    # true
-    # else
-    # true
-    # end
-    # end
-
     #    signal_connect("drag-data-received") do |widget, event, x, y, data, info, time| #TODO:gtk4
     # puts "drag-data-received"
     # puts
@@ -52,27 +40,39 @@ class VSourceView < GtkSource::View
     # true
     # end
 
-    return
-    signal_connect("key_press_event") do |widget, event|
-      handle_key_event(event, :key_press_event)
-      true
-    end
-
-    signal_connect("key_release_event") do |widget, event|
-      handle_key_event(event, :key_release_event)
-      true
-    end
-
     signal_connect("move-cursor") do |widget, event|
+      debug ("MOVE-CURSOR")
       $update_cursor = true
       false
     end
 
+    return
+
+    #TODO:gtk4
     signal_connect "button-release-event" do |widget, event|
       vma.buf.set_pos(buffer.cursor_position)
       false
     end
     @curpos_mark = nil
+  end
+
+  def register_signals()
+    click = Gtk::GestureClick.new
+    click.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
+    self.add_controller(click)
+    # Detect mouse click
+    click.signal_connect "pressed" do |gesture, n_press, x, y, z|
+      winw = width
+      view_width = visible_rect.width
+      gutter_width = winw - view_width
+      i = get_iter_at_location((x - gutter_width).to_i, y.to_i)
+      if !i.nil?
+        @bufo.set_pos(i.offset)
+      else
+        debug "iter nil 0000"
+      end
+      true
+    end
   end
 
   # def handle_key_event(event, sig)
@@ -140,7 +140,7 @@ class VSourceView < GtkSource::View
       # TODO:There should be a better way to do this
       key_str_parts.delete_at(0)
     end
-    
+
     if key_str_parts[0] == "shift" and key_str_parts[1].class == String
       #"shift-P" to just "P"
       # key_str_parts.delete_at(0) if key_str_parts[1].match(/^[[:upper:]]$/)
@@ -307,6 +307,7 @@ class VSourceView < GtkSource::View
   end
 
   def ensure_cursor_visible
+    return #TODO:gtk4
     if is_cursor_visible == false
       Thread.new {
         sleep 0.01

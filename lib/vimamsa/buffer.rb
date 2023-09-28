@@ -35,7 +35,8 @@ class Buffer < String
 
     @module = nil
 
-    @last_save = Time.now
+    @last_save = @last_asked_from_user = @file_last_cheked = Time.now
+
     @crypt = nil
     @update_highlight = true
     @syntax_detect_failed = false
@@ -429,7 +430,7 @@ class Buffer < String
 
   def run_delta(delta, auto_update_cpos = false)
     # auto_update_cpos: In some cases position of cursor should be updated automatically based on change to buffer (delta). In other cases this is handled by the action that creates the delta.
-    
+
     if $experimental
       @bt.handle_delta(Delta.new(delta[0], delta[1], delta[2], delta[3]))
     end
@@ -832,6 +833,8 @@ class Buffer < String
     end
     gui_set_cursor_pos(@id, @pos)
     calculate_line_and_column_pos
+
+    check_if_modified_outside
   end
 
   # Get the line number of character position
@@ -1523,12 +1526,12 @@ class Buffer < String
 
   def paste_finish(text, at, register)
     # if text == ""
-      # return if !$clipboard.any?
-      # if register == nil
-        # text = $clipboard[-1]
-      # else
-        # text = $register[register]
-      # end
+    # return if !$clipboard.any?
+    # if register == nil
+    # text = $clipboard[-1]
+    # else
+    # text = $register[register]
+    # end
     # end
     debug "PASTE: #{text}"
 
@@ -1550,19 +1553,19 @@ class Buffer < String
   end
 
   def paste(at = AFTER, register = nil)
-    paste_start(at,register)
+    paste_start(at, register)
     #TODO:
     # if register.nil?
-      # text = paste_system_clipboard
+    # text = paste_system_clipboard
     # end
 
     # if text == ""
-      # return if !$clipboard.any?
-      # if register == nil
-        # text = $clipboard[-1]
-      # else
-        # text = $register[register]
-      # end
+    # return if !$clipboard.any?
+    # if register == nil
+    # text = $clipboard[-1]
+    # else
+    # text = $register[register]
+    # end
     # end
   end
 
@@ -1681,11 +1684,10 @@ class Buffer < String
   def put_file_path_to_clipboard
     set_clipboard(self.fname)
   end
-  
+
   def put_file_ref_to_clipboard
-    set_clipboard(self.fname+":#{@lpos}")
+    set_clipboard(self.fname + ":#{@lpos}")
   end
- 
 
   def delete_active_selection() #TODO: remove this function
     return if !@visual_mode #TODO: this should not happen
@@ -1769,24 +1771,24 @@ class Buffer < String
     # The check if file exists is handled by Gtk::FileChooserDialog in GTK4
     # Keeping this code from GTK3 in case want to do this manually at some point
     # if !confirmed
-      # @unconfirmed_path = fpath
-      # if File.exists?(fpath) and File.file?(fpath)
-        # params = {}
-        # params["title"] = "The file already exists, overwrite? \r #{fpath}"
-        # params["inputs"] = {}
-        # params["inputs"]["yes_btn"] = { :label => "Yes", :type => :button, :default_focus => true }
-        # callback = proc { |x| save_as_check_callback(x) }
-        # params[:callback] = callback
-        # PopupFormGenerator.new(params).run
-        # return
-      # elsif File.exists?(fpath) #and File.directory?(fpath)
-        # params = {}
-        # params["title"] = "Can't write to the destination.\r #{fpath}"
-        # params["inputs"] = {}
-        # params["inputs"]["ok_btn"] = { :label => "Ok", :type => :button, :default_focus => true }
-        # PopupFormGenerator.new(params).run
-        # return
-      # end
+    # @unconfirmed_path = fpath
+    # if File.exists?(fpath) and File.file?(fpath)
+    # params = {}
+    # params["title"] = "The file already exists, overwrite? \r #{fpath}"
+    # params["inputs"] = {}
+    # params["inputs"]["yes_btn"] = { :label => "Yes", :type => :button, :default_focus => true }
+    # callback = proc { |x| save_as_check_callback(x) }
+    # params[:callback] = callback
+    # PopupFormGenerator.new(params).run
+    # return
+    # elsif File.exists?(fpath) #and File.directory?(fpath)
+    # params = {}
+    # params["title"] = "Can't write to the destination.\r #{fpath}"
+    # params["inputs"] = {}
+    # params["inputs"]["ok_btn"] = { :label => "Ok", :type => :button, :default_focus => true }
+    # PopupFormGenerator.new(params).run
+    # return
+    # end
     # end
 
     set_filename(fpath)
@@ -1828,7 +1830,40 @@ class Buffer < String
     }
   end
 
+  def check_if_modified_outside_callback(x)
+    debug "check_if_modified_outside_callback"
+    if x["yes_btn"] == "submit"
+      revert()
+    end
+  end
+
+  def check_if_modified_outside
+    # Don't check if less than 8 seconds since last checked
+    return false if @fname.nil?
+    return false if Time.now - 8 < @file_last_cheked
+    @file_last_cheked = Time.now
+
+    file_stat = File.stat(@fname)
+    modification_time = file_stat.mtime
+
+    if modification_time > @last_save and @last_asked_from_user < modification_time
+      @last_asked_from_user = Time.now
+      debug "File modified outside this program."
+      params = {}
+      params["title"] = "The file has been modified outside this program. Reload from disk? \r #{@fname}"
+      params["inputs"] = {}
+      params["inputs"]["yes_btn"] = { :label => "Yes", :type => :button, :default_focus => true }
+      callback = proc { |x| check_if_modified_outside_callback(x) }
+      params[:callback] = callback
+      PopupFormGenerator.new(params).run
+      return true
+    end
+
+    return false
+  end
+
   def save()
+    check_if_modified_outside
     if !@fname
       save_as()
       return
