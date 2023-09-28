@@ -56,6 +56,12 @@ class VSourceView < GtkSource::View
     @curpos_mark = nil
   end
 
+  def gutter_width()
+    winwidth = width
+    view_width = visible_rect.width
+    gutter_width = winwidth - view_width
+  end
+
   def register_signals()
     click = Gtk::GestureClick.new
     click.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)

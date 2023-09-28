@@ -229,21 +229,21 @@ class VMAgui
     @view = nil
     @buf1 = nil
     @img_resizer_active = false
-    imgproc = proc {
-      GLib::Idle.add(proc {
-        if !buf.images.empty?
-          vma.gui.scale_all_images
+    # imgproc = proc {
+      # GLib::Idle.add(proc {
+        # if !buf.images.empty?
+          # vma.gui.scale_all_images
 
-          w = Gtk::Window.new(:toplevel)
-          w.set_default_size(1, 1)
-          w.show_all
-          Thread.new { sleep 0.1; w.destroy }
-        end
+          # w = Gtk::Window.new(:toplevel)
+          # w.set_default_size(1, 1)
+          # w.show_all
+          # Thread.new { sleep 0.1; w.destroy }
+        # end
 
-        false
-      })
-    }
-    @delex = DelayExecutioner.new(1, imgproc)
+        # false
+      # })
+    # }
+    # @delex = DelayExecutioner.new(1, imgproc)
   end
 
   def run
@@ -269,7 +269,7 @@ class VMAgui
     end
   end
 
-  def handle_image_resize
+  def handle_image_resize #TODO:gtk4
     return if @img_resizer_active == true
     @dtime = Time.now
 

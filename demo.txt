@@ -1,5 +1,9 @@
 ❙Demo❙
 
+vma.gui.scale_all_images
+
+
+
 
 ◼ General
 Links: press ⦁enter⦁  while cursor on

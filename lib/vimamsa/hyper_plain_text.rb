@@ -76,5 +76,5 @@ def hpt_scan_images(bf = nil)
     end
     bf.add_image(imgfn, insert_pos + 1)
   }
-  vma.gui.delex.run
+  # vma.gui.delex.run #TODO:gtk4
 end

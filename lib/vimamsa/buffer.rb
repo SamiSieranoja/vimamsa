@@ -159,7 +159,6 @@ class Buffer < String
   end
 
   def add_image(imgpath, pos)
-    return # gtk4
     return if !is_legal_pos(pos)
 
     vbuf = view.buffer
@@ -170,13 +169,14 @@ class Buffer < String
 
     da = ResizableImage.new(imgpath, view)
     view.add_child_at_anchor(da, anchor)
-    da.signal_connect "draw" do |widget, cr|
+
+    da.set_draw_func do |widget, cr|
       da.do_draw(widget, cr)
     end
 
     da.scale_image
 
-    vma.gui.handle_image_resize
+    # vma.gui.handle_image_resize #TODO:gtk4
     @images << { :path => imgpath, :obj => da }
 
     gui_set_current_buffer(@id)

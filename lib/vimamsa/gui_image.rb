@@ -1,4 +1,3 @@
-
 # Following this example:
 # https://gabmus.org/posts/create_an_auto-resizing_image_widget_with_gtk3_and_python/
 class ResizableImage < Gtk::DrawingArea
@@ -18,26 +17,33 @@ class ResizableImage < Gtk::DrawingArea
   def scale_image()
     pb = @pixbuf
     view = @view
-    imglimit = view.visible_rect.width - 10
+    if view.visible_rect.width > 0
+      imglimit = view.visible_rect.width - 20
+    else
+      imglimit = 500
+    end
 
     if @oldimg.width > imglimit or @oldimg.width < imglimit - 10
       nwidth = imglimit
       nwidth = pb.width if pb.width < imglimit
       nheight = (pb.height * (nwidth.to_f / pb.width)).to_i
+      # Ripl.start :binding => binding
+
       pb = pb.scale_simple(nwidth, nheight, GdkPixbuf::InterpType::HYPER)
     else
       pb = @oldimg
     end
     @draw_image = pb
     @oldimg = pb
-    self.set_size_request(pb.width, pb.height)
-
+    #TODO: Should be better way to compensate for the gutter
+    self.set_size_request(pb.width+@view.gutter_width, pb.height)
   end
 
   def do_draw(da, cr)
     # puts @fpath
-    cr.set_source_pixbuf(@draw_image, 0, 0)
+    # Ripl.start :binding => binding
+
+    cr.set_source_pixbuf(@draw_image, @view.gutter_width, 0)
     cr.paint
   end
 end
-
