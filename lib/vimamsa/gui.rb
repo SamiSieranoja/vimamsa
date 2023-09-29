@@ -215,27 +215,8 @@ def gui_attach_buf_to_window(id, winid)
 end
 
 def gui_set_current_buffer(id)
-  view = $vmag.buffers[id]
-  debug "gui_set_current_buffer(#{id}), view=#{view}"
-  buf1 = view.buffer
-  $vmag.view = view
-  $vmag.buf1 = buf1
-  $view = view
-  $vbuf = buf1
-
-  if !$vmag.sw.child.nil?
-    # $vmag.sw.remove($vmag.sw.child)  #TODO:gtk4
-  end
-
-  # $vmag.sw.add(view)
-  $vmag.sw.set_child(view)
-
-  view.grab_focus
-  view.set_cursor_visible(true)
-  view.place_cursor_onscreen
-
-  # $vmag.sw.show_all
-  $vmag.sw.show
+  vma.gui.set_current_buffer(id)
+  return
 end
 
 def gui_set_window_title(wtitle, subtitle = "")
@@ -244,11 +225,14 @@ def gui_set_window_title(wtitle, subtitle = "")
 end
 
 class VMAgui
-  attr_accessor :buffers, :sw, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :overlay1, :overlay2
+  attr_accessor :buffers, :sw, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :overlay1, :overlay2, :sws
 
   def initialize()
+    @two_column = false
+    @active_column = 1
     @show_overlay = true
     @da = nil
+    @sws = []
     @buffers = {}
     @view = nil
     @buf1 = nil
@@ -621,7 +605,7 @@ class VMAgui
       @overlay = Gtk::Overlay.new
       # @overlay.add(@sw) #TODO:gtk4
       @overlay.add_overlay(@sw) #TODO:gtk4
-      @overlay1=@overlay
+      @overlay1 = @overlay
 
       # init_header_bar #TODO:gtk4
 
@@ -660,7 +644,7 @@ class VMAgui
         # clear_surface(surface)
         # drawing_area.queue_draw
       end
-      @sw1=@sw
+      @sw1 = @sw
 
       vma.start
     end
@@ -697,5 +681,56 @@ class VMAgui
     @sw = @sw2
     @sw2.show
     @overlay = @overlay2
+    @two_column = true
+    @active_column = 2
+  end
+
+  def toggle_active_window()
+    return if !@two_column
+    if @active_column == 1
+      set_active_window(2)
+    else
+      set_active_window(1)
+    end
+
+    vma.buffers.set_current_buffer_by_id(@sw.child.bufo.id)
+  end
+
+  def set_active_window(id)
+    return if !@two_column
+    return if id == @active_column
+    @active_column = id
+
+    if id == 1
+      @sw = @sw1
+      @overlay = @overlay1
+    elsif id == 2
+      @sw = @sw2
+      @overlay = @overlay2
+    end
+  end
+
+  def set_current_buffer(id)
+    view = @buffers[id]
+    debug "vma.gui.set_current_buffer(#{id}), view=#{view}"
+    buf1 = view.buffer
+    @view = view
+    @buf1 = buf1
+    $view = view
+    $vbuf = buf1
+
+    # If already open in another column
+
+    if @two_column and @active_column == 2 and id == @sw1.child.bufo.id
+      toggle_active_window
+    elsif @two_column and @active_column == 1 and id == @sw2.child.bufo.id
+      toggle_active_window
+    else
+      @sw.set_child(view)
+    end
+    view.grab_focus
+    view.set_cursor_visible(true)
+    view.place_cursor_onscreen
+    @sw.show
   end
 end

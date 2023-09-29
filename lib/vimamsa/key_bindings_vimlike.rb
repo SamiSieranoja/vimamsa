@@ -30,6 +30,9 @@ bindkey "C , t b", :set_line_style_bold
 bindkey "C , t t", :set_line_style_title
 bindkey "C , t c", :clear_line_styles
 bindkey "C , b", :start_buf_manager
+bindkey "C , w", :toggle_active_window
+bindkey "C , , w", :toggle_two_column
+
 # bindkey "C , f o", :open_file_dialog
 bindkey "CI ctrl-o", :open_file_dialog
 # bindkey "M enter", :minibuffer_end

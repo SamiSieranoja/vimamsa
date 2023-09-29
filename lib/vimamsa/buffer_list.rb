@@ -75,6 +75,11 @@ class BufferList < Array
     compact_buf_history()
   end
 
+  def set_current_buffer_by_id(buf_id, update_history = true)
+    idx = get_buffer_by_id(buf_id)
+    set_current_buffer(idx, update_history)
+  end
+
   def set_current_buffer(buffer_i, update_history = true)
     buffer_i = self.size -1 if buffer_i > self.size
     buffer_i = 0 if buffer_i < 0
