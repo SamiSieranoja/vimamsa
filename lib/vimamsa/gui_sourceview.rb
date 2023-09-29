@@ -16,6 +16,7 @@ class VSourceView < GtkSource::View
   def initialize(title, bufo)
     # super(:toplevel)
     @highlight_matching_brackets = true
+    @idle_func_running = false
     super()
     @bufo = bufo #object of Buffer class buffer.rb
     debug "vsource init"
@@ -289,8 +290,9 @@ class VSourceView < GtkSource::View
 
       scroll_to_iter(itr, within_margin, use_align, xalign, yalign)
 
-      # return true # Call this func again
+      return true # Call this func again
     else
+      @idle_func_running = false
       return false # Don't call this idle func again
     end
   end
@@ -313,8 +315,12 @@ class VSourceView < GtkSource::View
   end
 
   def ensure_cursor_visible
-    return #TODO:gtk4
+    # return #TODO:gtk4
+    debug "@idle_func_running=#{@idle_func_running}"
+    return if @idle_func_running
     if is_cursor_visible == false
+      @idle_func_running = true
+      debug "Starting idle func"
       Thread.new {
         sleep 0.01
         GLib::Idle.add(proc { cursor_visible_idle_func })
