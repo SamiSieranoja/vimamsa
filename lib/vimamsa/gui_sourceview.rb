@@ -332,7 +332,7 @@ class VSourceView < GtkSource::View
     if is_command_mode
       itr = buffer.get_iter_at(:offset => @bufo.pos)
       itr2 = buffer.get_iter_at(:offset => @bufo.pos + 1)
-      $view.buffer.select_range(itr, itr2)
+      $view.buffer.select_range(itr, itr2) #TODO:gtk4, breaks here 2c
     elsif @bufo.visual_mode?
       debug "VISUAL MODE"
       (_start, _end) = @bufo.get_visual_mode_range2

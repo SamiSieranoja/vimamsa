@@ -182,6 +182,38 @@ def gui_set_cursor_pos(id, pos)
   vma.buf.view.set_cursor_pos(pos)
 end
 
+def gui_set_active_window(winid)
+  sw = vma.gui.sw
+  if winid == 2
+    sw = vma.gui.sw2
+  end
+
+  sw.set_child(view)
+  view.grab_focus
+
+  vma.gui.view = view
+  vma.gui.buf1 = view.buffer
+  $view = view
+  $vbuf = view.buffer
+end
+
+#TODO:delete?
+def gui_attach_buf_to_window(id, winid)
+  view = vma.gui.buffers[id]
+  sw = vma.gui.sw
+  if winid == 2
+    sw = vma.gui.sw2
+  end
+
+  sw.set_child(view)
+  view.grab_focus
+
+  vma.gui.view = view
+  vma.gui.buf1 = view.buffer
+  $view = view
+  $vbuf = view.buffer
+end
+
 def gui_set_current_buffer(id)
   view = $vmag.buffers[id]
   debug "gui_set_current_buffer(#{id}), view=#{view}"
@@ -192,7 +224,7 @@ def gui_set_current_buffer(id)
   $vbuf = buf1
 
   if !$vmag.sw.child.nil?
-    #  $vmag.sw.remove($vmag.sw.child)  #TODO:gtk4
+    # $vmag.sw.remove($vmag.sw.child)  #TODO:gtk4
   end
 
   # $vmag.sw.add(view)
@@ -212,15 +244,7 @@ def gui_set_window_title(wtitle, subtitle = "")
 end
 
 class VMAgui
-  attr_accessor :buffers, :sw, :view, :buf1, :window, :delex, :statnfo
-
-  VERSION = "1.0"
-
-  HEART = "♥"
-  RADIUS = 150
-  N_WORDS = 5
-  FONT = "Serif 18"
-  TEXT = "I ♥ GTK+"
+  attr_accessor :buffers, :sw, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :overlay1, :overlay2
 
   def initialize()
     @show_overlay = true
@@ -230,18 +254,18 @@ class VMAgui
     @buf1 = nil
     @img_resizer_active = false
     # imgproc = proc {
-      # GLib::Idle.add(proc {
-        # if !buf.images.empty?
-          # vma.gui.scale_all_images
+    # GLib::Idle.add(proc {
+    # if !buf.images.empty?
+    # vma.gui.scale_all_images
 
-          # w = Gtk::Window.new(:toplevel)
-          # w.set_default_size(1, 1)
-          # w.show_all
-          # Thread.new { sleep 0.1; w.destroy }
-        # end
+    # w = Gtk::Window.new(:toplevel)
+    # w.set_default_size(1, 1)
+    # w.show_all
+    # Thread.new { sleep 0.1; w.destroy }
+    # end
 
-        # false
-      # })
+    # false
+    # })
     # }
     # @delex = DelayExecutioner.new(1, imgproc)
   end
@@ -597,31 +621,26 @@ class VMAgui
       @overlay = Gtk::Overlay.new
       # @overlay.add(@sw) #TODO:gtk4
       @overlay.add_overlay(@sw) #TODO:gtk4
+      @overlay1=@overlay
 
       # init_header_bar #TODO:gtk4
 
       @statnfo = Gtk::Label.new
       provider = Gtk::CssProvider.new
-      provider.load(data: "textview {   background-color:#353535; font-family: Monospace; font-size: 10pt; margin-top:4px; align:right;}")
+      # Ripl.start :binding => binding
+      @statnfo.add_css_class("statnfo")
+
+      provider.load(data: "label.statnfo {   background-color:#353535; font-size: 10pt; margin-top:2px; margin-bottom:2px; align:right;}")
       @statnfo.style_context.add_provider(provider)
-
-      # Deprecated, but found no other way to do it. css doesn't work.
-      # TODO: should select color automatically from theme
-      #    @statnfo.override_background_color(Gtk::StateFlags::NORMAL, "#353535") #TODO:gtk4
-
-      # @vbox.attach(@sw, 0, 0, 1, 1) #TODO:gtk4
 
       # numbers: left, top, width, height
       @vbox.attach(@overlay, 0, 1, 2, 1) #TODO:gtk4
-      # @vbox.attach(@menubar, 0, 0, 1, 1) #TODO:gtk4
-
-      @sw.vexpand = true #TODO:gtk4
-      @sw.hexpand = true #TODO:gtk4
+      @sw.vexpand = true
+      @sw.hexpand = true
 
       # column, row, width height
       # @vbox.attach(@menubar, 0, 0, 1, 1) #TODO:gtk4
-      @vbox.attach(@statnfo, 1, 0, 1, 1) #TODO:gtk4
-      #    @vbox.attach(@overlay, 0, 1, 2, 1) #TODO:gtk4
+      @vbox.attach(@statnfo, 1, 0, 1, 1)
       @overlay.vexpand = true #TODO:gtk4
       @overlay.hexpand = true #TODO:gtk4
 
@@ -641,6 +660,7 @@ class VMAgui
         # clear_surface(surface)
         # drawing_area.queue_draw
       end
+      @sw1=@sw
 
       vma.start
     end
@@ -650,5 +670,32 @@ class VMAgui
 
     # @window.show_all
     # @window.show
+  end
+
+  def set_two_column
+    # @window.set_default_size(800, 600) #TODO:gtk4
+    # @vpaned = Gtk::Paned.new(:vertical)
+    # @vbox = Gtk::Grid.new()
+    # @window.add(@vbox)
+
+    @sw2 = Gtk::ScrolledWindow.new
+    @sw2.set_policy(:automatic, :automatic)
+    @overlay2 = Gtk::Overlay.new
+    @overlay2.add_overlay(@sw2)
+
+    # numbers: left, top, width, height
+    @vbox.attach(@overlay2, 0, 1, 1, 1)
+    @vbox.remove(@overlay)
+    @vbox.attach(@overlay, 1, 1, 1, 1)
+
+    @sw2.vexpand = true
+    @sw2.hexpand = true
+
+    @overlay2.vexpand = true
+    @overlay2.hexpand = true
+
+    @sw = @sw2
+    @sw2.show
+    @overlay = @overlay2
   end
 end

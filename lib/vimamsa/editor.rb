@@ -510,7 +510,6 @@ GUESS_ENCODING_ORDER = [
 def create_new_file(filename = nil, file_contents = "\n")
   debug "NEW FILE CREATED"
   buffer = Buffer.new(file_contents)
-  # gui_set_current_buffer(buffer.id) #TODO: remove?
   vma.buffers << buffer
   vma.kbd.set_mode_to_default
   return buffer
