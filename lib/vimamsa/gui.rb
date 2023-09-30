@@ -524,7 +524,103 @@ class VMAgui
     # @window.add(Gtk::TextView.new)
   end
 
+  def debug_idle_func
+    if Time.now - @last_debug_idle > 1
+      @last_debug_idle = Time.now
+      # puts "DEBUG IDLE #{Time.now}"
+    end
+
+    ctrl_fn = File.expand_path("~/.vimamsa/ripl_ctrl")
+    # Allows to debug in case keyboard handling is lost
+    if File.exist?(ctrl_fn)
+      File.delete(ctrl_fn)
+      start_ripl
+    end
+
+    sleep 0.01
+    return true
+  end
+
+  def reset_controllers
+    clist = @window.observe_controllers
+    to_remove = []
+    (0..(clist.n_items - 1)).each { |x|
+      ctr = clist.get_item(x)
+      if ctr.class == Gtk::EventControllerKey
+        to_remove << ctr
+      end
+    }
+    if to_remove.size > 0
+      puts "Removing controllers:"
+      pp to_remove
+      to_remove.each { |x| @window.remove_controller(x) }
+    end
+
+    press = Gtk::EventControllerKey.new
+    @press = press
+    # to prevent SourceView key handler capturing any keypresses
+    press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
+    @window.add_controller(press)
+
+    press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
+      name = Gdk::Keyval.to_name(keyval)
+      uki = Gdk::Keyval.to_unicode(keyval)
+      keystr = uki.chr("UTF-8")
+      puts "key-pressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
+      buf.view.handle_key_event(keyval, keystr, :key_press)
+      true
+    end
+
+    press.signal_connect "modifiers" do |eventctr, modtype|
+      # eventctr: Gtk::EventControllerKey
+      # modtype: Gdk::ModifierType
+      debug "modifier change"
+      vma.kbd.modifiers[:ctrl] = modtype.control_mask?
+      vma.kbd.modifiers[:alt] = modtype.alt_mask?
+      vma.kbd.modifiers[:hyper] = modtype.hyper_mask?
+      vma.kbd.modifiers[:lock] = modtype.lock_mask?
+      vma.kbd.modifiers[:meta] = modtype.meta_mask?
+      vma.kbd.modifiers[:shift] = modtype.shift_mask?
+      vma.kbd.modifiers[:super] = modtype.super_mask?
+
+      #TODO:?
+      # button1_mask?
+      # ...
+      # button5_mask?
+      true
+    end
+
+    press.signal_connect "key-released" do |gesture, keyval, keycode, y|
+      name = Gdk::Keyval.to_name(keyval)
+      uki = Gdk::Keyval.to_unicode(keyval)
+      keystr = uki.chr("UTF-8")
+      puts "key released #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
+      buf.view.handle_key_event(keyval, keystr, :key_release)
+      # vma.kbd.match_key_conf(keystr, nil, :key_press)
+      # buf.view.handle_deltas
+      # buf.view.handle_key_event(keyval, keystr, :key_press)
+      true
+    end
+  end
+
+  def remove_extra_controllers
+    clist = vma.gui.window.observe_controllers
+    to_remove = []
+    (0..(clist.n_items - 1)).each { |x|
+      ctr = clist.get_item(x)
+      if ctr.class == Gtk::EventControllerKey and ctr != @press
+        to_remove << ctr
+      end
+    }
+    if to_remove.size > 0
+      puts "Removing controllers:"
+      pp to_remove
+      to_remove.each { |x| vma.gui.window.remove_controller(x) }
+    end
+  end
+
   def init_window
+    @last_debug_idle = Time.now
     app = Gtk::Application.new("net.samiddhi.vimamsa", :flags_none)
 
     app.signal_connect "activate" do
@@ -545,50 +641,60 @@ class VMAgui
       @vbox = Gtk::Grid.new()
       @window.add(@vbox)
 
-      # press = Gtk::GestureClick.new
-      press = Gtk::EventControllerKey.new
-      # to prevent SourceView key handler capturing any keypresses
-      press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
+      Thread.new {
+        sleep 0.01
+        GLib::Idle.add(proc { debug_idle_func })
+      }
 
-      @window.add_controller(press)
-      press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
-        name = Gdk::Keyval.to_name(keyval)
-        uki = Gdk::Keyval.to_unicode(keyval)
-        keystr = uki.chr("UTF-8")
-        puts "key-pressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
-        buf.view.handle_key_event(keyval, keystr, :key_press)
-        true
-      end
+      reset_controllers
 
-      press.signal_connect "modifiers" do |eventctr, modtype|
-        # eventctr: Gtk::EventControllerKey
-        # modtype: Gdk::ModifierType
-        debug "modifier change"
-        vma.kbd.modifiers[:ctrl] = modtype.control_mask?
-        vma.kbd.modifiers[:alt] = modtype.alt_mask?
-        vma.kbd.modifiers[:hyper] = modtype.hyper_mask?
-        vma.kbd.modifiers[:lock] = modtype.lock_mask?
-        vma.kbd.modifiers[:meta] = modtype.meta_mask?
-        vma.kbd.modifiers[:shift] = modtype.shift_mask?
-        vma.kbd.modifiers[:super] = modtype.super_mask?
+      if false
+        # press = Gtk::GestureClick.new
+        press = Gtk::EventControllerKey.new
+        @press = press
+        # to prevent SourceView key handler capturing any keypresses
+        press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
 
-        #TODO:?
-        # button1_mask?
-        # ...
-        # button5_mask?
-        true
-      end
+        @window.add_controller(press)
+        press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
+          name = Gdk::Keyval.to_name(keyval)
+          uki = Gdk::Keyval.to_unicode(keyval)
+          keystr = uki.chr("UTF-8")
+          puts "key-pressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
+          buf.view.handle_key_event(keyval, keystr, :key_press)
+          true
+        end
 
-      press.signal_connect "key-released" do |gesture, keyval, keycode, y|
-        name = Gdk::Keyval.to_name(keyval)
-        uki = Gdk::Keyval.to_unicode(keyval)
-        keystr = uki.chr("UTF-8")
-        puts "key released #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
-        buf.view.handle_key_event(keyval, keystr, :key_release)
-        # vma.kbd.match_key_conf(keystr, nil, :key_press)
-        # buf.view.handle_deltas
-        # buf.view.handle_key_event(keyval, keystr, :key_press)
-        true
+        press.signal_connect "modifiers" do |eventctr, modtype|
+          # eventctr: Gtk::EventControllerKey
+          # modtype: Gdk::ModifierType
+          debug "modifier change"
+          vma.kbd.modifiers[:ctrl] = modtype.control_mask?
+          vma.kbd.modifiers[:alt] = modtype.alt_mask?
+          vma.kbd.modifiers[:hyper] = modtype.hyper_mask?
+          vma.kbd.modifiers[:lock] = modtype.lock_mask?
+          vma.kbd.modifiers[:meta] = modtype.meta_mask?
+          vma.kbd.modifiers[:shift] = modtype.shift_mask?
+          vma.kbd.modifiers[:super] = modtype.super_mask?
+
+          #TODO:?
+          # button1_mask?
+          # ...
+          # button5_mask?
+          true
+        end
+
+        press.signal_connect "key-released" do |gesture, keyval, keycode, y|
+          name = Gdk::Keyval.to_name(keyval)
+          uki = Gdk::Keyval.to_unicode(keyval)
+          keystr = uki.chr("UTF-8")
+          puts "key released #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
+          buf.view.handle_key_event(keyval, keystr, :key_release)
+          # vma.kbd.match_key_conf(keystr, nil, :key_press)
+          # buf.view.handle_deltas
+          # buf.view.handle_key_event(keyval, keystr, :key_press)
+          true
+        end
       end
 
       # @window.signal_connect("key-pressed") { puts "Hello World!" }

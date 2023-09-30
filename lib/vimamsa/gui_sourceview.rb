@@ -63,12 +63,30 @@ class VSourceView < GtkSource::View
     gutter_width = winwidth - view_width
   end
 
+  def remove_old_controllers
+    clist = self.observe_controllers
+    to_remove = []
+    (0..(clist.n_items - 1)).each { |x|
+      ctr = clist.get_item(x)
+      if ctr.class == Gtk::EventControllerKey or ctr.class == Gtk::GestureClick
+        to_remove << ctr
+      end
+    }
+    if to_remove.size > 0
+      puts "Removing controllers:"
+      pp to_remove
+      to_remove.each { |x| self.remove_controller(x) }
+    end
+  end
+
   def register_signals()
+    remove_old_controllers
     click = Gtk::GestureClick.new
     click.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
     self.add_controller(click)
     # Detect mouse click
     click.signal_connect "pressed" do |gesture, n_press, x, y, z|
+      debug "SourceView, GestureClick"
       winw = width
       view_width = visible_rect.width
       gutter_width = winw - view_width
