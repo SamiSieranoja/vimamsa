@@ -225,7 +225,9 @@ def gui_set_window_title(wtitle, subtitle = "")
 end
 
 class VMAgui
-  attr_accessor :buffers, :sw, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :overlay1, :overlay2, :sws
+  attr_accessor :buffers, :sw, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :overlay1, :overlay2, :sws, :two_c
+  attr_reader :two_column
+
 
   def initialize()
     @two_column = false
@@ -528,6 +530,7 @@ class VMAgui
     if Time.now - @last_debug_idle > 1
       @last_debug_idle = Time.now
       # puts "DEBUG IDLE #{Time.now}"
+      @view.check_controllers
     end
 
     ctrl_fn = File.expand_path("~/.vimamsa/ripl_ctrl")
@@ -537,7 +540,7 @@ class VMAgui
       start_ripl
     end
 
-    sleep 0.01
+    sleep 0.02
     return true
   end
 

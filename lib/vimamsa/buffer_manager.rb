@@ -43,8 +43,11 @@ class BufferManager
     buf_i = buf_of_current_line()
     return if buf_i.nil?
 
-    vma.buffers.close_current_buffer()
+    # vma.buffers.close_current_buffer() #TODO:??
     vma.buffers.set_current_buffer(buf_i)
+    
+    bid = vma.buffers.get_buffer_by_id(@buf.id)
+    vma.buffers.close_other_buffer(bid)
     @@cur = nil
   end
 

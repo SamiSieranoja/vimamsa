@@ -22,6 +22,7 @@ class VSourceView < GtkSource::View
     debug "vsource init"
     @last_keyval = nil
     @last_event = [nil, nil]
+    @removed_controllers = []
     self.highlight_current_line = true
 
     #    self.drag_dest_add_image_targets #TODO:gtk4
@@ -63,34 +64,61 @@ class VSourceView < GtkSource::View
     gutter_width = winwidth - view_width
   end
 
-  def remove_old_controllers
+  def show_controllers
+    clist = self.observe_controllers
+    (0..(clist.n_items - 1)).each { |x|
+      ctr = clist.get_item(x)
+      pp ctr
+    }
+  end
+
+  def check_controllers
     clist = self.observe_controllers
     to_remove = []
     (0..(clist.n_items - 1)).each { |x|
       ctr = clist.get_item(x)
-      if ctr.class == Gtk::EventControllerKey or ctr.class == Gtk::GestureClick
+      # Sometimes a GestureClick EventController appears from somewhere
+      # not initiated from this file.
+
+      # if ctr.class == Gtk::EventControllerKey or ctr.class == Gtk::GestureClick
+      if ctr != @click
+        # to_remove << ctr if ctr.class != Gtk::GestureDrag
         to_remove << ctr
       end
     }
     if to_remove.size > 0
-      puts "Removing controllers:"
+      debug "Removing controllers:"
       pp to_remove
-      to_remove.each { |x| self.remove_controller(x) }
+      to_remove.each { |x|
+        # To avoid GC. https://github.com/ruby-gnome/ruby-gnome/issues/15790
+        @removed_controllers << x
+        self.remove_controller(x)
+      }
     end
   end
 
   def register_signals()
-    remove_old_controllers
+
+    #TODO: Doesn't seem to catch "move-cursor" signal since upgrade to gtk4
+    # self.signal_connect("move-cursor") do |widget, event|
+    # $update_cursor = true
+    # false
+    # end
+
+    check_controllers
     click = Gtk::GestureClick.new
     click.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
     self.add_controller(click)
     # Detect mouse click
+    @click = click
     click.signal_connect "pressed" do |gesture, n_press, x, y, z|
-      debug "SourceView, GestureClick"
+      debug "SourceView, GestureClick x=#{x} y=#{y}"
+      pp visible_rect
       winw = width
       view_width = visible_rect.width
       gutter_width = winw - view_width
-      i = get_iter_at_location((x - gutter_width).to_i, y.to_i)
+
+      i = get_iter_at_location((x - gutter_width).to_i, (y + visible_rect.y).to_i)
       if !i.nil?
         @bufo.set_pos(i.offset)
       else
@@ -173,6 +201,10 @@ class VSourceView < GtkSource::View
     end
 
     key_str = key_str_parts.join("-")
+    if key_str == "\u0000"
+      key_str = ""
+    end
+
     keynfo = { :key_str => key_str, :key_name => keyname, :keyval => keyval }
     debug keynfo.inspect
     # $kbd.match_key_conf(key_str, nil, :key_press)
@@ -294,6 +326,9 @@ class VSourceView < GtkSource::View
     # iter = buffer.get_iter_at(:offset => buffer.cursor_position)
     # iterxy = get_iter_location(iter)
 
+    # This is not the current buffer
+    return false if vma.gui.view != self
+
     sleep(0.01)
     # intr = iterxy.intersect(vr)
     if is_cursor_visible == false
@@ -357,6 +392,7 @@ class VSourceView < GtkSource::View
       debug "#{_start}, #{_end}"
       itr = buffer.get_iter_at(:offset => _start)
       itr2 = buffer.get_iter_at(:offset => _end + 1)
+      # Pango-CRITICAL **: pango_layout_get_cursor_pos: assertion 'index >= 0 && index <= layout->length' failed
       $view.buffer.select_range(itr, itr2)
     else # Insert mode
       itr = buffer.get_iter_at(:offset => @bufo.pos)

@@ -1707,6 +1707,10 @@ class Buffer < String
 
   def get_visual_mode_range2()
     r = get_visual_mode_range
+    if r.begin > r.end
+      debug "r.begin > r.end"
+      Ripl.start :binding => binding
+    end
     return [r.begin, r.end]
   end
 
@@ -1725,9 +1729,9 @@ class Buffer < String
     _end = @pos
 
     _start, _end = _end, _start if _start > _end
-    _end = _end + 1 if _start < _end
-
-    return _start..(_end - 1)
+    # _end = _end + 1 if _start < _end #TODO:verify if correct
+    # return _start..(_end - 1)
+    return _start..(_end)
   end
 
   def selection_start()
@@ -1842,6 +1846,7 @@ class Buffer < String
     return false if @fname.nil?
     return false if Time.now - 8 < @file_last_cheked
     @file_last_cheked = Time.now
+    return false if !File.exist?(@fname)
 
     file_stat = File.stat(@fname)
     modification_time = file_stat.mtime

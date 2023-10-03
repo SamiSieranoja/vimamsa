@@ -77,6 +77,10 @@ class BufferList < Array
 
   def set_current_buffer_by_id(buf_id, update_history = true)
     idx = get_buffer_by_id(buf_id)
+    if idx.nil?
+      debug "IDX=nil"
+      return
+    end
     set_current_buffer(idx, update_history)
   end
 
@@ -177,8 +181,10 @@ class BufferList < Array
     jump_to_buf = recent[@recent_ind + 1]
     jump_to_buf = 0 if jump_to_buf == nil
 
+    # Ripl.start :binding => binding
     self.slice!(buffer_i)
     $buffer_history = $buffer_history.collect { |x| r = x; r = x - 1 if x > buffer_i; r = nil if x == buffer_i; r }.compact
+
 
     if @current_buf == buffer_i
       if from_recent
@@ -187,7 +193,6 @@ class BufferList < Array
         @current_buf = $buffer_history.last
       end
     end
-    # Ripl.start :binding => binding
     if self.size == 0
       self << Buffer.new("\n")
       @current_buf = 0
