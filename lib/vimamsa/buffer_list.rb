@@ -24,6 +24,7 @@ class BufferList < Array
 
   def initialize()
     @last_dir = File.expand_path(".")
+    @buffer_history = []
     super
   end
 
@@ -32,7 +33,7 @@ class BufferList < Array
     super
     vma.buf = _buf
     @current_buf = self.size - 1
-    $buffer_history << @current_buf
+    @buffer_history << @current_buf
     @recent_ind = 0
     $hook.call(:change_buffer, vma.buf)
     gui_set_current_buffer(vma.buf.id)
@@ -51,8 +52,8 @@ class BufferList < Array
 
   def switch_to_last_buf()
     debug "SWITCH TO LAST BUF:"
-    debug $buffer_history
-    last_buf = $buffer_history[-2]
+    debug @buffer_history
+    last_buf = @buffer_history[-2]
     if last_buf
       set_current_buffer(last_buf)
     end
@@ -69,9 +70,20 @@ class BufferList < Array
     return buf_idx
   end
 
+  def add_buf_to_history(buf_idx)
+    if self.include?(buf_idx)
+      @buffer_history << @buf_idx
+      @recent_ind = 0
+      compact_buf_history()
+    else
+      debug "buffer_list, no such id:#{buf_idx}"
+      return
+    end
+  end
+
   def add_current_buf_to_history()
     @recent_ind = 0
-    $buffer_history << @current_buf
+    @buffer_history << @current_buf
     compact_buf_history()
   end
 
@@ -100,7 +112,7 @@ class BufferList < Array
       add_current_buf_to_history
     end
 
-    $hook.call(:change_buffer, vma.buf)
+    vma.hook.call(:change_buffer, vma.buf)
     vma.buf.set_active
 
     gui_set_current_buffer(vma.buf.id)
@@ -129,7 +141,7 @@ class BufferList < Array
 
   def get_recent_buffers()
     bufs = []; b = {}
-    $buffer_history.reverse.each { |x| bufs << x if !b[x] && x < self.size; b[x] = true }
+    @buffer_history.reverse.each { |x| bufs << x if !b[x] && x < self.size; b[x] = true }
     return bufs
   end
 
@@ -154,8 +166,8 @@ class BufferList < Array
   def compact_buf_history()
     h = {}
     # Keep only first occurence in history
-    bh = $buffer_history.reverse.select { |x| r = h[x] == nil; h[x] = true; r }
-    $buffer_history = bh.reverse
+    bh = @buffer_history.reverse.select { |x| r = h[x] == nil; h[x] = true; r }
+    @buffer_history = bh.reverse
   end
 
   # Close buffer in the background
@@ -168,7 +180,7 @@ class BufferList < Array
     message("Closed buffer #{bufname}")
 
     self.slice!(buffer_i)
-    $buffer_history = $buffer_history.collect { |x| r = x; r = x - 1 if x > buffer_i; r = nil if x == buffer_i; r }.compact
+    @buffer_history = @buffer_history.collect { |x| r = x; r = x - 1 if x > buffer_i; r = nil if x == buffer_i; r }.compact
   end
 
   def close_buffer(buffer_i, from_recent = false)
@@ -183,14 +195,13 @@ class BufferList < Array
 
     # Ripl.start :binding => binding
     self.slice!(buffer_i)
-    $buffer_history = $buffer_history.collect { |x| r = x; r = x - 1 if x > buffer_i; r = nil if x == buffer_i; r }.compact
-
+    @buffer_history = @buffer_history.collect { |x| r = x; r = x - 1 if x > buffer_i; r = nil if x == buffer_i; r }.compact
 
     if @current_buf == buffer_i
       if from_recent
         @current_buf = jump_to_buf
       else
-        @current_buf = $buffer_history.last
+        @current_buf = @buffer_history.last
       end
     end
     if self.size == 0

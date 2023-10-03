@@ -37,7 +37,7 @@ class Macro
     #TODO:
     @recorded_macros = vma.marshal_load("macros", {})
     @named_macros = vma.marshal_load("named_macros", {})
-    $hook.register(:shutdown, self.method("save"))
+    vma.hook.register(:shutdown, self.method("save"))
   end
 
   def save()

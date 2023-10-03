@@ -22,17 +22,19 @@ class EasyJump
       r = false if lsh[x] or lsh[x - 1] or lsh[x - 2]
       r
     }
+    
+    wsmarks = [0] if wsmarks.empty?
 
     # Exclude those word start positions that are too close to each other
     wsmarks.sort!
     wsm2 = [wsmarks[0]]
     for i in 1..(wsmarks.size - 1)
       if (wsmarks[i] - wsm2[-1]) >= 4 or visible_text[wsm2[-1]..wsmarks[i]].include?("\n")
-
         wsm2 << wsmarks[i]
       end
     end
     wsmarks = wsm2
+
 
     linestart_buf = (line_starts).collect { |x| x + visible_range[0] }
     wsmarks_buf = (wsmarks).collect { |x| x + visible_range[0] }
@@ -57,9 +59,11 @@ class EasyJump
     if @jump_sequence.include?(@easy_jump_input)
       jshash = Hash[@jump_sequence.map.with_index.to_a]
       nthword = jshash[@easy_jump_input]
-      debug "nthword:#{nthword} #{[@easy_jump_wsmarks[nthword], @jump_sequence[nthword]]}"
-      buf.set_pos(@easy_jump_wsmarks[nthword])
-      # @kbd.set_mode(:command)
+      newpos = @easy_jump_wsmarks[nthword]
+      if !newpos.nil?
+        debug "nthword:#{nthword} #{[@easy_jump_wsmarks[nthword], @jump_sequence[nthword]]}"
+        buf.set_pos(@easy_jump_wsmarks[nthword])
+      end
       vma.kbd.remove_keyhandling_override
       @jump_sequence = []
       vma.gui.clear_overlay()
@@ -76,7 +80,7 @@ class EasyJump
   def easy_jump_draw()
     vma.gui.start_overlay_draw
     for i in 0..(@easy_jump_wsmarks.size - 1)
-      vma.gui.overlay_draw_text(@jump_sequence[i], @easy_jump_wsmarks[i]) 
+      vma.gui.overlay_draw_text(@jump_sequence[i], @easy_jump_wsmarks[i])
     end
     vma.gui.end_overlay_draw
   end

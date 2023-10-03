@@ -50,8 +50,17 @@ class SelectUpdateWindow
     @opt = opt
 
     debug item_list.inspect
-    @update_callback = method(update_callback)
-    @select_callback = method(select_callback)
+
+    if select_callback.class == Method
+      @select_callback = select_callback
+    else
+      @select_callback = method(select_callback)
+    end
+    if update_callback.class == Method
+      @update_callback = update_callback
+    else
+      @update_callback = method(update_callback)
+    end
     # debug @update_callback_m.call("").inspect
 
     vbox = Gtk::Box.new(:vertical, 8)

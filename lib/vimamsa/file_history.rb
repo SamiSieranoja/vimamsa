@@ -8,8 +8,8 @@ class FileHistory
     # x = self.method("update")
     # x.call("ASFASF")
 
-    $hook.register(:change_buffer, self.method("update"))
-    $hook.register(:shutdown, self.method("save"))
+    vma.hook.register(:change_buffer, self.method("update"))
+    vma.hook.register(:shutdown, self.method("save"))
 
     reg_act(:fhist_remove_nonexisting, proc { remove_nonexisting }, "Cleanup history, remove non-existing files")
 
@@ -98,7 +98,6 @@ def gui_file_history_update_callback(search_str = "")
 end
 
 def gui_file_history_select_callback(search_str, idx)
-  # selected_file = $file_search_list[idx][0]
   selected_file = $search_list[idx][0]
 
   debug "FILE HISTORY SELECT CALLBACK: s=#{search_str},i=#{idx}: #{selected_file}"

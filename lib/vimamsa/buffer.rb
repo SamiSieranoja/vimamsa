@@ -6,7 +6,7 @@ require "openssl"
 require "ripl/multi_line"
 
 $paste_lines = false
-$buffer_history = [0]
+$buffer_history = []
 
 $update_highlight = false
 
@@ -470,7 +470,7 @@ class Buffer < String
       @update_hl_endpos = pos + delta[2]
       add_hl_update(@update_hl_startpos, @update_hl_endpos)
     end
-    debug "DELTA=#{delta.inspect}"
+    debug("DELTA=#{delta.inspect}", 2)
     # sanity_check_line_ends #TODO: enable with debug mode
     #highlight_c()
 

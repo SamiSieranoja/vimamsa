@@ -1,7 +1,12 @@
 require "fileutils"
 
-def debug(message)
+def debug(message, severity = 1)
   if $debug
+    if severity > 1
+      # Add red colour and bold for attention
+      # https://en.wikipedia.org/wiki/ANSI_escape_code
+      message = "\033[1;31m!!! \033[0m#{message}"
+    end
     puts "[#{DateTime.now().strftime("%H:%M:%S")}] #{message}"
     $stdout.flush
   end
@@ -22,7 +27,7 @@ end
 
 $log_messages = []
 
-def log_message(message,vlevel=1)
+def log_message(message, vlevel = 1)
   puts message if conf("log.verbose") >= vlevel
   $log_messages << message
 end
@@ -136,7 +141,6 @@ def run_random_jump_test__tmpl(test_time = 60 * 60 * 10)
     step += 1
   end
 end
-
 
 def start_ripl
   Ripl.start :binding => binding

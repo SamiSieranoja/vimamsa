@@ -24,7 +24,6 @@ $command_history = []
 $clipboard = []
 $register = Hash.new("")
 $cnf = {}
-$search_dirs = []
 $errors = []
 
 $cur_register = "a"

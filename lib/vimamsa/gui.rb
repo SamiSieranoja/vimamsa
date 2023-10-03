@@ -624,7 +624,7 @@ class VMAgui
 
   def init_window
     @last_debug_idle = Time.now
-    app = Gtk::Application.new("net.samiddhi.vimamsa", :flags_none)
+    app = Gtk::Application.new("net.samiddhi.vimamsa.r#{rand(1000)}", :flags_none)
 
     app.signal_connect "activate" do
 

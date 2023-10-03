@@ -32,7 +32,7 @@ def mkdir_if_not_exists(_dirpath)
 end
 
 class Editor
-  attr_reader :file_content_search_paths, :file_name_search_paths, :gui
+  attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook
   attr_accessor :converters, :fh, :paint_stack, :kbd, :langsrv
   #attr_writer :call_func, :update_highlight
 
@@ -73,7 +73,8 @@ class Editor
     @gui = $vmag #TODO
 
     $hook = Hook.new
-    register_plugin(:Hook, $hook)
+    @hook = $hook
+    register_plugin(:Hook, @hook)
     $macro = Macro.new
     register_plugin(:Macro, $macro)
     $search = Search.new
@@ -131,8 +132,6 @@ class Editor
 
     # set_gui_style(1)
 
-    # Limit file search to these extensions:
-    $find_extensions = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb"]
 
     #TODO: remove
     dotfile = read_file("", "~/.vimamsarc")
@@ -179,7 +178,6 @@ class Editor
     # render_buffer(vma.buf, 1) #TODO
 
     # gui_select_buffer_init #TODO
-    # gui_file_finder_init #TODO
 
     #Load plugins
     require "vimamsa/file_history.rb"
@@ -192,7 +190,7 @@ class Editor
     # To access via vma.FileFinder
     # self.define_singleton_method(:FileFinder) { @_plugins[:FileFinder] }
 
-    $hook.call(:after_init)
+    @hook.call(:after_init)
   end
 
   def register_plugin(name, obj)
@@ -250,7 +248,7 @@ class Editor
   end
 
   def shutdown()
-    $hook.call(:shutdown)
+    @hook.call(:shutdown)
     save_state
     $vmag.quit
   end
@@ -543,12 +541,13 @@ def filter_buffer(buf)
 end
 
 def load_buffer(fname)
-  return if !File.exist?(fname)
+  # If file already open in existing buffer
   existing_buffer = vma.buffers.get_buffer_by_filename(fname)
   if existing_buffer != nil
-    $buffer_history << existing_buffer
+    vma.buffers.add_buf_to_history(existing_buffer)
     return
   end
+  return if !File.exist?(fname)
   debug("LOAD BUFFER: #{fname}")
   buffer = Buffer.new(read_file("", fname), fname)
   # gui_set_current_buffer(buffer.id)

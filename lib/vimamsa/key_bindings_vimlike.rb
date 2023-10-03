@@ -15,6 +15,8 @@ bindkey "C x", :delete_char_forward
 bindkey "C , , l t", :load_theme
 bindkey "C , f", :gui_file_finder
 bindkey "C , h", :gui_file_history_finder
+bindkey "C , z", :gui_file_finder
+
 bindkey "C , r r", :gui_search_replace
 bindkey "V , r r", :gui_search_replace
 bindkey "V , t b", :set_style_bold
