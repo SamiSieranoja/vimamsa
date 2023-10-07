@@ -132,7 +132,6 @@ class Editor
 
     # set_gui_style(1)
 
-
     #TODO: remove
     dotfile = read_file("", "~/.vimamsarc")
     eval(dotfile) if dotfile
@@ -167,17 +166,10 @@ class Editor
     end
 
     if fname
-      buffer = Buffer.new(read_file("", fname), fname)
+      open_new_file(fname)
     else
-      buffer = Buffer.new(" \n")
+      create_new_buffer(file_contents = "\n")
     end
-    vma.buffers << buffer
-
-    # load_theme($cnf[:theme])
-
-    # render_buffer(vma.buf, 1) #TODO
-
-    # gui_select_buffer_init #TODO
 
     #Load plugins
     require "vimamsa/file_history.rb"
@@ -513,20 +505,14 @@ def create_new_file(filename = nil, file_contents = "\n")
   return buffer
 end
 
-# def open_new_file(filename, file_contents = "")
-# #TODO: expand path
-# filename = File.expand_path(filename)
-# b = vma.buffers.get_buffer_by_filename(filename)
-# # File is already opened to existing buffer
-# if b != nil
-# message "Switching to: #{filename}"
-# vma.buffers.set_current_buffer(b)
-# else
-# message "New file opened: #{filename}"
-# fname = filename
-# load_buffer(fname)
-# end
-# end
+def create_new_buffer(file_contents = "\n")
+  debug "NEW BUFFER CREATED"
+  buffer = Buffer.new(file_contents)
+  vma.buffers.add(buffer)
+  # vma.kbd.set_mode_to_default
+  # Ripl.start :binding => binding
+  return buffer
+end
 
 def filter_buffer(buf)
   i = 0
@@ -557,6 +543,7 @@ def load_buffer(fname)
   #    debug("END FILTER: #{fname}")
   vma.buffers << buffer
   #$buffer_history << vma.buffers.size - 1
+  return buffer
 end
 
 def jump_to_file(filename, linenum = nil, charn = nil)
@@ -595,7 +582,8 @@ def open_new_file(filename, file_contents = "")
   else
     message "New file opened: #{filename}"
     fname = filename
-    load_buffer(fname)
+    bf = load_buffer(fname)
+    vma.buffers.set_current_buffer_by_id(bf.id)
   end
 end
 

@@ -174,7 +174,7 @@ class KeyBindingTree
       end
     end
 
-    $view.draw_cursor() #TODO: handle outside this class
+    # $view.draw_cursor() #TODO: handle outside this class
   end
 
   def cur_mode_str()

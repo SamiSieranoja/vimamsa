@@ -64,8 +64,6 @@ class Buffer < String
     end
 
     t1 = Time.now
-    gui_set_current_buffer(@id)
-    gui_set_window_title(@title, @subtitle)
 
     set_content(str)
     debug "init time:#{Time.now - t1}"

@@ -20,7 +20,7 @@ def load_buffer_list()
 end
 
 class BufferList < Array
-  attr_reader :current_buf, :last_dir
+  attr_reader :current_buf, :last_dir, :buffer_history
 
   def initialize()
     @last_dir = File.expand_path(".")
@@ -36,9 +36,14 @@ class BufferList < Array
     @buffer_history << @current_buf
     @recent_ind = 0
     $hook.call(:change_buffer, vma.buf)
-    gui_set_current_buffer(vma.buf.id)
+    vma.gui.set_current_buffer(vma.buf.id)
     gui_set_cursor_pos(vma.buf.id, vma.buf.pos)
     update_last_dir(_buf)
+  end
+
+  def add(_buf)
+    self.append(_buf)
+    @buffer_history << self.size - 1
   end
 
   def switch()
@@ -48,6 +53,11 @@ class BufferList < Array
     m = method("switch")
     set_last_command({ method: m, params: [] })
     set_current_buffer(@current_buf)
+  end
+
+  def get_last_visited_id
+    last_buf = @buffer_history[-2]
+    return self[last_buf].id
   end
 
   def switch_to_last_buf()
@@ -115,7 +125,8 @@ class BufferList < Array
     vma.hook.call(:change_buffer, vma.buf)
     vma.buf.set_active
 
-    gui_set_current_buffer(vma.buf.id)
+    vma.gui.set_current_buffer(vma.buf.id)
+
     gui_set_window_title(vma.buf.title, vma.buf.subtitle)
 
     if vma.buf.fname

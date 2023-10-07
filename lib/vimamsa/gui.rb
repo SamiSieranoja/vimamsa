@@ -226,8 +226,7 @@ end
 
 class VMAgui
   attr_accessor :buffers, :sw, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :overlay1, :overlay2, :sws, :two_c
-  attr_reader :two_column
-
+  attr_reader :two_column, :windows
 
   def initialize()
     @two_column = false
@@ -239,6 +238,7 @@ class VMAgui
     @view = nil
     @buf1 = nil
     @img_resizer_active = false
+    @windows = {}
     # imgproc = proc {
     # GLib::Idle.add(proc {
     # if !buf.images.empty?
@@ -530,7 +530,7 @@ class VMAgui
     if Time.now - @last_debug_idle > 1
       @last_debug_idle = Time.now
       # puts "DEBUG IDLE #{Time.now}"
-      @view.check_controllers
+      # @view.check_controllers
     end
 
     ctrl_fn = File.expand_path("~/.vimamsa/ripl_ctrl")
@@ -742,6 +742,9 @@ class VMAgui
 
       init_minibuffer
 
+      @windows[1] = { :sw => @sw, :overlay => @overlay, :id => 1 }
+      @active_window = @windows[1]
+
       # @window.show_all
       @window.show
 
@@ -776,6 +779,8 @@ class VMAgui
     @overlay2 = Gtk::Overlay.new
     @overlay2.add_overlay(@sw2)
 
+    @windows[2] = { :sw => @sw2, :overlay => @overlay2, :id => 2 }
+
     # numbers: left, top, width, height
     @vbox.attach(@overlay2, 0, 1, 1, 1)
     @vbox.remove(@overlay)
@@ -787,11 +792,19 @@ class VMAgui
     @overlay2.vexpand = true
     @overlay2.hexpand = true
 
-    @sw = @sw2
+    # @sw = @sw2
     @sw2.show
-    @overlay = @overlay2
+    # @overlay = @overlay2
     @two_column = true
-    @active_column = 2
+    # @active_column = 2
+    # @active_window = @windows[2]
+    if vma.buffers.size > 1
+      last = vma.buffers.get_last_visited_id
+      set_buffer_to_window(last, 2)
+    else
+      bf = create_new_buffer "\n\n"
+      set_buffer_to_window(bf.id, 2)
+    end
   end
 
   def toggle_active_window()
@@ -808,15 +821,36 @@ class VMAgui
   def set_active_window(id)
     return if !@two_column
     return if id == @active_column
-    @active_column = id
+    return if id == @active_window[:id]
 
-    if id == 1
-      @sw = @sw1
-      @overlay = @overlay1
-    elsif id == 2
-      @sw = @sw2
-      @overlay = @overlay2
+    if @windows[id].nil?
+      debug "No such window #{id}", 2
+      return
     end
+
+    @active_window = @windows[id]
+    @active_column = id #TODO: remove
+
+    @sw = @windows[id][:sw]
+    @overlay = @windows[id][:overlay]
+
+    #TODO: set buf & view of active window??
+
+  end
+
+  def set_buffer_to_window(bufid, winid)
+    view = @buffers[bufid]
+    debug "vma.gui.set_buffer_to_window(#{bufid}), winid=#{winid}"
+    buf1 = view.buffer
+
+    @windows[winid][:sw].set_child(view)
+
+    #TODO:???
+    # @view = view
+    # @buf1 = buf1
+    # $view = view ???
+    # $vbuf = buf1
+
   end
 
   def set_current_buffer(id)
@@ -838,8 +872,9 @@ class VMAgui
       @sw.set_child(view)
     end
     view.grab_focus
-    view.set_cursor_visible(true)
-    view.place_cursor_onscreen
+    # TODO:needed?
+    # view.set_cursor_visible(true)
+    # view.place_cursor_onscreen
     @sw.show
   end
 end
