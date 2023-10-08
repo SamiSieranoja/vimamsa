@@ -824,9 +824,7 @@ class Buffer < String
   end
 
   def set_pos(new_pos)
-    puts caller.join("\n")
 
-    debug "SETPOS:#{new_pos}", 2
     if new_pos >= self.size
       @pos = self.size - 1 # TODO:??right side of last char
     elsif new_pos >= 0

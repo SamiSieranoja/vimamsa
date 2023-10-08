@@ -234,7 +234,7 @@ class Editor
   def shutdown()
     @hook.call(:shutdown)
     save_state
-    $vmag.quit
+    @gui.quit
   end
 
   def save_state

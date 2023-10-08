@@ -263,6 +263,12 @@ class VMAgui
 
   def quit
     @window.destroy
+    @shutdown = true
+    for t in Thread.list
+      if t != Thread.current
+        t.exit
+      end
+    end
   end
 
   def delay_scale()
@@ -527,6 +533,7 @@ class VMAgui
   end
 
   def debug_idle_func
+    return false if @shutdown == true
     if Time.now - @last_debug_idle > 1
       @last_debug_idle = Time.now
       # puts "DEBUG IDLE #{Time.now}"
@@ -733,14 +740,14 @@ class VMAgui
     @windows[2] = { :sw => @sw2, :overlay => @overlay2, :id => 2 }
 
     @vbox.remove(@overlay)
-    
+
     # numbers: left, top, width, height
     # @vbox.attach(@overlay2, 0, 1, 1, 1)
     # @vbox.attach(@overlay, 1, 1, 1, 1)
-    
+
     @pane.set_start_child(@overlay)
     @pane.set_end_child(@overlay2)
-    
+
     @vbox.attach(@pane, 0, 1, 2, 1)
 
     @sw2.vexpand = true
@@ -751,7 +758,7 @@ class VMAgui
 
     @sw2.show
     @two_column = true
-    
+
     if vma.buffers.size > 1
       last = vma.buffers.get_last_visited_id
       set_buffer_to_window(last, 2)
