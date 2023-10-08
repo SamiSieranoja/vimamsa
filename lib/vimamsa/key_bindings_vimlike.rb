@@ -1,3 +1,13 @@
+vma.kbd.add_mode("C", :command)
+vma.kbd.add_mode("I", :insert,:insert)
+vma.kbd.add_mode("V", :visual,:visual)
+vma.kbd.add_mode("M", :minibuffer) #TODO: needed?
+vma.kbd.add_mode("R", :readchar)
+vma.kbd.add_mode("B", :browse,:command)
+vma.kbd.set_default_mode(:command)
+vma.kbd.set_mode(:command)
+vma.kbd.show_state_trail
+
 bindkey ["VCB M", "B m"], :run_last_macro
 
 bindkey "VC s", :easy_jump
@@ -71,7 +81,7 @@ bindkey "C d d", [:delete_line, proc { buf.delete_line }, "Delete current line"]
 bindkey "C enter || C return", [:line_action, proc { buf.handle_line_action() }, "Line action"]
 bindkey "C p", [:paste_after, proc { buf.paste(AFTER) }, ""] # TODO: implement as replace for visual mode
 bindkey "V d", [:delete_selection, proc { buf.delete(SELECTION) }, ""]
-bindkey "V a d", [:delete_append_selection, proc { buf.delete(SELECTION,:append) }, "Delete and append selection"]
+bindkey "V a d", [:delete_append_selection, proc { buf.delete(SELECTION, :append) }, "Delete and append selection"]
 
 default_keys = {
 
@@ -136,7 +146,6 @@ default_keys = {
 
   "C n" => "$search.jump_to_next()",
   "C N" => "$search.jump_to_previous()",
-
 
   "C C" => :content_search,
 
@@ -203,7 +212,7 @@ default_keys = {
   "V g c" => :selection_capitalize,
   "V g s" => :selection_swapcase,
   "V g r" => :selection_reverse,
-  
+
   "VC j" => :forward_line,
   "VC k" => :backward_line,
 

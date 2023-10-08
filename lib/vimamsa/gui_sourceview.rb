@@ -382,23 +382,33 @@ class VSourceView < GtkSource::View
   end
 
   def draw_cursor
-    if is_command_mode
+    mode = vma.kbd.get_mode
+    ctype = vma.kbd.get_cursor_type
+    # if is_command_mode
+    if ctype == :command
       itr = buffer.get_iter_at(:offset => @bufo.pos)
       itr2 = buffer.get_iter_at(:offset => @bufo.pos + 1)
-      $view.buffer.select_range(itr, itr2) #TODO:gtk4, breaks here 2c
-    elsif @bufo.visual_mode?
+      buffer.select_range(itr, itr2)
+    # elsif @bufo.visual_mode?
+    elsif ctype == :visual
       debug "VISUAL MODE"
       (_start, _end) = @bufo.get_visual_mode_range2
       debug "#{_start}, #{_end}"
       itr = buffer.get_iter_at(:offset => _start)
       itr2 = buffer.get_iter_at(:offset => _end + 1)
       # Pango-CRITICAL **: pango_layout_get_cursor_pos: assertion 'index >= 0 && index <= layout->length' failed
-      $view.buffer.select_range(itr, itr2)
-    else # Insert mode
-      # itr = buffer.get_iter_at(:offset => @bufo.pos)
-      # $view.buffer.select_range(itr, itr)
-      vma.gui.sw.toggle_cursor_visible
+      buffer.select_range(itr, itr2)
+    elsif ctype == :insert
+      # Not sure why this is needed
+      itr = buffer.get_iter_at(:offset => @bufo.pos)
+      buffer.select_range(itr, itr)
+
+      # Via trial and error, this combination is only thing that seems to work:
+      vma.gui.sw.child.toggle_cursor_visible
+      vma.gui.sw.child.cursor_visible = true
+
       debug "INSERT MODE"
+    else # TODO
     end
   end
 end

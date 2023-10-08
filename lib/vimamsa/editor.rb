@@ -90,15 +90,6 @@ class Editor
     # build_key_bindings_tree
     @kbd = KeyBindingTree.new()
     $kbd = @kbd
-    @kbd.add_mode("C", :command)
-    @kbd.add_mode("I", :insert)
-    @kbd.add_mode("V", :visual)
-    @kbd.add_mode("M", :minibuffer)
-    @kbd.add_mode("R", :readchar)
-    @kbd.add_mode("B", :browse)
-    @kbd.set_default_mode(:command)
-    @kbd.set_mode(:command)
-    @kbd.show_state_trail
     require "vimamsa/key_bindings_vimlike"
     sleep(0.03)
 

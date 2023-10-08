@@ -36,15 +36,17 @@ setcnf :indent_based_on_last_line, true
 setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd", ".js"]
 
 class State
-  attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level
+  attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level, :cursor_type
+  attr_reader :cur_mode
 
-  def initialize(key_name, eval_rule = "")
+  def initialize(key_name, eval_rule = "", ctype = :command)
     @key_name = key_name
     @eval_rule = eval_rule
     @children = []
     @major_modes = []
     @action = nil
     @level = 0
+    @cursor_type = ctype
   end
 
   def to_s()
@@ -66,7 +68,7 @@ class KeyBindingTree
     @last_action = nil
     @cur_action = nil
 
-    @modifiers = {:ctrl =>false, :shift=>false, :alt=>false} # TODO: create a queue
+    @modifiers = { :ctrl => false, :shift => false, :alt => false } # TODO: create a queue
     @last_event = [nil, nil, nil, nil, nil]
 
     @override_keyhandling_callback = nil
@@ -84,8 +86,8 @@ class KeyBindingTree
     set_mode(@default_mode)
   end
 
-  def add_mode(id, label)
-    mode = State.new(id)
+  def add_mode(id, label, cursortype = :command)
+    mode = State.new(id, "", cursortype)
     mode.level = 1
     @modes[label] = mode
     @root.children << mode
@@ -94,6 +96,7 @@ class KeyBindingTree
     end
   end
 
+  # Add keyboard key binding mode based on another mode
   def add_minor_mode(id, label, major_mode_label)
     mode = State.new(id)
     @modes[label] = mode
@@ -173,12 +176,25 @@ class KeyBindingTree
         end
       end
     end
+    @cur_mode = label
 
-    # $view.draw_cursor() #TODO: handle outside this class
+    if !vma.gui.view.nil?
+      vma.gui.view.draw_cursor()  #TODO: handle outside this class
+
+      # Ripl.start :binding => binding
+    end
   end
 
   def cur_mode_str()
     return @mode_root_state.key_name
+  end
+
+  def get_cursor_type
+    @mode_root_state.cursor_type
+  end
+
+  def get_mode
+    return @cur_mode
   end
 
   def set_state(key_name, eval_rule = "")
