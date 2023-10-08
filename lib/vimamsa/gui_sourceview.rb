@@ -368,7 +368,7 @@ class VSourceView < GtkSource::View
   end
 
   def ensure_cursor_visible
-    # return #TODO:gtk4
+    return #TODO:gtk4
     debug "@idle_func_running=#{@idle_func_running}"
     return if @idle_func_running
     if is_cursor_visible == false

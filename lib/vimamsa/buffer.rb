@@ -824,6 +824,9 @@ class Buffer < String
   end
 
   def set_pos(new_pos)
+    puts caller.join("\n")
+
+    debug "SETPOS:#{new_pos}", 2
     if new_pos >= self.size
       @pos = self.size - 1 # TODO:??right side of last char
     elsif new_pos >= 0
@@ -1515,6 +1518,7 @@ class Buffer < String
 
   # Start asynchronous read of system clipboard
   def paste_start(at, register)
+    @clipboard_paste_running = true
     clipboard = vma.gui.window.display.clipboard
     clipboard.read_text_async do |_clipboard, result|
       text = clipboard.read_text_finish(result)
@@ -1532,6 +1536,7 @@ class Buffer < String
     # end
     # end
     debug "PASTE: #{text}"
+    $clipboard << text
 
     return if text == ""
 
@@ -1548,23 +1553,22 @@ class Buffer < String
       set_pos(pos + text.size)
     end
     set_pos(@pos)
+    @clipboard_paste_running = false
   end
 
   def paste(at = AFTER, register = nil)
-    paste_start(at, register)
-    #TODO:
-    # if register.nil?
-    # text = paste_system_clipboard
-    # end
+    # Macro's don't work with asynchronous call using GTK
+    # TODO: implement as synchronous? 
+    # Use internal clipboard
+    if vma.macro.running_macro
+      text = get_clipboard()
+      paste_finish(text, at, register)
+    else
+      # Get clipboard using GUI
+      paste_start(at, register)
+    end
+    return true
 
-    # if text == ""
-    # return if !$clipboard.any?
-    # if register == nil
-    # text = $clipboard[-1]
-    # else
-    # text = $register[register]
-    # end
-    # end
   end
 
   def delete_line()

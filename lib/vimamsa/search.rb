@@ -44,6 +44,8 @@ class Search
     else
       return false
     end
+    
+    return nil
   end
 
   def update_search()

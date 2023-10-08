@@ -1,4 +1,3 @@
-
 def gui_find_macro_update_callback(search_str = "")
   debug "gui_find_macro_update_callback: #{search_str}"
   heystack = $macro.named_macros
@@ -24,7 +23,7 @@ def gui_find_macro_select_callback(search_str, idx)
 end
 
 class Macro
-  # attr_reader :recorded_macros, :recording, :named_macros
+  attr_reader :running_macro
   attr_accessor :recorded_macros, :recording, :named_macros, :last_macro
 
   def initialize()
@@ -33,6 +32,7 @@ class Macro
     @current_recording = []
     @current_name = nil
     @last_macro = "a"
+    @running_macro = false
 
     #TODO:
     @recorded_macros = vma.marshal_load("macros", {})
@@ -52,14 +52,13 @@ class Macro
   end
 
   def find_macro_gui()
-
     l = $macro.named_macros.keys.sort.collect { |x| [x, 0] }
     $macro_search_list = l
     $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
 
     gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
-                            "gui_find_macro_select_callback",
-                            "gui_find_macro_update_callback")
+                             "gui_find_macro_select_callback",
+                             "gui_find_macro_update_callback")
   end
 
   def name_macro(name, id = nil)
@@ -128,6 +127,7 @@ class Macro
     end
     acts = @recorded_macros[name]
     if acts.kind_of?(Array) and acts.any?
+      @running_macro = true
       set_last_command({ method: $macro.method("run_macro"), params: [name] })
       #
       for a in acts
@@ -135,6 +135,8 @@ class Macro
         debug ret
         if ret == false
           message("Error while running macro")
+          Ripl.start :binding => binding
+
           break
         end
       end
@@ -142,6 +144,7 @@ class Macro
       # debug(eval_str)
       # eval(eval_str)
     end
+    @running_macro = false
     buf.set_pos(buf.pos)
   end
 

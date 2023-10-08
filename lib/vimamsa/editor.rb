@@ -32,7 +32,7 @@ def mkdir_if_not_exists(_dirpath)
 end
 
 class Editor
-  attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook
+  attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook, :macro
   attr_accessor :converters, :fh, :paint_stack, :kbd, :langsrv
   #attr_writer :call_func, :update_highlight
 
@@ -75,7 +75,8 @@ class Editor
     $hook = Hook.new
     @hook = $hook
     register_plugin(:Hook, @hook)
-    $macro = Macro.new
+    @macro = Macro.new
+    $macro = @macro
     register_plugin(:Macro, $macro)
     $search = Search.new
     register_plugin(:Search, $search)
@@ -300,6 +301,8 @@ def open_file_dialog()
   gui_open_file_dialog(File.dirname(path))
 end
 
+
+#TODO:delete?
 def system_clipboard_changed(clipboard_contents)
   max_clipboard_items = 100
   if clipboard_contents != $clipboard[-1]
