@@ -651,55 +651,6 @@ class VMAgui
 
       reset_controllers
 
-      if false
-        # press = Gtk::GestureClick.new
-        press = Gtk::EventControllerKey.new
-        @press = press
-        # to prevent SourceView key handler capturing any keypresses
-        press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
-
-        @window.add_controller(press)
-        press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
-          name = Gdk::Keyval.to_name(keyval)
-          uki = Gdk::Keyval.to_unicode(keyval)
-          keystr = uki.chr("UTF-8")
-          puts "key-pressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
-          buf.view.handle_key_event(keyval, keystr, :key_press)
-          true
-        end
-
-        press.signal_connect "modifiers" do |eventctr, modtype|
-          # eventctr: Gtk::EventControllerKey
-          # modtype: Gdk::ModifierType
-          debug "modifier change"
-          vma.kbd.modifiers[:ctrl] = modtype.control_mask?
-          vma.kbd.modifiers[:alt] = modtype.alt_mask?
-          vma.kbd.modifiers[:hyper] = modtype.hyper_mask?
-          vma.kbd.modifiers[:lock] = modtype.lock_mask?
-          vma.kbd.modifiers[:meta] = modtype.meta_mask?
-          vma.kbd.modifiers[:shift] = modtype.shift_mask?
-          vma.kbd.modifiers[:super] = modtype.super_mask?
-
-          #TODO:?
-          # button1_mask?
-          # ...
-          # button5_mask?
-          true
-        end
-
-        press.signal_connect "key-released" do |gesture, keyval, keycode, y|
-          name = Gdk::Keyval.to_name(keyval)
-          uki = Gdk::Keyval.to_unicode(keyval)
-          keystr = uki.chr("UTF-8")
-          puts "key released #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
-          buf.view.handle_key_event(keyval, keystr, :key_release)
-          # vma.kbd.match_key_conf(keystr, nil, :key_press)
-          # buf.view.handle_deltas
-          # buf.view.handle_key_event(keyval, keystr, :key_press)
-          true
-        end
-      end
-
       # @window.signal_connect("key-pressed") { puts "Hello World!" }
       # @window.signal_connect("clicked") { puts "Hello World!" }
 
@@ -805,6 +756,11 @@ class VMAgui
       bf = create_new_buffer "\n\n"
       set_buffer_to_window(bf.id, 2)
     end
+  end
+
+  def is_buffer_open(bufid)
+    openbufids = @windows.keys.collect { |x| @windows[x][:sw].child.bufo.id }
+    return openbufids.include?(bufid)
   end
 
   def toggle_active_window()

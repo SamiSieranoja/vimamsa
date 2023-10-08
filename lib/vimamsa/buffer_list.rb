@@ -204,7 +204,6 @@ class BufferList < Array
     jump_to_buf = recent[@recent_ind + 1]
     jump_to_buf = 0 if jump_to_buf == nil
 
-    # Ripl.start :binding => binding
     self.slice!(buffer_i)
     @buffer_history = @buffer_history.collect { |x| r = x; r = x - 1 if x > buffer_i; r = nil if x == buffer_i; r }.compact
 
@@ -212,10 +211,11 @@ class BufferList < Array
       if from_recent
         @current_buf = jump_to_buf
       else
-        @current_buf = @buffer_history.last
+      	# Find last edited buffer that is not already open
+        @current_buf = @buffer_history.filter{|x| !vma.gui.is_buffer_open(self[x].id)}.last
       end
     end
-    if self.size == 0
+    if self.size == 0 or @current_buf.nil?
       self << Buffer.new("\n")
       @current_buf = 0
     else

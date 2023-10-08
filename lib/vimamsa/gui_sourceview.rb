@@ -395,8 +395,9 @@ class VSourceView < GtkSource::View
       # Pango-CRITICAL **: pango_layout_get_cursor_pos: assertion 'index >= 0 && index <= layout->length' failed
       $view.buffer.select_range(itr, itr2)
     else # Insert mode
-      itr = buffer.get_iter_at(:offset => @bufo.pos)
-      $view.buffer.select_range(itr, itr)
+      # itr = buffer.get_iter_at(:offset => @bufo.pos)
+      # $view.buffer.select_range(itr, itr)
+      vma.gui.sw.toggle_cursor_visible
       debug "INSERT MODE"
     end
   end
