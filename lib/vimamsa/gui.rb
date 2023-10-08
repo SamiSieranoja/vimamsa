@@ -645,7 +645,6 @@ class VMAgui
       @window.add(@vbox)
 
       Thread.new {
-        sleep 0.01
         GLib::Idle.add(proc { debug_idle_func })
       }
 
@@ -729,13 +728,20 @@ class VMAgui
     @sw2.set_policy(:automatic, :automatic)
     @overlay2 = Gtk::Overlay.new
     @overlay2.add_overlay(@sw2)
+    @pane = Gtk::Paned.new(:horizontal)
 
     @windows[2] = { :sw => @sw2, :overlay => @overlay2, :id => 2 }
 
-    # numbers: left, top, width, height
-    @vbox.attach(@overlay2, 0, 1, 1, 1)
     @vbox.remove(@overlay)
-    @vbox.attach(@overlay, 1, 1, 1, 1)
+    
+    # numbers: left, top, width, height
+    # @vbox.attach(@overlay2, 0, 1, 1, 1)
+    # @vbox.attach(@overlay, 1, 1, 1, 1)
+    
+    @pane.set_start_child(@overlay)
+    @pane.set_end_child(@overlay2)
+    
+    @vbox.attach(@pane, 0, 1, 2, 1)
 
     @sw2.vexpand = true
     @sw2.hexpand = true
@@ -743,12 +749,9 @@ class VMAgui
     @overlay2.vexpand = true
     @overlay2.hexpand = true
 
-    # @sw = @sw2
     @sw2.show
-    # @overlay = @overlay2
     @two_column = true
-    # @active_column = 2
-    # @active_window = @windows[2]
+    
     if vma.buffers.size > 1
       last = vma.buffers.get_last_visited_id
       set_buffer_to_window(last, 2)
