@@ -494,8 +494,9 @@ GUESS_ENCODING_ORDER = [
 def create_new_file(filename = nil, file_contents = "\n")
   debug "NEW FILE CREATED"
   buffer = Buffer.new(file_contents)
-  vma.buffers << buffer
+  vma.buffers.add(buffer)
   vma.kbd.set_mode_to_default
+  vma.buffers.set_current_buffer_by_id(buffer.id)
   return buffer
 end
 
@@ -503,6 +504,7 @@ def create_new_buffer(file_contents = "\n")
   debug "NEW BUFFER CREATED"
   buffer = Buffer.new(file_contents)
   vma.buffers.add(buffer)
+  vma.buffers.set_current_buffer_by_id(buffer.id)
   # vma.kbd.set_mode_to_default
   # Ripl.start :binding => binding
   return buffer

@@ -18,7 +18,7 @@ class ResizableImage < Gtk::DrawingArea
     pb = @pixbuf
     view = @view
     if view.visible_rect.width > 0
-      imglimit = view.visible_rect.width - 20
+      imglimit = view.visible_rect.width - 50
     else
       imglimit = 500
     end

@@ -266,7 +266,8 @@ class VSourceView < GtkSource::View
       end
     end
     if any_change
-      gui_set_cursor_pos(@bufo.id, @bufo.pos) #TODO: only when necessary
+      # gui_set_cursor_pos(@bufo.id, @bufo.pos) #TODO: only when necessary
+      self.set_cursor_pos(pos)
     end
 
     # sanity_check #TODO
@@ -389,7 +390,7 @@ class VSourceView < GtkSource::View
       itr = buffer.get_iter_at(:offset => @bufo.pos)
       itr2 = buffer.get_iter_at(:offset => @bufo.pos + 1)
       buffer.select_range(itr, itr2)
-    # elsif @bufo.visual_mode?
+      # elsif @bufo.visual_mode?
     elsif ctype == :visual
       debug "VISUAL MODE"
       (_start, _end) = @bufo.get_visual_mode_range2

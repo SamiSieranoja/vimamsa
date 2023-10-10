@@ -27,6 +27,7 @@ class Buffer < String
     super(str)
 
     @images = []
+    @audiofiles = []
     @lang = nil
     @id = @@num_buffers
     @@num_buffers += 1
@@ -154,6 +155,55 @@ class Buffer < String
   def view()
     # Get the VSourceView < GtkSource::View object corresponding to this buffer
     return vma.gui.buffers[@id]
+  end
+
+  # Replace char at pos with audio widget for
+  def add_audio(afpath, pos)
+    return if !is_legal_pos(pos)
+    afpath = File.expand_path(afpath)
+    return if !File.exist?(afpath)
+
+    vbuf = view.buffer
+    itr = vbuf.get_iter_at(:offset => pos)
+    itr2 = vbuf.get_iter_at(:offset => pos + 1)
+    vbuf.delete(itr, itr2)
+    anchor = vbuf.create_child_anchor(itr)
+
+    mf = Gtk::MediaFile.new()
+    mf.file = Gio::File.new_for_path(File.expand_path(afpath))
+    mc = Gtk::MediaControls.new(mf)
+    @audiofiles << mc
+
+    view.add_child_at_anchor(mc, anchor)
+    mc.set_size_request(500, 20)
+    mc.set_margin_start(view.gutter_width + 10)
+
+    provider = Gtk::CssProvider.new
+    mc.add_css_class("medctr")
+
+    provider.load(data: ".medctr {   background-color:#353535; }")
+    mc.style_context.add_provider(provider)
+
+    # >> Gtk::MediaControls.signals
+    # => ["direction-changed", "destroy", "show", "hide", "map", "unmap", "realize", "unrealize", "state-flags-changed", "mnemonic-activate", "move-focus", "keynav-failed", "query-tooltip", "notify"]
+
+    # If this is done too early, the gutter is not yet drawn which
+    # will result in wrong position
+    if @audiofiles.size == 1
+      Thread.new {
+        GLib::Idle.add(proc { self.reset_audio_widget_positions })
+      }
+    end
+    $audiof = mf
+  end
+
+  def reset_audio_widget_positions
+    debug "reset_audio_widget_positions", 2
+    for mc in @audiofiles
+      mc.set_size_request(500, 20)
+      mc.set_margin_start(view.gutter_width + 10)
+    end
+    return false
   end
 
   def add_image(imgpath, pos)
@@ -334,6 +384,7 @@ class Buffer < String
     gui_set_buffer_contents(@id, self.to_s)
     @images = [] #TODO: if reload
     hpt_scan_images(self)
+    hpt_scan_audio(self)
 
     # add_hl_update(@update_hl_startpos, @update_hl_endpos)
   end
@@ -824,7 +875,6 @@ class Buffer < String
   end
 
   def set_pos(new_pos)
-
     if new_pos >= self.size
       @pos = self.size - 1 # TODO:??right side of last char
     elsif new_pos >= 0
@@ -1556,7 +1606,7 @@ class Buffer < String
 
   def paste(at = AFTER, register = nil)
     # Macro's don't work with asynchronous call using GTK
-    # TODO: implement as synchronous? 
+    # TODO: implement as synchronous?
     # Use internal clipboard
     if vma.macro.running_macro
       text = get_clipboard()
@@ -1566,7 +1616,6 @@ class Buffer < String
       paste_start(at, register)
     end
     return true
-
   end
 
   def delete_line()

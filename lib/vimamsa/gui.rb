@@ -178,6 +178,7 @@ def gui_set_buffer_contents(id, txt)
   vma.gui.buffers[id].buffer.set_text(txt)
 end
 
+#TODO: remove
 def gui_set_cursor_pos(id, pos)
   vma.buf.view.set_cursor_pos(pos)
 end
@@ -277,12 +278,13 @@ class VMAgui
   end
 
   def scale_all_images
-    # puts "scale all"
+    debug "scale all", 2
     for img in buf.images
       if !img[:obj].destroyed?
         img[:obj].scale_image
       end
     end
+    false
   end
 
   def handle_image_resize #TODO:gtk4
@@ -726,10 +728,12 @@ class VMAgui
   end
 
   def set_two_column
+    return if @two_column
     # @window.set_default_size(800, 600) #TODO:gtk4
     # @vpaned = Gtk::Paned.new(:vertical)
     # @vbox = Gtk::Grid.new()
     # @window.add(@vbox)
+    
 
     @sw2 = Gtk::ScrolledWindow.new
     @sw2.set_policy(:automatic, :automatic)
@@ -742,9 +746,6 @@ class VMAgui
     @vbox.remove(@overlay)
 
     # numbers: left, top, width, height
-    # @vbox.attach(@overlay2, 0, 1, 1, 1)
-    # @vbox.attach(@overlay, 1, 1, 1, 1)
-
     @pane.set_start_child(@overlay)
     @pane.set_end_child(@overlay2)
 
