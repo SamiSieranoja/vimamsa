@@ -111,7 +111,7 @@ class FileManager
     end
 
     if @buf.nil?
-      @buf = create_new_file(nil, s)
+      @buf = create_new_buffer(s,"filemgr")
       @buf.module = self
       @buf.active_kbd_mode = :file_exp
     else

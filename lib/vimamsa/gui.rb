@@ -686,7 +686,7 @@ class VMAgui
       @statnfo.style_context.add_provider(provider)
 
       # numbers: left, top, width, height
-      @vbox.attach(@overlay, 0, 1, 2, 1) #TODO:gtk4
+      @vbox.attach(@overlay, 0, 1, 2, 1)
       @sw.vexpand = true
       @sw.hexpand = true
 
@@ -733,7 +733,6 @@ class VMAgui
     # @vpaned = Gtk::Paned.new(:vertical)
     # @vbox = Gtk::Grid.new()
     # @window.add(@vbox)
-    
 
     @sw2 = Gtk::ScrolledWindow.new
     @sw2.set_policy(:automatic, :automatic)
@@ -842,6 +841,6 @@ class VMAgui
     # TODO:needed?
     # view.set_cursor_visible(true)
     # view.place_cursor_onscreen
-    @sw.show
+    # @sw.show
   end
 end

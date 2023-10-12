@@ -45,7 +45,7 @@ Will search all .txt files in the following directories:
       dlist = dlist + Dir.glob("#{d}/**/*").select { |e| File.file?(e) and fext.include?(File.extname(e)) and File.size(e) < 200e3 }
     end
     bufstr = "Results:\n\n"
-    b = create_new_file(nil, bufstr)
+    b = create_new_buffer(bufstr,"contentsearch")
     lno = 1
     @linep = {}
     for fp in dlist
@@ -118,7 +118,7 @@ def ack_buffer(instr, b = nil)
     bufstr += run_cmd("ack -Q --type-add=gd=.gd -ki --nohtml --nojs --nojson #{instr} #{path}")
   end
   if bufstr.size > 5
-    create_new_file(nil, bufstr)
+  create_new_buffer(bufstr,"ack")
   else
     message("No results for input:#{instr}")
   end

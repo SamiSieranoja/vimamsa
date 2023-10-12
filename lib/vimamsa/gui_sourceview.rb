@@ -43,7 +43,7 @@ class VSourceView < GtkSource::View
     # end
 
     signal_connect("move-cursor") do |widget, event|
-      debug ("MOVE-CURSOR")
+      debug("MOVE-CURSOR",2)
       $update_cursor = true
       false
     end
@@ -83,7 +83,7 @@ class VSourceView < GtkSource::View
       # if ctr.class == Gtk::EventControllerKey or ctr.class == Gtk::GestureClick
       if ctr != @click
         # to_remove << ctr if ctr.class != Gtk::GestureDrag
-        to_remove << ctr
+        to_remove << ctr 
       end
     }
     if to_remove.size > 0

@@ -301,7 +301,6 @@ def open_file_dialog()
   gui_open_file_dialog(File.dirname(path))
 end
 
-
 #TODO:delete?
 def system_clipboard_changed(clipboard_contents)
   max_clipboard_items = 100
@@ -492,21 +491,27 @@ GUESS_ENCODING_ORDER = [
 ]
 
 def create_new_file(filename = nil, file_contents = "\n")
-  debug "NEW FILE CREATED"
   buffer = Buffer.new(file_contents)
+
+  debug "NEW FILE CREATED: #{buffer.id}"
   vma.buffers.add(buffer)
   vma.kbd.set_mode_to_default
   vma.buffers.set_current_buffer_by_id(buffer.id)
+
+  # Do set_content twice (once in Buffer.new) to force redraw and work around a bug 
+  # The bug: if switching a child of scrolledWindow to a textview with a file smaller than the window, it won't get drawn properly if in previous (larger) file the ScrolledWindow was scrolled down.
+  buffer.set_content(file_contents)
+
   return buffer
 end
 
-def create_new_buffer(file_contents = "\n")
+def create_new_buffer(file_contents = "\n",prefix="buf")
   debug "NEW BUFFER CREATED"
-  buffer = Buffer.new(file_contents)
+  buffer = Buffer.new(file_contents,nil,prefix)
   vma.buffers.add(buffer)
   vma.buffers.set_current_buffer_by_id(buffer.id)
-  # vma.kbd.set_mode_to_default
-  # Ripl.start :binding => binding
+  buffer.set_content(file_contents)
+
   return buffer
 end
 

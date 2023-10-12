@@ -45,7 +45,7 @@ class BufferManager
 
     # vma.buffers.close_current_buffer() #TODO:??
     vma.buffers.set_current_buffer(buf_i)
-    
+
     bid = vma.buffers.get_buffer_by_id(@buf.id)
     vma.buffers.close_other_buffer(bid)
     @@cur = nil
@@ -70,8 +70,8 @@ class BufferManager
     jump_to_line = 0
     for b in vma.buffers.sort_by { |x| x.list_str }
       if b.id == vma.buf.id # current file
-      # s << "   "
-      jump_to_line = i
+        # s << "   "
+        jump_to_line = i
       end
       x = b.list_str
       s << "#{x}\n"
@@ -79,8 +79,10 @@ class BufferManager
       i += 1
     end
 
+
+
     if @buf.nil?
-      @buf = create_new_file(nil, s)
+      @buf = create_new_buffer(s,"bufmgr")
       @buf.module = self
       @buf.active_kbd_mode = :buf_mgr
     else
@@ -88,13 +90,10 @@ class BufferManager
     end
     # Position on the line of the active buffer
     # @buf.set_content(s)
-    newlpos=@header.size+jump_to_line
-    # vma.buffers.set_current_buffer(vma.buffers.get_buffer_by_id(@buf.id))
-    # @buf.set_pos(newlpos)
-    # center_on_current_line
+    newlpos = @header.size + jump_to_line
+
     @buf.set_line_and_column_pos(newlpos, 0)
-    # Thread.new{sleep 0.1; gui_set_cursor_pos(@buf.id, @buf.pos)}
-    # gui_set_cursor_pos(@buf.id, @buf.pos)
+
     # Thread.new{sleep 0.1; center_on_current_line()} # TODO
   end
 end
