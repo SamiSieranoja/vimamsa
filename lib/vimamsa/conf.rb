@@ -21,3 +21,5 @@ setcnf "log.verbose", 1
 setcnf :tab_width, 4
 setcnf :enable_lsp, false
 
+setcnf :workspace_folders, []
+

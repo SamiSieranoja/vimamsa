@@ -1,12 +1,59 @@
 
+class HSafe
+  def initialize(hash)
+    @h = hash
+    @a = []
+  end
+
+  def [](x)
+    @a << x
+    return self
+  end
+
+  def val
+    b = @a.reverse
+    hh = @h
+    while !b.empty?
+      x = b.pop
+      puts "x=#{x}"
+      pp b
+      ok = false
+      if hh.class == Hash or hh.class == Array
+        ok = true
+      else
+        if hh.methods.include?(:[])
+          ok = true
+        end
+      end
+      return nil if !ok
+      if hh[x].nil?
+        return nil
+      else
+        hh = hh[x]
+      end
+    end
+    return hh
+  end
+end
+
+# h= Hash.new
+# h[2] = Hash.new
+# h[2]["sdf"] = Hash.new
+# h[2]["sdf"][:ll] = 2323
+# pp HSafe.new(h)[2]["sdf"][:ll].val
+# pp HSafe.new(h)[2]["sdf"][:llz].val
+# pp HSafe.new(h)["SDFSDFD"]["sdf"][:llz].val
+
+
+
 # From https://stackoverflow.com/questions/2108727/which-in-ruby-checking-if-program-exists-in-path-from-ruby
 # Cross-platform way of finding an executable in the $PATH.
 #
 #   which('ruby') #=> /usr/bin/ruby
 
-
 # Execute proc after wait_time seconds after last .run call.
 # Used for image scaling after window resize
+
 class DelayExecutioner
   def initialize(wait_time, _proc)
     @wait_time = wait_time

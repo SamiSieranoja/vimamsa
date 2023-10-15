@@ -27,6 +27,9 @@ bindkey "C , f", :gui_file_finder
 bindkey "C , h", :gui_file_history_finder
 bindkey "C , z", :gui_file_finder
 
+bindkey "C ` k", :lsp_debug
+bindkey "C ` j", :lsp_jump_to_definition
+
 bindkey "C , r r", :gui_search_replace
 bindkey "V , r r", :gui_search_replace
 bindkey "V , t b", :set_style_bold

@@ -22,7 +22,7 @@ class Buffer < String
 
   @@num_buffers = 0
 
-  def initialize(str = "\n", fname = nil, prefix="buf")
+  def initialize(str = "\n", fname = nil, prefix = "buf")
     debug "Buffer.rb: def initialize"
     super(str)
 
@@ -65,7 +65,7 @@ class Buffer < String
     end
 
     t1 = Time.now
-    
+
     set_content(str)
     debug "init time:#{Time.now - t1}"
 
@@ -110,6 +110,16 @@ class Buffer < String
     end
   end
 
+  def lsp_jump_to_def()
+    if !@lsp.nil?
+      fpuri = URI.join("file:///", @fname).to_s
+      r = @lsp.get_definition(fpuri, @lpos, @cpos)
+      if !r.nil?
+        jump_to_file(r[0], r[1])
+      end
+    end
+  end
+
   def add_to_lsp()
     if !@lsp.nil?
       @lsp.open_file(@fname, self.to_s)
@@ -117,6 +127,11 @@ class Buffer < String
   end
 
   def init_lsp()
+    if @lang == "ruby" and !vma.langsrv["ruby"].nil?
+      @lsp = vma.langsrv["ruby"]
+      add_to_lsp()
+    end
+
     if @lang == "cpp" and !vma.langsrv["cpp"].nil?
       @lsp = vma.langsrv["cpp"]
       add_to_lsp()
@@ -174,7 +189,7 @@ class Buffer < String
     # mc = Gtk::MediaControls.new(Gtk::MediaFile.new)
     # Thread.new{mf.play;sleep 0.01; mf.pause}
     @audiofiles << mc
-	
+
     view.add_child_at_anchor(mc, anchor)
     mc.set_size_request(500, 20)
     mc.set_margin_start(view.gutter_width + 10)
@@ -184,13 +199,12 @@ class Buffer < String
 
     provider.load(data: ".medctr {   background-color:#353535; }")
     mc.style_context.add_provider(provider)
-    
+
     pp mf.set_prepared(true)
     # pp mf.pause
-	pp mf.duration
-	pp mf.has_audio?
+    pp mf.duration
+    pp mf.has_audio?
 
-    
     # >> Gtk::MediaControls.signals
     # => ["direction-changed", "destroy", "show", "hide", "map", "unmap", "realize", "unrealize", "state-flags-changed", "mnemonic-activate", "move-focus", "keynav-failed", "query-tooltip", "notify"]
 
@@ -359,7 +373,6 @@ class Buffer < String
         sanitycheck_btree()
       end
     end
-    
 
     @last_update = Time.now - 10
     debug("line_ends")
@@ -388,7 +401,6 @@ class Buffer < String
     @update_highlight = true
     @update_hl_startpos = 0 #TODO
     @update_hl_endpos = self.size - 1
-
 
     gui_set_buffer_contents(@id, self.to_s)
     @images = [] #TODO: if reload

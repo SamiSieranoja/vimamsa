@@ -133,7 +133,8 @@ class Editor
 
     if conf(:enable_lsp)
       require "vimamsa/langservp"
-      @langsrv["cpp"] = ClangLangsrv.new()
+      @langsrv["ruby"] = LangSrv.new("ruby")
+      @langsrv["cpp"] = LangSrv.new("cpp")
     end
 
     # build_options
