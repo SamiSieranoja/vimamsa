@@ -31,6 +31,7 @@ class Buffer < String
     @lang = nil
     @id = @@num_buffers
     @@num_buffers += 1
+    @version = 0
     gui_create_buffer(@id, self)
     debug "NEW BUFFER fn=#{fname} ID:#{@id}"
 
@@ -76,6 +77,7 @@ class Buffer < String
     if conf(:enable_lsp)
       init_lsp
     end
+    return self
   end
 
   def list_str()
@@ -120,21 +122,16 @@ class Buffer < String
     end
   end
 
-  def add_to_lsp()
+  def init_lsp()
+    if conf(:enable_lsp) and !@lang.nil?
+      @lsp = LangSrv.get(@lang.to_sym)
+      if @lang == "php"
+        # Ripl.start :binding => binding
+      end
+    end
+
     if !@lsp.nil?
       @lsp.open_file(@fname, self.to_s)
-    end
-  end
-
-  def init_lsp()
-    if @lang == "ruby" and !vma.langsrv["ruby"].nil?
-      @lsp = vma.langsrv["ruby"]
-      add_to_lsp()
-    end
-
-    if @lang == "cpp" and !vma.langsrv["cpp"].nil?
-      @lsp = vma.langsrv["cpp"]
-      add_to_lsp()
     end
   end
 
@@ -501,8 +498,22 @@ class Buffer < String
   def run_delta(delta, auto_update_cpos = false)
     # auto_update_cpos: In some cases position of cursor should be updated automatically based on change to buffer (delta). In other cases this is handled by the action that creates the delta.
 
+    # delta[0]: char position
+    # delta[1]: INSERT or DELETE
+    # delta[2]: number of chars affected
+    # delta[3]: text to add in case of insert
+
+    @version += 1
     if $experimental
       @bt.handle_delta(Delta.new(delta[0], delta[1], delta[2], delta[3]))
+    end
+
+    if !@lsp.nil?
+      dc = delta.clone
+      dc[3] = "" if dc[3].nil?
+      dc[4] = get_line_and_col_pos(delta[0])
+      dc[5] = get_line_and_col_pos(delta[0] + delta[2])
+      @lsp.handle_delta(dc, @fname, @version)
     end
     pos = delta[0]
     if @edit_pos_history.any? and (@edit_pos_history.last - pos).abs <= 2

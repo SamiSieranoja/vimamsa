@@ -1,3 +1,4 @@
+
 def save_buffer_list()
   message("Save buffer list")
   buffn = get_dot_path("buffers.txt")
@@ -26,6 +27,7 @@ class BufferList < Array
     @last_dir = File.expand_path(".")
     @buffer_history = []
     super
+    @current_buf=0
   end
 
   # lastdir = File.expand_path(".") if lastdir.nil?

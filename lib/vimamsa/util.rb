@@ -45,7 +45,6 @@ end
 # pp HSafe.new(h)["SDFSDFD"]["sdf"][:llz].val
 
 
-
 # From https://stackoverflow.com/questions/2108727/which-in-ruby-checking-if-program-exists-in-path-from-ruby
 # Cross-platform way of finding an executable in the $PATH.
 #
