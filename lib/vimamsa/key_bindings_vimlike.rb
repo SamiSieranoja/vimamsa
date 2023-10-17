@@ -1,9 +1,10 @@
 vma.kbd.add_mode("C", :command)
-vma.kbd.add_mode("I", :insert,:insert)
-vma.kbd.add_mode("V", :visual,:visual)
+vma.kbd.add_mode("I", :insert, :insert)
+vma.kbd.add_mode("V", :visual, :visual)
 vma.kbd.add_mode("M", :minibuffer) #TODO: needed?
 vma.kbd.add_mode("R", :readchar)
-vma.kbd.add_mode("B", :browse,:command)
+vma.kbd.add_mode("B", :browse, :command)
+vma.kbd.add_mode("X", :replace, :command, name: "Replace")
 vma.kbd.set_default_mode(:command)
 vma.kbd.set_mode(:command)
 vma.kbd.show_state_trail
@@ -98,7 +99,7 @@ default_keys = {
   #    'C , s'=> 'gui_select_buffer',
   "C , r v b" => :buf_revert,
   "C , c b" => "bufs.close_current_buffer",
-  #"C , b" => '$kbd.set_mode("S");gui_select_buffer',
+  #"C , b" => 'vma.kbd.set_mode("S");gui_select_buffer',
   "C , n b" => :buf_new,
   # "C , , ." => "backup_all_buffers()",
   "VC , , s" => :search_actions,
@@ -112,10 +113,10 @@ default_keys = {
   "VC pagedown" => "page_down",
   "VC pageup" => "page_up",
 
-  "VCI left" => "buf.move(BACKWARD_CHAR)",
-  "VCI right" => "buf.move(FORWARD_CHAR)",
-  "VCI down" => "buf.move(FORWARD_LINE)",
-  "VCI up" => "buf.move(BACKWARD_LINE)",
+  "VCIX left" => "buf.move(BACKWARD_CHAR)",
+  "VCIX right" => "buf.move(FORWARD_CHAR)",
+  "VCIX down" => "buf.move(FORWARD_LINE)",
+  "VCIX up" => "buf.move(BACKWARD_LINE)",
 
   "VC w" => "buf.jump_word(FORWARD,WORD_START)",
   "VC b" => "buf.jump_word(BACKWARD,WORD_START)",
@@ -163,11 +164,11 @@ default_keys = {
   "VC O" => "buf.jump(END_OF_LINE)",
   "VC $" => "buf.jump(END_OF_LINE)",
 
-  "C o" => 'buf.jump(END_OF_LINE);buf.insert_txt("\n");$kbd.set_mode(:insert)',
+  "C o" => 'buf.jump(END_OF_LINE);buf.insert_txt("\n");vma.kbd.set_mode(:insert)',
   "C X" => 'buf.jump(END_OF_LINE);buf.insert_txt("\n");',
-  "C A" => "buf.jump(END_OF_LINE);$kbd.set_mode(:insert)",
-  "C I" => "buf.jump(FIRST_NON_WHITESPACE);$kbd.set_mode(:insert)",
-  "C a" => "buf.move(FORWARD_CHAR);$kbd.set_mode(:insert)",
+  "C A" => "buf.jump(END_OF_LINE);vma.kbd.set_mode(:insert)",
+  "C I" => "buf.jump(FIRST_NON_WHITESPACE);vma.kbd.set_mode(:insert)",
+  "C a" => "buf.move(FORWARD_CHAR);vma.kbd.set_mode(:insert)",
   "C J" => "buf.join_lines()",
   "C u" => "buf.undo()",
 
@@ -232,8 +233,17 @@ default_keys = {
   'CV \' <char>' => "buf.jump_to_mark(<char>)",
   # "CV ''" =>'jump_to_mark(NEXT_MARK)', #TODO
 
-  "C i" => "$kbd.set_mode(:insert)",
-  "C ctrl!" => "$kbd.set_mode(:insert)",
+  # Switch to other mode
+  "C i" => "vma.kbd.set_mode(:insert)",
+  "C R" => "vma.kbd.set_mode(:replace)",
+  "C ctrl!" => "vma.kbd.set_mode(:insert)",
+  "C ctrl!" => "vma.kbd.set_mode(:insert)",
+  
+
+  # "R esc || R ctrl!" => "vma.kbd.set_mode(:command)",
+  "X esc" => "vma.kbd.set_mode(:command)",
+  "X ctrl!" => "vma.kbd.set_mode(:command)",
+  "X <char>" => "buf.replace_with_char(<char>);buf.move(FORWARD_CHAR)",
 
   # Macros
   # (experimental, may not work correctly)
@@ -254,22 +264,22 @@ default_keys = {
   # "CV Q" => :quit,
   "CV ctrl-q" => :quit,
   "CV , R" => "restart_application",
-  "I ctrl!" => "$kbd.set_mode(:command)",
+  "I ctrl!" => "vma.kbd.set_mode(:command)",
   "C shift!" => "buf.save",
   "I <char>" => "buf.insert_txt(<char>)",
-  "I esc" => "$kbd.set_mode(:command)",
+  "I esc" => "vma.kbd.set_mode(:command)",
 
   "I ctrl-d" => "buf.delete2(:to_word_end)",
 
-  # INSERT MODE: Moving
-  "I ctrl-a" => "buf.jump(BEGINNING_OF_LINE)",
-  "I ctrl-b" => "buf.move(BACKWARD_CHAR)",
-  "I ctrl-f" => "buf.move(FORWARD_CHAR)",
-  "I ctrl-n" => "buf.move(FORWARD_LINE)",
-  "I ctrl-p" => "buf.move(BACKWARD_LINE)",
-  "I ctrl-e" => "buf.jump(END_OF_LINE)", # context: mode:I, buttons down: {C}
-  "I alt-f" => "buf.jump_word(FORWARD,WORD_START)",
-  "I alt-b" => "buf.jump_word(BACKWARD,WORD_START)",
+  # Insert and Replace modes: Moving
+  "IX ctrl-a" => "buf.jump(BEGINNING_OF_LINE)",
+  "IX ctrl-b" => "buf.move(BACKWARD_CHAR)",
+  "IX ctrl-f" => "buf.move(FORWARD_CHAR)",
+  "IX ctrl-n" => "buf.move(FORWARD_LINE)",
+  "IX ctrl-p" => "buf.move(BACKWARD_LINE)",
+  "IX ctrl-e" => "buf.jump(END_OF_LINE)", # context: mode:I, buttons down: {C}
+  "IX alt-f" => "buf.jump_word(FORWARD,WORD_START)",
+  "IX alt-b" => "buf.jump_word(BACKWARD,WORD_START)",
 
   "I tab" => 'buf.insert_txt("	")',
   "I space" => 'buf.insert_txt(" ")',

@@ -86,7 +86,7 @@ class KeyBindingTree
     set_mode(@default_mode)
   end
 
-  def add_mode(id, label, cursortype = :command)
+  def add_mode(id, label, cursortype = :command, name: nil)
     mode = State.new(id, "", cursortype)
     mode.level = 1
     @modes[label] = mode
