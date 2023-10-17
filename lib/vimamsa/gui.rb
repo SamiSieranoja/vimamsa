@@ -222,12 +222,14 @@ end
 
 def gui_set_window_title(wtitle, subtitle = "")
   $vmag.window.title = wtitle
+  # $vmag.subtitle.markup = "<span weight='ultrabold'>#{subtitle}</span>"
+  $vmag.subtitle.markup = "<span weight='light' size='small'>#{subtitle}</span>"
   #  $vmag.window.titlebar.subtitle = subtitle #TODO:gtk4
 end
 
 class VMAgui
   attr_accessor :buffers, :sw, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :overlay1, :overlay2, :sws, :two_c
-  attr_reader :two_column, :windows
+  attr_reader :two_column, :windows, :subtitle
 
   def initialize()
     @two_column = false
@@ -645,7 +647,7 @@ class VMAgui
       #    sw = @window.screen.width #TODO:gtk4
       # TODO:Maximise vertically
       #    @window.set_default_size((sw * 0.45).to_i, sh - 20) #TODO:gtk4
-      @window.set_default_size(800, 600) #TODO:gtk4
+      @window.set_default_size(800, 600)
 
       @window.title = "Multiple Views"
       @vpaned = Gtk::Paned.new(:vertical)
@@ -678,11 +680,16 @@ class VMAgui
       # init_header_bar #TODO:gtk4
 
       @statnfo = Gtk::Label.new
+      @subtitle = Gtk::Label.new("")
+      @statbox = Gtk::Box.new(:horizontal, 2)
+      @statnfo.set_size_request(150, 10)
+      @statbox.pack_end(@subtitle, :expand => true, :fill => true, :padding => 0)
+      @statbox.pack_end(@statnfo, :expand => false, :fill => false, :padding => 0)
       provider = Gtk::CssProvider.new
-      # Ripl.start :binding => binding
       @statnfo.add_css_class("statnfo")
-
       provider.load(data: "label.statnfo {   background-color:#353535; font-size: 10pt; margin-top:2px; margin-bottom:2px; align:right;}")
+
+      provider = Gtk::CssProvider.new
       @statnfo.style_context.add_provider(provider)
 
       # numbers: left, top, width, height
@@ -691,20 +698,16 @@ class VMAgui
       @sw.hexpand = true
 
       # column, row, width height
-      # @vbox.attach(@menubar, 0, 0, 1, 1) #TODO:gtk4
-      @vbox.attach(@statnfo, 1, 0, 1, 1)
-      @overlay.vexpand = true #TODO:gtk4
-      @overlay.hexpand = true #TODO:gtk4
+      @vbox.attach(@statbox, 1, 0, 1, 1)
 
-      #    @menubar.vexpand = false #TODO:gtk4
-      #    @menubar.hexpand = false #TODO:gtk4
+      @overlay.vexpand = true
+      @overlay.hexpand = true
 
       init_minibuffer
 
       @windows[1] = { :sw => @sw, :overlay => @overlay, :id => 1 }
       @active_window = @windows[1]
 
-      # @window.show_all
       @window.show
 
       press = Gtk::GestureClick.new
@@ -716,6 +719,30 @@ class VMAgui
         # drawing_area.queue_draw
       end
       @sw1 = @sw
+
+      prov = Gtk::CssProvider.new
+      # See gtk-4.9.4/gtk/theme/Default/_common.scss  on how to theme
+      prov.load(data: " headerbar { padding: 0 0px; min-height: 16px; border-width: 0 0 0px; border-style: solid; }
+      
+         headerbar .title {
+      font-weight: bold;
+      font-size: 11pt;
+      color: #cdffee;
+  }
+  
+ headerbar > windowhandle > box .start {
+      border-spacing: 6px;
+  }
+ 
+ headerbar windowcontrols button {
+        min-height: 15px;
+        min-width: 15px;
+      }
+  
+         ")
+      @window.style_context.add_provider(prov)
+
+      sc = Gtk::StyleContext.add_provider_for_display(Gdk::Display.default, prov)
 
       vma.start
     end

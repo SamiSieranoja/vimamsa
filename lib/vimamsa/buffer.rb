@@ -62,7 +62,8 @@ class Buffer < String
       @title = File.basename(@fname)
       @dirname = File.dirname(@fname)
       userhome = File.expand_path("~")
-      @subtitle = @dirname.gsub(/^#{userhome}/, "~")
+      # @subtitle = @dirname.gsub(/^#{userhome}/, "~")
+      @subtitle = @fname.gsub(/^#{userhome}/, "~")
     end
 
     t1 = Time.now

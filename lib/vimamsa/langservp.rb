@@ -89,7 +89,6 @@ class LangSrv
       a = LSP::Interface::DidChangeTextDocumentParams.new(
         text_document: LSP::Interface::VersionedTextDocumentIdentifier.new(uri: fpuri, version: version),
         content_changes: changes,
-
       )
       id = new_id
       pp a
@@ -134,6 +133,7 @@ class LangSrv
       text_document: LSP::Interface::TextDocumentIdentifier.new(uri: fpuri),
     )
     id = new_id
+    pp a
     @writer.write(id: id, params: a, method: "textDocument/definition")
     r = wait_for_response(id)
     return nil if r.nil?
