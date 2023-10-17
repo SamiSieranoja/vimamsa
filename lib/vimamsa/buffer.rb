@@ -1032,13 +1032,24 @@ class Buffer < String
     calculate_line_and_column_pos
   end
 
+  # Ranges to use in delete or copy operations
   def get_range(range_id)
     range = nil
     if range_id == :to_word_end
+      # TODO: better way to make the search than + 150 from current position
       wmarks = get_word_end_marks(@pos, @pos + 150)
       if wmarks.any?
         range = @pos..wmarks[0]
       end
+    elsif range_id == :to_next_word # start of
+      wmarks = get_word_start_marks(@pos, @pos + 150)
+      if !wmarks[0].nil?
+        range = @pos..(wmarks[0] - 1)
+        debug range, 2
+      else
+        range = get_range(:to_word_end)
+      end
+      # Ripl.start :binding => binding
     elsif range_id == :to_line_end
       debug "TO LINE END"
       range = @pos..(@line_ends[@lpos] - 1)

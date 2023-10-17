@@ -722,7 +722,13 @@ class VMAgui
 
       prov = Gtk::CssProvider.new
       # See gtk-4.9.4/gtk/theme/Default/_common.scss  on how to theme
+      # gtksourceview/gtksourcestyleschemepreview.c      
+      # gtksourceview/gtksourcestylescheme.c      
       prov.load(data: " headerbar { padding: 0 0px; min-height: 16px; border-width: 0 0 0px; border-style: solid; }
+      
+      textview border.left gutter { color: #8aa; font-size:8pt; }     
+      
+      textview border.left gutter { padding: 0px 0px 0px 0px; margin: 0px 0px 0px 0px; color: #8aa; font-size:9pt; }     
       
          headerbar .title {
       font-weight: bold;

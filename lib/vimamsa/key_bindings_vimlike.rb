@@ -52,7 +52,8 @@ bindkey "C , , w", :toggle_two_column
 bindkey "CI ctrl-o", :open_file_dialog
 # bindkey "M enter", :minibuffer_end
 bindkey "C , a", :ack_search
-bindkey "C d w", :delete_to_word_end
+bindkey "C d w", :delete_to_next_word_start
+
 bindkey "C d 0", :delete_to_line_start
 bindkey "C , , f", :file_finder
 bindkey "VC h", :e_move_backward_char
