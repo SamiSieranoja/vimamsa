@@ -20,19 +20,20 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib","ext"]
 
-  spec.add_development_dependency "bundler", ">= 2.2.33"
-  spec.add_development_dependency "rake", ">= 13.0"
+  spec.add_development_dependency "bundler", "~> 2.4.21"
+  spec.add_development_dependency "rake", "~> 13.0"
   
-  spec.add_runtime_dependency 'rufo', '>= 0.5'
+  spec.add_runtime_dependency 'rufo', '~> 0.16.2'
   
-  spec.add_runtime_dependency 'ripl', '>= 0.7'
-  spec.add_runtime_dependency 'ripl-multi_line', '>= 0.3.1'
-  spec.add_runtime_dependency 'gdk4', '>= 4.0.2'
-  spec.add_runtime_dependency 'gtk4', '>= 4.0.2'
-  spec.add_runtime_dependency 'differ', '>=  0.1'
-  spec.add_runtime_dependency 'gtksourceview5'
-  spec.add_runtime_dependency 'parallel', '>= 1.14'
-  spec.add_runtime_dependency 'listen', '>= 3.4'
+  spec.add_runtime_dependency 'ripl', '~> 0.7.1'
+  spec.add_runtime_dependency 'ripl-multi_line', '~> 0.3.1'
+  spec.add_runtime_dependency 'gdk4', '~> 4.2.0'
+  spec.add_runtime_dependency 'gtk4', '~> 4.2.0'
+  spec.add_runtime_dependency 'differ', '~>  0.1.2'
+  spec.add_runtime_dependency 'gtksourceview5', '~> 4.2.0'
+  spec.add_runtime_dependency 'parallel', '~> 1.14' #TODO: update?
+  spec.add_runtime_dependency 'listen', '~> 3.4'  #TODO: update?
+
 
   spec.extensions = ["ext/vmaext/extconf.rb"]
   spec.licenses    = ['GPL-3.0+']

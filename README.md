@@ -16,7 +16,7 @@ sudo apt install ruby-dev
 sudo gem install vimamsa
 ```
 
-### Other options
+### Other install options
 
 Install from sources:
 
