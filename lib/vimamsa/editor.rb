@@ -96,6 +96,8 @@ class Editor
 
     FileManager.init
     BufferManager.init
+    
+    @gui.init_menu
 
     mkdir_if_not_exists("~/.vimamsa")
     mkdir_if_not_exists("~/.vimamsa/backup")
@@ -371,7 +373,7 @@ def set_next_command_count(num)
 end
 
 def start_minibuffer_cmd(bufname, bufstr, cmd)
-  $kbd.set_mode(:minibuffer)
+  vma.kbd.set_mode(:minibuffer)
   $minibuffer = Buffer.new(bufstr, "")
   $minibuffer.call_func = method(cmd)
 end
@@ -384,7 +386,8 @@ def show_key_bindings()
   kbd_s << "key!: Press key once, release before pressing any other keys\n"
 
   kbd_s << "===============================================\n"
-  kbd_s << $kbd.to_s
+  kbd_s << vma.kbd.to_s
+  kbd_s << "\n"
   kbd_s << "===============================================\n"
   b = create_new_file(nil, kbd_s)
   gui_set_file_lang(b.id, "hyperplaintext")

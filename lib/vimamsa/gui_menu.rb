@@ -16,7 +16,6 @@ module Vimamsa
     end
 
     def add_menu_items()
-    
       add_to_menu "File.Example", { :label => "<span foreground='#888888'>Action, [mode] key binding</span>", :action => nil }
       add_to_menu "File.Save", { :label => "Save", :action => :buf_save }
       add_to_menu "File.Save as", { :label => "Save As...", :action => :buf_save_as }
@@ -40,14 +39,13 @@ module Vimamsa
       add_to_menu "Actions.FileHistoryFinder", { :label => "Search files in history", :action => :gui_file_history_finder }
 
       add_to_menu "Actions.experimental.Diff", { :label => "Show Diff of\nunsaved changes", :action => :diff_buffer }
-      
+
       add_to_menu "Actions.experimental.EnableDebug", { :label => "Enable debug", :action => :enable_debug }
       add_to_menu "Actions.experimental.DisableDebug", { :label => "Disable debug", :action => :disable_debug }
       add_to_menu "Actions.experimental.ShowImages", { :label => "Show images ⟦img:path⟧", :action => :show_images }
-      
+
       add_to_menu "Actions.EncryptFile", { :label => "Encrypt file", :action => :encrypt_file }
       add_to_menu "Help.KeyBindings", { :label => "Show key bindings", :action => :show_key_bindings }
-      
 
       #TODO: :auto_indent_buffer
 
@@ -55,18 +53,11 @@ module Vimamsa
 
     end
 
-    def initialize(menubar)
-      # nfo["file"] = { :items => {}, :label => "File" }
-      # nfo["actions"] = { :items => {}, :label => "Actions" }
-      # nfo["help"] = { :items => {}, :label => "Help" }
-
+    def initialize(menubar, _app)
+      @app = _app
       @nfo = {}
 
       add_menu_items
-
-      # add_to_menu("help.extra.keybindings", { :label => "Show keybindings" })
-      # add_to_menu("help.extra.nfo.keybindings", { :label => "Show keybindings" })
-      # add_to_menu("help.keybindings", { :label => "Show keybindings <span foreground='#888888'  >C ? k</span>" }) #font='12' weight='ultrabold'
 
       for k, v in @nfo
         build_menu(v, menubar)
@@ -74,8 +65,7 @@ module Vimamsa
     end
 
     def build_menu(nfo, parent)
-      # menu = Gtk::Menu.new
-      menu = Gtk::PopoverMenu.new
+      menu = Gio::Menu.new
       if nfo[:action]
         kbd_str = ""
         for mode_str in ["C", "V"]
@@ -87,16 +77,29 @@ module Vimamsa
         end
 
         label_str = nfo[:label] + kbd_str
-        menuitem = Gtk::MenuItem.new(:label => label_str)
-        menuitem.children[0].set_markup(label_str)
+        actkey = nfo[:action].to_s
+        menuitem = Gio::MenuItem.new(label_str, "app.#{actkey}")
+        
+        # This worked in GTK3:
+        # But seems there is no way to access the Label object in GTK4
+        # menuitem.children[0].set_markup(label_str)
 
-        menuitem.signal_connect("activate") do
+        act = Gio::SimpleAction.new(actkey)
+        @app.add_action(act)
+        act.signal_connect "activate" do |_simple_action, _parameter|
           call_action(nfo[:action])
         end
       else
-        menuitem = Gtk::MenuItem.new(:label => nfo[:label])
-        menuitem.children[0].set_markup(nfo[:label])
+        menuitem = Gio::MenuItem.new(nfo[:label], nil)
       end
+
+      # Apparently requires Gtk 4.6 to work.
+      # According to instructions in: https://discourse.gnome.org/t/gtk4-and-pango-markup-in-menu-items/16082
+      # Boolean true here should work but doesn't yet in GTK 4.6. The string version does work.
+      menuitem.set_attribute_value("use-markup", "true")
+      # menuitem.set_attribute_value("use-markup", true)
+      # This might change in the future(?), but the string version still works in gtk-4.13.0 (gtk/gtkmenutrackeritem.c)
+
 
       if !nfo[:items].nil? and !nfo[:items].empty?
         for k2, item in nfo[:items]
@@ -104,7 +107,8 @@ module Vimamsa
         end
         menuitem.submenu = menu
       end
-      parent.append(menuitem)
+      o = parent.append_item(menuitem)
+
     end
   end #end class
 end

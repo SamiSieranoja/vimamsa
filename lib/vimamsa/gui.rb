@@ -27,8 +27,6 @@ def gui_file_saveas(dirpath)
   # dialog.set_current_folder(dirpath) #TODO:gtk4
   dialog.signal_connect("response") do |dialog, response_id|
     if response_id == Gtk::ResponseType::ACCEPT
-
-      # dialog.file.uri
       file_saveas(dialog.file.parse_name)
     end
     dialog.destroy
@@ -36,9 +34,6 @@ def gui_file_saveas(dirpath)
 
   dialog.modal = true
   dialog.show
-  # dialog.run
-  # 'Gtk::Dialog#run' has been deprecated. Use Gtk::Window#set_modal and 'response' signal instead.>
-
 end
 
 def idle_func
@@ -229,7 +224,7 @@ end
 
 class VMAgui
   attr_accessor :buffers, :sw, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :overlay1, :overlay2, :sws, :two_c
-  attr_reader :two_column, :windows, :subtitle
+  attr_reader :two_column, :windows, :subtitle, :app
 
   def initialize()
     @two_column = false
@@ -242,6 +237,7 @@ class VMAgui
     @buf1 = nil
     @img_resizer_active = false
     @windows = {}
+    @app = nil
     # imgproc = proc {
     # GLib::Idle.add(proc {
     # if !buf.images.empty?
@@ -426,8 +422,8 @@ class VMAgui
     sw = Gtk::ScrolledWindow.new
     sw.set_policy(:automatic, :automatic)
     overlay = Gtk::Overlay.new
-    overlay.set_child(sw) #TODO:gtk4
-    @vbox.attach(overlay, 0, 2, 2, 1) #TODO:gtk4
+    overlay.set_child(sw)
+    @vbox.attach(overlay, 0, 3, 2, 1)
     $sw2 = sw
     sw.set_size_request(-1, 12)
 
@@ -636,11 +632,13 @@ class VMAgui
   def init_window
     @last_debug_idle = Time.now
     app = Gtk::Application.new("net.samiddhi.vimamsa.r#{rand(1000)}", :flags_none)
+    @app = app
 
     app.signal_connect "activate" do
 
       # @window = Gtk::Window.new(:toplevel)
-      @window = Gtk::Window.new()
+      # @window = Gtk::Window.new()
+      @window = Gtk::ApplicationWindow.new(app)
       @window.set_application(app)
 
       #    sh = @window.screen.height #TODO:gtk4
@@ -693,17 +691,50 @@ class VMAgui
       @statnfo.style_context.add_provider(provider)
 
       # numbers: left, top, width, height
-      @vbox.attach(@overlay, 0, 1, 2, 1)
+      @vbox.attach(@overlay, 0, 2, 2, 1)
       @sw.vexpand = true
       @sw.hexpand = true
 
       # column, row, width height
-      @vbox.attach(@statbox, 1, 0, 1, 1)
+      @vbox.attach(@statbox, 1, 1, 1, 1)
 
       @overlay.vexpand = true
       @overlay.hexpand = true
 
       init_minibuffer
+
+      # p = Gtk::Popover.new
+
+      name = "save"
+      window = @window
+      action = Gio::SimpleAction.new(name)
+      action.signal_connect "activate" do |_simple_action, _parameter|
+        dialog = Gtk::MessageDialog.new(:parent => window,
+                                        :flags => :destroy_with_parent,
+                                        :buttons => :close,
+                                        :message => "Action FOOBAR activated.")
+        dialog.signal_connect(:response) do
+          dialog.destroy
+        end
+        dialog.show
+      end
+
+      @window.add_action(action)
+      doc_actions = Gio::SimpleActionGroup.new
+      doc_actions.add_action(action)
+
+      act_quit = Gio::SimpleAction.new("quit")
+      app.add_action(act_quit)
+      act_quit.signal_connect "activate" do |_simple_action, _parameter|
+        window.destroy
+        exit!
+      end
+
+      menubar = Gio::Menu.new
+      app.menubar = menubar
+      @window.show_menubar = true
+
+      @menubar = menubar
 
       @windows[1] = { :sw => @sw, :overlay => @overlay, :id => 1 }
       @active_window = @windows[1]
@@ -722,8 +753,8 @@ class VMAgui
 
       prov = Gtk::CssProvider.new
       # See gtk-4.9.4/gtk/theme/Default/_common.scss  on how to theme
-      # gtksourceview/gtksourcestyleschemepreview.c      
-      # gtksourceview/gtksourcestylescheme.c      
+      # gtksourceview/gtksourcestyleschemepreview.c
+      # gtksourceview/gtksourcestylescheme.c
       prov.load(data: " headerbar { padding: 0 0px; min-height: 16px; border-width: 0 0 0px; border-style: solid; }
       
       textview border.left gutter { color: #8aa; font-size:8pt; }     
@@ -758,6 +789,10 @@ class VMAgui
 
     # @window.show_all
     # @window.show
+  end
+
+  def init_menu
+    Vimamsa::Menu.new(@menubar, @app)
   end
 
   def set_two_column
