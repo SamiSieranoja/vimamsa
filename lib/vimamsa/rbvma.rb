@@ -1,9 +1,5 @@
-#require "gtksourceview4"
 require "date"
 require "fileutils"
-
-# require "gtk3"
-# require "gtksourceview4"
 
 require "gtk4"
 require "gtksourceview5"

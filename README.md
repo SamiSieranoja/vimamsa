@@ -5,7 +5,7 @@ Vi/Vim -inspired experimental GUI-oriented text editor written with Ruby and GTK
 
 ## Requirements
  - Ruby 2.0+
- - GTK 3
+ - GTK 4
 
 ## Installation
 
@@ -16,14 +16,31 @@ sudo apt install ruby-dev
 sudo gem install vimamsa
 ```
 
-Run:
+### Other options
+
+Install from sources:
+
+```
+git clone https://github.com/SamiSieranoja/vimamsa.git
+cd vimamsa
+gem build vimamsa.gemspec 
+sudo gem install --local vimamsa-0.1.*.gem
+
+```
+
+Older version for GTK3:
+
+    sudo gem install vimamsa -v 0.1.10
+
+## Run
 ```
 vimamsa
 ```
 
-Packages for optional features:
+Install packages for optional features:
 ```
 sudo apt install ack-grep clang-format
+gem install ripl ripl-multi_line differ parallel listen rufo language_server-protocol
 ```
 
 For customization, edit ~/.vimamsa/custom.rb

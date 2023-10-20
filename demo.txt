@@ -1,12 +1,8 @@
 ❙Demo❙
 
-vma.gui.scale_all_images
-
-
-
 
 ◼ General
-Links: press ⦁enter⦁  while cursor on
+Links: press ⦁enter⦁  while text cursor on
 ⟦README.md⟧
 
 Extension .txt can be omitted:
@@ -27,5 +23,3 @@ Images work in .txt-files by drag&drop. (experimental)
  
  
  
- 
-foosdfsdf99z
