@@ -43,7 +43,7 @@ class VSourceView < GtkSource::View
     # end
 
     signal_connect("move-cursor") do |widget, event|
-      debug("MOVE-CURSOR",2)
+      debug("MOVE-CURSOR", 2)
       $update_cursor = true
       false
     end
@@ -83,7 +83,7 @@ class VSourceView < GtkSource::View
       # if ctr.class == Gtk::EventControllerKey or ctr.class == Gtk::GestureClick
       if ctr != @click
         # to_remove << ctr if ctr.class != Gtk::GestureDrag
-        to_remove << ctr 
+        to_remove << ctr
       end
     }
     if to_remove.size > 0
@@ -118,12 +118,23 @@ class VSourceView < GtkSource::View
       view_width = visible_rect.width
       gutter_width = winw - view_width
 
-      i = get_iter_at_location((x - gutter_width).to_i, (y + visible_rect.y).to_i)
+      xloc = (x - gutter_width).to_i
+      yloc = (y + visible_rect.y).to_i
+      debug "xloc=#{xloc} yloc=#{yloc}"
+
+      # This needs to happen after xloc calculation, otherwise xloc gets a wrong value (around 200 bigger)
+      if vma.gui.current_view != self
+        vma.gui.set_current_view(self)
+      end
+
+      i = get_iter_at_location(xloc, yloc)
       if !i.nil?
         @bufo.set_pos(i.offset)
       else
-        debug "iter nil 0000"
+        debug "iter nil"
+        #TODO: find correct line position some other way
       end
+
       true
     end
   end
@@ -266,7 +277,7 @@ class VSourceView < GtkSource::View
       end
     end
     if any_change
-      # gui_set_cursor_pos(@bufo.id, @bufo.pos) #TODO: only when necessary
+       #TODO: only when necessary
       self.set_cursor_pos(pos)
     end
 

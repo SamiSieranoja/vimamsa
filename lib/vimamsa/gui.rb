@@ -178,38 +178,6 @@ def gui_set_cursor_pos(id, pos)
   vma.buf.view.set_cursor_pos(pos)
 end
 
-def gui_set_active_window(winid)
-  sw = vma.gui.sw
-  if winid == 2
-    sw = vma.gui.sw2
-  end
-
-  sw.set_child(view)
-  view.grab_focus
-
-  vma.gui.view = view
-  vma.gui.buf1 = view.buffer
-  $view = view
-  $vbuf = view.buffer
-end
-
-#TODO:delete?
-def gui_attach_buf_to_window(id, winid)
-  view = vma.gui.buffers[id]
-  sw = vma.gui.sw
-  if winid == 2
-    sw = vma.gui.sw2
-  end
-
-  sw.set_child(view)
-  view.grab_focus
-
-  vma.gui.view = view
-  vma.gui.buf1 = view.buffer
-  $view = view
-  $vbuf = view.buffer
-end
-
 def gui_set_current_buffer(id)
   vma.gui.set_current_buffer(id)
   return
@@ -817,8 +785,8 @@ class VMAgui
     @vbox.remove(@overlay)
 
     # numbers: left, top, width, height
-    @pane.set_start_child(@overlay)
-    @pane.set_end_child(@overlay2)
+    @pane.set_start_child(@overlay2)
+    @pane.set_end_child(@overlay)
 
     @vbox.attach(@pane, 0, 2, 2, 1)
 
@@ -835,7 +803,7 @@ class VMAgui
       last = vma.buffers.get_last_visited_id
       set_buffer_to_window(last, 2)
     else
-      bf = create_new_buffer "\n\n"
+      bf = create_new_buffer "\n\n", "buff", false
       set_buffer_to_window(bf.id, 2)
     end
   end
@@ -852,8 +820,14 @@ class VMAgui
     else
       set_active_window(1)
     end
+  end
 
-    vma.buffers.set_current_buffer_by_id(@sw.child.bufo.id)
+  # activate that window which has the given view
+  def set_current_view(view)
+    w = @windows.find { |k, v| v[:sw].child == view }
+    if !w.nil?
+      set_active_window(w[0])
+    end
   end
 
   def set_active_window(id)
@@ -872,8 +846,14 @@ class VMAgui
     @sw = @windows[id][:sw]
     @overlay = @windows[id][:overlay]
 
+    vma.buffers.set_current_buffer_by_id(@sw.child.bufo.id)
+
     #TODO: set buf & view of active window??
 
+  end
+
+  def current_view
+    return @sw.child
   end
 
   def set_buffer_to_window(bufid, winid)
@@ -882,6 +862,7 @@ class VMAgui
     buf1 = view.buffer
 
     @windows[winid][:sw].set_child(view)
+    idle_ensure_cursor_drawn
 
     #TODO:???
     # @view = view
@@ -900,17 +881,21 @@ class VMAgui
     $view = view
     $vbuf = buf1
 
-    # If already open in another column
-
+    # Check if buffer is already open in another column
     if @two_column and @active_column == 2 and id == @sw1.child.bufo.id
       toggle_active_window
-    elsif @two_column and @active_column == 1 and id == @sw2.child.bufo.id
+    elsif @two_column && @active_column == 1 && !@sw2.child.nil? && id == @sw2.child.bufo.id
+      #TODO: should not need !@sw2.child.nil? here. If this happens then other column is empty.
       toggle_active_window
     else
       @sw.set_child(view)
     end
     view.grab_focus
 
+    idle_ensure_cursor_drawn
+  end
+
+  def idle_ensure_cursor_drawn
     run_as_idle proc { self.ensure_cursor_drawn }
   end
 

@@ -509,11 +509,11 @@ def create_new_file(filename = nil, file_contents = "\n")
   return buffer
 end
 
-def create_new_buffer(file_contents = "\n",prefix="buf")
+def create_new_buffer(file_contents = "\n",prefix="buf", setcurrent=true)
   debug "NEW BUFFER CREATED"
   buffer = Buffer.new(file_contents,nil,prefix)
   vma.buffers.add(buffer)
-  vma.buffers.set_current_buffer_by_id(buffer.id)
+  vma.buffers.set_current_buffer_by_id(buffer.id) if setcurrent
   buffer.set_content(file_contents)
 
   return buffer
