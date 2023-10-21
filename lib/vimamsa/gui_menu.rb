@@ -43,6 +43,10 @@ module Vimamsa
       add_to_menu "Actions.experimental.EnableDebug", { :label => "Enable debug", :action => :enable_debug }
       add_to_menu "Actions.experimental.DisableDebug", { :label => "Disable debug", :action => :disable_debug }
       add_to_menu "Actions.experimental.ShowImages", { :label => "Show images ⟦img:path⟧", :action => :show_images }
+      
+      
+      add_to_menu "View.TwoColumn", { :label => "Start two column mode", :action => :toggle_two_column }
+      
 
       add_to_menu "Actions.EncryptFile", { :label => "Encrypt file", :action => :encrypt_file }
       add_to_menu "Help.KeyBindings", { :label => "Show key bindings", :action => :show_key_bindings }

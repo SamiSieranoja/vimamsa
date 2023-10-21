@@ -15,12 +15,12 @@ class FileFinder
 
   def initialize()
     vma.hook.register(:shutdown, self.method("save"))
-    @dir_list = vma.marshal_load("file_index")
+    @@dir_list = vma.marshal_load("file_index")
   end
 
   def save()
    debug "SAVE FILE INDEX", 2
-    vma.marshal_save("file_index", @dir_list)
+    vma.marshal_save("file_index", @@dir_list)
   end
 
   def start_gui()
@@ -30,7 +30,7 @@ class FileFinder
     end
     l = []
     $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
-    if @dir_list == nil
+    if @@dir_list == nil
       Thread.new { FileFinder.recursively_find_files() }
     end
 
@@ -71,16 +71,16 @@ class FileFinder
       debug("FIND FILEs IN #{d}")
       dlist = dlist + Dir.glob("#{d}/**/*").select { |e| File.file?(e) and $find_extensions.include?(File.extname(e)) }
       debug("FIND FILEs IN #{d} END")
-    end   #@dir_list = Dir.glob('./**/*').select { |e| File.file? e }
-    debug("END find files2")
-    @dir_list = dlist
+    end
+    @@dir_list = dlist
     debug("END find files")
-    return @dir_list
+    return @@dir_list
   end
 
   def filter_files(search_str)
     dir_hash = {}
-    scores = Parallel.map(@dir_list, in_threads: 8) do |file|
+
+    scores = Parallel.map(@@dir_list, in_threads: 8) do |file|
       [file, srn_dst(search_str, file)]
     end
     for s in scores

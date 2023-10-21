@@ -1,11 +1,8 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 require "ripl/multi_line"
 require "tempfile"
 # Ripl.config[:multi_line_prompt] = ' > '
 require "pathname"
-
-ENV["GTK_THEME"] = "Adwaita:dark"
-# ENV["GTK_THEME"] = "Adwaita:light"
 
 selfpath = __FILE__
 selfpath = File.readlink(selfpath) if File.lstat(selfpath).symlink?

@@ -629,23 +629,36 @@ class VMAgui
     end
   end
 
+  def idle_set_size()
+    # Need to wait for a while to window to be maximized to get correct @window.width
+    sleep 0.1
+    width = @window.width / 2
+    height = @window.height - 5
+    # Ripl.start :binding => binding
+    @window.unmaximize
+    @window.set_size_request(width, height)
+    return false
+  end
+
   def init_window
     @last_debug_idle = Time.now
     app = Gtk::Application.new("net.samiddhi.vimamsa.r#{rand(1000)}", :flags_none)
     @app = app
 
-    app.signal_connect "activate" do
+    Gtk::Settings.default.gtk_application_prefer_dark_theme = true
+    Gtk::Settings.default.gtk_theme_name = "Adwaita"
 
-      # @window = Gtk::Window.new(:toplevel)
-      # @window = Gtk::Window.new()
+    app.signal_connect "activate" do
       @window = Gtk::ApplicationWindow.new(app)
       @window.set_application(app)
 
-      #    sh = @window.screen.height #TODO:gtk4
-      #    sw = @window.screen.width #TODO:gtk4
-      # TODO:Maximise vertically
-      #    @window.set_default_size((sw * 0.45).to_i, sh - 20) #TODO:gtk4
-      @window.set_default_size(800, 600)
+      @window.maximize
+
+      Thread.new {
+        GLib::Idle.add(proc {
+          idle_set_size
+        })
+      }
 
       @window.title = "Multiple Views"
       @vpaned = Gtk::Paned.new(:vertical)

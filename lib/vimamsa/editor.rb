@@ -93,6 +93,7 @@ class Editor
     $kbd = @kbd
     require "vimamsa/key_bindings_vimlike"
     sleep(0.03)
+    
 
     FileManager.init
     BufferManager.init
@@ -169,7 +170,6 @@ class Editor
     #Load plugins
     require "vimamsa/file_history.rb"
     @fh = FileHistory.new
-    # @_plugins[:FileFinder] = FileFinder.new
     @_plugins[:FileHistory] = @fh
 
     register_plugin(:FileHistory, @fh)
