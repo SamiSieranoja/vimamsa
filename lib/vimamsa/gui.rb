@@ -829,8 +829,8 @@ class VMAgui
     @pane.set_start_child(@overlay)
     @pane.set_end_child(@overlay2)
 
-    @vbox.attach(@pane, 0, 1, 2, 1)
-
+    @vbox.attach(@pane, 0, 2, 2, 1)
+    
     @sw2.vexpand = true
     @sw2.hexpand = true
 
@@ -919,6 +919,7 @@ class VMAgui
       @sw.set_child(view)
     end
     view.grab_focus
+    view.draw_cursor
     # TODO:needed?
     # view.set_cursor_visible(true)
     # view.place_cursor_onscreen
