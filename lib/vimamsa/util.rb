@@ -1,3 +1,12 @@
+# Run idle proc once
+# Delay execution of proc until Gtk has fully processed the last calls. 
+def run_as_idle(p)
+  if p.class == Proc
+    Thread.new {
+      GLib::Idle.add(proc { p.call; false })
+    }
+  end
+end
 
 class HSafe
   def initialize(hash)
@@ -43,7 +52,6 @@ end
 # pp HSafe.new(h)[2]["sdf"][:ll].val
 # pp HSafe.new(h)[2]["sdf"][:llz].val
 # pp HSafe.new(h)["SDFSDFD"]["sdf"][:llz].val
-
 
 # From https://stackoverflow.com/questions/2108727/which-in-ruby-checking-if-program-exists-in-path-from-ruby
 # Cross-platform way of finding an executable in the $PATH.

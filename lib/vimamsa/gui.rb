@@ -551,6 +551,7 @@ class VMAgui
     return true
   end
 
+  # Remove widget event controllers added by gtk, and add our own.
   def reset_controllers
     clist = @window.observe_controllers
     to_remove = []
@@ -653,12 +654,8 @@ class VMAgui
       @window.set_application(app)
 
       @window.maximize
-
-      Thread.new {
-        GLib::Idle.add(proc {
-          idle_set_size
-        })
-      }
+      # Need to let Gtk process after maximize
+      run_as_idle proc { idle_set_size }
 
       @window.title = "Multiple Views"
       @vpaned = Gtk::Paned.new(:vertical)
@@ -671,12 +668,6 @@ class VMAgui
       }
 
       reset_controllers
-
-      # @window.signal_connect("key-pressed") { puts "Hello World!" }
-      # @window.signal_connect("clicked") { puts "Hello World!" }
-
-      # @menubar = Gtk::PopoverMenuBar.new #TODO:gtk4
-      #    @menubar.expand = false #TODO:gtk4
 
       @sw = Gtk::ScrolledWindow.new
       @sw.set_policy(:automatic, :automatic)
@@ -830,7 +821,7 @@ class VMAgui
     @pane.set_end_child(@overlay2)
 
     @vbox.attach(@pane, 0, 2, 2, 1)
-    
+
     @sw2.vexpand = true
     @sw2.hexpand = true
 
@@ -919,10 +910,12 @@ class VMAgui
       @sw.set_child(view)
     end
     view.grab_focus
+
+    run_as_idle proc { self.ensure_cursor_drawn }
+  end
+
+  def ensure_cursor_drawn
+    # view.place_cursor_onscreen #TODO: needed?
     view.draw_cursor
-    # TODO:needed?
-    # view.set_cursor_visible(true)
-    # view.place_cursor_onscreen
-    # @sw.show
   end
 end
