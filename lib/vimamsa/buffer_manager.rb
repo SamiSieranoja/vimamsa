@@ -15,6 +15,7 @@ class BufferManager
 
     bindkey "bmgr enter", :bmgr_select
     bindkey "bmgr c", :bmgr_close
+    bindkey "bmgr x", :close_current_buffer
   end
 
   def initialize()
@@ -60,7 +61,7 @@ class BufferManager
     @@cur = self
     @header = []
     @header << "Current buffers:"
-    @header << "keys: <enter> to select, <c> to close buffer"
+    @header << "keys: <enter> to select, <c> to close buffer, <x> exit"
     @header << "=" * 40
 
     s = ""

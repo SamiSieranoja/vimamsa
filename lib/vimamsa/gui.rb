@@ -296,69 +296,42 @@ class VMAgui
     @da.show
   end
 
-  def toggle_overlay
-    @show_overlay = @show_overlay ^ 1
-    if !@show_overlay
-      if @da != nil
-        @overlay.remove(@da)
-      end
-      return
-    else
-      @da = Gtk::Fixed.new
-      @overlay.add_overlay(@da)
-      @overlay.set_overlay_pass_through(@da, true)
+  def remove_overlay_cursor()
+    if !@cursorov.nil?
+      @overlay.remove_overlay(@cursorov)
+      @cursorov = nil
     end
+  end
 
-    (startpos, endpos) = get_visible_area
-    s = @view.buffer.text
-    wpos = s.enum_for(:scan, /\W(\w)/).map { Regexp.last_match.begin(0) + 1 }
-    wpos = wpos[0..130]
+  def overlay_draw_cursor(textpos)
+    remove_overlay_cursor
+    # GLib::Idle.add(proc { self.overlay_draw_cursor_(textpos) })
+    overlay_draw_cursor_(textpos)
+  end
 
-    # vr =  @view.visible_rect
-    # # gtk_text_view_get_line_at_y
-    # # gtk_text_view_get_iter_at_position
-    # gtk_text_view_get_iter_at_position(vr.
-    # istart = @view.get_iter_at_position(vr.x,vr.y)
-    # istart = @view.get_iter_at_y(vr.y)
-    # startpos = @view.get_iter_at_position_raw(vr.x,vr.y)[1].offset
-    # endpos = @view.get_iter_at_position_raw(vr.x+vr.width,vr.y+vr.height)[1].offset
-    # debug "startpos,endpos:#{[startpos, endpos]}"
+  # To draw on empty lines and line-ends (where select_range doesn't work)
+  def overlay_draw_cursor_(textpos)
+    # Thread.new {
+    # GLib::Idle.add(proc { p.call; false })
+    # }
 
-    da = @da
-    if false
-      da.signal_connect "draw" do |widget, cr|
-        cr.save
-        for pos in wpos
-          (x, y) = @view.pos_to_coord(pos)
-
-          layout = da.create_pango_layout("XY")
-          desc = Pango::FontDescription.new("sans bold 11")
-          layout.font_description = desc
-
-          cr.move_to(x, y)
-          # cr.move_to(gutter_width, 300)
-          cr.pango_layout_path(layout)
-
-          cr.set_source_rgb(1.0, 0.0, 0.0)
-          cr.fill_preserve
-        end
-        cr.restore
-        false # = draw other
-        # true # = Don't draw others
-      end
+    while Time.now - @last_adj_time < 0.3
+      return true
     end
+    
+    remove_overlay_cursor
+    @cursorov = Gtk::Fixed.new
+    @overlay.add_overlay(@cursorov)
 
-    for pos in wpos
-      (x, y) = @view.pos_to_coord(pos)
-      # da.put(Gtk::Label.new("AB"), x, y)
-      label = Gtk::Label.new("<span background='#00000088' foreground='#ff0000' weight='ultrabold'>AB</span>")
-      label.use_markup = true
-      da.put(label, x, y)
-    end
+    (x, y) = @view.pos_to_coord(textpos)
+    pp [x, y]
 
-    # debug @view.pos_to_coord(300).inspect
-
-    @da.show
+    # Trying to draw only background of character "I"
+    label = Gtk::Label.new("<span background='#00ffaaff' foreground='#00ffaaff' weight='ultrabold'>I</span>")
+    label.use_markup = true
+    @cursorov.put(label, x, y)
+    @cursorov.show
+    return false
   end
 
   def handle_deltas()
@@ -639,6 +612,18 @@ class VMAgui
 
       @sw = Gtk::ScrolledWindow.new
       @sw.set_policy(:automatic, :automatic)
+
+      @last_adj_time = Time.now
+      @sw.vadjustment.signal_connect("value-changed") { |x|
+        pp x.page_increment
+        pp x.page_size
+        pp x.step_increment
+        pp x.upper
+        pp x.value
+        pp x
+        @last_adj_time = Time.now
+        # puts "@sw.vadjustment"
+      }
 
       # @sw.signal_connect("clicked") { puts "Hello World!" }
       # @sw.signal_connect("key-pressed") { puts "Hello World!" }

@@ -72,7 +72,7 @@ class EasyJump
       # @kbd.set_mode(:command)
       vma.kbd.remove_keyhandling_override
       @jump_sequence = []
-      vma.gui.clear_overlay()
+      vma.gui.clear_overlay
     end
     return true
   end

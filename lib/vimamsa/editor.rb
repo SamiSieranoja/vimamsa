@@ -389,7 +389,7 @@ def show_key_bindings()
   kbd_s << vma.kbd.to_s
   kbd_s << "\n"
   kbd_s << "===============================================\n"
-  b = create_new_file(nil, kbd_s)
+  b = create_new_buffer(kbd_s,"key-bindings")
   gui_set_file_lang(b.id, "hyperplaintext")
   #
 end

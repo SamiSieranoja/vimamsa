@@ -243,11 +243,10 @@ class VSourceView < GtkSource::View
     b = buffer
     iter = b.get_iter_at(:offset => i)
     iterxy = get_iter_location(iter)
-    # winw = parent_window.width #TODO:gtk4
     winw = width #TODO
 
     view_width = visible_rect.width
-    gutter_width = winw - view_width
+    gutter_width = winw - view_width #TODO
 
     x = iterxy.x + gutter_width
     y = iterxy.y
@@ -277,7 +276,7 @@ class VSourceView < GtkSource::View
       end
     end
     if any_change
-       #TODO: only when necessary
+      #TODO: only when necessary
       self.set_cursor_pos(pos)
     end
 
@@ -398,9 +397,18 @@ class VSourceView < GtkSource::View
     ctype = vma.kbd.get_cursor_type
     # if is_command_mode
     if ctype == :command
-      itr = buffer.get_iter_at(:offset => @bufo.pos)
-      itr2 = buffer.get_iter_at(:offset => @bufo.pos + 1)
-      buffer.select_range(itr, itr2)
+      if @bufo[@bufo.pos] == "\n"
+        # vma.gui.remove_overlay_cursor
+        vma.gui.overlay_draw_cursor(@bufo.pos) 
+        # 
+        #TODO: clear select range
+      else
+        vma.gui.remove_overlay_cursor 
+        
+        itr = buffer.get_iter_at(:offset => @bufo.pos)
+        itr2 = buffer.get_iter_at(:offset => @bufo.pos + 1)
+        buffer.select_range(itr, itr2)
+      end
       # elsif @bufo.visual_mode?
     elsif ctype == :visual
       debug "VISUAL MODE"

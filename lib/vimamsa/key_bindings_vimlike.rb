@@ -75,7 +75,7 @@ bindkey "B c", :close_current_buffer
 bindkey "B ;", "buf.jump_to_last_edit"
 bindkey "B q", :jump_to_last_edit
 bindkey "B w", :jump_to_next_edit
-bindkey "C , d", :diff_buffer
+# bindkey "C , d", :diff_buffer
 bindkey "C , g", :invoke_grep_search
 #bindkey 'C , g', proc{invoke_grep_search}
 bindkey "C , v", :auto_indent_buffer
@@ -156,6 +156,7 @@ default_keys = {
 
   # Debug
   "C , d r p" => "start_ripl",
+  "C , d o" => "vma.gui.clear_overlay",
   "C , D" => "debug_print_buffer",
   "C , c s" => "bufs.close_scrap_buffers",
   "C , d b" => "debug_print_buffer",
