@@ -475,6 +475,7 @@ class KeyBindingTree
   end
 
   def handle_key_bindigs_action(action, c)
+    $acth << action
     $method_handles_repeat = false #TODO:??
     n = 1
     if $next_command_count and !(action.class == String and action.include?("set_next_command_count"))

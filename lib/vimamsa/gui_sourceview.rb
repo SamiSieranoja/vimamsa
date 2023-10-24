@@ -34,6 +34,7 @@ class VSourceView < GtkSource::View
     # puts "drag-data-received"
     # puts
     # if data.uris.size >= 1
+
     # imgpath = CGI.unescape(data.uris[0])
     # m = imgpath.match(/^file:\/\/(.*)/)
     # if m
@@ -46,7 +47,9 @@ class VSourceView < GtkSource::View
 
     # Mainly after page-up or page-down
     signal_connect("move-cursor") do |widget, event|
-      if event.name == "GTK_MOVEMENT_PAGES"
+      if event.name == "GTK_MOVEMENT_PAGES" and (last_action == "page_up" or last_action == "page_down")
+        # Ripl.start :binding => binding
+
         debug("MOVE-CURSOR", 2)
         $update_cursor = true
       end

@@ -346,6 +346,7 @@ class VMAgui
   end
 
   def handle_deltas()
+    view.delete_cursor_char
     while d = buf.deltas.shift
       pos = d[0]
       op = d[1]
