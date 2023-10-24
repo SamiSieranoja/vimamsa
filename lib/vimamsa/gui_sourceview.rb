@@ -46,8 +46,11 @@ class VSourceView < GtkSource::View
 
     # Mainly after page-up or page-down
     signal_connect("move-cursor") do |widget, event|
-      debug("MOVE-CURSOR", 2)
-      $update_cursor = true
+      if event.name == "GTK_MOVEMENT_PAGES"
+        debug("MOVE-CURSOR", 2)
+        $update_cursor = true
+      end
+
       # handle_scrolling()
       # curpos = buffer.cursor_position
       # debug "MOVE CURSOR (sig): #{curpos}"
