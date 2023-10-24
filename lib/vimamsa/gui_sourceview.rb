@@ -25,6 +25,8 @@ class VSourceView < GtkSource::View
     @removed_controllers = []
     self.highlight_current_line = true
 
+    @tt = nil
+
     #    self.drag_dest_add_image_targets #TODO:gtk4
     #    self.drag_dest_add_uri_targets #TODO:gtk4
 
@@ -141,6 +143,7 @@ class VSourceView < GtkSource::View
 
   # def handle_key_event(event, sig)
   def handle_key_event(keyval, keyname, sig)
+    delete_cursorchar
     if $update_cursor
       curpos = buffer.cursor_position
       debug "MOVE CURSOR: #{curpos}"
@@ -237,6 +240,7 @@ class VSourceView < GtkSource::View
     # set_focus(5)
     # false
 
+    draw_cursor #TODO: only when needed
   end
 
   def pos_to_coord(i)
@@ -259,6 +263,7 @@ class VSourceView < GtkSource::View
   end
 
   def handle_deltas()
+    delete_cursorchar
     any_change = false
     while d = @bufo.deltas.shift
       any_change = true
@@ -299,6 +304,7 @@ class VSourceView < GtkSource::View
   end
 
   def set_cursor_pos(pos)
+    delete_cursorchar
     # return
     itr = buffer.get_iter_at(:offset => pos)
     itr2 = buffer.get_iter_at(:offset => pos + 1)
@@ -392,19 +398,47 @@ class VSourceView < GtkSource::View
     end
   end
 
+  # Delete the extra char added to buffer to represent the cursor
+  def delete_cursorchar
+    if !@cursorchar.nil?
+      itr = buffer.get_iter_at(:offset => @cursorchar)
+      itr2 = buffer.get_iter_at(:offset => @cursorchar + 1)
+      buffer.delete(itr, itr2)
+      @cursorchar = nil
+    end
+  end
+
   def draw_cursor
+    # if @tt.nil?
+      # @tt = buffer.create_tag("font_tag")
+      # @tt.font = "Arial"
+    # end
+
     mode = vma.kbd.get_mode
     ctype = vma.kbd.get_cursor_type
-    # if is_command_mode
+    delete_cursorchar
+    vma.gui.remove_overlay_cursor
     if ctype == :command
       if @bufo[@bufo.pos] == "\n"
-        # vma.gui.remove_overlay_cursor
-        vma.gui.overlay_draw_cursor(@bufo.pos) 
-        # 
-        #TODO: clear select range
+        # If we are at end of line, it's not possible to draw the cursor by making a selection. I tried to do this by drawing an overlay, but that generates issues. If moving the cursor causes the ScrolledWindow to be scrolled, these errors randomly appear and the whole view shows blank:
+        # (ruby:21016): Gtk-WARNING **: 19:52:23.181: Trying to snapshot GtkSourceView 0x55a97524c8c0 without a current allocation
+        # (ruby:21016): Gtk-WARNING **: 19:52:23.181: Trying to snapshot GtkGizmo 0x55a9727d2580 without a current allocation
+        # (ruby:21016): Gtk-WARNING **: 19:52:23.243: Trying to snapshot GtkSourceView 0x55a97524c8c0 without a current allocation
+        # vma.gui.overlay_draw_cursor(@bufo.pos)
+
+        # Current workaround is to add an empty space to the place where the cursor is and then remove this whenever we get any kind of event that might cause this class to be accessed.
+        itr = buffer.get_iter_at(:offset => @bufo.pos)
+        buffer.insert(itr, " ") # normal space
+        # buffer.insert(itr, " ") # thin space (U+2009)
+        # buffer.insert(itr, "l")
+        @cursorchar = @bufo.pos
+
+        # Apparently we need to redo this after buffer.insert:
+        itr = buffer.get_iter_at(:offset => @bufo.pos)
+        itr2 = buffer.get_iter_at(:offset => @bufo.pos + 1)
+        # buffer.apply_tag(@tt, itr, itr2)
+        buffer.select_range(itr, itr2)
       else
-        vma.gui.remove_overlay_cursor 
-        
         itr = buffer.get_iter_at(:offset => @bufo.pos)
         itr2 = buffer.get_iter_at(:offset => @bufo.pos + 1)
         buffer.select_range(itr, itr2)

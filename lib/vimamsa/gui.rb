@@ -304,9 +304,10 @@ class VMAgui
   end
 
   def overlay_draw_cursor(textpos)
+  # return
     remove_overlay_cursor
-    # GLib::Idle.add(proc { self.overlay_draw_cursor_(textpos) })
-    overlay_draw_cursor_(textpos)
+    GLib::Idle.add(proc { self.overlay_draw_cursor_(textpos) })
+    # overlay_draw_cursor_(textpos)
   end
 
   # To draw on empty lines and line-ends (where select_range doesn't work)
@@ -315,9 +316,9 @@ class VMAgui
     # GLib::Idle.add(proc { p.call; false })
     # }
 
-    while Time.now - @last_adj_time < 0.3
-      return true
-    end
+    # while Time.now - @last_adj_time < 0.3
+      # return true
+    # end
     
     remove_overlay_cursor
     @cursorov = Gtk::Fixed.new
@@ -615,12 +616,12 @@ class VMAgui
 
       @last_adj_time = Time.now
       @sw.vadjustment.signal_connect("value-changed") { |x|
-        pp x.page_increment
-        pp x.page_size
-        pp x.step_increment
-        pp x.upper
-        pp x.value
-        pp x
+        # pp x.page_increment
+        # pp x.page_size
+        # pp x.step_increment
+        # pp x.upper
+        # pp x.value
+        # pp x
         @last_adj_time = Time.now
         # puts "@sw.vadjustment"
       }
@@ -848,6 +849,9 @@ class VMAgui
 
     @windows[winid][:sw].set_child(view)
     idle_ensure_cursor_drawn
+    
+    # @overlay = Gtk::Overlay.new
+    # @overlay.add_overlay(view)
 
     #TODO:???
     # @view = view
