@@ -44,9 +44,19 @@ class VSourceView < GtkSource::View
     # true
     # end
 
+    # Mainly after page-up or page-down
     signal_connect("move-cursor") do |widget, event|
       debug("MOVE-CURSOR", 2)
       $update_cursor = true
+      # handle_scrolling()
+      # curpos = buffer.cursor_position
+      # debug "MOVE CURSOR (sig): #{curpos}"
+
+      # run_as_idle proc {
+      # curpos = buffer.cursor_position
+      # debug "MOVE CURSOR (sig2): #{curpos}"
+      # }
+
       false
     end
 
@@ -141,14 +151,36 @@ class VSourceView < GtkSource::View
     end
   end
 
+  def handle_scrolling()
+    delete_cursorchar
+    # curpos = buffer.cursor_position
+    # debug "MOVE CURSOR: #{curpos}"
+    return nil if vma.gui.nil?
+    return nil if @bufo.nil?
+    vma.gui.run_after_scrolling proc {
+      delete_cursorchar
+      bc = window_to_buffer_coords(Gtk::TextWindowType::WIDGET, gutter_width + 2, 60)
+      if !bc.nil?
+        # Try to get exact character position
+        i = get_iter_at_location(bc[0], bc[1])
+        if i.nil?
+          # If doesn't work, at least get the start of correct line
+          i = get_line_at_y(bc[1])
+          i = i[0]
+        end
+        if !i.nil?
+          @bufo.set_pos(i.offset)
+        end
+      end
+      $update_cursor = false
+    }
+  end
+
   # def handle_key_event(event, sig)
   def handle_key_event(keyval, keyname, sig)
     delete_cursorchar
     if $update_cursor
-      curpos = buffer.cursor_position
-      debug "MOVE CURSOR: #{curpos}"
-      buf.set_pos(curpos)
-      $update_cursor = false
+      handle_scrolling
     end
     debug $view.visible_rect.inspect
 
@@ -410,8 +442,8 @@ class VSourceView < GtkSource::View
 
   def draw_cursor
     # if @tt.nil?
-      # @tt = buffer.create_tag("font_tag")
-      # @tt.font = "Arial"
+    # @tt = buffer.create_tag("font_tag")
+    # @tt.font = "Arial"
     # end
 
     mode = vma.kbd.get_mode

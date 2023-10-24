@@ -304,10 +304,20 @@ class VMAgui
   end
 
   def overlay_draw_cursor(textpos)
-  # return
+    # return
     remove_overlay_cursor
     GLib::Idle.add(proc { self.overlay_draw_cursor_(textpos) })
     # overlay_draw_cursor_(textpos)
+  end
+
+  # Run proc after animated scrolling has stopped (e.g. after page down)
+  def run_after_scrolling(p)
+    Thread.new {
+      while Time.now - @last_adj_time < 0.1
+        sleep 0.1
+      end
+      run_as_idle p
+    }
   end
 
   # To draw on empty lines and line-ends (where select_range doesn't work)
@@ -317,9 +327,9 @@ class VMAgui
     # }
 
     # while Time.now - @last_adj_time < 0.3
-      # return true
+    # return true
     # end
-    
+
     remove_overlay_cursor
     @cursorov = Gtk::Fixed.new
     @overlay.add_overlay(@cursorov)
@@ -849,7 +859,7 @@ class VMAgui
 
     @windows[winid][:sw].set_child(view)
     idle_ensure_cursor_drawn
-    
+
     # @overlay = Gtk::Overlay.new
     # @overlay.add_overlay(view)
 
