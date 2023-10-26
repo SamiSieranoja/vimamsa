@@ -1786,6 +1786,7 @@ class Buffer < String
   end
 
   def end_visual_mode()
+    return if !visual_mode?
     debug "End visual mode"
     #TODO:take previous mode (insert|command) from stack?
     $kbd.set_mode(:command)

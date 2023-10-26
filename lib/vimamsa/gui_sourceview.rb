@@ -117,25 +117,74 @@ class VSourceView < GtkSource::View
   end
 
   def register_signals()
-
-    #TODO: Doesn't seem to catch "move-cursor" signal since upgrade to gtk4
-    # self.signal_connect("move-cursor") do |widget, event|
-    # $update_cursor = true
-    # false
-    # end
-
     check_controllers
+
+    # Implement mouse selections using @cnt_mo and @cnt_drag
+    @cnt_mo = Gtk::EventControllerMotion.new
+    self.add_controller(@cnt_mo)
+    @cnt_mo.signal_connect "motion" do |gesture, x, y|
+      if !@range_start.nil? and !x.nil? and !y.nil? and buf.visual_mode?
+        i = coord_to_iter(x, y, true)
+        @bufo.set_pos(i) if !i.nil? and @last_iter != i
+        @last_iter = i
+      end
+    end
+
+    @last_coord = nil
+    @cnt_drag = Gtk::GestureDrag.new
+    self.add_controller(@cnt_drag)
+    @cnt_drag.signal_connect "drag-begin" do |gesture, x, y|
+      debug "drag-begin", 2
+      i = coord_to_iter(x, y, true)
+      pp i
+      @range_start = i
+      if !buf.visual_mode?
+        buf.start_visual_mode
+      end
+    end
+
+    @cnt_drag.signal_connect "drag-end" do |gesture, offsetx, offsety|
+      debug "drag-end", 2
+
+      # Not enough drag
+      if offsetx.abs < 5 and offsety.abs < 5
+        buf.end_visual_mode
+      end
+      @range_start = nil
+    end
+
     click = Gtk::GestureClick.new
     click.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
     self.add_controller(click)
     # Detect mouse click
     @click = click
+
+    @range_start = nil
     click.signal_connect "pressed" do |gesture, n_press, x, y, z|
-      debug "SourceView, GestureClick x=#{x} y=#{y}"
-      pp visible_rect
-      winw = width
-      view_width = visible_rect.width
-      gutter_width = winw - view_width
+      debug "SourceView, GestureClick released x=#{x} y=#{y}"
+
+      if buf.visual_mode?
+        buf.end_visual_mode
+      end
+
+      xloc = (x - gutter_width).to_i
+      yloc = (y + visible_rect.y).to_i
+      debug "xloc=#{xloc} yloc=#{yloc}"
+
+      i = coord_to_iter(xloc, yloc)
+      # @range_start = i
+
+      # This needs to happen after xloc calculation, otherwise xloc gets a wrong value (around 200 bigger)
+      if vma.gui.current_view != self
+        vma.gui.set_current_view(self)
+      end
+
+      @bufo.set_pos(i) if !i.nil?
+      true
+    end
+
+    click.signal_connect "released" do |gesture, n_press, x, y, z|
+      debug "SourceView, GestureClick released x=#{x} y=#{y}"
 
       xloc = (x - gutter_width).to_i
       yloc = (y + visible_rect.y).to_i
@@ -146,16 +195,36 @@ class VSourceView < GtkSource::View
         vma.gui.set_current_view(self)
       end
 
-      i = get_iter_at_location(xloc, yloc)
-      if !i.nil?
-        @bufo.set_pos(i.offset)
-      else
-        debug "iter nil"
-        #TODO: find correct line position some other way
-      end
+      i = coord_to_iter(xloc, yloc)
 
+      # if i != @range_start
+      # debug "RANGE #{[@range_start, i]}", 2
+      # end
+
+      @bufo.set_pos(i) if !i.nil?
+      # @range_start = nil
       true
     end
+  end
+
+  def coord_to_iter(xloc, yloc, transform_coord = false)
+    if transform_coord
+      xloc = (xloc - gutter_width).to_i
+      yloc = (yloc + visible_rect.y).to_i
+    end
+
+    # Try to get exact character position
+    i = get_iter_at_location(xloc, yloc)
+
+    # If doesn't work, at least get the start of correct line
+    # TODO: sometimes end of line is better choice
+    if i.nil?
+      r = get_line_at_y(yloc)
+      i = r[0] if !r.nil?
+    end
+
+    return i.offset if !i.nil?
+    return nil
   end
 
   def handle_scrolling()
@@ -165,19 +234,13 @@ class VSourceView < GtkSource::View
     return nil if vma.gui.nil?
     return nil if @bufo.nil?
     vma.gui.run_after_scrolling proc {
-      debug "START UPDATE POS AFTER SCROLLING",2
+      debug "START UPDATE POS AFTER SCROLLING", 2
       delete_cursorchar
       bc = window_to_buffer_coords(Gtk::TextWindowType::WIDGET, gutter_width + 2, 60)
       if !bc.nil?
-        # Try to get exact character position
-        i = get_iter_at_location(bc[0], bc[1])
-        if i.nil?
-          # If doesn't work, at least get the start of correct line
-          i = get_line_at_y(bc[1])
-          i = i[0]
-        end
+        i = coord_to_iter(bc[0], bc[1])
         if !i.nil?
-          @bufo.set_pos(i.offset)
+          @bufo.set_pos(i)
         end
       end
       $update_cursor = false
@@ -350,8 +413,6 @@ class VSourceView < GtkSource::View
     itr2 = buffer.get_iter_at(:offset => pos + 1)
     buffer.place_cursor(itr)
 
-    # $view.signal_emit("extend-selection", Gtk::MovementStep.new(:PAGES), -1, false)
-
     within_margin = 0.075 #margin as a [0.0,0.5) fraction of screen size
     use_align = false
     xalign = 0.5 #0.0=top 1.0=bottom, 0.5=center
@@ -366,9 +427,6 @@ class VSourceView < GtkSource::View
     $idle_scroll_to_mark = true
     ensure_cursor_visible
 
-    # scroll_to_iter(itr, within_margin, use_align, xalign, yalign)
-
-    # $view.signal_emit("extend-selection", Gtk::TextExtendSelection.new, itr,itr,itr2)
     draw_cursor
 
     return true
@@ -485,9 +543,9 @@ class VSourceView < GtkSource::View
       end
       # elsif @bufo.visual_mode?
     elsif ctype == :visual
-      debug "VISUAL MODE"
+      # debug "VISUAL MODE"
       (_start, _end) = @bufo.get_visual_mode_range2
-      debug "#{_start}, #{_end}"
+      # debug "#{_start}, #{_end}"
       itr = buffer.get_iter_at(:offset => _start)
       itr2 = buffer.get_iter_at(:offset => _end + 1)
       # Pango-CRITICAL **: pango_layout_get_cursor_pos: assertion 'index >= 0 && index <= layout->length' failed
