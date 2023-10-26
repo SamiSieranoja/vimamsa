@@ -51,7 +51,8 @@ class VSourceView < GtkSource::View
         # Ripl.start :binding => binding
 
         debug("MOVE-CURSOR", 2)
-        $update_cursor = true
+        # $update_cursor = true
+        handle_scrolling()
       end
 
       # handle_scrolling()
@@ -164,6 +165,7 @@ class VSourceView < GtkSource::View
     return nil if vma.gui.nil?
     return nil if @bufo.nil?
     vma.gui.run_after_scrolling proc {
+      debug "START UPDATE POS AFTER SCROLLING",2
       delete_cursorchar
       bc = window_to_buffer_coords(Gtk::TextWindowType::WIDGET, gutter_width + 2, 60)
       if !bc.nil?

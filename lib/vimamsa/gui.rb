@@ -313,9 +313,15 @@ class VMAgui
   # Run proc after animated scrolling has stopped (e.g. after page down)
   def run_after_scrolling(p)
     Thread.new {
+      # After running 
+      #   view.signal_emit("move-cursor", Gtk::MovementStep.new(:PAGES)
+      # have to wait for animated page down scrolling to actually start
+      # Then have to wait determine that it has stopped if scrolling adjustment stops changing. There should be a better way to do this.
+      sleep 0.1
       while Time.now - @last_adj_time < 0.1
         sleep 0.1
       end
+      debug "SCROLLING ENDED", 2
       run_as_idle p
     }
   end
