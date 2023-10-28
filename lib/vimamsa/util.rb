@@ -1,3 +1,6 @@
+require "open3"
+
+
 # Run idle proc once
 # Delay execution of proc until Gtk has fully processed the last calls.
 def run_as_idle(p)
@@ -6,6 +9,48 @@ def run_as_idle(p)
       GLib::Idle.add(proc { p.call; false })
     }
   end
+end
+
+def open_url(url)
+  system("xdg-open", url)
+end
+
+def open_with_default_program(url)
+  system("xdg-open", url)
+end
+
+def run_cmd(cmd)
+  tmpf = Tempfile.new("vmarun", "/tmp").path
+  cmd = "#{cmd} > #{tmpf}"
+  debug "CMD:\n#{cmd}"
+  system("bash", "-c", cmd)
+  res_str = File.read(tmpf)
+  return res_str
+end
+
+def exec_cmd(bin_name, arg1 = nil, arg2 = nil, arg3 = nil, arg4 = nil, arg5 = nil)
+  assert_binary_exists(bin_name)
+  if !arg5.nil?
+    p = Open3.popen2(bin_name, arg1, arg2, arg3, arg4, arg5)
+  elsif !arg4.nil?
+    p = Open3.popen2(bin_name, arg1, arg2, arg3, arg4)
+  elsif !arg3.nil?
+    p = Open3.popen2(bin_name, arg1, arg2, arg3)
+  elsif !arg2.nil?
+    p = Open3.popen2(bin_name, arg1, arg2)
+  elsif !arg1.nil?
+    p = Open3.popen2(bin_name, arg1)
+  else
+    p = Open3.popen2(bin_name)
+  end
+
+  ret_str = p[1].read
+  return ret_str
+end
+
+def mkdir_if_not_exists(_dirpath)
+  dirpath = File.expand_path(_dirpath)
+  Dir.mkdir(dirpath) unless File.exist?(dirpath)
 end
 
 class HSafe

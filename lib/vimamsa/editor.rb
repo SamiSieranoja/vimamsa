@@ -26,10 +26,6 @@ def handle_drag_and_drop(fname)
   buf.handle_drag_and_drop(fname)
 end
 
-def mkdir_if_not_exists(_dirpath)
-  dirpath = File.expand_path(_dirpath)
-  Dir.mkdir(dirpath) unless File.exist?(dirpath)
-end
 
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook, :macro
@@ -636,45 +632,7 @@ def get_file_line_pointer(s)
   return nil
 end
 
-def open_url(url)
-  system("xdg-open", url)
-end
-
-def open_with_default_program(url)
-  system("xdg-open", url)
-end
-
-def run_cmd(cmd)
-  tmpf = Tempfile.new("vmarun", "/tmp").path
-  cmd = "#{cmd} > #{tmpf}"
-  debug "CMD:\n#{cmd}"
-  system("bash", "-c", cmd)
-  res_str = File.read(tmpf)
-  return res_str
-end
-
-require "open3"
-
-def exec_cmd(bin_name, arg1 = nil, arg2 = nil, arg3 = nil, arg4 = nil, arg5 = nil)
-  assert_binary_exists(bin_name)
-  if !arg5.nil?
-    p = Open3.popen2(bin_name, arg1, arg2, arg3, arg4, arg5)
-  elsif !arg4.nil?
-    p = Open3.popen2(bin_name, arg1, arg2, arg3, arg4)
-  elsif !arg3.nil?
-    p = Open3.popen2(bin_name, arg1, arg2, arg3)
-  elsif !arg2.nil?
-    p = Open3.popen2(bin_name, arg1, arg2)
-  elsif !arg1.nil?
-    p = Open3.popen2(bin_name, arg1)
-  else
-    p = Open3.popen2(bin_name)
-  end
-
-  ret_str = p[1].read
-  return ret_str
-end
-
+# TODO: Implement using https://github.com/blackwinter/ruby-filemagic
 def file_is_text_file(fpath)
   debug "file_is_text_file(#{fpath})"
   fpath = File.expand_path(fpath)

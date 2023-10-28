@@ -68,6 +68,24 @@ def gui_grep()
   gui_one_input_action("Grep", "Search:", "grep", callback)
 end
 
+def highlight_match(bf, str, color: "#aa0000ff")
+  vbuf = bf.view.buffer
+  r = Regexp.new(Regexp.escape(str), Regexp::IGNORECASE)
+
+  hlparts = []
+
+  tt = vma.gui.view.buffer.create_tag("highlight_match_tag")
+  tt.weight = 650
+  tt.foreground = color
+
+  ind = scan_indexes(bf, r)
+  ind.each { |x|
+    itr = vbuf.get_iter_at(:offset => x)
+    itr2 = vbuf.get_iter_at(:offset => x + str.size)
+    vbuf.apply_tag(tt, itr, itr2)
+  }
+end
+
 def grep_cur_buffer(search_str, b = nil)
   debug "grep_cur_buffer(search_str)"
   lines = vma.buf.split("\n")
@@ -76,18 +94,21 @@ def grep_cur_buffer(search_str, b = nil)
   fpath = vma.buf.pathname.expand_path.to_s + ":" if vma.buf.pathname
   res_str = ""
 
+  hlparts = []
   $grep_matches = []
   lines.each_with_index { |l, i|
     if r.match(l)
-      # res_str << "#{fpath}#{i + 1}:#{l}\n"
-      res_str << "#{i + 1}:#{l}\n"
+      res_str << "#{i + 1}:"
+      # ind = scan_indexes(l, r)
+      res_str << "#{l}\n"
       $grep_matches << i + 1 # Lines start from index 1
     end
   }
   $grep_bufid = vma.buffers.current_buf
-  b = create_new_file(nil, res_str)
-  # set_current_buffer(buffer_i, update_history = true)
-  # @current_buf = buffer_i
+  b = create_new_buffer(res_str, "grep")
+  vbuf = vma.gui.view.buffer
+
+  highlight_match(b, search_str, color: "#10bd8e")
 
   b.line_action_handler = proc { |lineno|
     debug "GREP HANDLER:#{lineno}"
@@ -98,10 +119,6 @@ def grep_cur_buffer(search_str, b = nil)
     end
   }
 end
-
-# def invoke_grep_search()
-# start_minibuffer_cmd("", "", :grep_cur_buffer)
-# end
 
 def gui_one_input_action(title, field_label, button_title, callback, opt = {})
   a = OneInputAction.new(nil, title, field_label, button_title, callback, opt)

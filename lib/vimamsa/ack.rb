@@ -118,7 +118,8 @@ def ack_buffer(instr, b = nil)
     bufstr += run_cmd("ack -Q --type-add=gd=.gd -ki --nohtml --nojs --nojson #{instr} #{path}")
   end
   if bufstr.size > 5
-  create_new_buffer(bufstr,"ack")
+  b = create_new_buffer(bufstr,"ack")
+  highlight_match(b, instr, color: "#10bd8e")
   else
     message("No results for input:#{instr}")
   end
