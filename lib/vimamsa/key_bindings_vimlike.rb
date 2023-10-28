@@ -162,6 +162,7 @@ default_keys = {
   "C , d b" => "debug_print_buffer",
   "C , d c" => "debug_dump_clipboard",
   "C , d d" => "debug_dump_deltas",
+  
   "VC O" => "buf.jump(END_OF_LINE)",
   "VC $" => "buf.jump(END_OF_LINE)",
 
@@ -197,6 +198,7 @@ default_keys = {
   "C d $" => "buf.delete2(:to_line_end)",
   #    'C d e'=> 'buf.delete_to_next_word_end',
   "C d <num> e" => "delete_next_word",
+  "C d ' <char>" => "buf.delete2(:to_mark,<char>)",
   "C r <char>" => "buf.replace_with_char(<char>)", # TODO
   "C , l b" => "load_buffer_list",
   "C , l l" => "save_buffer_list",

@@ -90,33 +90,6 @@ def page_down
   return true
 end
 
-def paste_system_clipboard()
-
-  #TODO: Check if something useful in this old GTK3 code.
-  utf8_string = Gdk::Atom.intern("UTF8_STRING")
-
-  clipboard = Gtk::Clipboard.get_default($vmag.window.display)
-  received_text = ""
-
-  target_string = Gdk::Selection::TARGET_STRING
-  ti = clipboard.request_contents(target_string)
-
-  if clipboard.wait_is_text_available?
-    received_text = clipboard.wait_for_text
-  end
-
-  if received_text != "" and !received_text.nil?
-    max_clipboard_items = 100
-    if received_text != $clipboard[-1]
-      #TODO: HACK
-      $paste_lines = false
-    end
-    $clipboard << received_text
-    # debug $clipboard[-1]
-    $clipboard = $clipboard[-([$clipboard.size, max_clipboard_items].min)..-1]
-  end
-  return received_text
-end
 
 def set_system_clipboard(arg)
   vma.gui.window.display.clipboard.set(arg)

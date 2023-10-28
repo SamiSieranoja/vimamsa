@@ -5,7 +5,6 @@ require "pathname"
 require "openssl"
 require "ripl/multi_line"
 
-$paste_lines = false
 $buffer_history = []
 
 $update_highlight = false
@@ -15,7 +14,7 @@ $ifuncon = false
 class Buffer < String
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images, :last_save
   attr_writer :call_func, :update_highlight
-  attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle
+  attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle, :paste_lines
 
   @@num_buffers = 0
 
@@ -31,6 +30,9 @@ class Buffer < String
     @version = 0
     gui_create_buffer(@id, self)
     debug "NEW BUFFER fn=#{fname} ID:#{@id}"
+
+    # If true, we will create new line after this and paste there
+    @paste_lines = false
 
     @module = nil
 
@@ -803,7 +805,7 @@ class Buffer < String
   end
 
   def copy(range_id)
-    $paste_lines = false
+    @paste_lines = false
     debug "range_id: #{range_id}"
     debug range_id.inspect
     range = get_range(range_id)
@@ -966,9 +968,14 @@ class Buffer < String
     set_line_and_column_pos(nil, nil)
   end
 
-  def delete2(range_id)
-    $paste_lines = false
-    range = get_range(range_id)
+  def delete2(range_id, mark = nil)
+    # if mark != nil
+    # debug mark, 2
+    # return
+    # end
+
+    @paste_lines = false
+    range = get_range(range_id, mark: mark)
     return if range == nil
     debug "RANGE"
     debug range.inspect
@@ -980,7 +987,7 @@ class Buffer < String
   end
 
   def delete(op, x = nil)
-    $paste_lines = false
+    @paste_lines = false
     # Delete selection
     if op == SELECTION && visual_mode?
       (startpos, endpos) = get_visual_mode_range2
@@ -1028,7 +1035,7 @@ class Buffer < String
   end
 
   # Ranges to use in delete or copy operations
-  def get_range(range_id)
+  def get_range(range_id, mark: nil)
     range = nil
     if range_id == :to_word_end
       # TODO: better way to make the search than + 150 from current position
@@ -1045,6 +1052,16 @@ class Buffer < String
         range = get_range(:to_word_end)
       end
       # Ripl.start :binding => binding
+
+    elsif range_id == :to_mark
+      debug "TO MARK"
+      start = @line_ends[@lpos]
+      mpos = @marks[mark]
+      if !mpos.nil?
+        range = start..mpos
+      else
+        return nil
+      end
     elsif range_id == :to_line_end
       debug "TO LINE END"
       range = @pos..(@line_ends[@lpos] - 1)
@@ -1068,15 +1085,18 @@ class Buffer < String
     end
     return range if range == nil
     if range.last < range.first
-      range.last = range.first
+      range = range.last..range.first
+      # range.last = range.first
     end
     if range.first < 0
-      range.first = 0
+      # range.first = 0
+      range = 0..range.last
     end
     if range.last >= self.size
-      range.last = self.size - 1
+      # range.last = self.size - 1
+      range = range.first..(self.size - 1)
     end
-    #TODO: sanity check
+    debug range, 2
     return range
   end
 
@@ -1608,26 +1628,35 @@ class Buffer < String
     @clipboard_paste_running = true
     clipboard = vma.gui.window.display.clipboard
     clipboard.read_text_async do |_clipboard, result|
-      text = clipboard.read_text_finish(result)
-      paste_finish(text, at, register)
+      begin
+        text = clipboard.read_text_finish(result)
+      rescue Gio::IOError::NotSupported
+        # Happens when pasting from KeePassX and clipboard cleared
+        debug Gio::IOError::NotSupported
+      else
+        paste_finish(text, at, register)
+      end
     end
   end
 
   def paste_finish(text, at, register)
-    # if text == ""
-    # return if !$clipboard.any?
-    # if register == nil
-    # text = $clipboard[-1]
-    # else
-    # text = $register[register]
-    # end
-    # end
     debug "PASTE: #{text}"
+
+    # If we did not put this text to clipboard
+    if text != $clipboard[-1]
+      @paste_lines = false
+    end
+
+    # Not sure if this is possible
+    if text.encoding != Encoding::UTF_8
+      text = text.encode(Encoding::UTF_8)
+    end
+
     $clipboard << text
 
     return if text == ""
 
-    if $paste_lines
+    if @paste_lines
       debug "PASTE LINES"
       put_to_new_next_line(text)
     else
@@ -1669,7 +1698,7 @@ class Buffer < String
     add_delta([lrange.begin, DELETE, lrange.end - lrange.begin + 1], true)
     set_clipboard(s)
     update_pos(lrange.begin)
-    $paste_lines = true
+    @paste_lines = true
     #recalc_line_ends
   end
 
@@ -1686,7 +1715,7 @@ class Buffer < String
 
   def copy_active_selection(x = nil)
     debug "!COPY SELECTION"
-    $paste_lines = false
+    @paste_lines = false
     return if !@visual_mode
 
     debug "COPY SELECTION"
@@ -1766,7 +1795,7 @@ class Buffer < String
       debug "copy num_lines:#{num_lines}"
     end
     set_clipboard(self[line_range(@lpos, num_lines)])
-    $paste_lines = true
+    @paste_lines = true
   end
 
   def put_file_path_to_clipboard
