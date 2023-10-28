@@ -1507,6 +1507,10 @@ class Buffer < String
   end
 
   def insert_txt_at(c, pos)
+    if c.nil? or pos.nil?
+      error("input c=nil || pos=nil")
+      return
+    end
     c = c.force_encoding("UTF-8");  #TODO:correct?
     c = "\n" if c == "\r"
     add_delta([pos, INSERT, c.size, c], true)
@@ -1647,10 +1651,7 @@ class Buffer < String
       @paste_lines = false
     end
 
-    # Not sure if this is possible
-    if text.encoding != Encoding::UTF_8
-      text = text.encode(Encoding::UTF_8)
-    end
+    text = sanitize_input(text)
 
     $clipboard << text
 
@@ -2055,7 +2056,7 @@ class Buffer < String
   end
 end
 
-#TODO
+#TODO: function not used
 def write_to_file(savepath, s)
   if is_path_writable(savepath)
     IO.write(savepath, self.to_s)

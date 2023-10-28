@@ -1,5 +1,5 @@
 # Run idle proc once
-# Delay execution of proc until Gtk has fully processed the last calls. 
+# Delay execution of proc until Gtk has fully processed the last calls.
 def run_as_idle(p)
   if p.class == Proc
     Thread.new {
@@ -137,6 +137,14 @@ def read_file(text, path)
   #    content = filter_buffer(content)
   debug("END FILTER")
   return content
+end
+
+def sanitize_input(str)
+  if str.encoding != Encoding::UTF_8
+    str = text.encode(Encoding::UTF_8)
+  end
+  str.gsub!(/\r\n/, "\n")
+  return str
 end
 
 def is_url(s)

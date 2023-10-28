@@ -48,12 +48,6 @@ require "vimamsa/conf"
 # load "vendor/ver/lib/ver/syntax/detector.rb"
 # load "vendor/ver/config/detect.rb"
 
-$vma = Editor.new
-
-def vma()
-  return $vma
-end
-
 def unimplemented
   debug "unimplemented"
 end

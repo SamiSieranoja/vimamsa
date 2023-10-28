@@ -69,13 +69,19 @@ class SelectUpdateWindow
 
     @window.add(vbox)
 
+    if !opt[:desc].nil?
+      descl = Gtk::Label.new(opt[:desc])
+      set_margin_all(descl,15)
+      # vbox.append(descl, :expand => false, :fill => false, :padding => 0)
+      vbox.append(descl)
+    end
+
     @entry = Gtk::SearchEntry.new
     @entry.width_chars = 45
     container = Gtk::Box.new(:horizontal, 10)
     # container.halign = :start
     container.halign = :center
-    container.pack_start(@entry,
-                         :expand => false, :fill => false, :padding => 0)
+    container.append(@entry)
 
     # create tree view
     @model = Gtk::ListStore.new(String, String)
@@ -135,11 +141,6 @@ class SelectUpdateWindow
     @entry.signal_connect("changed") { debug "[changed] " }
     @entry.signal_connect("next-match") { debug "[next-match] " }
 
-    if !opt[:desc].nil?
-      descl = Gtk::Label.new(opt[:desc])
-      vbox.pack_start(descl, :expand => false, :fill => false, :padding => 0)
-    end
-
     # label = Gtk::Label.new(<<-EOF)
     # Search:
     # EOF
@@ -147,7 +148,7 @@ class SelectUpdateWindow
     # label = Gtk::Label.new("Input:")
     # vbox.pack_start(label, :expand => false, :fill => false, :padding => 0)
 
-    vbox.pack_start(container, :expand => false, :fill => false, :padding => 0)
+    vbox.append(container)
     sw = Gtk::ScrolledWindow.new(nil, nil)
     # sw.shadow_type = :etched_in #TODO:gtk4
     sw.set_policy(:never, :automatic)

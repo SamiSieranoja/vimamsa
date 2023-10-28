@@ -49,6 +49,7 @@ class Editor
     @converters = {}
     @paint_stack = []
     @_plugins = {}
+    @errors
   end
 
   def open_file_listener(added)
@@ -93,11 +94,10 @@ class Editor
     $kbd = @kbd
     require "vimamsa/key_bindings_vimlike"
     sleep(0.03)
-    
 
     FileManager.init
     BufferManager.init
-    
+
     @gui.init_menu
 
     mkdir_if_not_exists("~/.vimamsa")
@@ -282,6 +282,11 @@ class Editor
     debug "CAN OPEN?: #{can_open}"
     return can_open
   end
+
+  def error(message)
+    debug "ERORR #{caller[0]} #{str}", 2
+    @errors << [message, caller]
+  end
 end
 
 def _quit()
@@ -389,7 +394,7 @@ def show_key_bindings()
   kbd_s << vma.kbd.to_s
   kbd_s << "\n"
   kbd_s << "===============================================\n"
-  b = create_new_buffer(kbd_s,"key-bindings")
+  b = create_new_buffer(kbd_s, "key-bindings")
   gui_set_file_lang(b.id, "hyperplaintext")
   #
 end
@@ -456,6 +461,11 @@ def minibuffer_delete()
   $minibuffer.delete(BACKWARD_CHAR)
 end
 
+def error(str)
+  puts caller[0]
+  debug "#{caller[0]} ERROR: #{str}", 2
+end
+
 def message(s)
   s = "[#{DateTime.now().strftime("%H:%M")}] #{s}"
   debug s
@@ -502,16 +512,16 @@ def create_new_file(filename = nil, file_contents = "\n")
   vma.kbd.set_mode_to_default
   vma.buffers.set_current_buffer_by_id(buffer.id)
 
-  # Do set_content twice (once in Buffer.new) to force redraw and work around a bug 
+  # Do set_content twice (once in Buffer.new) to force redraw and work around a bug
   # The bug: if switching a child of scrolledWindow to a textview with a file smaller than the window, it won't get drawn properly if in previous (larger) file the ScrolledWindow was scrolled down.
   buffer.set_content(file_contents)
 
   return buffer
 end
 
-def create_new_buffer(file_contents = "\n",prefix="buf", setcurrent=true)
+def create_new_buffer(file_contents = "\n", prefix = "buf", setcurrent = true)
   debug "NEW BUFFER CREATED"
-  buffer = Buffer.new(file_contents,nil,prefix)
+  buffer = Buffer.new(file_contents, nil, prefix)
   vma.buffers.add(buffer)
   vma.buffers.set_current_buffer_by_id(buffer.id) if setcurrent
   buffer.set_content(file_contents)
@@ -585,6 +595,10 @@ def open_new_file(filename, file_contents = "")
     message "Switching to: #{filename}"
     vma.buffers.set_current_buffer(b)
   else
+    if !is_path_writable(filename)
+      message("Path #{filename} cannot be written to")
+      return false
+    end
     message "New file opened: #{filename}"
     fname = filename
     bf = load_buffer(fname)

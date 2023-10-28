@@ -49,18 +49,11 @@ end
 
 require "vimamsa/editor.rb"
 
-# load "gui_funcs.rb"
-
 $vma = Editor.new
 def vma()
   return $vma
 end
 
-# c_startup
-# run_random_jump_test
-# main_loop
-
-# debug("END")
 
 
 

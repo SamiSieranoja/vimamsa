@@ -54,7 +54,7 @@ end
 
 def search_actions()
   l = []
-  opt = { :title => "Search actions.", :desc => "Fuzzy search for actions. <up> or <down> to change selcted. <enter> to select current." }
+  opt = { :title => "Search for actions", :desc => "Fuzzy search for actions. <up> or <down> to change selcted. <enter> to select current." }
   $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
 
   gui_select_update_window(l, $select_keys.collect { |x| x.upcase },

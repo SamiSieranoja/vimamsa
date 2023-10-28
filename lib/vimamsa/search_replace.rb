@@ -188,6 +188,13 @@ module Gtk
   end
 end
 
+def set_margin_all(widget, m)
+  widget.margin_bottom = m
+  widget.margin_top = m
+  widget.margin_end = m
+  widget.margin_start = m
+end
+
 class OneInputAction
   def initialize(main_window, title, field_label, button_title, callback, opt = {})
     @window = Gtk::Window.new()
