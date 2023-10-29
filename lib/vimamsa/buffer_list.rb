@@ -20,7 +20,7 @@ def load_buffer_list()
 end
 
 class BufferList < Array
-  attr_reader :current_buf, :last_dir, :buffer_history
+  attr_reader :current_buf, :last_dir, :last_file, :buffer_history
 
   def initialize()
     @last_dir = File.expand_path(".")
@@ -141,6 +141,7 @@ class BufferList < Array
   def update_last_dir(buf)
     if buf.fname
       @last_dir = File.dirname(buf.fname)
+      @last_file = buf.fname
     end
   end
 

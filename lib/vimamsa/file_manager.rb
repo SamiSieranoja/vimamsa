@@ -114,6 +114,12 @@ class FileManager
   def dir_to_buf(dirpath, b = nil)
     # File.stat("testfile").mtime
 
+    debug "last file: #{vma.buffers.last_file}", 2
+    lastf = vma.buffers.last_file
+    jumpto = nil
+    if File.dirname(lastf) == dirpath
+      jumpto = File.basename(lastf)
+    end
     vma.buffers.last_dir = dirpath
     dirpath = File.expand_path(dirpath)
     @header = []
@@ -152,7 +158,11 @@ class FileManager
     s << @cdirs.join("\n")
     s << "\n"
     s << "\n"
+    jumppos = nil
     for f in @cfiles
+      if f[0] == jumpto
+        jumppos = s.size
+      end
       s << "#{f[0]}\n"
       # s << @cfiles.join("\n")
     end
@@ -164,7 +174,11 @@ class FileManager
     else
       @buf.set_content(s)
     end
-    @buf.set_line_and_column_pos(@header.size, 0)
+    if jumppos
+      @buf.set_pos(jumppos)
+    else
+      @buf.set_line_and_column_pos(@header.size, 0)
+    end
   end
 
   def fullp(fn)
