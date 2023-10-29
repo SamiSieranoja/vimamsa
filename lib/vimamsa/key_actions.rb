@@ -104,6 +104,10 @@ reg_act(:execute_current_line_in_terminal_autoclose, proc { buf.execute_current_
 reg_act(:show_images, proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")
 reg_act(:delete_current_file, proc { bufs.delete_current_buffer() }, "Delete current file")
 
+
+reg_act(:audio_stop, proc { Audio.stop }, "Stop audio playback")
+
+
 act_list = {
   # File handling
   :buf_save => { :proc => proc { buf.save },

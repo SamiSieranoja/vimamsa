@@ -132,10 +132,11 @@ class Editor
 
     if conf(:enable_lsp)
       require "vimamsa/langservp"
+      require "vimamsa/audio" # TODO:config
       @langsrv["ruby"] = LangSrv.new("ruby")
       @langsrv["cpp"] = LangSrv.new("cpp")
     end
-
+    
     # build_options
 
     fname = nil

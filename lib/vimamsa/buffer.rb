@@ -400,7 +400,6 @@ class Buffer < String
     gui_set_buffer_contents(@id, self.to_s)
     @images = [] #TODO: if reload
     hpt_scan_images(self)
-    hpt_scan_audio(self)
 
     # add_hl_update(@update_hl_startpos, @update_hl_endpos)
   end

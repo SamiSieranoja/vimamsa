@@ -267,7 +267,12 @@ class KeyBindingTree
     for st in @state_trail
       st = st[0] if st.class == Array
       if first
-        s_trail << "[#{st.to_s}]"
+        trailpfx = ""
+        if !st.major_modes.empty?
+          mmid = st.major_modes.first
+          trailpfx = "#{@modes[mmid].to_s}>"
+        end
+        s_trail << "[#{trailpfx}#{st.to_s}]"
       else
         s_trail << " #{st.to_s}"
       end
@@ -532,7 +537,7 @@ def exec_action(action)
   $kbd.last_action = $kbd.cur_action
   $kbd.cur_action = action
   if action.class == Symbol
-    return call(action)
+    return call_action(action)
   elsif action.class == Proc
     return action.call
   else

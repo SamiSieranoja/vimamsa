@@ -3,6 +3,8 @@ vma.kbd.add_mode("I", :insert, :insert)
 vma.kbd.add_mode("V", :visual, :visual)
 vma.kbd.add_mode("M", :minibuffer) #TODO: needed?
 vma.kbd.add_mode("R", :readchar)
+# vma.kbd.add_mode("audio", :audio, :command)
+vma.kbd.add_minor_mode("audio", :audio, :command)
 vma.kbd.add_mode("B", :browse, :command)
 vma.kbd.add_mode("X", :replace, :command, name: "Replace")
 vma.kbd.set_default_mode(:command)
@@ -49,6 +51,15 @@ bindkey "C , b", :start_buf_manager
 bindkey "C , w", :toggle_active_window
 bindkey "C , , w", :toggle_two_column
 
+bindkey "C , u s", :audio_stop
+bindkey "C m a", "vma.kbd.set_mode(:audio)"
+bindkey "audio s", :audio_stop
+bindkey "audio space", :audio_stop
+bindkey "audio q || audio esc", "vma.kbd.set_mode_to_default"
+
+
+
+
 # bindkey "C , f o", :open_file_dialog
 bindkey "CI ctrl-o", :open_file_dialog
 # bindkey "M enter", :minibuffer_end
@@ -63,7 +74,7 @@ bindkey "C z ", :start_browse_mode
 bindkey "B h", :history_switch_backwards
 bindkey "B l", :history_switch_forwards
 #bindkey 'B z', :center_on_current_line
-bindkey "B z", "center_on_current_line();call(:exit_browse_mode)"
+bindkey "B z", "center_on_current_line();call_action(:exit_browse_mode)"
 bindkey "B enter || B return || B esc || B j || B ctrl!", :exit_browse_mode
 bindkey "B s", :page_up
 bindkey "B d", :page_down

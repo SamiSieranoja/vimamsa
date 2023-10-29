@@ -111,15 +111,15 @@ Will search the following directories:
   gui_one_input_action(nfo, "Search:", "search", callback)
 end
 
-def ack_buffer(instr, b = nil)
-  instr = Shellwords.escape(instr)
+def ack_buffer(_instr, b = nil)
+  instr = Shellwords.escape(_instr)
   bufstr = ""
   for path in vma.get_content_search_paths
     bufstr += run_cmd("ack -Q --type-add=gd=.gd -ki --nohtml --nojs --nojson #{instr} #{path}")
   end
   if bufstr.size > 5
   b = create_new_buffer(bufstr,"ack")
-  highlight_match(b, instr, color: "#10bd8e")
+  highlight_match(b, _instr, color: "#10bd8e")
   else
     message("No results for input:#{instr}")
   end

@@ -192,6 +192,8 @@ def sanitize_input(str)
   return str
 end
 
+
+
 def is_url(s)
   return s.match(/(https?|file):\/\/.*/) != nil
 end

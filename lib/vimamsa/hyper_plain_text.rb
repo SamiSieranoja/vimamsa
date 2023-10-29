@@ -1,8 +1,10 @@
 def hpt_check_cur_word(w)
   debug "check_cur_word(w)"
-  m = w.match(/⟦(.*)⟧/)
+  m = w.match(/⟦((audio|img):)(.*)⟧/)
   if m
-    fpfx = m[1]
+    # Ripl.start :binding => binding
+
+    fpfx = m[3]
     if vma.buf.fname
       dn = File.dirname(vma.buf.fname)
 
@@ -23,8 +25,13 @@ def hpt_check_cur_word(w)
       end
 
       if fn
-        message "HPT opening file #{fn}"
-        return fn
+        if m[2] == "audio"
+          # Thread.new { Audio.play(fn) }
+          Audio.play(fn) 
+        else
+          message "HPT opening file #{fn}"
+          return fn
+        end
         # open_existing_file(fn)
         # return true
       else

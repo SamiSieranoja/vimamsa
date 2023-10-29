@@ -32,9 +32,9 @@ def missing_callfunc
 end
 
 #TODO: remove
-def call(id)
-  call_action(id)
-end
+# def call(id)
+  # call_action(id)
+# end
 
 $acth = []
 
@@ -116,7 +116,7 @@ def search_actions_select_callback(search_str, idx)
     eval(acc)
   elsif acc.class == Symbol
     debug "Symbol"
-    call(acc)
+    call_action(acc)
   end
 end
 
