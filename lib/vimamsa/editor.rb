@@ -91,7 +91,6 @@ class Editor
     require "vimamsa/key_bindings_vimlike"
     sleep(0.03)
 
-    FileManager.init
     BufferManager.init
 
     @gui.init_menu
@@ -111,6 +110,7 @@ class Editor
       example_custom = IO.read(ppath("custom_example.rb"))
       IO.write(custom_fn, example_custom)
     end
+    
 
     mkdir_if_not_exists("~/.vimamsa/custom.rb")
 
@@ -129,6 +129,8 @@ class Editor
 
     custom_script = read_file("", custom_fn)
     eval(custom_script) if custom_script
+    
+    FileManager.init
 
     if conf(:enable_lsp)
       require "vimamsa/langservp"

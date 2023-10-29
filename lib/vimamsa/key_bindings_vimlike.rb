@@ -56,9 +56,6 @@ bindkey "audio s", :audio_stop
 bindkey "audio space", :audio_stop
 bindkey "audio q || audio esc", "vma.kbd.set_mode_to_default"
 
-
-
-
 # bindkey "C , f o", :open_file_dialog
 bindkey "CI ctrl-o", :open_file_dialog
 # bindkey "M enter", :minibuffer_end
