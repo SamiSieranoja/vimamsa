@@ -1,4 +1,3 @@
-
 def save_buffer_list()
   message("Save buffer list")
   buffn = get_dot_path("buffers.txt")
@@ -27,7 +26,7 @@ class BufferList < Array
     @last_dir = File.expand_path(".")
     @buffer_history = []
     super
-    @current_buf=0
+    @current_buf = 0
   end
 
   # lastdir = File.expand_path(".") if lastdir.nil?
@@ -113,6 +112,7 @@ class BufferList < Array
     buffer_i = 0 if buffer_i < 0
     vma.buf = self[buffer_i]
     return if !vma.buf
+    update_last_dir(vma.buf)
     @current_buf = buffer_i
     debug "SWITCH BUF2. bufsize:#{self.size}, curbuf: #{@current_buf}"
     fpath = vma.buf.fname
@@ -213,8 +213,8 @@ class BufferList < Array
       if from_recent
         @current_buf = jump_to_buf
       else
-      	# Find last edited buffer that is not already open
-        @current_buf = @buffer_history.filter{|x| !vma.gui.is_buffer_open(self[x].id)}.last
+        # Find last edited buffer that is not already open
+        @current_buf = @buffer_history.filter { |x| !vma.gui.is_buffer_open(self[x].id) }.last
       end
     end
     if self.size == 0 or @current_buf.nil?

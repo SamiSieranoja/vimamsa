@@ -6,7 +6,6 @@ def gui_open_file_dialog(dirpath)
                                       :buttons => [["Open", :accept],
                                                    ["Cancel", :cancel]])
   dialog.set_current_folder(Gio::File.new_for_path(dirpath))
-  # dialog.set_current_folder(Gio::File.new_for_path("/tmp"))
 
   dialog.signal_connect("response") do |dialog, response_id|
     if response_id == Gtk::ResponseType::ACCEPT
@@ -24,7 +23,7 @@ def gui_file_saveas(dirpath)
                                       :action => :save,
                                       :buttons => [["Save", :accept],
                                                    ["Cancel", :cancel]])
-  # dialog.set_current_folder(dirpath) #TODO:gtk4
+  dialog.set_current_folder(Gio::File.new_for_path(dirpath))
   dialog.signal_connect("response") do |dialog, response_id|
     if response_id == Gtk::ResponseType::ACCEPT
       file_saveas(dialog.file.parse_name)

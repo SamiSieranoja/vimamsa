@@ -3,7 +3,6 @@ vma.kbd.add_mode("I", :insert, :insert)
 vma.kbd.add_mode("V", :visual, :visual)
 vma.kbd.add_mode("M", :minibuffer) #TODO: needed?
 vma.kbd.add_mode("R", :readchar)
-# vma.kbd.add_mode("audio", :audio, :command)
 vma.kbd.add_minor_mode("audio", :audio, :command)
 vma.kbd.add_mode("B", :browse, :command)
 vma.kbd.add_mode("X", :replace, :command, name: "Replace")
@@ -52,7 +51,7 @@ bindkey "C , w", :toggle_active_window
 bindkey "C , , w", :toggle_two_column
 
 bindkey "C , u s", :audio_stop
-bindkey "C m a", "vma.kbd.set_mode(:audio)"
+bindkey "C , m a", "vma.kbd.set_mode(:audio)"
 bindkey "audio s", :audio_stop
 bindkey "audio space", :audio_stop
 bindkey "audio q || audio esc", "vma.kbd.set_mode_to_default"

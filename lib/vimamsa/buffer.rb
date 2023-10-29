@@ -1870,7 +1870,7 @@ class Buffer < String
     savepath = ""
 
     # If current file has fname, save to that fname
-    # Else search for previously open files and save to the directory of
+    # Else search for previously opened files and save to the directory of
     # the last viewed file that has a filename
     # selffers[$buffer_history.reverse[1]].fname
 
