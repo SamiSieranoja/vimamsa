@@ -33,7 +33,8 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'gtksourceview5', '~> 4.2.0'
   spec.add_runtime_dependency 'parallel', '~> 1.14' #TODO: update?
   spec.add_runtime_dependency 'listen', '~> 3.4'  #TODO: update?
-
+  spec.add_runtime_dependency 'language_server-protocol', '~> 3.17.0.3'
+  spec.add_runtime_dependency 'gstreamer', '~> 4.2.0'
 
   spec.extensions = ["ext/vmaext/extconf.rb"]
   spec.licenses    = ['GPL-3.0+']

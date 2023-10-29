@@ -1040,7 +1040,7 @@ class Buffer < String
       # TODO: better way to make the search than + 150 from current position
       wmarks = get_word_end_marks(@pos, @pos + 150)
       if wmarks.any?
-        range = @pos..wmarks[0]
+        range = @pos..(wmarks[0])
       end
     elsif range_id == :to_next_word # start of
       wmarks = get_word_start_marks(@pos, @pos + 150)

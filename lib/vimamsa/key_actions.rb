@@ -104,9 +104,7 @@ reg_act(:execute_current_line_in_terminal_autoclose, proc { buf.execute_current_
 reg_act(:show_images, proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")
 reg_act(:delete_current_file, proc { bufs.delete_current_buffer() }, "Delete current file")
 
-
 reg_act(:audio_stop, proc { Audio.stop }, "Stop audio playback")
-
 
 act_list = {
   # File handling
@@ -167,6 +165,12 @@ act_list = {
 
   :quit => { :proc => proc { _quit },
              :desc => "Quit", :group => :app },
+
+  :run_tests => { :proc => proc { run_tests },
+                  :desc => "Run tests" },
+
+  :debug_buf_hex => { :proc => proc { puts "SHA256: " + (Digest::SHA2.hexdigest vma.buf.to_s) },
+                      :desc => "Output SHA256 hex digest of curent buffer" },
 
 }
 

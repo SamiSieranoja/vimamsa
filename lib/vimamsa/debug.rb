@@ -79,10 +79,6 @@ def savedebug(message, e)
   puts save_fn_json
 end
 
-def run_tests()
-  run_test("01")
-  run_test("02")
-end
 
 def run_test(test_id)
   target_results = read_file("", "tests/test_#{test_id}_output.txt")

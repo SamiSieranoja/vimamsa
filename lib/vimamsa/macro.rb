@@ -116,6 +116,27 @@ class Macro
     run_macro(@last_macro)
   end
 
+  # Run the provided list of actions
+  def run_actions(acts)
+    isok = true
+    if acts.kind_of?(Array) and acts.any?
+      @running_macro = true
+      # TODO:needed?
+      # set_last_command({ method: $macro.method("run_macro"), params: [name] })
+      for a in acts
+        ret = exec_action(a)
+        if ret == false
+          error "Error while running macro"
+          isok=false
+          break
+        end
+      end
+    end
+    @running_macro = false
+    buf.set_pos(buf.pos)
+    return isok
+  end
+
   def run_macro(name)
     if $macro.is_recording == true
       message("Can't run a macro that runs a macro (recursion risk)")
@@ -126,26 +147,13 @@ class Macro
       @last_macro = name
     end
     acts = @recorded_macros[name]
-    if acts.kind_of?(Array) and acts.any?
-      @running_macro = true
-      set_last_command({ method: $macro.method("run_macro"), params: [name] })
-      #
-      for a in acts
-        ret = exec_action(a)
-        debug ret
-        if ret == false
-          message("Error while running macro")
-          Ripl.start :binding => binding
+    return run_acts(acts)
+  end
 
-          break
-        end
-      end
-      # eval_str = m.join(";")
-      # debug(eval_str)
-      # eval(eval_str)
-    end
-    @running_macro = false
-    buf.set_pos(buf.pos)
+  def dump_last_macro()
+    puts "======MACRO START======="
+    puts @recorded_macros[@last_macro].inspect
+    puts "======MACRO END========="
   end
 
   def save_macro(name)
