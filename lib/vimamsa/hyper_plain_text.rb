@@ -1,6 +1,6 @@
 def hpt_check_cur_word(w)
   debug "check_cur_word(w)"
-  m = w.match(/⟦((audio|img):)(.*)⟧/)
+  m = w.match(/⟦((audio|img):)?(.*)⟧/)
   if m
     # Ripl.start :binding => binding
 
