@@ -635,17 +635,6 @@ def get_file_line_pointer(s)
   return nil
 end
 
-# TODO: Implement using https://github.com/blackwinter/ruby-filemagic
-def file_is_text_file(fpath)
-  debug "file_is_text_file(#{fpath})"
-  fpath = File.expand_path(fpath)
-  return false if !File.exist?(fpath)
-  r = exec_cmd("file", fpath)
-  debug "DEBUG:#{r}"
-  return true if r.match(/UTF-8.*text/)
-  return true if r.match(/ASCII.*text/)
-  return false
-end
 
 def set_register(char)
   $cur_register = char

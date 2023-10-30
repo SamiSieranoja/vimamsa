@@ -147,7 +147,7 @@ class Macro
       @last_macro = name
     end
     acts = @recorded_macros[name]
-    return run_acts(acts)
+    return run_actions(acts)
   end
 
   def dump_last_macro()

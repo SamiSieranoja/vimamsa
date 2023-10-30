@@ -291,6 +291,7 @@ class VSourceView < GtkSource::View
     keyval_trans[Gdk::Keyval::KEY_Shift_L] = "shift"
     keyval_trans[Gdk::Keyval::KEY_Shift_R] = "shift"
     keyval_trans[Gdk::Keyval::KEY_Tab] = "tab"
+    keyval_trans[Gdk::Keyval::GDK_KEY_ISO_Left_Tab] = "tab"
 
     key_trans = {}
     key_trans["\e"] = "esc"
@@ -311,10 +312,12 @@ class VSourceView < GtkSource::View
       key_str_parts.delete_at(0)
     end
 
-    if key_str_parts[0] == "shift" and key_str_parts[1].class == String
-      #"shift-P" to just "P"
-      # key_str_parts.delete_at(0) if key_str_parts[1].match(/^[[:upper:]]$/)
-      key_str_parts.delete_at(0)
+    if key_str_parts[0] == "shift" and key_str_parts.size == 2
+      if key_str_parts[1].size == 1 and key_str_parts[1].match(/^[[:upper:]]$/)
+        #"shift-P" to just "P" etc.
+        # but keep shift-tab as is
+        key_str_parts.delete_at(0)
+      end
     end
 
     key_str = key_str_parts.join("-")

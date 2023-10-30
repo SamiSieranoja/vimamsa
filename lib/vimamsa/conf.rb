@@ -23,8 +23,14 @@ setcnf :default_search_extensions, ["txt", "rb"]
 
 
 setcnf "log.verbose", 1
-setcnf :tab_width, 4
 setcnf :enable_lsp, false
+
+
+setcnf :tab_width, 2
+setcnf :tab_to_spaces_default, false
+setcnf :tab_to_spaces_languages, ["c", "java", "ruby", "hyperplaintext", "php"]
+setcnf :tab_to_spaces_not_languages, ["makefile"]
+
 
 setcnf :workspace_folders, []
 

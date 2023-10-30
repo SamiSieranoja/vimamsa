@@ -1,8 +1,7 @@
 def hpt_check_cur_word(w)
   debug "check_cur_word(w)"
   m = w.match(/⟦((audio|img):)?(.*)⟧/)
-  if m
-    # Ripl.start :binding => binding
+        if m
 
     fpfx = m[3]
     if vma.buf.fname
@@ -17,6 +16,7 @@ def hpt_check_cur_word(w)
       fcands << File.expand_path("#{fpfx}.txt")
 
       fn = nil
+      
       for fc in fcands
         if File.exists?(fc)
           fn = fc

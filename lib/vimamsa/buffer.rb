@@ -269,6 +269,34 @@ class Buffer < String
     # buf.jump(END_OF_LINE);buf.insert_txt("\n");
   end
 
+  def unindent
+    debug("unindent", 2)
+    conf(:tab_width).times {
+      p = @pos - 1
+      if p >= 0
+        if self[p] == " "
+          delete(BACKWARD_CHAR)
+        end
+      else
+        break
+      end
+    }
+  end
+
+  def insert_tab
+    convert = conf(:tab_to_spaces_default)
+    convert = true if conf(:tab_to_spaces_languages).include?(@lang)
+    convert = false if conf(:tab_to_spaces_not_languages).include?(@lang)
+    tw = conf(:tab_width)
+    if convert
+      indent_to = (@cpos / tw) * tw + tw
+      indentdiff = indent_to - @cpos
+      insert_txt(" " * indentdiff)
+    else
+      insert_txt("\t")
+    end
+  end
+
   def insert_image_after_current_line(fname)
     lr = current_line_range()
     a = "⟦img:#{fname}⟧\n"

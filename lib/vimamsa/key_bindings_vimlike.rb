@@ -291,7 +291,8 @@ default_keys = {
   "IX alt-f" => "buf.jump_word(FORWARD,WORD_START)",
   "IX alt-b" => "buf.jump_word(BACKWARD,WORD_START)",
 
-  "I tab" => 'buf.insert_txt("	")',
+  "I tab" => 'buf.insert_tab',
+  "I shift-tab" => 'buf.unindent',
   "I space" => 'buf.insert_txt(" ")',
 #  "I return" => 'buf.insert_new_line()',
 }
