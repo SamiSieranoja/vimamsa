@@ -313,7 +313,7 @@ class VSourceView < GtkSource::View
     end
 
     if key_str_parts[0] == "shift" and key_str_parts.size == 2
-      if key_str_parts[1].size == 1 and key_str_parts[1].match(/^[[:upper:]]$/)
+      if key_str_parts[1].size == 1 # and key_str_parts[1].match(/^[[:upper:]]$/)
         #"shift-P" to just "P" etc.
         # but keep shift-tab as is
         key_str_parts.delete_at(0)
