@@ -15,6 +15,7 @@ require "uri"
 require "vimamsa/util"
 # exit!
 require "vimamsa/main"
+require "vimamsa/terminal"
 require "vimamsa/form_generator"
 
 require "vimamsa/actions"
@@ -31,6 +32,8 @@ require "vimamsa/hyper_plain_text"
 
 require "vimamsa/ack"
 require "vimamsa/buffer"
+require "vimamsa/buffer_cursor"
+require "vimamsa/buffer_changetext"
 require "vimamsa/buffer_list"
 require "vimamsa/buffer_manager"
 require "vimamsa/constants"
