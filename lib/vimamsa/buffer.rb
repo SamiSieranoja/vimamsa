@@ -100,7 +100,7 @@ class Buffer < String
   end
 
   def set_executable
-    if File.exists?(@fname)
+    if File.exist?(@fname)
       FileUtils.chmod("+x", @fname)
       message("Set executable: #{@fname}")
     end
@@ -329,7 +329,7 @@ class Buffer < String
 
   def revert()
     return if !@fname
-    return if !File.exists?(@fname)
+    return if !File.exist?(@fname)
     message("Revert buffer #{@fname}")
     str = read_file("", @fname)
     self.set_content(str)
@@ -1923,7 +1923,7 @@ class Buffer < String
     # Keeping this code from GTK3 in case want to do this manually at some point
     # if !confirmed
     # @unconfirmed_path = fpath
-    # if File.exists?(fpath) and File.file?(fpath)
+    # if File.exist?(fpath) and File.file?(fpath)
     # params = {}
     # params["title"] = "The file already exists, overwrite? \r #{fpath}"
     # params["inputs"] = {}
@@ -1932,7 +1932,7 @@ class Buffer < String
     # params[:callback] = callback
     # PopupFormGenerator.new(params).run
     # return
-    # elsif File.exists?(fpath) #and File.directory?(fpath)
+    # elsif File.exist?(fpath) #and File.directory?(fpath)
     # params = {}
     # params["title"] = "Can't write to the destination.\r #{fpath}"
     # params["inputs"] = {}

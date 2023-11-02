@@ -18,7 +18,7 @@ def hpt_check_cur_word(w)
       fn = nil
       
       for fc in fcands
-        if File.exists?(fc)
+        if File.exist?(fc)
           fn = fc
           break
         end
