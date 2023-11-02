@@ -1,0 +1,52 @@
+<?xml version="1.0" ?>
+<style-scheme id="molokai_edit" name="Molokai_edit" version="1.0">
+  <color name="lightblue"                   value="#00FFF8"/>
+
+    <author/>
+    <_description>
+        Port of the Molokai Text Mate Theme to GTKSourceView. 
+    </_description>
+
+  <color name="heading"                       value="#CF6A4C"/>
+<style name="selection" foreground="#ffffff" background="#10bd8e"/>
+
+
+    <style foreground="#AE81FF" name="def:boolean"/>
+    <style foreground="#AE81FF" name="def:number"/>
+    <style foreground="#E6DB74" name="def:string"/>
+    <style bold="true" foreground="#AE81FF" name="def:constant"/>
+    <style background="#F8F8F0" foreground="#ffffff" name="cursor"/>
+    <style background="#13354A" name="diff:added-line"/>
+    <style background="#4C4745" foreground="#89807D" name="diff:changed-line"/>
+    <style background="#1E0010" foreground="#960050" name="diff:removed-line"/>
+    <style background="#1E0010" foreground="#960050" name="def:error"/>
+    <style foreground="#A6E22E" name="def:function"/>
+    <style foreground="#FD971F" name="def:identifier"/>
+    <style bold="true" foreground="#F92672" name="def:keyword"/>
+    <style background="#FD971F" bold="true" foreground="#000000" name="bracket-match"/>
+    <style foreground="#A6E22E" name="def:preprocessor"/>
+    <style background="#455354" foreground="#FFFFFF" name="search-match"/>
+    <style background="#bg" foreground="#66D9EF" italic="true" name="def:specials"/>
+    <style bold="true" foreground="#F92672" name="def:statement"/>
+    <style foreground="#66D9EF" name="def:type"/>
+    <!--style background="#272822" foreground="#F8F8F2" name="text"/-->
+    <style background="#000000" foreground="#F8F8F2" name="text"/>
+    <style foreground="#75715E" name="def:comment"/>
+    <style background="#3E3D32" name="current-line"/>
+    <style background="#222222" foreground="#F8F8F2" name="text"/>
+    <!--style foreground="#465457" name="def:comment"/-->
+    <style background="#3e3d32" name="current-line"/>
+    <style background="#2a2a2a" foreground="#bcbca7" name="line-numbers"/>
+
+  <style name="def:title"                scale="2.0" bold="true" />
+  <style name="def:hyperlink"                foreground="lightblue" bold="true" />
+  <style name="def:heading0"                scale="5.0" bold="true" foreground="heading" />
+  <style name="def:heading1"                scale="1.75" bold="true" foreground="heading" />
+  <style name="def:heading2"                scale="1.5" bold="true" foreground="heading" />
+  <style name="def:heading3"                scale="1.25" bold="true" foreground="heading" />
+  <style name="def:heading4"                scale="1.175" bold="true" foreground="heading" />
+  <style name="def:heading5"                scale="1.1" bold="true" foreground="heading" />
+  <style name="def:heading6"                scale="1.0" bold="true" foreground="heading" />
+  <style name="def:bold"                bold="true" />
+</style-scheme>
+

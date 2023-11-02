@@ -8,15 +8,20 @@ class FileHistory
     # x = self.method("update")
     # x.call("ASFASF")
 
-    $hook.register(:change_buffer, self.method("update"))
-    $hook.register(:shutdown, self.method("save"))
+    vma.hook.register(:change_buffer, self.method("update"))
+    vma.hook.register(:shutdown, self.method("save"))
 
-    @history = vma.marshal_load("file_history",{})
+    reg_act(:fhist_remove_nonexisting, proc { remove_nonexisting }, "Cleanup history, remove non-existing files")
+
+    @history = vma.marshal_load("file_history", {})
     $search_list = []
   end
 
+  # def self.init()
+  # end
+
   def update(buf)
-    puts "FileHistory.update(buf=#{buf.fname})"
+    debug "FileHistory.update(buf=#{buf.fname})"
     return if !buf.fname
     @history[buf.fname] if !@history[buf.fname]
     if !@history[buf.fname]
@@ -24,7 +29,7 @@ class FileHistory
     else
       @history[buf.fname] += 1
     end
-    puts @history
+    debug @history
 
     # puts "FileHistory.update(buf=#{buf})"
   end
@@ -33,14 +38,31 @@ class FileHistory
     vma.marshal_save("file_history", @history)
   end
 
+  def remove_nonexisting()
+    size_orig = @history.size
+    for k, v in @history
+      if !File.exist?(k)
+        @history.delete(k)
+        log_message("Delete #{k} from history")
+      end
+    end
+    size_new = @history.size
+    message("History size #{size_orig} => #{size_new}")
+  end
+
   def start_gui()
     return if $vma.fh.history.empty?
     l = []
     $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
 
-    qt_select_update_window(l, $select_keys.collect { |x| x.upcase },
-                            "gui_file_history_select_callback",
-                            "gui_file_history_update_callback")
+    opt = { :title => "File history search",
+            :desc => "Search for previously opened files. Fuzzy search." ,
+            :columns => [{:title=>'Filename',:id=>0}]
+            }
+    gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
+                             "gui_file_history_select_callback",
+                             "gui_file_history_update_callback",
+                             opt)
   end
 end
 
@@ -61,7 +83,7 @@ def fuzzy_filter(search_str, list, maxfinds)
 end
 
 def gui_file_history_update_callback(search_str = "")
-  puts "gui_file_history_update_callback: #{search_str}"
+  debug "gui_file_history_update_callback: #{search_str}"
   return [] if $vma.fh.history.empty?
   $search_list = []
   files = $vma.fh.history.keys.sort.collect { |x| [x, 0] }
@@ -69,15 +91,16 @@ def gui_file_history_update_callback(search_str = "")
   if (search_str.size > 1)
     files = fuzzy_filter(search_str, $vma.fh.history.keys, 40)
   end
+
   $search_list = files
-  return files
+  ret = files.collect{|x|[x[0]]}
+  return ret
 end
 
 def gui_file_history_select_callback(search_str, idx)
-  # selected_file = $file_search_list[idx][0]
   selected_file = $search_list[idx][0]
 
   debug "FILE HISTORY SELECT CALLBACK: s=#{search_str},i=#{idx}: #{selected_file}"
-  qt_select_window_close(0)
+  gui_select_window_close(0)
   open_new_file(selected_file)
 end

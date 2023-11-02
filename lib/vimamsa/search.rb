@@ -1,11 +1,16 @@
 
 def execute_search(input_str)
   $search = Search.new
-  return $search.set(input_str, "simple", $buffer)
+  eval_str="execute_search(#{input_str.dump})"
+  $macro.overwrite_current_action(eval_str)
+  return $search.set(input_str, "simple", vma.buf)
 end
 
 def invoke_search()
-  start_minibuffer_cmd("", "", :execute_search)
+  nfo = ""
+  
+  callback = proc{|x| execute_search(x)}
+  gui_one_input_action(nfo, "Search:", "search", callback)
 end
 
 class Search
@@ -27,7 +32,7 @@ class Search
       @reg = Regexp.new(regex, Regexp::IGNORECASE)
     end
     @search_indexes = scan_indexes(buffer, @reg)
-    puts @search_indexes.inspect
+    debug @search_indexes.inspect
     @cur_search_i = -1
     if @search_indexes.any?
       @cur_search_i = 0
@@ -39,6 +44,8 @@ class Search
     else
       return false
     end
+    
+    return nil
   end
 
   def update_search()
@@ -49,7 +56,6 @@ class Search
     if startpos != nil
       @cur_search_i = @search_indexes.find_index(startpos)
     end
-    # Ripl.start :binding => binding
   end
 
   def jump_to_next()

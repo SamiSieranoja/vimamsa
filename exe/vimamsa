@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+require "ripl/multi_line"
+require "tempfile"
+# Ripl.config[:multi_line_prompt] = ' > '
+require "pathname"
+
+selfpath = __FILE__
+selfpath = File.readlink(selfpath) if File.lstat(selfpath).symlink?
+scriptdir = File.expand_path(File.dirname(selfpath) + "/..")
+
+# If process is already running, open the parameter file in the running process and exit.
+listen_dir = File.expand_path("~/.vimamsa/listen")
+if File.exist?(listen_dir) and !ARGV[0].nil?
+  tmpf = Tempfile.new("vmarun", listen_dir)
+  fp = tmpf.path
+  paramfn = File.expand_path(ARGV[0])
+  puts paramfn
+  tmpf.write(paramfn)
+  tmpf.close
+  tstart = Time.new
+  timeout = false
+  while File.exist?(fp)
+    sleep 0.001
+    if Time.new - tstart > 0.5
+      timeout = true
+      break
+    end
+  end
+  exit(0) if !timeout
+end
+
+$LOAD_PATH.unshift(File.expand_path("lib"))
+$LOAD_PATH.unshift(File.expand_path("ext"))
+
+require "vimamsa"
+# Ilib:ext
+# r rbvma -e "puts VMA.new.run"
+$vmag = VMAgui.new()
+$vmag.run

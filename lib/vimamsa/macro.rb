@@ -1,6 +1,5 @@
-
 def gui_find_macro_update_callback(search_str = "")
-  puts "gui_find_macro_update_callback: #{search_str}"
+  debug "gui_find_macro_update_callback: #{search_str}"
   heystack = $macro.named_macros
   return [] if heystack.empty?
   $macro_search_list = []
@@ -14,17 +13,17 @@ def gui_find_macro_update_callback(search_str = "")
 end
 
 def gui_find_macro_select_callback(search_str, idx)
-  puts "gui_find_macro_select_callback"
+  debug "gui_find_macro_select_callback"
   selected = $macro_search_list[idx]
   m = $macro.named_macros[selected[0]].clone
-  puts "SELECTED MACRO:#{selected}, #{m}"
+  debug "SELECTED MACRO:#{selected}, #{m}"
   id = $macro.last_macro
   $macro.recorded_macros[id] = m
   $macro.run_macro(id)
 end
 
 class Macro
-  # attr_reader :recorded_macros, :recording, :named_macros
+  attr_reader :running_macro
   attr_accessor :recorded_macros, :recording, :named_macros, :last_macro
 
   def initialize()
@@ -33,10 +32,12 @@ class Macro
     @current_recording = []
     @current_name = nil
     @last_macro = "a"
+    @running_macro = false
 
+    #TODO:
     @recorded_macros = vma.marshal_load("macros", {})
     @named_macros = vma.marshal_load("named_macros", {})
-    $hook.register(:shutdown, self.method("save"))
+    vma.hook.register(:shutdown, self.method("save"))
   end
 
   def save()
@@ -55,13 +56,13 @@ class Macro
     $macro_search_list = l
     $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
 
-    qt_select_update_window(l, $select_keys.collect { |x| x.upcase },
-                            "gui_find_macro_select_callback",
-                            "gui_find_macro_update_callback")
+    gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
+                             "gui_find_macro_select_callback",
+                             "gui_find_macro_update_callback")
   end
 
   def name_macro(name, id = nil)
-    puts "NAME MACRO #{name}"
+    debug "NAME MACRO #{name}"
     if id.nil?
       id = @last_macro
     end
@@ -104,8 +105,36 @@ class Macro
     end
   end
 
+  # Allow method to specify the macro action instead of recording from keyboard input
+  def overwrite_current_action(eval_str)
+    if @recording
+      @current_recording[-1] = eval_str
+    end
+  end
+
   def run_last_macro
     run_macro(@last_macro)
+  end
+
+  # Run the provided list of actions
+  def run_actions(acts)
+    isok = true
+    if acts.kind_of?(Array) and acts.any?
+      @running_macro = true
+      # TODO:needed?
+      # set_last_command({ method: $macro.method("run_macro"), params: [name] })
+      for a in acts
+        ret = exec_action(a)
+        if ret == false
+          error "Error while running macro"
+          isok=false
+          break
+        end
+      end
+    end
+    @running_macro = false
+    buf.set_pos(buf.pos)
+    return isok
   end
 
   def run_macro(name)
@@ -118,22 +147,13 @@ class Macro
       @last_macro = name
     end
     acts = @recorded_macros[name]
-    if acts.kind_of?(Array) and acts.any?
-      set_last_command({ method: $macro.method("run_macro"), params: [name] })
-      #
-      # Ripl.start :binding => binding
-      for a in acts
-        ret = exec_action(a)
-        puts ret
-        if ret == false
-          message("Error while running macro")
-          break
-        end
-      end
-      # eval_str = m.join(";")
-      # debug(eval_str)
-      # eval(eval_str)
-    end
+    return run_actions(acts)
+  end
+
+  def dump_last_macro()
+    puts "======MACRO START======="
+    puts @recorded_macros[@last_macro].inspect
+    puts "======MACRO END========="
   end
 
   def save_macro(name)

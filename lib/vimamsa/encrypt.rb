@@ -33,15 +33,15 @@ class Encrypt
 end
 
 def decrypt_cur_buffer(password, b = nil)
-  $buffer.decrypt(password)
+  vma.buf.decrypt(password)
 end
 
 def encrypt_cur_buffer()
   callback = proc{|x|encrypt_cur_buffer_callback(x)}
-  gui_one_input_action("Encrypt", "Password:", "Encrypt", callback)
+  gui_one_input_action("Encrypt", "Password:", "Encrypt", callback,{:hide=>true})
 end
 
 def encrypt_cur_buffer_callback(password,b=nil)
-  $buffer.set_encrypted(password)
+  vma.buf.set_encrypted(password)
 end
 

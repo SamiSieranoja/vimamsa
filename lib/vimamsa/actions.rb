@@ -1,61 +1,87 @@
 class Action
-  attr_accessor :id, :method_name, :method
+  attr_accessor :id, :method_name, :method, :opt
 
-  def initialize(id, method_name, method, scope = [])
+  def initialize(id, method_name, method, opt = {})
     @method_name = method_name
     @id = id
     @method = method
+    @opt = opt
+
     $actions[id] = self
   end
 end
 
 $actions = {}
 
-def reg_act(id, callfunc, name = "", scope = [])
+def reg_act(id, callfunc, name = "", opt = {})
   if callfunc.class == Proc
-    a = Action.new(id, name, callfunc, scope)
+    a = Action.new(id, name, callfunc, opt)
   else
-    a = Action.new(id, name, method(callfunc), scope)
+    begin
+      m = method(callfunc)
+    rescue NameError
+      m = method("missing_callfunc")
+    end
+    a = Action.new(id, name, m, opt)
+  end
+  return a
+end
+
+def missing_callfunc
+  debug "missing_callfunc"
+end
+
+#TODO: remove
+# def call(id)
+  # call_action(id)
+# end
+
+$acth = []
+
+def call_action(id)
+  $acth << id
+  a = $actions[id]
+  if a
+    a.method.call()
+  else
+    message("Unknown action: " + id.inspect)
   end
 end
 
-def call(id)
-  a = $actions[id]
-  if a
-    #        Ripl.start :binding => binding
-    a.method.call()
-  end
+def last_action
+  return $acth[-1]
 end
 
 def search_actions()
   l = []
+  opt = { :title => "Search for actions", :desc => "Fuzzy search for actions. <up> or <down> to change selcted. <enter> to select current." }
   $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
-  qt_select_update_window(l, $select_keys.collect { |x| x.upcase },
-                          "search_actions_select_callback",
-                          "search_actions_update_callback")
+
+  gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
+                           "search_actions_select_callback",
+                           "search_actions_update_callback",
+                           opt)
 end
 
 $item_list = []
 
 def search_actions_update_callback(search_str = "")
-  #    item_list = $actions.collect {|x| x[1].id.to_s}
   return [] if search_str == ""
-  # item_list = $action_list.collect { |x|
-    # actname = x[:action].to_s
-    # if x[:action].class == Symbol
-      # mn = $actions[x[:action]].method_name
-      # actname = mn if mn.size > 0
-    # end
-    # r = { :str => actname, :key => x[:key], :action => x[:action] }
-  # }
-
-  # => {:str=>"insert_new_line", :key=>"I return", :action=>:insert_new_line}
 
   item_list2 = []
   for act_id in $actions.keys
     act = $actions[act_id]
     item = {}
     item[:key] = ""
+
+    for mode_str in ["C", "V"]
+      c_kbd = vma.kbd.act_bindings[mode_str][act_id]
+      if c_kbd.class == String
+        item[:key] = "[#{mode_str} #{c_kbd}] "
+        break
+      end
+    end
+    # c_kbd = vma.kbd.act_bindings[mode_str][nfo[:action]]
     item[:action] = act_id
     item[:str] = act_id.to_s
     if $actions[act_id].method_name != ""
@@ -63,18 +89,19 @@ def search_actions_update_callback(search_str = "")
     end
     item_list2 << item
   end
-  # Ripl.start :binding => binding
+
   item_list = item_list2
 
   a = filter_items(item_list, 0, search_str)
-  puts a.inspect
+  debug a.inspect
 
   r = a.collect { |x| [x[0][0], 0, x] }
-  puts r.inspect
+  debug r.inspect
   $item_list = r
+
   # Ripl.start :binding => binding
 
-  r = a.collect { |x| ["[#{x[0][:key]}] #{x[0][:str]}", 0, x] }
+  r = a.collect { |x| ["#{x[0][:key]}#{x[0][:str]}", 0, x] }
   return r
 end
 
@@ -82,25 +109,30 @@ def search_actions_select_callback(search_str, idx)
   item = $item_list[idx][2]
   acc = item[0][:action]
 
-  puts "Selected:" + acc.to_s
-  qt_select_window_close(0)
+  debug "Selected:" + acc.to_s
+  gui_select_window_close(0)
 
   if acc.class == String
     eval(acc)
   elsif acc.class == Symbol
-    puts "Symbol"
-    call(acc)
+    debug "Symbol"
+    call_action(acc)
   end
 end
 
 def filter_items(item_list, item_key, search_str)
   #    Ripl.start :binding => binding
   item_hash = {}
+  puts item_list.inspect
   scores = Parallel.map(item_list, in_threads: 8) do |item|
+    if item[:str].class != String
+      puts item.inspect
+      exit!
+    end
     [item, srn_dst(search_str, item[:str])]
   end
   scores.sort_by! { |x| -x[1] }
-  puts scores.inspect
+  debug scores.inspect
   scores = scores[0..30]
 
   return scores

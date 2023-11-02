@@ -1,53 +1,58 @@
+# Vimamsa
 
-Vimamsa - Vi/Vim inspired experimental GUI-oriented text editor being written in Ruby embedded in C/C++ QT5 app. 
+Vi/Vim -inspired experimental GUI-oriented text editor written with Ruby and GTK. 
 
-Status: 
- - Currently in alpha level.  
- - Personally, I've managed to mostly move away from using VIm to Vimamsa as my main editor, but the program still needs work to be usable for someone who doesn't know the source code.
 
-Any questions, comments or suggestions, please send email to: sami.sieranoja@gmail.com
+## Requirements
+ - Ruby 2.0+
+ - GTK 4
 
-![Screenshot](/screenshots/screenshot_easyjump.png?raw=true "EasyJump")
+## Installation
 
-## Install & Use
 
-REQUIREMENTS:
- - Ruby 2.5
- - QT 5
-
-Instructions for Ubuntu 18.04:
-
-Install requirements:
+On Ubuntu:
 ```
-sudo apt install qtbase5-dev qtbase5-dev-tools qt5-qmake ruby2.5-dev ruby2.5
-sudo gem2.5 install parallel differ
-sudo gem2.5 install ripl ripl-multi_line # For debug
+sudo apt install ruby-dev
+sudo gem install vimamsa
 ```
 
-Packages for optional features:
+### Other install options
+
+Install from sources:
+
 ```
-sudo gem2.5 install rufo # Ruby auto indent
+git clone https://github.com/SamiSieranoja/vimamsa.git
+cd vimamsa
+gem build vimamsa.gemspec 
+sudo gem install --local vimamsa-0.1.*.gem
+
+```
+
+Older version for GTK3:
+
+    sudo gem install vimamsa -v 0.1.10
+
+## Run
+```
+vimamsa
+```
+
+Install packages for optional features:
+```
 sudo apt install ack-grep clang-format
+gem install ripl ripl-multi_line differ parallel listen rufo language_server-protocol
 ```
 
-To compile:
-```
-./make_ubuntu1804.sh 
-```
+For customization, edit ~/.vimamsa/custom.rb
 
-RUN:
-```
-./vimamsa.rb
-```
+## Screenshots
 
-For customization, edit dot_vimamsarc.rb and copy to ~/.vimamsarc
+<a href="https://samiddhi.net/vimamsa/screenshot1.png" target="_blank"><img src="https://samiddhi.net/vimamsa/screenshot1.png" width="400"/></a>
+<a href="https://samiddhi.net/vimamsa/screenshot2.png" target="_blank"><img src="https://samiddhi.net/vimamsa/screenshot2.png" width="400"/></a>
 
-
- 
- 
 ## Key bindings
 
-Key bindings are very much like in VIm. For details, see file lib/vimamsa/key_bindings.rb and lib/vimamsa/default_bindings.rb
+Key bindings are very much like in VIm. For details, see file lib/vimamsa/key_bindings.rb and lib/vimamsa/key_bindings_vimlike.rb
 
 Keys that work somewhat similarly as in Vim:
 
@@ -78,10 +83,10 @@ ctrl-x means press and hold ctrl key, press x
 
 <tbody>
 <tr><th>Key</th><th>Action</th></tr>
-<tr><td style="text-align:center;">ctrl!</td> 	<td style="text-align:left;">switch between command and insert modes</td> </tr>
+<tr><td style="text-align:center;">ctrl!</td>     <td style="text-align:left;">switch between command and insert modes</td> </tr>
 <tr> <td style="text-align:center;">z</td> <td style="text-align:left;"> enter into BROWSE mode</td></tr>
-<tr> 	<td style="text-align:center;">shift!</td> 	<td style="text-align:left;">save file</td> </tr>
-<tr> 	<td style="text-align:center;">s</td> 	<td style="text-align:left;">Easy jump (Similar to Vim EasyMotion https://github.com/easymotion/vim-easymotion ) </td> </tr>
+<tr>     <td style="text-align:center;">shift!</td>     <td style="text-align:left;">save file</td> </tr>
+<tr>     <td style="text-align:center;">s</td>     <td style="text-align:left;">Easy jump (Similar to Vim EasyMotion https://github.com/easymotion/vim-easymotion ) </td> </tr>
 <tr> <td style="text-align:center;">tab</td> <td style="text-align:left;">switch betwen current and previous buffer/file</td></tr>
 <tr> <td style="text-align:center;">enter</td> <td style="text-align:left;"> (when cursor on link) open url in browser </td></tr>
 <tr> <td style="text-align:center;">enter</td> <td style="text-align:left;">(when cursor on /path/to/file.txt:linenum ) open file in editor, jump to linenum </td></tr>
@@ -89,7 +94,7 @@ ctrl-x means press and hold ctrl key, press x
 </td></tr>
 <tr> <td style="text-align:center;">,b</td> <td style="text-align:left;"> Switch buffer (jump to other open file)</td></tr>
 <tr> <td style="text-align:center;">,g</td> <td style="text-align:left;">search for input string inside current buffer</td></tr>
-<tr> <td style="text-align:center;">,f</td> <td style="text-align:left;">Fuzzy filename search</td></tr>
+<tr> <td style="text-align:center;">,f</td> <td style="text-align:left;">File finder</td></tr>
 <tr> <td style="text-align:center;">space c</td> <td style="text-align:left;">insert character "c"</td></tr>
 </tbody>
 </table>
@@ -133,7 +138,7 @@ ctrl-x means press and hold ctrl key, press x
 </tbody>
 </table>
 
-Bindings can be customized in ~/.vimamsarc  
+Bindings can be customized in ~/.vimamsa/custom.rb
 For example, to bind ctrl-n to action "create new file":  
 ```
 bindkey 'C ctrl-n',  'create_new_file()'
@@ -142,4 +147,5 @@ bindkey 'C ctrl-n',  'create_new_file()'
 ## Current limitations
  - UTF8 only
  - Line endings with "\n"
+
 
