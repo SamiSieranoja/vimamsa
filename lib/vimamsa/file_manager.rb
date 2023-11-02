@@ -17,7 +17,8 @@ class FileManager
   end
 
   def self.init()
-    reg_act(:start_file_selector, proc { FileManager.new.run; $kbd.set_mode(:file_exp) }, "File selector")
+    reg_act(:start_file_selector, proc { FileManager.new.run; vma.kbd.set_mode(:file_exp);vma.kbd.set_default_mode(:file_exp)}, "File selector")
+
 
     reg_act(:fexp_chdir_parent, proc { FileManager.chdir_parent }, "File selector")
     reg_act(:fexp_select, proc { buf.module.select_line }, "")
@@ -169,6 +170,7 @@ class FileManager
 
     if @buf.nil?
       @buf = create_new_buffer(s, "filemgr")
+      @buf.default_mode = :file_exp
       @buf.module = self
       @buf.active_kbd_mode = :file_exp
     else

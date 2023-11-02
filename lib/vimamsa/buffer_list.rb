@@ -110,6 +110,10 @@ class BufferList < Array
   def set_current_buffer(buffer_i, update_history = true)
     buffer_i = self.size -1 if buffer_i > self.size
     buffer_i = 0 if buffer_i < 0
+    if !vma.buf.nil? and vma.kbd.get_mode != :browse #TODO
+      # Save keyboard mode status of old buffer when switching buffer
+      vma.buf.mode_stack = vma.kbd.default_mode_stack.clone
+    end
     vma.buf = self[buffer_i]
     return if !vma.buf
     update_last_dir(vma.buf)
@@ -123,11 +127,18 @@ class BufferList < Array
     if update_history
       add_current_buf_to_history
     end
-
     vma.hook.call(:change_buffer, vma.buf)
-    vma.buf.set_active
+    vma.buf.set_active # TODO
 
     vma.gui.set_current_buffer(vma.buf.id)
+
+    if !vma.buf.mode_stack.nil? and vma.kbd.get_mode != :browse #TODO
+      debug "set kbd mode stack #{vma.buf.mode_stack}  #{vma.buf.id}", 2
+      # Reload previously saved keyboard mode status
+      # vma.kbd.set_mode_stack(vma.buf.mode_stack.clone) #TODO:needed?
+      vma.kbd.set_mode_stack([vma.buf.default_mode])
+    end
+    vma.kbd.set_mode_to_default
 
     gui_set_window_title(vma.buf.title, vma.buf.subtitle)
 
@@ -136,6 +147,10 @@ class BufferList < Array
     end
 
     # hpt_scan_images() if $debug # experimental
+  end
+
+  def to_s
+    return self.class.to_s
   end
 
   def update_last_dir(buf)

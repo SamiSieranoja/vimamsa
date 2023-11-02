@@ -56,13 +56,14 @@ end
 
 class KeyBindingTree
   attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action, :modifiers
-  attr_reader :mode_root_state, :state_trail, :act_bindings
+  attr_reader :mode_root_state, :state_trail, :act_bindings, :default_mode_stack
 
   def initialize()
     @modes = {}
     @root = State.new("ROOT")
     @cur_state = @root # used for building the tree
     @default_mode = nil
+    @default_mode_stack = []
     @mode_history = []
     @state_trail = []
     @last_action = nil
@@ -80,10 +81,26 @@ class KeyBindingTree
     @match_state = [@modes[label]] # used for matching input
     @mode_root_state = @modes[label]
     @default_mode = label
+    @default_mode_stack << label
+    if !vma.buf.nil?
+      # vma.buf.mode_stack = @default_mode_stack.clone
+    end
+  end
+
+  def set_mode_stack(ms)
+    @default_mode_stack = ms
   end
 
   def set_mode_to_default()
-    set_mode(@default_mode)
+    # set_mode(@default_mode)
+    set_mode(@default_mode_stack[-1])
+  end
+
+  def to_previous_mode()
+    if @default_mode_stack.size > 1
+      @default_mode_stack.pop
+    end
+    set_mode_to_default()
   end
 
   def add_mode(id, label, cursortype = :command, name: nil)
@@ -181,8 +198,8 @@ class KeyBindingTree
     if !vma.gui.view.nil?
       vma.gui.view.draw_cursor()  #TODO: handle outside this class
 
-      # Ripl.start :binding => binding
     end
+
   end
 
   def cur_mode_str()

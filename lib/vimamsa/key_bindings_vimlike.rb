@@ -68,6 +68,7 @@ bindkey "VC h", :e_move_backward_char
 bindkey "C , , .", :backup_all_buffers
 bindkey "C z ", :start_browse_mode
 bindkey "B h", :history_switch_backwards
+# bindkey "B h", [:browse_file_backwards, proc { vma.kbd.to_previous_mode; call_action(:history_switch_backwards);  }, "Browse previous file"]
 bindkey "B l", :history_switch_forwards
 #bindkey 'B z', :center_on_current_line
 bindkey "B z", "center_on_current_line();call_action(:exit_browse_mode)"
@@ -106,7 +107,6 @@ default_keys = {
   #    'C , s'=> 'gui_select_buffer',
   "C , r v b" => :buf_revert,
   "C , c b" => "bufs.close_current_buffer",
-  #"C , b" => 'vma.kbd.set_mode("S");gui_select_buffer',
   "C , n b" => :buf_new,
   # "C , , ." => "backup_all_buffers()",
   "VC , , s" => :search_actions,
@@ -274,10 +274,10 @@ default_keys = {
   # "CV Q" => :quit,
   "CV ctrl-q" => :quit,
   "CV , R" => "restart_application",
-  "I ctrl!" => "vma.kbd.set_mode(:command)",
+  # "I ctrl!" => "vma.kbd.to_previous_mode",
   "C shift!" => "buf.save",
   "I <char>" => "buf.insert_txt(<char>)",
-  "I esc" => "vma.kbd.set_mode(:command)",
+  "I esc || I ctrl!" => "vma.kbd.set_mode_to_default",
 
   "I ctrl-d" => "buf.delete2(:to_word_end)",
 

@@ -91,7 +91,9 @@ reg_act :delete_to_next_word_start, proc { buf.delete2(:to_next_word) }, "Delete
 reg_act :delete_to_line_start, proc { buf.delete2(:to_line_start) }, "Delete to line start", { :group => [:edit, :basic] }
 reg_act :start_browse_mode, proc { $kbd.set_mode(:browse); $kbd.set_default_mode(:browse) }, "Start browse mode"
 reg_act :exit_browse_mode, proc {
-  bufs.add_current_buf_to_history(); $kbd.set_mode(:command); $kbd.set_default_mode(:command)
+  bufs.add_current_buf_to_history; 
+  vma.kbd.set_mode_stack([vma.buf.default_mode])
+  vma.kbd.set_mode_to_default
 }, "Exit browse mode"
 
 reg_act :page_down, proc { page_down }, "Page down", :group => [:move, :basic]
@@ -177,4 +179,3 @@ act_list = {
 for k, v in act_list
   reg_act(k, v[:proc], v[:desc])
 end
-

@@ -84,6 +84,7 @@ class BufferManager
 
     if @buf.nil?
       @buf = create_new_buffer(s,"bufmgr")
+      @buf.default_mode = :buf_mgr
       @buf.module = self
       @buf.active_kbd_mode = :buf_mgr
     else

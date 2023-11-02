@@ -14,7 +14,7 @@ $ifuncon = false
 class Buffer < String
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images, :last_save
   attr_writer :call_func, :update_highlight
-  attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle, :paste_lines
+  attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle, :paste_lines, :mode_stack, :default_mode
 
   @@num_buffers = 0
 
@@ -28,6 +28,8 @@ class Buffer < String
     @id = @@num_buffers
     @@num_buffers += 1
     @version = 0
+    @mode_stack = [:command] # TODO
+    @default_mode = :command # TODO
     gui_create_buffer(@id, self)
     debug "NEW BUFFER fn=#{fname} ID:#{@id}"
 
@@ -91,11 +93,10 @@ class Buffer < String
 
   def set_active
     if !@active_kbd_mode.nil?
-      $kbd.set_mode(@active_kbd_mode)
+      # $kbd.set_mode(@active_kbd_mode) #TODO: remove?
     else
       $kbd.set_mode_to_default
     end
-    # gui_set_current_buffer(@id)
   end
 
   def set_executable
