@@ -1,5 +1,11 @@
 require "gstreamer"
 
+class File
+  def self.exists?(fn)
+    File.exist?(fn)
+  end
+end
+
 # following the example gstreamer-4.2.0/sample/helloworld_e.rb
 class Audio
   @@playbin = nil
@@ -22,6 +28,8 @@ class Audio
       end
     end
 
+    # playbin.seek(10.0)
+
     # playbin.volume
     # playbin.volume=1.0
     # playbin.stream_time
@@ -35,10 +43,10 @@ class Audio
     end
     playbin.uri = uri
     @@playbin = playbin
+    $pb = playbin
 
     bus = playbin.bus
     bus.add_watch do |bus, message|
-
       case message.type
       when Gst::MessageType::EOS
         puts "End-of-stream"
@@ -54,5 +62,19 @@ class Audio
 
     # start play back and listed to events
     playbin.play
+    playbin.seek_simple(Gst::Format::TIME, Gst::SeekFlags::NONE, 10.0)
+    Thread.new{sleep 1; Audio.seek_forward(5)}
+  end
+
+  def self.seek_forward(secs = 5.0)
+    return if @@playbin.nil?
+    if @@playbin.current_state == "playing"
+      duration = @@playbin.query_duration(Gst::Format::TIME)[1]
+      curpos = @@playbin.query_position(Gst::Format::TIME)[1]
+      newpos = curpos + secs * 1.0e9
+      @@playbin.seek_simple(Gst::Format::TIME, Gst::SeekFlags::FLUSH, newpos)
+      message("New audio pos: #{(newpos/1.0e9).round(1)}/#{(duration/1.0e9).round(1)}")
+      # $pb.query_position(Gst::Format::TIME)[1]/1.0e9
+    end
   end
 end

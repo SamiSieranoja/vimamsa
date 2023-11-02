@@ -15,6 +15,11 @@
 # Open this file every time the program starts
 # setcnf :startup_file, "~/Documents/startup.txt"
 
+# To enable LSP:
+# conf(:custom_lsp)[:ruby] = {name: "solargraph", command:"solargraph stdio", type: "stdio"}
+# conf(:custom_lsp)[:cpp] = {name: "clangd", command:"clangd-12 --offset-encoding=utf-8", type: "stdio"}
+
+
 def insert_date()
   # $buffer.insert_txt("#{DateTime.now().strftime("==========\n%Y-%m-%d")}\n")
   vma.buf.insert_txt("#{DateTime.now().strftime("%Y-%m-%d")}\n")
