@@ -31,8 +31,8 @@ end
 reg_act(:lsp_debug, proc { vma.buf.lsp_get_def }, "LSP get definition")
 reg_act(:lsp_jump_to_definition, proc { vma.buf.lsp_jump_to_def }, "LSP jump to definition")
 
-reg_act(:enable_debug, proc { $debug = true }, "Enable debug")
-reg_act(:disable_debug, proc { $debug = false }, "Disable debug")
+reg_act(:enable_debug, proc { cnf.debug = true }, "Enable debug")
+reg_act(:disable_debug, proc { cnf.debug = false }, "Disable debug")
 
 reg_act(:easy_jump, proc { EasyJump.start }, "Easy jump")
 reg_act(:savedebug, "savedebug", "Save debug info", { :group => :debug })

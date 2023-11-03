@@ -100,7 +100,7 @@ def gui_create_buffer(id, bufo)
   view = VSourceView.new(nil, bufo)
 
   view.register_signals()
-  $debug = true
+  cnf.debug = true
 
   ssm = GtkSource::StyleSchemeManager.new
   ssm.set_search_path(ssm.search_path << ppath("styles/"))
@@ -117,6 +117,7 @@ def gui_create_buffer(id, bufo)
   provider.load(data: "textview { font-family: Monospace; font-size: 11pt; }")
   view.style_context.add_provider(provider)
   view.wrap_mode = :char
+  pp $cnf
   view.set_tab_width(conf(:tab_width))
 
   $vmag.buffers[id] = view

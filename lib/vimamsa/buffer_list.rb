@@ -146,7 +146,7 @@ class BufferList < Array
       @last_dir = File.dirname(vma.buf.fname)
     end
 
-    # hpt_scan_images() if $debug # experimental
+    # hpt_scan_images() if cnf.debug? # experimental
   end
 
   def to_s

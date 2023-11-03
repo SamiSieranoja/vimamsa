@@ -12,6 +12,7 @@ require "ripl/multi_line"
 require "shellwords"
 require "cgi"
 require "uri"
+require "vimamsa/conf"
 require "vimamsa/util"
 # exit!
 require "vimamsa/main"
@@ -49,7 +50,6 @@ require "vimamsa/hook"
 require "vimamsa/macro"
 require "vimamsa/search"
 require "vimamsa/search_replace"
-require "vimamsa/conf"
 # load "vendor/ver/lib/ver/vendor/textpow.rb"
 # load "vendor/ver/lib/ver/syntax/detector.rb"
 # load "vendor/ver/config/detect.rb"
@@ -58,15 +58,7 @@ def unimplemented
   debug "unimplemented"
 end
 
-
-$debug = false
-
-def scan_indexes(txt, regex)
-  # indexes = txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0) + 1 }
-  indexes = txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0)  }
-  return indexes
-end
-
+cnf.debug = false
 $update_cursor = false
 
 

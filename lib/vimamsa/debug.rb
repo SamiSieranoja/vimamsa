@@ -1,7 +1,7 @@
 require "fileutils"
 
 def debug(message, severity = 1)
-  if $debug
+  if cnf.debug?
     if severity > 1
       # Add red colour and bold for attention
       # https://en.wikipedia.org/wiki/ANSI_escape_code

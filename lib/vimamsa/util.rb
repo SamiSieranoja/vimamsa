@@ -1,5 +1,11 @@
 require "open3"
 
+# Get all indexes for start of matching regexp 
+def scan_indexes(txt, regex)
+  # indexes = txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0) + 1 }
+  indexes = txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0)  }
+  return indexes
+end
 
 def file_mime_type(fpath)
   fpath = File.expand_path(fpath)

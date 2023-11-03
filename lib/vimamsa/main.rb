@@ -23,7 +23,6 @@ Encoding.default_internal = Encoding::UTF_8
 $command_history = []
 $clipboard = []
 $register = Hash.new("")
-$cnf = {}
 $errors = []
 
 $cur_register = "a"
@@ -31,7 +30,7 @@ $debuginfo = {}
 
 $jump_sequence = []
 
-$debug = false
+cnf.debug = false
 $experimental = false
 
 # Return currently active buffer

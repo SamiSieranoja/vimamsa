@@ -18,20 +18,6 @@
 # 'I ctrl-a'=> 'vma.buf.jump(BEGINNING_OF_LINE)',
 #
 
-$cnf = {} # TODO
-
-def conf(id)
-  return $cnf[id]
-end
-
-def set_conf(id, val)
-  $cnf[id] = val
-end
-
-def setcnf(id, val)
-  set_conf(id, val)
-end
-
 setcnf :indent_based_on_last_line, true
 setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd", ".js"]
 
@@ -371,7 +357,7 @@ class KeyBindingTree
       if event_type == :key_press and c != "shift"
         # TODO:include other modifiers in addition to shift?
         set_state_to_root
-        printf(", BACK TO ROOT") if $debug
+        printf(", BACK TO ROOT") if cnf.debug?
       end
 
       if event_type == :key_release and c == "shift!"
@@ -379,10 +365,10 @@ class KeyBindingTree
         # only on key release when no other key has been pressed
         # after said modifier key (shift).
         set_state_to_root
-        printf(", BACK TO ROOT") if $debug
+        printf(", BACK TO ROOT") if cnf.debug?
       end
 
-      printf("\n") if $debug
+      printf("\n") if cnf.debug?
     else
 
       # Don't execute action if one of the states has children

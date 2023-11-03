@@ -1,5 +1,4 @@
 $cnf = {} # TODO
-require "ripl"
 
 def conf(id)
   return $cnf[id]
@@ -141,3 +140,6 @@ cnf.match.highlight.color = "#10bd8e"
 
 
 pp $confh
+# Ripl.start :binding => binding
+
+

@@ -355,7 +355,7 @@ class Buffer < String
     # @bt = BufferTree.new(str)
     if $experimental
       @bt = BufferTree.new(self)
-      if $debug
+      if cnf.debug?
         sanitycheck_btree()
       end
     end
