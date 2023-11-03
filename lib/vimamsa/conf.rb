@@ -137,5 +137,7 @@ cnf.tab.to_spaces_languages = ["c", "java", "ruby", "hyperplaintext", "php"]
 cnf.tab.to_spaces_not_languages = ["makefile"]
 cnf.workspace_folders = []
 
+cnf.match.highlight.color = "#10bd8e"
+
 
 pp $confh

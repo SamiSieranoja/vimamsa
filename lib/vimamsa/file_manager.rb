@@ -17,17 +17,13 @@ class FileManager
   end
 
   def self.init()
-    reg_act(:start_file_selector, proc { FileManager.new.run; vma.kbd.set_mode(:file_exp);vma.kbd.set_default_mode(:file_exp)}, "File selector")
-
+    reg_act(:start_file_selector, proc { FileManager.new.run; vma.kbd.set_mode(:file_exp); vma.kbd.set_default_mode(:file_exp) }, "File selector")
 
     reg_act(:fexp_chdir_parent, proc { FileManager.chdir_parent }, "File selector")
     reg_act(:fexp_select, proc { buf.module.select_line }, "")
 
     reg_act(:fexp_sort_mtime, proc { FileManager.cur.sort_mtime }, "Sort based on time")
     reg_act(:fexp_sort_fname, proc { FileManager.cur.sort_fname }, "Sort based on file name")
-    reg_act(:fexp_cut_file, proc { FileManager.cur.cut_file }, "Cut file (to paste elsewhere)")
-    reg_act(:fexp_delete_file, proc { FileManager.cur.delete_file }, "Delete current file")
-    reg_act(:fexp_paste_files, proc { FileManager.cur.paste_files }, "Move previously cut files here")
 
     bindkey "C , j f", :start_file_selector
     bindkey "C , f", :start_file_selector
@@ -39,7 +35,12 @@ class FileManager
     bindkey "fexp o m", :fexp_sort_mtime
     bindkey "fexp o f", :fexp_sort_fname
 
-    if $experimental2
+    # These are not yet safe to use
+    if cnf.fexp.experimental?
+      reg_act(:fexp_cut_file, proc { FileManager.cur.cut_file }, "Cut file (to paste elsewhere)")
+      reg_act(:fexp_delete_file, proc { FileManager.cur.delete_file }, "Delete current file")
+      reg_act(:fexp_paste_files, proc { FileManager.cur.paste_files }, "Move previously cut files here")
+
       bindkey "fexp d d", :fexp_cut_file
       bindkey "fexp d D", :fexp_delete_file
       bindkey "fexp p p", :fexp_paste_files
@@ -98,11 +99,19 @@ class FileManager
     @cut_files << fn
   end
 
+  def delete_file_confirmed(*args)
+    debug args, 2
+    fn = @file_to_delete
+    message "Deleting file #{fn}"
+    FileUtils.remove_file(fn)
+  end
+
   def delete_file
     fn = cur_file
     if File.file?(fn)
-      message "Deleting file #{fn}"
-      FileUtils.remove_file(fn)
+      @file_to_delete = fn #TODO: set as parameter to confirm_box
+      Gui.confirm("Delete the file? \r #{fn}",
+                  self.method("delete_file_confirmed"))
     else
       message "Can't delete #{fn}"
     end

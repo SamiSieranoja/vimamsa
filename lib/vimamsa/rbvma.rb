@@ -16,7 +16,6 @@ require "vimamsa/util"
 # exit!
 require "vimamsa/main"
 require "vimamsa/terminal"
-require "vimamsa/form_generator"
 
 require "vimamsa/actions"
 require "vimamsa/key_binding_tree"
@@ -24,7 +23,10 @@ require "vimamsa/key_actions"
 
 # Graphical stuff:
 require "vimamsa/gui"
+require "vimamsa/gui_form_generator"
+require "vimamsa/gui_text"
 require "vimamsa/gui_menu"
+require "vimamsa/gui_dialog"
 require "vimamsa/gui_select_window"
 require "vimamsa/gui_sourceview"
 require "vimamsa/gui_image"
