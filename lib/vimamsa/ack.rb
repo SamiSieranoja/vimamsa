@@ -81,7 +81,6 @@ Will search all .txt files in the following directories:
         end
       end
 
-      # jumpto = $grep_matches[lineno]
       # if jumpto.class == Integer
       # vma.buffers.set_current_buffer($grep_bufid, update_history = true)
       # buf.jump_to_line(jumpto)

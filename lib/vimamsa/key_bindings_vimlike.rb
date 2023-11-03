@@ -8,7 +8,8 @@ vma.kbd.add_mode("B", :browse, :command)
 vma.kbd.add_mode("X", :replace, :command, name: "Replace")
 vma.kbd.set_default_mode(:command)
 vma.kbd.set_mode(:command)
-vma.kbd.show_state_trail
+# vma.kbd.show_state_trail
+
 
 bindkey ["VCB M", "B m"], :run_last_macro
 
@@ -85,7 +86,6 @@ bindkey "B ;", "buf.jump_to_last_edit"
 bindkey "B q", :jump_to_last_edit
 bindkey "B w", :jump_to_next_edit
 # bindkey "C , d", :diff_buffer
-bindkey "C , g", :invoke_grep_search
 #bindkey 'C , g', proc{invoke_grep_search}
 bindkey "C , v", :auto_indent_buffer
 bindkey "C , , d", :savedebug

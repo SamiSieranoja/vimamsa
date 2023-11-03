@@ -110,6 +110,7 @@ class Editor
     custom_script = read_file("", custom_fn)
     eval(custom_script) if custom_script
     
+    Grep.init
     FileManager.init
 
     if conf(:enable_lsp)

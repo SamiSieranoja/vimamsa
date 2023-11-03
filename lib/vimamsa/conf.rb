@@ -13,9 +13,6 @@ def setcnf(id, val)
 end
 
 setcnf :custom_lsp, {}
-# conf(:custom_lsp)[:ruby] = {name: "solargraph", command:"solargraph stdio", type: "stdio"}
-# conf(:custom_lsp)[:cpp] = {name: "clangd", command:"clangd-12 --offset-encoding=utf-8", type: "stdio"}
-# conf(:custom_lsp)[:python] = {name: "pyright", command:"pyright-langserver --stdio --verbose", type: "stdio"}
 
 setcnf :indent_based_on_last_line, true
 setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd", ".js", ".py"]
@@ -72,6 +69,19 @@ class Conf
 
   def method_missing(method_name, *args)
     c = ConfId.new(method_name)
+
+    #TODO: improve
+    if m = method_name.match(/(.*)[\!\?]$/)
+      c = ConfId.new(m[1])
+      return get(c)
+    end
+
+    if m = method_name.match(/(.*)=$/)
+      c = ConfId.new(m[1])
+      set(c, args[0])
+      return args[0]
+    end
+
     return c
   end
 end
@@ -129,6 +139,7 @@ cnf.default_search_extensions = ["txt", "rb"]
 cnf.log.verbose = 1
 cnf.lsp.enabled = false
 cnf.fexp.experimental = false
+cnf.experimental = false
 
 cnf.tab.width = 2
 cnf.tab.to_spaces_default = false
@@ -138,8 +149,6 @@ cnf.workspace_folders = []
 
 cnf.match.highlight.color = "#10bd8e"
 
-
-pp $confh
+# pp $confh
+# pp cnf.experimental?
 # Ripl.start :binding => binding
-
-
