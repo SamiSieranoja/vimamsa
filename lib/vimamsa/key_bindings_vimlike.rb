@@ -55,6 +55,8 @@ bindkey "C , u s", :audio_stop
 bindkey "C , m a", "vma.kbd.set_mode(:audio)"
 bindkey "audio s", :audio_stop
 bindkey "audio f || audio right", [:audio_forward, proc { Audio.seek_forward }, "Seek forward in audio stream"]
+bindkey "audio left", [:audio_backward, proc { Audio.seek_forward(-5.0) }, "Seek backward in audio stream"]
+
 bindkey "audio space", :audio_stop
 bindkey "audio q || audio esc", "vma.kbd.set_mode_to_default"
 

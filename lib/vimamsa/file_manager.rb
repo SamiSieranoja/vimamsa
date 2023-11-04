@@ -6,6 +6,7 @@ class FileManager
   def initialize()
     @buf = nil
     @cut_files = []
+    @copied_files = []
   end
 
   def self.chdir_parent()
@@ -38,10 +39,12 @@ class FileManager
     # These are not yet safe to use
     if cnf.fexp.experimental?
       reg_act(:fexp_cut_file, proc { FileManager.cur.cut_file }, "Cut file (to paste elsewhere)")
+      reg_act(:fexp_copy_file, proc { FileManager.cur.copy_file }, "Copy file (to paste elsewhere)")
       reg_act(:fexp_delete_file, proc { FileManager.cur.delete_file }, "Delete current file")
       reg_act(:fexp_paste_files, proc { FileManager.cur.paste_files }, "Move previously cut files here")
 
       bindkey "fexp d d", :fexp_cut_file
+      bindkey "fexp y y", :fexp_copy_file
       bindkey "fexp d D", :fexp_delete_file
       bindkey "fexp p p", :fexp_paste_files
     end
@@ -78,18 +81,42 @@ class FileManager
   end
 
   def paste_files
-    if @cut_files.empty?
-      message "Nothing to paste, cut some files first!"
+    if !@cut_files.empty?
+      message "MOVE FILES #{@cut_files.join(",")} TO #{@ld} "
+      # Thread.new {
+      for fn in @cut_files
+        FileUtils.move(fn, @ld)
+        puts "FileUtils.move(#{fn}, #{@ld})"
+      end
+    elsif !@copied_files.empty?
+      for fn in @copied_files
+        bn = File.basename(fn)
+        bnwe = File.basename(fn, ".*")
+        ext = File.extname(fn)
+        dst = "#{@ld}/#{bn}"
+        break if !File.exist?(fn)
+        if dst == fn #or File.exist?(dst)
+          i = 1
+          exists = true
+          while File.exist?(dst)
+            dst = "#{@ld}/#{bnwe}_copy#{i}#{ext}"
+            i += 1
+          end
+        elsif File.exist?(dst)
+          message("File #{dst} already exists")
+          break
+          #TODO: confirm if user wants to replace existing file
+        end
+        message "FileUtils.copy_entry(#{fn}, #{dst})"
+        FileUtils.copy_entry(fn, dst, preserve = false, dereference_root = false, remove_destination = false)
+      end
+    else
+      message "Nothing to paste, cut/copy some files first!"
       return
-    end
-    message "MOVE FILES #{@cut_files.join(",")} TO #{@ld} "
-    # Thread.new {
-    for fn in @cut_files
-      FileUtils.move(fn, @ld)
-      puts "FileUtils.move(#{fn}, #{@ld})"
     end
     # }
     @cut_files = []
+    @copied_files = []
     #TODO:
   end
 
@@ -97,13 +124,22 @@ class FileManager
     fn = cur_file
     debug "CUT FILE #{fn}", 2
     @cut_files << fn
+    @copied_files = []
+  end
+
+  def copy_file
+    fn = cur_file
+    debug "COPY FILE #{fn}", 2
+    @copied_files << fn
+    @cut_files = []
   end
 
   def delete_file_confirmed(*args)
     debug args, 2
     fn = @file_to_delete
     message "Deleting file #{fn}"
-    FileUtils.remove_file(fn)
+    # FileUtils.remove_file(fn)
+    FileUtils.remove_entry_secure(fn, force = false)
   end
 
   def delete_file
@@ -111,6 +147,10 @@ class FileManager
     if File.file?(fn)
       @file_to_delete = fn #TODO: set as parameter to confirm_box
       Gui.confirm("Delete the file? \r #{fn}",
+                  self.method("delete_file_confirmed"))
+    elsif File.directory?(fn)
+      @file_to_delete = fn #TODO: set as parameter to confirm_box
+          Gui.confirm("Delete the directory? \r #{fn}",
                   self.method("delete_file_confirmed"))
     else
       message "Can't delete #{fn}"

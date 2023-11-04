@@ -63,7 +63,6 @@ class Audio
     # start play back and listed to events
     playbin.play
     playbin.seek_simple(Gst::Format::TIME, Gst::SeekFlags::NONE, 10.0)
-    Thread.new{sleep 1; Audio.seek_forward(5)}
   end
 
   def self.seek_forward(secs = 5.0)
@@ -72,9 +71,12 @@ class Audio
       duration = @@playbin.query_duration(Gst::Format::TIME)[1]
       curpos = @@playbin.query_position(Gst::Format::TIME)[1]
       newpos = curpos + secs * 1.0e9
+      newpos = 0.0 if newpos < 0
+      return if newpos > duration
       @@playbin.seek_simple(Gst::Format::TIME, Gst::SeekFlags::FLUSH, newpos)
-      message("New audio pos: #{(newpos/1.0e9).round(1)}/#{(duration/1.0e9).round(1)}")
+      message("New audio pos: #{(newpos / 1.0e9).round(1)}/#{(duration / 1.0e9).round(1)}")
       # $pb.query_position(Gst::Format::TIME)[1]/1.0e9
     end
   end
 end
+
