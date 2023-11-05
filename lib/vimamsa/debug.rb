@@ -59,7 +59,7 @@ def savedebug(message, e)
   dbginfo["trace_str"] = dbginfo["trace"].join("\n")
   dbginfo["edit_history"] = buf.edit_history
   dbginfo["cnf"] = $cnf
-  dbginfo["register"] = $register
+  dbginfo["register"] = vma.register
   dbginfo["clipboard"] = $clipboard
   # dbginfo["last_event"] = $last_event
   dbginfo["buffer"] = {}

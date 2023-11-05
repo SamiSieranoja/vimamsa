@@ -351,8 +351,7 @@ class Buffer < String
     self.replace(str)
     @line_ends = scan_indexes(self, /\n/)
 
-    # @bt = BufferTree.new(str)
-    if $experimental
+    if cnf.btree.experimental?
       @bt = BufferTree.new(self)
       if cnf.debug?
         sanitycheck_btree()
@@ -432,7 +431,7 @@ class Buffer < String
     # delta[3]: text to add in case of insert
 
     @version += 1
-    if $experimental
+    if cnf.btree.experimental?
       @bt.handle_delta(Delta.new(delta[0], delta[1], delta[2], delta[3]))
     end
 
@@ -712,7 +711,7 @@ class Buffer < String
     debug range_id.inspect
     range = get_range(range_id)
     debug range.inspect
-    set_clipboard(self[range])
+    vma.clipboard.set(self[range])
   end
 
   def recalc_line_ends()
@@ -1238,10 +1237,10 @@ class Buffer < String
     s = self[get_visual_mode_range]
     if x == :append
       debug "APPEND"
-      s += "\n" + get_clipboard()
+      s += "\n" + vma.clipboard.get()
     end
 
-    set_clipboard(s)
+    vma.clipboard.set(s)
     end_visual_mode
     return true
   end
@@ -1310,23 +1309,23 @@ class Buffer < String
       num_lines = vma.kbd.next_command_count
       debug "copy num_lines:#{num_lines}"
     end
-    set_clipboard(self[line_range(@lpos, num_lines)])
+    vma.clipboard.set(self[line_range(@lpos, num_lines)])
     @paste_lines = true
   end
 
   def put_file_path_to_clipboard
-    set_clipboard(self.fname)
+    vma.clipboard.set(self.fname)
   end
 
   def put_file_ref_to_clipboard
-    set_clipboard(self.fname + ":#{@lpos}")
+    vma.clipboard.set(self.fname + ":#{@lpos}")
   end
 
   def delete_active_selection() #TODO: remove this function
     return if !@visual_mode #TODO: this should not happen
 
     _start, _end = get_visual_mode_range
-    set_clipboard(self[_start, _end])
+    vma.clipboard.set(self[_start, _end])
     end_visual_mode
   end
 

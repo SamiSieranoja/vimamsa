@@ -125,7 +125,7 @@ class Buffer < String
     # TODO: implement as synchronous?
     # Use internal clipboard
     if vma.macro.running_macro
-      text = get_clipboard()
+      text = vma.clipboard.get()
       paste_finish(text, at, register)
     else
       # Get clipboard using GUI
@@ -187,9 +187,9 @@ class Buffer < String
     end
     if x == :append
       debug "APPEND"
-      s += "\n" + get_clipboard()
+      s += "\n" + vma.clipboard.get()
     end
-    set_clipboard(s)
+    vma.clipboard.set(s)
     add_delta([startpos, DELETE, (endpos - startpos + 1)], true)
     #recalc_line_ends
     calculate_line_and_column_pos
@@ -221,7 +221,7 @@ class Buffer < String
     lrange = line_range(@lpos, num_lines)
     s = self[lrange]
     add_delta([lrange.begin, DELETE, lrange.end - lrange.begin + 1], true)
-    set_clipboard(s)
+    vma.clipboard.set(s)
     update_pos(lrange.begin)
     @paste_lines = true
     #recalc_line_ends

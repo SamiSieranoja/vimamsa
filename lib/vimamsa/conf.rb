@@ -28,6 +28,17 @@ setcnf :tab_to_spaces_not_languages, ["makefile"]
 
 setcnf :workspace_folders, []
 
+
+# New way to configure:
+# To set conf value:
+#   cnf.foo.bar.baz = 3
+
+#To get conf value:
+# cnf.foo.bar.baz?
+# cnf.foo.bar.baz!
+# get(cnf.foo.bar.baz)
+# (All get the same result)
+
 class ConfId
   def initialize(first)
     @id = [first]
@@ -42,7 +53,14 @@ class ConfId
       return args[0]
     elsif m = method_name.match(/(.*)[\!\?]$/)
       @id << m[1].to_sym
-      return get(self)
+      r = get(self)
+
+      if r.class == Hash and r.empty?
+        # The accessed key was not defined
+        return nil
+      else
+        return r
+      end
     else
       @id << method_name
     end
@@ -86,15 +104,7 @@ class Conf
   end
 end
 
-# New way to configure:
 
-#To set conf value:
-# cnf.foo.bar.baz = 3
-
-#To get conf value:
-# cnf.foo.bar.baz?
-# cnf.foo.bar.baz!
-# get(cnf.foo.bar.baz)
 
 $confh = Hash.new { |h, k| h[k] = Hash.new(&h.default_proc) }
 # set cnf.foo.bar.baz, 3
@@ -126,12 +136,6 @@ def cnf()
   return $vimamsa_conf
 end
 
-# cnf.foo.bar.baz = 3
-# pp $confh
-# pp cnf.foo.bar.baz!
-# pp cnf.foo.bar.baz?
-# pp get(cnf.foo.bar.baz)
-
 cnf.indent_based_on_last_line = true
 cnf.extensions_to_open = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd", ".js", ".py"]
 cnf.default_search_extensions = ["txt", "rb"]
@@ -149,6 +153,3 @@ cnf.workspace_folders = []
 
 cnf.match.highlight.color = "#10bd8e"
 
-# pp $confh
-# pp cnf.experimental?
-# Ripl.start :binding => binding

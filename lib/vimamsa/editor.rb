@@ -1,15 +1,13 @@
 require "pty"
 
-
 def handle_drag_and_drop(fname)
   debug "EDITOR:handle_drag_and_drop"
   buf.handle_drag_and_drop(fname)
 end
 
-
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook, :macro
-  attr_accessor :converters, :fh, :paint_stack, :kbd, :langsrv
+  attr_accessor :converters, :fh, :paint_stack, :kbd, :langsrv, :register, :cur_register, :clipboard
   #attr_writer :call_func, :update_highlight
 
   def initialize()
@@ -26,6 +24,19 @@ class Editor
     @paint_stack = []
     @_plugins = {}
     @errors
+    @register = Hash.new("")
+    @cur_register = "a"
+    @clipboard = Clipboard.new
+  end
+
+  def set_register(char)
+    @cur_register = char
+    message("Set register #{char}")
+  end
+
+  def paste_register(char)
+    $c = @cur_register #TODO:??
+    message("Paste: #{$c}")
   end
 
   def open_file_listener(added)
@@ -89,7 +100,6 @@ class Editor
       example_custom = IO.read(ppath("custom_example.rb"))
       IO.write(custom_fn, example_custom)
     end
-    
 
     mkdir_if_not_exists("~/.vimamsa/custom.rb")
 
@@ -108,7 +118,7 @@ class Editor
 
     custom_script = read_file("", custom_fn)
     eval(custom_script) if custom_script
-    
+
     Grep.init
     FileManager.init
 
@@ -118,7 +128,7 @@ class Editor
       @langsrv["ruby"] = LangSrv.new("ruby")
       @langsrv["cpp"] = LangSrv.new("cpp")
     end
-    
+
     # build_options
 
     fname = nil
@@ -288,35 +298,28 @@ def open_file_dialog()
   gui_open_file_dialog(File.dirname(path))
 end
 
-#TODO:delete?
-def system_clipboard_changed(clipboard_contents)
-  max_clipboard_items = 100
-  if clipboard_contents != $clipboard[-1]
-    #TODO: HACK
-    $paste_lines = false
+class Clipboard
+  def initialize
+    @clipboard = []
   end
-  $clipboard << clipboard_contents
-  # debug $clipboard[-1]
-  $clipboard = $clipboard[-([$clipboard.size, max_clipboard_items].min)..-1]
-end
 
-def get_clipboard()
-  return $clipboard[-1]
-end
-
-def set_clipboard(s)
-  if !(s.class <= String) or s.size == 0
-    debug s.inspect
-    debug [s, s.class, s.size]
-    log_error("s.class != String or s.size == 0")
-    # Ripl.start :binding => binding
-    return
+  def set(s)
+    if !(s.class <= String) or s.size == 0
+      debug s.inspect
+      debug [s, s.class, s.size]
+      log_error("s.class != String or s.size == 0")
+      return
+    end
+    @clipboard << s
+    set_system_clipboard(s)
+    vma.register[vma.cur_register] = s
+    debug "SET CLIPBOARD: [#{s}]"
+    debug "REGISTER: #{vma.cur_register}:#{vma.register[vma.cur_register]}"
   end
-  $clipboard << s
-  set_system_clipboard(s)
-  $register[$cur_register] = s
-  debug "SET CLIPBOARD: [#{s}]"
-  debug "REGISTER: #{$cur_register}:#{$register[$cur_register]}"
+
+  def get()
+    return @clipboard[-1]
+  end
 end
 
 def set_cursor_pos(new_pos)
@@ -613,17 +616,6 @@ def get_file_line_pointer(s)
     end
   end
   return nil
-end
-
-
-def set_register(char)
-  $cur_register = char
-  message("Set register #{char}")
-end
-
-def paste_register(char)
-  $c = $register[char]
-  message("Paste: #{$c}")
 end
 
 def find_project_dir_of_fn(fn)

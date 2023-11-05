@@ -212,7 +212,7 @@ default_keys = {
   "C r <char>" => "buf.replace_with_char(<char>)", # TODO
   "C , l b" => "load_buffer_list",
   "C , l l" => "save_buffer_list",
-  "C , r <char>" => "set_register(<char>)", # TODO
+  "C , r <char>" => "vma.set_register(<char>)", # TODO
   "C , p <char>" => "buf.paste(BEFORE,<char>)", # TODO
 
   "C ctrl-c" => "buf.comment_line()",

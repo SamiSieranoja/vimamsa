@@ -1,7 +1,7 @@
 #scriptdir=File.expand_path(File.dirname(__FILE__))
 $:.unshift File.dirname(__FILE__) + "/lib"
 
-# require 'benchmark/ips'
+#/home/samsam/Drive/code/vimamsa/git/lib/vimamsa/lib/vimamsa/main.rb require 'benchmark/ips'
 
 # load "vendor/ver/lib/ver/vendor/textpow.rb"
 # load "vendor/ver/lib/ver/syntax/detector.rb"
@@ -19,19 +19,14 @@ end
 Encoding.default_external = Encoding::UTF_8
 Encoding.default_internal = Encoding::UTF_8
 
-# Globals
+# Globals (TODO:refactor)
 $command_history = []
 $clipboard = []
-$register = Hash.new("")
 $errors = []
 
-$cur_register = "a"
 $debuginfo = {}
 
-$jump_sequence = []
-
 cnf.debug = false
-$experimental = false
 
 # Return currently active buffer
 def buf()

@@ -22,6 +22,8 @@ require "vimamsa/actions"
 require "vimamsa/key_binding_tree"
 require "vimamsa/key_actions"
 
+require "vimamsa/clipboard"
+
 # Graphical stuff:
 require "vimamsa/gui"
 require "vimamsa/gui_form_generator"
