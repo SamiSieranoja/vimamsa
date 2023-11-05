@@ -271,8 +271,6 @@ class Buffer < String
   end
 
   def jump_to_next_instance_of_char(char, direction = FORWARD)
-
-    #return if at_end_of_line?
     if direction == FORWARD
       position_of_next_char = self.index(char, @pos + 1)
       if position_of_next_char != nil
@@ -291,6 +289,7 @@ class Buffer < String
     set_last_command({ method: m, params: [char, direction] })
     $last_find_command = { char: char, direction: direction }
     set_pos(@pos)
+    return true
   end
 
   def jump_to_pos(new_pos)

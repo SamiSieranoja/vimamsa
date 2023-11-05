@@ -22,7 +22,7 @@ setcnf :indent_based_on_last_line, true
 setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd", ".js"]
 
 class State
-  attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level, :cursor_type 
+  attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level, :cursor_type
   attr_reader :cur_mode
 
   def initialize(key_name, eval_rule = "", ctype = :command)
@@ -509,15 +509,15 @@ class KeyBindingTree
         ret = exec_action(action)
 
         if vma.macro.is_recording and ret != false
+          debug "RECORD ACTION:#{action}", 2
           vma.macro.record_action(action)
         end
         break if @method_handles_repeat
-        debug "@next_command_count #{@next_command_count} #{n}, #{action}", 2
-        # $next_command_count = nil
         # Some methods have specific implementation for repeat,
         #   like '5yy' => copy next five lines. (copy_line())
         # By default the same command is just repeated n times
         #   like '20j' => go to next line 20 times.
+        # But methods can also handle the number input themselves if vma.kbd.method_handles_repeat=true is set,
       end
     rescue SyntaxError
       message("SYNTAX ERROR with eval cmd #{action}: " + $!.to_s)
