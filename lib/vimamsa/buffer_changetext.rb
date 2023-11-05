@@ -212,7 +212,7 @@ class Buffer < String
   end
 
   def delete_line()
-    $method_handles_repeat = true
+    vma.kbd.method_handles_repeat = true
     num_lines = 1
     if !vma.kbd.next_command_count.nil? and vma.kbd.next_command_count > 0
       num_lines = vma.kbd.next_command_count

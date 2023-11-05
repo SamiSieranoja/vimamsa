@@ -14,8 +14,8 @@ vma.kbd.set_mode(:command)
 bindkey ["VCB M", "B m"], :run_last_macro
 
 bindkey "VC s", :easy_jump
-bindkey "VC , m f", [:find_macro_gui, proc { $macro.find_macro_gui }, "Find named macro"]
-bindkey "C , m n", [:gui_name_macro, proc { $macro.gui_name_macro }, "Name last macro"]
+bindkey "VC , m f", [:find_macro_gui, proc { vma.macro.find_macro_gui }, "Find named macro"]
+bindkey "C , m n", [:gui_name_macro, proc { vma.macro.gui_name_macro }, "Name last macro"]
 bindkey "C , j r", :jump_to_random
 bindkey "I enter", :insert_new_line
 bindkey "C , ; s k", :show_key_bindings #TODO: better binding
@@ -260,16 +260,16 @@ default_keys = {
 
   # Macros
   # (experimental, may not work correctly)
-  # "C q a" => '$macro.start_recording("a")',
-  "VC q <char>" => "$macro.start_recording(<char>)",
-  "VC q($macro.is_recording==true) " => "$macro.end_recording", # TODO
-  # 'C q'=> '$macro.end_recording', #TODO
-  "C q v" => "$macro.end_recording",
-  # 'C v'=> '$macro.end_recording',
-  # "C M" => '$macro.run_last_macro',
-  "C @ <char>" => "$macro.run_macro(<char>)",
-  "C , m S" => '$macro.save_macro("a")',
-  "C , m s" => "$macro.save",
+  # "C q a" => 'vma.macro.start_recording("a")',
+  "VC q <char>" => "vma.macro.start_recording(<char>)",
+  "VC q(vma.macro.is_recording==true) " => "$macro.end_recording", # TODO
+  # 'C q'=> 'vma.macro.end_recording', #TODO
+  "C q v" => "vma.macro.end_recording",
+  # 'C v'=> 'vma.macro.end_recording',
+  # "C M" => 'vma.macro.run_last_macro',
+  "C @ <char>" => "vma.macro.run_macro(<char>)",
+  "C , m S" => 'vma.macro.save_macro("a")',
+  "C , m s" => "vma.macro.save",
   "C , t r" => "run_tests()",
 
   # "C ." => "repeat_last_action", # TODO

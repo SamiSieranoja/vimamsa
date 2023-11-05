@@ -661,7 +661,7 @@ class Buffer < String
   end
 
   def get_repeat_num()
-    $method_handles_repeat = true
+    vma.kbd.method_handles_repeat = true
     repeat_num = 1
     if !vma.kbd.next_command_count.nil? and vma.kbd.next_command_count > 0
       repeat_num = vma.kbd.next_command_count
@@ -1305,7 +1305,7 @@ class Buffer < String
   end
 
   def copy_line()
-    $method_handles_repeat = true
+    vma.kbd.method_handles_repeat = true
     num_lines = 1
     if !vma.kbd.next_command_count.nil? and vma.kbd.next_command_count > 0
       num_lines = vma.kbd.next_command_count

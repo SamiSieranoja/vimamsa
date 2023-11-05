@@ -53,8 +53,7 @@ class Editor
     @hook = $hook
     register_plugin(:Hook, @hook)
     @macro = Macro.new
-    $macro = @macro
-    register_plugin(:Macro, $macro)
+    register_plugin(:Macro, @macro)
     $search = Search.new
     register_plugin(:Search, $search)
 

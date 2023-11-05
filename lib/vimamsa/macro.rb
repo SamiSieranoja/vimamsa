@@ -1,6 +1,6 @@
 def gui_find_macro_update_callback(search_str = "")
   debug "gui_find_macro_update_callback: #{search_str}"
-  heystack = $macro.named_macros
+  heystack = vma.macro.named_macros
   return [] if heystack.empty?
   $macro_search_list = []
   files = heystack.keys.sort.collect { |x| [x, 0] }
@@ -15,11 +15,11 @@ end
 def gui_find_macro_select_callback(search_str, idx)
   debug "gui_find_macro_select_callback"
   selected = $macro_search_list[idx]
-  m = $macro.named_macros[selected[0]].clone
+  m = vma.macro.named_macros[selected[0]].clone
   debug "SELECTED MACRO:#{selected}, #{m}"
-  id = $macro.last_macro
-  $macro.recorded_macros[id] = m
-  $macro.run_macro(id)
+  id = vma.macro.last_macro
+  vma.macro.recorded_macros[id] = m
+  vma.macro.run_macro(id)
 end
 
 class Macro
@@ -52,7 +52,7 @@ class Macro
   end
 
   def find_macro_gui()
-    l = $macro.named_macros.keys.sort.collect { |x| [x, 0] }
+    l = vma.macro.named_macros.keys.sort.collect { |x| [x, 0] }
     $macro_search_list = l
     $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
 
@@ -122,7 +122,7 @@ class Macro
     if acts.kind_of?(Array) and acts.any?
       @running_macro = true
       # TODO:needed?
-      # set_last_command({ method: $macro.method("run_macro"), params: [name] })
+      # set_last_command({ method: vma.macro.method("run_macro"), params: [name] })
       for a in acts
         ret = exec_action(a)
         if ret == false
@@ -138,7 +138,7 @@ class Macro
   end
 
   def run_macro(name)
-    if $macro.is_recording == true
+    if vma.macro.is_recording == true
       message("Can't run a macro that runs a macro (recursion risk)")
       return false
     end

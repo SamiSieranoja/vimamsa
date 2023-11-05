@@ -44,7 +44,7 @@ reg_act(:e_move_backward_char, "e_move_backward_char", "", { :group => [:move, :
 reg_act(:history_switch_backwards, "history_switch_backwards", "", { :group => :file })
 reg_act(:history_switch_forwards, "history_switch_forwards", "", { :group => :file })
 reg_act(:center_on_current_line, "center_on_current_line", "", { :group => :view })
-reg_act(:run_last_macro, proc { $macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
+reg_act(:run_last_macro, proc { vma.macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
 reg_act(:jump_to_next_edit, "jump_to_next_edit", "")
 reg_act(:jump_to_last_edit, proc { buf.jump_to_last_edit }, "")
 reg_act(:jump_to_random, proc { buf.jump_to_random_pos }, "")

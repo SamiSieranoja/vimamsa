@@ -41,7 +41,7 @@ class State
 end
 
 class KeyBindingTree
-  attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action, :modifiers, :next_command_count
+  attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action, :modifiers, :next_command_count, :method_handles_repeat
   attr_reader :mode_root_state, :state_trail, :act_bindings, :default_mode_stack
 
   def initialize()
@@ -55,6 +55,7 @@ class KeyBindingTree
     @state_trail = []
     @last_action = nil
     @cur_action = nil
+    @method_handles_repeat = false
 
     @modifiers = { :ctrl => false, :shift => false, :alt => false } # TODO: create a queue
     @last_event = [nil, nil, nil, nil, nil]
@@ -496,7 +497,7 @@ class KeyBindingTree
 
   def handle_key_bindigs_action(action, c)
     $acth << action
-    $method_handles_repeat = false #TODO:??
+    @method_handles_repeat = false #TODO:??
     n = 1
     if @next_command_count and !(action.class == String and action.include?("set_next_command_count"))
       n = @next_command_count
@@ -507,10 +508,10 @@ class KeyBindingTree
       n.times do
         ret = exec_action(action)
 
-        if $macro.is_recording and ret != false
-          $macro.record_action(action)
+        if vma.macro.is_recording and ret != false
+          vma.macro.record_action(action)
         end
-        break if $method_handles_repeat
+        break if @method_handles_repeat
         debug "@next_command_count #{@next_command_count} #{n}, #{action}", 2
         # $next_command_count = nil
         # Some methods have specific implementation for repeat,
