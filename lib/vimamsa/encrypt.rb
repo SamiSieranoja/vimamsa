@@ -1,4 +1,3 @@
-
 require "openssl"
 
 class Encrypt
@@ -13,16 +12,16 @@ class Encrypt
   end
 
   def encrypt(text)
-    cipher=@enc
+    cipher = @enc
     encrypted = cipher.update text
     encrypted << cipher.final
-    encrypted = encrypted.unpack('H*')[0].upcase
+    encrypted = encrypted.unpack("H*")[0].upcase
     @enc.reset
     return encrypted
   end
 
   def decrypt(encrypted)
-    cipher=@dec
+    cipher = @dec
     encrypted = [encrypted].pack("H*").unpack("C*").pack("c*")
     plain = cipher.update encrypted
     plain << cipher.final
@@ -32,16 +31,12 @@ class Encrypt
   end
 end
 
-def decrypt_cur_buffer(password, b = nil)
-  vma.buf.decrypt(password)
-end
 
 def encrypt_cur_buffer()
-  callback = proc{|x|encrypt_cur_buffer_callback(x)}
-  gui_one_input_action("Encrypt", "Password:", "Encrypt", callback,{:hide=>true})
+  callback = proc { |x| encrypt_cur_buffer_callback(x) }
+  gui_one_input_action("Encrypt", "Password:", "Encrypt", callback, { :hide => true })
 end
 
-def encrypt_cur_buffer_callback(password,b=nil)
+def encrypt_cur_buffer_callback(password, b = nil)
   vma.buf.set_encrypted(password)
 end
-

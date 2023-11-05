@@ -298,6 +298,7 @@ class Buffer < String
   end
 
   def decrypt(password)
+    return if @encrypted_str.nil?
     begin
       @crypt = Encrypt.new(password)
       str = @crypt.decrypt(@encrypted_str)
@@ -338,11 +339,9 @@ class Buffer < String
     @ftype = nil
     if str[0..10] == "VMACRYPT001"
       @encrypted_str = str[11..-1]
-      callback = proc { |x| decrypt_cur_buffer(x) }
-      gui_one_input_action("Decrypt", "Password:", "decrypt", callback, { :hide => true })
+      callback = proc { |x| self.decrypt(x) }
+      gui_one_input_action("Decrypt file \n #{@fname}", "Password:", "decrypt", callback, { :hide => true })
       str = "ENCRYPTED"
-    else
-      # @crypt = nil
     end
 
     if (str[-1] != "\n")

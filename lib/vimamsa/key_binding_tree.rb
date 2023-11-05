@@ -223,7 +223,7 @@ class KeyBindingTree
 
   # Print key bindings to show as documentation or for debugging
   def to_s()
-    return self.class.to_s
+    # return self.class.to_s
     s = ""
     # @cur_state = @root
     stack = [[@root, ""]]

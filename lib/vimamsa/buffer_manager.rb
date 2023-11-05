@@ -7,11 +7,12 @@ class BufferManager
   end
 
   def self.init()
-    vma.kbd.add_minor_mode("bmgr", :buf_mgr, :command)
+    # vma.kbd.add_minor_mode("bmgr", :buf_mgr, :command)
+    vma.kbd.add_minor_mode("bmgr", :bmgr, :command)
     reg_act(:bmgr_select, proc { buf.module.select_line }, "")
     reg_act(:bmgr_close, proc { buf.module.close_selected }, "")
 
-    reg_act(:start_buf_manager, proc { BufferManager.new.run; vma.kbd.set_mode(:buf_mgr) }, "Buffer manager")
+    reg_act(:start_buf_manager, proc { BufferManager.new.run; vma.kbd.set_mode(:bmgr) }, "Buffer manager")
 
     bindkey "bmgr enter", :bmgr_select
     bindkey "bmgr c", :bmgr_close
