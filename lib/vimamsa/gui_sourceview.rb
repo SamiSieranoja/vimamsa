@@ -436,13 +436,9 @@ class VSourceView < GtkSource::View
   end
 
   def cursor_visible_idle_func
+    return false
     debug "cursor_visible_idle_func"
     # From https://picheta.me/articles/2013/08/gtk-plus--a-method-to-guarantee-scrolling.html
-    # vr = visible_rect
-
-    # b = $view.buffer
-    # iter = buffer.get_iter_at(:offset => buffer.cursor_position)
-    # iterxy = get_iter_location(iter)
 
     # This is not the current buffer
     return false if vma.gui.view != self
@@ -486,16 +482,13 @@ class VSourceView < GtkSource::View
   end
 
   def ensure_cursor_visible
-    return #TODO:gtk4
+    # return
     debug "@idle_func_running=#{@idle_func_running}"
     return if @idle_func_running
     if is_cursor_visible == false
       @idle_func_running = true
       debug "Starting idle func"
-      Thread.new {
-        sleep 0.01
-        GLib::Idle.add(proc { cursor_visible_idle_func })
-      }
+      GLib::Idle.add(proc { cursor_visible_idle_func })
     end
   end
 

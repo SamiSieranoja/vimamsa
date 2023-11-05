@@ -137,16 +137,16 @@ default_keys = {
   "VC f space" => "buf.jump_to_next_instance_of_char(' ')",
   "VC F space" => "buf.jump_to_next_instance_of_char(' ',BACKWARD)",
 
-  "VC /[1-9]/" => "set_next_command_count(<char>)",
+  "VC /[1-9]/" => "vma.kbd.set_next_command_count(<char>)",
   #    'VC number=/[0-9]/+ g'=> 'jump_to_line(<number>)',
   #    'VC X=/[0-9]/+ * Y=/[0-9]/+ '=> 'x_times_y(<X>,<Y>)',
-  "VC ^" => "buf.jump(BEGINNING_OF_LINE)",
-  "VC G($next_command_count!=nil)" => "buf.jump_to_line()",
-  "VC 0($next_command_count!=nil)" => "set_next_command_count(<char>)",
-  "VC 0($next_command_count==nil)" => "buf.jump(BEGINNING_OF_LINE)",
+  "VC G(vma.kbd.next_command_count!=nil)" => "buf.jump_to_line()",
+  "VC 0(vma.kbd.next_command_count!=nil)" => "set_next_command_count(<char>)",
+  "VC 0(vma.kbd.next_command_count==nil)" => "buf.jump(BEGINNING_OF_LINE)",
   # 'C 0'=> 'buf.jump(BEGINNING_OF_LINE)',
   "VC g g" => "buf.jump(START_OF_BUFFER)",
   "VC g ;" => "buf.jump_to_last_edit",
+  "VC ^" => "buf.jump(BEGINNING_OF_LINE)",
   "VC G" => "buf.jump(END_OF_BUFFER)",
   #    'VC z z' => 'center_on_current_line',
   "VC *" => "buf.jump_to_next_instance_of_word",
@@ -185,7 +185,7 @@ default_keys = {
   "C u" => "buf.undo()",
 
   "C ^" => "buf.jump(BEGINNING_OF_LINE)",
-  "C /[1-9]/" => "set_next_command_count(<char>)",
+  # "C /[1-9]/" => "vma.kbd.set_next_command_count(<char>)",
 
   # Command mode only:
   "C ctrl-r" => "buf.redo()", # TODO:???

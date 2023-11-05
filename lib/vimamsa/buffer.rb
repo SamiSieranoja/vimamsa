@@ -663,8 +663,8 @@ class Buffer < String
   def get_repeat_num()
     $method_handles_repeat = true
     repeat_num = 1
-    if !$next_command_count.nil? and $next_command_count > 0
-      repeat_num = $next_command_count
+    if !vma.kbd.next_command_count.nil? and vma.kbd.next_command_count > 0
+      repeat_num = vma.kbd.next_command_count
     end
     return repeat_num
   end
@@ -1307,8 +1307,8 @@ class Buffer < String
   def copy_line()
     $method_handles_repeat = true
     num_lines = 1
-    if !$next_command_count.nil? and $next_command_count > 0
-      num_lines = $next_command_count
+    if !vma.kbd.next_command_count.nil? and vma.kbd.next_command_count > 0
+      num_lines = vma.kbd.next_command_count
       debug "copy num_lines:#{num_lines}"
     end
     set_clipboard(self[line_range(@lpos, num_lines)])

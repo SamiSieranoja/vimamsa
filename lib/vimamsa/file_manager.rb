@@ -117,7 +117,7 @@ class FileManager
     # }
     @cut_files = []
     @copied_files = []
-    #TODO:
+    refresh
   end
 
   def cut_file
@@ -140,6 +140,7 @@ class FileManager
     message "Deleting file #{fn}"
     # FileUtils.remove_file(fn)
     FileUtils.remove_entry_secure(fn, force = false)
+    refresh
   end
 
   def delete_file
@@ -150,7 +151,7 @@ class FileManager
                   self.method("delete_file_confirmed"))
     elsif File.directory?(fn)
       @file_to_delete = fn #TODO: set as parameter to confirm_box
-          Gui.confirm("Delete the directory? \r #{fn}",
+      Gui.confirm("Delete the directory? \r #{fn}",
                   self.method("delete_file_confirmed"))
     else
       message "Can't delete #{fn}"
@@ -234,6 +235,14 @@ class FileManager
 
   def fullp(fn)
     "#{@ld}/#{fn}"
+  end
+
+  def refresh
+    # TODO: only apply diff
+    lpos = @buf.lpos
+    # cpos = @buf.cpos
+    dir_to_buf(@ld)
+    @buf.set_line_and_column_pos(lpos, 0)
   end
 
   def cur_file

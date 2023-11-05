@@ -22,7 +22,7 @@ setcnf :indent_based_on_last_line, true
 setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd", ".js"]
 
 class State
-  attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level, :cursor_type
+  attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level, :cursor_type 
   attr_reader :cur_mode
 
   def initialize(key_name, eval_rule = "", ctype = :command)
@@ -41,10 +41,11 @@ class State
 end
 
 class KeyBindingTree
-  attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action, :modifiers
+  attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action, :modifiers, :next_command_count
   attr_reader :mode_root_state, :state_trail, :act_bindings, :default_mode_stack
 
   def initialize()
+    @next_command_count = nil
     @modes = {}
     @root = State.new("ROOT")
     @cur_state = @root # used for building the tree
@@ -183,9 +184,7 @@ class KeyBindingTree
 
     if !vma.gui.view.nil?
       vma.gui.view.draw_cursor()  #TODO: handle outside this class
-
     end
-
   end
 
   def cur_mode_str()
@@ -223,6 +222,7 @@ class KeyBindingTree
 
   # Print key bindings to show as documentation or for debugging
   def to_s()
+    return self.class.to_s
     s = ""
     # @cur_state = @root
     stack = [[@root, ""]]
@@ -287,7 +287,19 @@ class KeyBindingTree
       act_s = cstate.action.to_s if cstate.action != nil
       children << "  #{cstate.to_s} #{act_s}\n"
     end
+    if !@next_command_count.nil?
+      s_trail << " #{@next_command_count}"
+    end
     return [s_trail, children]
+  end
+
+  def set_next_command_count(num)
+    if @next_command_count != nil
+      @next_command_count = @next_command_count * 10 + num.to_i
+    else
+      @next_command_count = num.to_i
+    end
+    debug("NEXT COMMAND COUNT: #{@next_command_count}")
   end
 
   # Modifies state of key binding tree (move to new state) based on received event
@@ -486,9 +498,8 @@ class KeyBindingTree
     $acth << action
     $method_handles_repeat = false #TODO:??
     n = 1
-    if $next_command_count and !(action.class == String and action.include?("set_next_command_count"))
-      n = $next_command_count
-      # $next_command_count = nil
+    if @next_command_count and !(action.class == String and action.include?("set_next_command_count"))
+      n = @next_command_count
       debug("COUNT command #{n} times")
     end
 
@@ -500,6 +511,8 @@ class KeyBindingTree
           $macro.record_action(action)
         end
         break if $method_handles_repeat
+        debug "@next_command_count #{@next_command_count} #{n}, #{action}", 2
+        # $next_command_count = nil
         # Some methods have specific implementation for repeat,
         #   like '5yy' => copy next five lines. (copy_line())
         # By default the same command is just repeated n times
@@ -524,8 +537,8 @@ class KeyBindingTree
       end
     end
 
-    if action.class == String and !action.include?("set_next_command_count")
-      $next_command_count = nil
+    if !(action.class == String and action.include?("set_next_command_count"))
+      @next_command_count = nil
     end
   end
 end

@@ -214,8 +214,8 @@ class Buffer < String
   def delete_line()
     $method_handles_repeat = true
     num_lines = 1
-    if !$next_command_count.nil? and $next_command_count > 0
-      num_lines = $next_command_count
+    if !vma.kbd.next_command_count.nil? and vma.kbd.next_command_count > 0
+      num_lines = vma.kbd.next_command_count
       debug "copy num_lines:#{num_lines}"
     end
     lrange = line_range(@lpos, num_lines)
