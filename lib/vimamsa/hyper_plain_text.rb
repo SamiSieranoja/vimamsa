@@ -1,8 +1,7 @@
 def hpt_check_cur_word(w)
   debug "check_cur_word(w)"
   m = w.match(/⟦((audio|img):)?(.*)⟧/)
-        if m
-
+  if m
     fpfx = m[3]
     if vma.buf.fname
       dn = File.dirname(vma.buf.fname)
@@ -16,7 +15,7 @@ def hpt_check_cur_word(w)
       fcands << File.expand_path("#{fpfx}.txt")
 
       fn = nil
-      
+
       for fc in fcands
         if File.exist?(fc)
           fn = fc
@@ -27,8 +26,12 @@ def hpt_check_cur_word(w)
       if fn
         if m[2] == "audio"
           # Thread.new { Audio.play(fn) }
-          Audio.play(fn) 
+          Audio.play(fn)
         else
+          if !file_is_text_file(fn)
+            message "Not text file #{fn}"
+            return nil
+          end
           message "HPT opening file #{fn}"
           return fn
         end
