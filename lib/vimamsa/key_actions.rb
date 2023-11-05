@@ -35,6 +35,11 @@ reg_act(:enable_debug, proc { cnf.debug = true }, "Enable debug")
 reg_act(:disable_debug, proc { cnf.debug = false }, "Disable debug")
 
 reg_act(:easy_jump, proc { EasyJump.start }, "Easy jump")
+reg_act(:gui_ensure_cursor_visible, proc { vma.gui.view.ensure_cursor_visible }, "Scroll to current cursor position")
+reg_act(:gui_refresh_cursor, proc { vma.buf.refresh_cursor }, "Refresh cursor")
+
+
+
 reg_act(:savedebug, "savedebug", "Save debug info", { :group => :debug })
 reg_act(:open_file_dialog, "open_file_dialog", "Open file", { :group => :file })
 reg_act(:create_new_file, "create_new_file", "Create new file", { :group => :file })

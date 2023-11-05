@@ -134,6 +134,8 @@ class Macro
     end
     @running_macro = false
     buf.set_pos(buf.pos)
+    # TODO: Should be a better way to trigger this. Sometimes need to wait for GTK to process things before updating the cursor.
+    run_as_idle proc { vma.buf.refresh_cursor; vma.buf.refresh_cursor }, delay: 0.15
     return isok
   end
 

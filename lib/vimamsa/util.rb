@@ -1,9 +1,9 @@
 require "open3"
 
-# Get all indexes for start of matching regexp 
+# Get all indexes for start of matching regexp
 def scan_indexes(txt, regex)
   # indexes = txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0) + 1 }
-  indexes = txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0)  }
+  indexes = txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0) }
   return indexes
 end
 
@@ -13,12 +13,11 @@ def file_mime_type(fpath)
   r = exec_cmd("file", "--mime-type", "--mime-encoding", fpath)
   return false if r.class != String
   return false if r.size < 2
-  m=r.match(".*:\s*(.*)")
+  m = r.match(".*:\s*(.*)")
   mimetype = m[1].match(/(.*);/)
   charset = m[1].match(/charset=(.*)/)
   return [mimetype, charset]
 end
-
 
 def file_is_text_file(fpath)
   debug "file_is_text_file(#{fpath})"
@@ -30,14 +29,15 @@ def file_is_text_file(fpath)
   return true if r.match(/ASCII.*text/)
   return false
 end
-# file --mime-type --mime-encoding
 
+# file --mime-type --mime-encoding
 
 # Run idle proc once
 # Delay execution of proc until Gtk has fully processed the last calls.
-def run_as_idle(p)
+def run_as_idle(p, delay: 0.0)
   if p.class == Proc
     Thread.new {
+      sleep delay
       GLib::Idle.add(proc { p.call; false })
     }
   end
@@ -223,8 +223,6 @@ def sanitize_input(str)
   str.gsub!(/\r\n/, "\n")
   return str
 end
-
-
 
 def is_url(s)
   return s.match(/(https?|file):\/\/.*/) != nil

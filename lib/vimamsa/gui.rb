@@ -35,32 +35,6 @@ def gui_file_saveas(dirpath)
   dialog.show
 end
 
-def idle_func
-  # debug "IDLEFUNC"
-  if $idle_scroll_to_mark
-    # $view.get_visible_rect
-    vr = $view.visible_rect
-
-    # iter = b.get_iter_at(:offset => i)
-
-    b = $view.buffer
-    iter = b.get_iter_at(:offset => b.cursor_position)
-    iterxy = $view.get_iter_location(iter)
-    # debug "ITERXY" + iterxy.inspect
-
-    intr = iterxy.intersect(vr)
-    if intr.nil?
-      $view.set_cursor_pos($view.buffer.cursor_position)
-    else
-      $idle_scroll_to_mark = false
-    end
-
-    sleep(0.1)
-  end
-  sleep(0.01)
-  return true
-end
-
 def center_on_current_line()
   b = $view.buffer
   iter = b.get_iter_at(:offset => b.cursor_position)

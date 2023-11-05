@@ -27,13 +27,18 @@ class Buffer < String
     return @pos == self.size
   end
 
+  def refresh_cursor
+    self.view.set_cursor_pos(@pos)
+  end
+  
   def set_pos(new_pos)
     if new_pos >= self.size
       @pos = self.size - 1 # TODO:??right side of last char
     elsif new_pos >= 0
       @pos = new_pos
     end
-    gui_set_cursor_pos(@id, @pos)
+    self.view.set_cursor_pos(pos)
+     # gui_set_cursor_pos(@id, @pos)
     calculate_line_and_column_pos
 
     check_if_modified_outside

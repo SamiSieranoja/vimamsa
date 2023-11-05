@@ -519,6 +519,7 @@ class KeyBindingTree
         #   like '20j' => go to next line 20 times.
         # But methods can also handle the number input themselves if vma.kbd.method_handles_repeat=true is set,
       end
+      # run_as_idle proc { vma.buf.refresh_cursor; vma.buf.refresh_cursor }, delay: 0.05
     rescue SyntaxError
       message("SYNTAX ERROR with eval cmd #{action}: " + $!.to_s)
       # rescue NoMethodError

@@ -38,7 +38,8 @@ class BufferList < Array
     @recent_ind = 0
     $hook.call(:change_buffer, vma.buf)
     vma.gui.set_current_buffer(vma.buf.id)
-    gui_set_cursor_pos(vma.buf.id, vma.buf.pos)
+    # gui_set_cursor_pos(vma.buf.id, vma.buf.pos)
+    vma.buf.view.set_cursor_pos(vma.buf.pos)
     update_last_dir(_buf)
   end
 
