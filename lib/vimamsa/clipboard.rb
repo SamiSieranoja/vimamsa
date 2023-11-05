@@ -3,6 +3,14 @@ class Clipboard
     @clipboard = []
   end
 
+  def [](key)
+    return @clipboard[key]
+  end
+
+  def <<(str)
+    return @clipboard << str
+  end
+
   def set(s)
     if !(s.class <= String) or s.size == 0
       debug s.inspect
@@ -22,3 +30,6 @@ class Clipboard
   end
 end
 
+def set_system_clipboard(arg)
+  vma.gui.window.display.clipboard.set(arg)
+end

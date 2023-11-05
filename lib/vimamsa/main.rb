@@ -21,7 +21,6 @@ Encoding.default_internal = Encoding::UTF_8
 
 # Globals (TODO:refactor)
 $command_history = []
-$clipboard = []
 $errors = []
 
 $debuginfo = {}

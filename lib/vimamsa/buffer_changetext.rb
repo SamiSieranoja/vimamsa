@@ -94,13 +94,13 @@ class Buffer < String
     debug "PASTE: #{text}"
 
     # If we did not put this text to clipboard
-    if text != $clipboard[-1]
+    if text != vma.clipboard[-1]
       @paste_lines = false
     end
 
     text = sanitize_input(text)
 
-    $clipboard << text
+    vma.clipboard << text
 
     return if text == ""
 
@@ -108,6 +108,7 @@ class Buffer < String
       debug "PASTE LINES"
       put_to_new_next_line(text)
     else
+      debug "PASTE !LINES"
       if at_end_of_buffer? or at_end_of_line? or at == BEFORE
         pos = @pos
       else

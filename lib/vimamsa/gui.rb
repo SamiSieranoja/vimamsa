@@ -90,9 +90,6 @@ def page_down
 end
 
 
-def set_system_clipboard(arg)
-  vma.gui.window.display.clipboard.set(arg)
-end
 
 def gui_create_buffer(id, bufo)
   debug "gui_create_buffer(#{id})"

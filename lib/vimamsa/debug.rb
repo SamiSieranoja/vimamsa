@@ -18,7 +18,7 @@ def debug_print_buffer(c)
 end
 
 def debug_dump_clipboard()
-  puts $clipboard.inspect
+  puts vma.clipboard.inspect
 end
 
 def debug_dump_deltas()
@@ -60,7 +60,7 @@ def savedebug(message, e)
   dbginfo["edit_history"] = buf.edit_history
   dbginfo["cnf"] = $cnf
   dbginfo["register"] = vma.register
-  dbginfo["clipboard"] = $clipboard
+  dbginfo["clipboard"] = vma.clipboard
   # dbginfo["last_event"] = $last_event
   dbginfo["buffer"] = {}
   dbginfo["buffer"]["str"] = buf.to_s
