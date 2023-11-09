@@ -39,10 +39,21 @@ def hpt_check_cur_word(w)
         # return true
       else
         message "File not found: #{fpfx}"
+        newfn = fcands[0]
+        if File.extname(newfn) == ""
+          newfn = fcands[1]
+        end
+         Gui.confirm("File does not exist. Create a new file? \r #{newfn}",
+                    proc{hpt_create_new_file(newfn)})
+                   
       end
     end
   end
   return nil
+end
+
+def hpt_create_new_file(fn)
+  create_new_file(fn)
 end
 
 def translate_path(fn, bf)

@@ -539,7 +539,7 @@ class VMAgui
     height = @window.height - 5
     # Ripl.start :binding => binding
     @window.unmaximize
-    @window.set_size_request(width, height)
+    @window.set_default_size(width, height)
     return false
   end
 

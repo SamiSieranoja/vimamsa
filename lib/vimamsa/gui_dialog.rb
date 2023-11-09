@@ -1,5 +1,5 @@
 module Gui
-  def self.confirm(title, callback)
+  def self.confirm(title, callback, param: nil)
     params = {}
     params["title"] = title
     params["inputs"] = {}

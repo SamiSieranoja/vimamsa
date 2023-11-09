@@ -487,7 +487,7 @@ GUESS_ENCODING_ORDER = [
 ]
 
 def create_new_file(filename = nil, file_contents = "\n")
-  buffer = Buffer.new(file_contents)
+  buffer = Buffer.new(file_contents,filename)
 
   debug "NEW FILE CREATED: #{buffer.id}"
   vma.buffers.add(buffer)
