@@ -77,6 +77,11 @@ class VSourceView < GtkSource::View
     @curpos_mark = nil
   end
 
+  def set_content(str)
+    delete_cursorchar
+    self.buffer.set_text(str)
+  end
+
   def gutter_width()
     winwidth = width
     view_width = visible_rect.width

@@ -114,7 +114,8 @@ end
 
 def gui_set_buffer_contents(id, txt)
   debug "gui_set_buffer_contents(#{id}, txt)"
-  vma.gui.buffers[id].buffer.set_text(txt)
+  # vma.gui.buffers[id].buffer.set_text(txt)
+  vma.gui.buffers[id].set_content(txt)
 end
 
 #TODO: remove

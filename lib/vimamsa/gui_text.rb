@@ -5,7 +5,11 @@ module Gui
 
     hlparts = []
 
-    tt = vma.gui.view.buffer.create_tag("highlight_match_tag")
+    tt = vma.gui.view.buffer.tag_table.lookup("highlight_match_tag")
+    if tt.nil?
+      tt = vma.gui.view.buffer.create_tag("highlight_match_tag")
+    end
+
     tt.weight = 650
     tt.foreground = color
 

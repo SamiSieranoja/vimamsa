@@ -391,6 +391,7 @@ class Buffer < String
     gui_set_buffer_contents(@id, self.to_s)
     @images = [] #TODO: if reload
     hpt_scan_images(self)
+    
 
     # add_hl_update(@update_hl_startpos, @update_hl_endpos)
   end
@@ -1335,7 +1336,7 @@ class Buffer < String
     return if !visual_mode?
     debug "End visual mode"
     #TODO:take previous mode (insert|command) from stack?
-    $kbd.set_mode(:command)
+    vma.kbd.set_mode_to_default
     @visual_mode = false
     return true
   end

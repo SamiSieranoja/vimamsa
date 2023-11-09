@@ -85,9 +85,14 @@ class Grep
     end
     vma.kbd.add_minor_mode("bmgr", :buf_mgr, :command)
     reg_act(:grep_buffer, proc { Grep.new.run }, "Grep current buffer")
+    reg_act(:grep_refresh, proc {
+      if vma.buf.module.class == Grep
+        vma.buf.module.refresh
+      end
+    }, "Refresh current Grep buffer")
 
     bindkey "C , g", :grep_buffer
-
+    bindkey "grep ctrl-r", :grep_refresh
   end
 
   def apply_changes()
@@ -114,45 +119,55 @@ class Grep
     @line_to_id = {}
   end
 
-  def callback(search_str, b = nil)
-    debug "grep_cur_buffer(search_str)"
-    lines = vma.buf.split("\n")
-    r = Regexp.new(Regexp.escape(search_str), Regexp::IGNORECASE)
-    fpath = ""
-    fpath = vma.buf.pathname.expand_path.to_s + ":" if vma.buf.pathname
-    res_str = ""
+  def refresh
+    set_buf_contents
+  end
 
-    hlparts = []
+  def set_buf_contents()
+    lines = @orig_buf.split("\n")
+
     @grep_matches = []
+
+    res_str = ""
     lines.each_with_index { |l, i|
-      if r.match(l)
+      if @r.match(l)
         res_str << "#{i + 1}:"
         # ind = scan_indexes(l, r)
         res_str << "#{l}\n"
         @grep_matches << i + 1 # Lines start from index 1
       end
     }
-    $grep_bufid = vma.buffers.current_buf
-    @orig_buf = vma.buf
-    b = create_new_buffer(res_str, "grep")
-    vbuf = vma.gui.view.buffer
 
-    Gui.highlight_match(b, search_str, color: cnf.match.highlight.color!)
-    b.default_mode = :grep
-    b.module = self
+    @buf.set_content(res_str)
+
+    Gui.highlight_match(@buf, @search_str, color: cnf.match.highlight.color!)
+  end
+
+  def callback(search_str, b = nil)
+    debug "grep_cur_buffer(search_str)"
+    @r = Regexp.new(Regexp.escape(search_str), Regexp::IGNORECASE)
+    fpath = ""
+    fpath = vma.buf.pathname.expand_path.to_s + ":" if vma.buf.pathname
+
+    @search_str = search_str
+    @orig_buf = vma.buf
+    @buf = create_new_buffer("", "grep")
+
+    @buf.default_mode = :grep
+    @buf.module = self
 
     vma.kbd.set_mode(:grep) #TODO: allow to work with other keybindings also
     vma.kbd.set_default_mode(:grep)
-    b.line_action_handler = proc { |lineno|
+    @buf.line_action_handler = proc { |lineno|
       debug "GREP HANDLER:#{lineno}"
       jumpto = @grep_matches[lineno]
       if jumpto.class == Integer
-        # vma.buffers.set_current_buffer($grep_bufid, update_history = true)
-        # buf.jump_to_line(jumpto)
         vma.buffers.set_current_buffer_by_id(@orig_buf.id)
         @orig_buf.jump_to_line(jumpto)
       end
     }
+
+    set_buf_contents
   end
 
   def run()
