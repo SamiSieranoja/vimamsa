@@ -40,6 +40,8 @@ class LangSrv
     for c in conf(:workspace_folders)
       wf << LSP::Interface::WorkspaceFolder.new(uri: c[:uri], name: c[:name])
     end
+    debug "WORKSPACE FOLDERS",2
+    debug wf.inspect,2
 
     pid = Process.pid
 

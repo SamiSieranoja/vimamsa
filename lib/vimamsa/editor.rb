@@ -580,6 +580,12 @@ def open_new_file(filename, file_contents = "")
     if !is_path_writable(filename)
       message("Path #{filename} cannot be written to")
       return false
+    elsif !File.exist?(filename)
+      message("File #{filename} does not exist")
+      return false
+    elsif !file_is_text_file(filename)
+      message("File #{filename} does not contain text")
+      return false
     end
     message "New file opened: #{filename}"
     fname = filename

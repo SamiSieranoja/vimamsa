@@ -63,8 +63,6 @@ def page_down
   return true
 end
 
-
-
 def gui_create_buffer(id, bufo)
   debug "gui_create_buffer(#{id})"
   buf1 = GtkSource::Buffer.new()
@@ -576,7 +574,6 @@ class VMAgui
       @sw = Gtk::ScrolledWindow.new
       @sw.set_policy(:automatic, :automatic)
 
-
       @last_adj_time = Time.now
       @sw.vadjustment.signal_connect("value-changed") { |x|
         # pp x.page_increment
@@ -716,6 +713,28 @@ class VMAgui
     Vimamsa::Menu.new(@menubar, @app)
   end
 
+  def toggle_two_column
+    if @two_column
+      set_one_column
+    else
+      set_two_column
+    end
+  end
+
+  def set_one_column
+    return if !@two_column
+    @windows[2][:sw].set_child(nil)
+    @windows.delete(2)
+    
+    @pane.set_start_child(nil)
+    @pane.set_end_child(nil)
+
+    @vbox.remove(@pane)
+    @vbox.attach(@overlay, 0, 2, 2, 1)
+    @vbox.attach(@statbox, 1, 1, 1, 1)
+    @two_column = false
+  end
+
   def set_two_column
     return if @two_column
     # @window.set_default_size(800, 600) #TODO:gtk4
@@ -733,10 +752,10 @@ class VMAgui
 
     @vbox.remove(@overlay)
 
-    # numbers: left, top, width, height
     @pane.set_start_child(@overlay2)
     @pane.set_end_child(@overlay)
 
+    # numbers: left, top, width, height
     @vbox.attach(@pane, 0, 2, 2, 1)
 
     @sw2.vexpand = true

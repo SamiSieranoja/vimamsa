@@ -164,7 +164,7 @@ act_list = {
   :toggle_active_window => { :proc => proc { vma.gui.toggle_active_window },
                              :desc => "Toggle active window", :group => :search },
 
-  :toggle_two_column => { :proc => proc { vma.gui.set_two_column },
+  :toggle_two_column => { :proc => proc { vma.gui.toggle_two_column },
                           :desc => "Set two column mode", :group => :search },
 
   :content_search => { :proc => proc { FileContentSearch.start_gui },
