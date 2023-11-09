@@ -153,3 +153,4 @@ cnf.workspace_folders = []
 
 cnf.match.highlight.color = "#10bd8e"
 
+cnf.lsp.enabled = false

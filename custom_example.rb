@@ -16,8 +16,15 @@
 # setcnf :startup_file, "~/Documents/startup.txt"
 
 # To enable LSP:
-# conf(:custom_lsp)[:ruby] = {name: "solargraph", command:"solargraph stdio", type: "stdio"}
-# conf(:custom_lsp)[:cpp] = {name: "clangd", command:"clangd-12 --offset-encoding=utf-8", type: "stdio"}
+# cnf.lsp.enabled = true
+# cnf.lsp.server.solargraph = { name: "solargraph", command: "solargraph stdio", type: "stdio" }
+# cnf.lsp.server.solargraph.languages = ["ruby"]
+
+# cnf.lsp.server.clangd = { name: "clangd", command: "clangd-12 --offset-encoding=utf-8", type: "stdio" }
+# cnf.lsp.server.clangd.languages = ["c", "cpp"]
+
+
+
 
 
 def insert_date()

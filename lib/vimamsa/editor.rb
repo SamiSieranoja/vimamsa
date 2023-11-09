@@ -122,7 +122,7 @@ class Editor
     Grep.init
     FileManager.init
 
-    if conf(:enable_lsp)
+    if cnf.lsp.enabled?
       require "vimamsa/langservp"
       require "vimamsa/audio" # TODO:config
       @langsrv["ruby"] = LangSrv.new("ruby")

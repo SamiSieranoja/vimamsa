@@ -76,7 +76,7 @@ class Buffer < String
     self << "\n" if self[-1] != "\n"
     @current_word = nil
     @active_kbd_mode = nil
-    if conf(:enable_lsp)
+    if cnf.lsp.enabled?
       init_lsp
     end
     return self
@@ -114,6 +114,7 @@ class Buffer < String
   end
 
   def lsp_jump_to_def()
+    message("LSP not activated") if @lsp.nil?
     if !@lsp.nil?
       fpuri = URI.join("file:///", @fname).to_s
       r = @lsp.get_definition(fpuri, @lpos, @cpos)
@@ -124,8 +125,9 @@ class Buffer < String
   end
 
   def init_lsp()
-    if conf(:enable_lsp) and !@lang.nil?
-      @lsp = LangSrv.get(@lang.to_sym)
+    if cnf.lsp.enabled?
+      @lsp = LangSrv.get(@lang)
+      
       if @lang == "php"
         # Ripl.start :binding => binding
       end

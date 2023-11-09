@@ -19,11 +19,14 @@ class LangSrv
 
   def initialize(lang)
     @error = true
-    clsp = conf(:custom_lsp)
 
     # Use LSP server specified by user if available
     @lang = lang
-    lspconf = clsp[lang]
+
+    lspconf = nil
+    ret = cnf.lsp.server?.find { |k, v| v[:languages].include?(@lang) }
+    lspconf = ret[1] unless ret.nil?
+
     if !lspconf.nil?
       @io = IO.popen(lspconf[:command], "r+")
     else
