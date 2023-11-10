@@ -91,6 +91,14 @@ class Buffer < String
     return x
   end
 
+  #Check if this buffer is attached to any windows
+  def is_active
+    for k in @windows.keys
+      return true if @windows[k][:sw].child.bufo == self
+    end
+    return false
+  end
+
   def set_active
     if !@active_kbd_mode.nil?
       # $kbd.set_mode(@active_kbd_mode) #TODO: remove?
@@ -127,7 +135,7 @@ class Buffer < String
   def init_lsp()
     if cnf.lsp.enabled?
       @lsp = LangSrv.get(@lang)
-      
+
       if @lang == "php"
         # Ripl.start :binding => binding
       end
@@ -391,7 +399,6 @@ class Buffer < String
     gui_set_buffer_contents(@id, self.to_s)
     @images = [] #TODO: if reload
     hpt_scan_images(self)
-    
 
     # add_hl_update(@update_hl_startpos, @update_hl_endpos)
   end
@@ -517,7 +524,6 @@ class Buffer < String
       end
     end
   end
-
 
   def undo()
     debug @edit_history.inspect
@@ -795,7 +801,7 @@ class Buffer < String
       @line_ends.sort!
     end
   end
-  
+
   # Ranges to use in delete or copy operations
   def get_range(range_id, mark: nil)
     range = nil
@@ -1099,7 +1105,6 @@ class Buffer < String
       insert_txt(" ", BEFORE)
     end
   end
-
 
   def replace_with_char(char)
     debug "self_pos:'#{self[@pos]}'"

@@ -62,6 +62,14 @@ class BufferList < Array
     return self[last_buf].id
   end
 
+  def get_last_non_active_buffer
+    # = @buffer_history[-2]
+    for x in @buffer_history.reverse
+      return self[x] if !self[x].is_active
+    end
+    return nil
+  end
+
   def switch_to_last_buf()
     debug "SWITCH TO LAST BUF:"
     debug @buffer_history
@@ -135,7 +143,6 @@ class BufferList < Array
     vma.gui.set_current_buffer(vma.buf.id)
 
     if !vma.buf.mode_stack.nil? and vma.kbd.get_scope != :editor #TODO
-
       debug "set kbd mode stack #{vma.buf.mode_stack}  #{vma.buf.id}", 2
       # Reload previously saved keyboard mode status
       # vma.kbd.set_mode_stack(vma.buf.mode_stack.clone) #TODO:needed?
