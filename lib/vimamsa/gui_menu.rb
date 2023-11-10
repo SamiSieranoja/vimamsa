@@ -45,7 +45,7 @@ module Vimamsa
       add_to_menu "Actions.experimental.ShowImages", { :label => "Show images ⟦img:path⟧", :action => :show_images }
       
       
-      add_to_menu "View.TwoColumn", { :label => "Start two column mode", :action => :toggle_two_column }
+      add_to_menu "View.TwoColumn", { :label => "Toggle two column mode", :action => :toggle_two_column }
       
 
       add_to_menu "Actions.EncryptFile", { :label => "Encrypt file", :action => :encrypt_file }

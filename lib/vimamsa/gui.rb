@@ -134,7 +134,7 @@ def gui_set_window_title(wtitle, subtitle = "")
 end
 
 class VMAgui
-  attr_accessor :buffers, :sw, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :overlay1, :overlay2, :sws, :two_c
+  attr_accessor :buffers, :sw, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c
   attr_reader :two_column, :windows, :subtitle, :app
 
   def initialize()
@@ -326,7 +326,6 @@ class VMAgui
     overlay = Gtk::Overlay.new
     overlay.set_child(sw)
     @vbox.attach(overlay, 0, 3, 2, 1)
-    $sw2 = sw
     sw.set_size_request(-1, 12)
 
     view = VSourceView.new(nil, nil)
@@ -537,7 +536,6 @@ class VMAgui
     sleep 0.1
     width = @window.width / 2
     height = @window.height - 5
-    # Ripl.start :binding => binding
     @window.unmaximize
     @window.set_default_size(width, height)
     return false
@@ -586,14 +584,8 @@ class VMAgui
         # puts "@sw.vadjustment"
       }
 
-      # @sw.signal_connect("clicked") { puts "Hello World!" }
-      # @sw.signal_connect("key-pressed") { puts "Hello World!" }
       @overlay = Gtk::Overlay.new
-      # @overlay.add(@sw) #TODO:gtk4
-      @overlay.add_overlay(@sw) #TODO:gtk4
-      @overlay1 = @overlay
-
-      # init_header_bar #TODO:gtk4
+      @overlay.add_overlay(@sw)
 
       @statnfo = Gtk::Label.new
       @subtitle = Gtk::Label.new("")
@@ -620,8 +612,6 @@ class VMAgui
       @overlay.hexpand = true
 
       init_minibuffer
-
-      # p = Gtk::Popover.new
 
       name = "save"
       window = @window
@@ -658,16 +648,6 @@ class VMAgui
       @active_window = @windows[1]
 
       @window.show
-
-      press = Gtk::GestureClick.new
-      press.button = Gdk::BUTTON_SECONDARY
-      @window.add_controller(press)
-      press.signal_connect "pressed" do |gesture, n_press, x, y|
-        puts "FOOBARpressed"
-        # clear_surface(surface)
-        # drawing_area.queue_draw
-      end
-      @sw1 = @sw
 
       prov = Gtk::CssProvider.new
       # See gtk-4.9.4/gtk/theme/Default/_common.scss  on how to theme
@@ -853,9 +833,9 @@ class VMAgui
     $vbuf = buf1
 
     # Check if buffer is already open in another column
-    if @two_column and @active_column == 2 and id == @sw1.child.bufo.id
+    if @two_column and @active_column == 2 and id == @windows[1][:sw].child.bufo.id
       toggle_active_window
-    elsif @two_column && @active_column == 1 && !@sw2.child.nil? && id == @sw2.child.bufo.id
+    elsif @two_column && @active_column == 1 && !@windows[2][:sw].child.nil? && id == @windows[2][:sw].child.bufo.id
       #TODO: should not need !@sw2.child.nil? here. If this happens then other column is empty.
       toggle_active_window
     else
@@ -867,8 +847,7 @@ class VMAgui
       @sw = new_scrolled_window
       @sw.set_child(view)
       @overlay.add_overlay(@sw)
-      @windows[1][:sw] = @sw
-      @sw1 = @sw
+      @active_window[:sw] = @sw
     end
     view.grab_focus
 
