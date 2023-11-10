@@ -62,6 +62,7 @@ class BufferList
   # end
 
   def slist
+    # TODO: implement using heap/priorityque
     @list.sort_by! { |x| x.access_time }
   end
 
@@ -176,13 +177,6 @@ class BufferList
     return @last_dir
   end
 
-  def get_recent_buffers()
-    # bufs = []; b = {}
-    # @buffer_history.reverse.each { |x| bufs << x if !b[x] && x < self.size; b[x] = true }
-    bufs = slist
-    return bufs
-  end
-
   def reset_navigation
     @navigation_idx = 0
   end
@@ -204,19 +198,6 @@ class BufferList
     set_current_buffer(b.id, false)
   end
 
-  # Close buffer in the background
-  # TODO: if open in another widget
-  def close_other_buffer(buffer_i)
-    return if self.size <= buffer_i
-    return if @current_buf == buffer_i
-
-    bufname = self[buffer_i].basename
-    message("Closed buffer #{bufname}")
-
-    self.slice!(buffer_i)
-    @buffer_history = @buffer_history.collect { |x| r = x; r = x - 1 if x > buffer_i; r = nil if x == buffer_i; r }.compact
-  end
-
   def get_last_non_active_buffer
     for bu in slist.reverse
       return bu.id if !bu.is_active
@@ -224,63 +205,63 @@ class BufferList
     return nil
   end
 
-  def close_buffer(idx, from_recent = false)
+  def close_buffer(idx, from_recent = false, auto_open: true)
     return if idx.nil?
     bu = @h[idx]
     return if bu.nil?
 
     bufname = bu.basename
     message("Closed buffer #{bufname}")
-    @current_buf = get_last_non_active_buffer
 
     @list.delete(@h[idx])
     @h.delete(idx)
-    
-    if @list.size == 0 or @current_buf.nil?
-      bu = Buffer.new("\n")
-      add(bu)
-      @current_buf = bu.id
-    end
-    set_current_buffer(@current_buf, false)
-  end
 
-  #TODO
-  def close_all_buffers()
-    message("Closing all buffers")
-    while true
-      if self.size == 1
-        close_buffer(0)
-        break
-      else
-        close_buffer(0)
+    if auto_open
+      @current_buf = get_last_non_active_buffer
+      if @list.size == 0 or @current_buf.nil?
+        bu = Buffer.new("\n")
+        add(bu)
+        @current_buf = bu.id
       end
+      set_current_buffer(@current_buf, false)
     end
-    # self << Buffer.new("\n")
   end
 
+  # Close buffer in the background
+  def close_other_buffer(idx)
+    close_buffer(idx, auto_open: false)
+  end
 
   #TODO
+  # def close_all_buffers()
+  # message("Closing all buffers")
+  # while @list.size > 0
+  # if self.size == 1
+  # close_buffer(0)
+  # break
+  # else
+  # close_buffer(0)
+  # end
+  # end
+  # # self << Buffer.new("\n")
+  # end
+
   def close_scrap_buffers()
-    i = 0
-    while i < self.size
-      if !self[i].pathname
-        close_buffer(i)
-      else
-        i += 1
+    l = @list.clone
+    for bu in l
+      if !bu.pathname
+        close_buffer(bu.id)
       end
     end
   end
 
-
-  #TODO
   def close_current_buffer(from_recent = false)
     close_buffer(@current_buf, from_recent)
   end
 
-  #TODO
   def delete_current_buffer(from_recent = false)
     fn = buf.fname
-    close_buffer(@current_buf, from_recent)
+    close_buffer(@current_buf)
     #TODO: confirm with user, "Do you want to delete file X"
     if is_existing_file(fn)
       message("Deleting file: #{fn}")

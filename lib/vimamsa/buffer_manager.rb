@@ -28,28 +28,25 @@ class BufferManager
     l = @buf.lpos - @header.size
     return nil if l < 0
     bufid = @line_to_id[l]
-    buf_i = vma.buffers.get_buffer_by_id(bufid)
-    return buf_i
+    return bufid
   end
 
   def close_selected
-    buf_i = buf_of_current_line()
-    if buf_i.nil?
+    idx = buf_of_current_line()
+    if idx.nil?
       message("buf already closed")
       return
     end
-    vma.buffers.close_other_buffer(buf_i)
+    vma.buffers.close_other_buffer(idx)
   end
 
   def select_line
-    buf_i = buf_of_current_line()
-    return if buf_i.nil?
+    idx = buf_of_current_line()
+    return if idx.nil?
 
     # vma.buffers.close_current_buffer() #TODO:??
-    vma.buffers.set_current_buffer(buf_i)
-
-    bid = vma.buffers.get_buffer_by_id(@buf.id)
-    vma.buffers.close_other_buffer(bid)
+    vma.buffers.set_current_buffer(idx)
+    vma.buffers.close_other_buffer(@buf.id)
     @@cur = nil
   end
 
@@ -70,7 +67,7 @@ class BufferManager
     s << "\n"
     i = 0
     jump_to_line = 0
-    for b in vma.buffers.sort_by { |x| x.list_str }
+    for b in vma.buffers.list.sort_by { |x| x.list_str }
       if b.id == vma.buf.id # current file
         # s << "   "
         jump_to_line = i

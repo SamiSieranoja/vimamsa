@@ -60,7 +60,7 @@ reg_act(:put_file_ref_to_clipboard, proc { buf.put_file_ref_to_clipboard }, "Put
 reg_act(:encrypt_file, proc { encrypt_cur_buffer }, "Set current file to encrypt on save")
 reg_act(:set_unencrypted, proc { buf.set_unencrypted }, "Set current file to save unencrypted")
 reg_act(:set_executable, proc { buf.set_executable }, "Set current file permissions to executable")
-reg_act(:close_all_buffers, proc { bufs.close_all_buffers() }, "Close all buffers")
+# reg_act(:close_all_buffers, proc { bufs.close_all_buffers() }, "Close all buffers")
 reg_act(:close_current_buffer, proc { bufs.close_current_buffer(true) }, "Close current buffer")
 reg_act(:comment_selection, proc { buf.comment_selection }, "")
 reg_act(:delete_char_forward, proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward", { :group => [:edit, :basic] })
