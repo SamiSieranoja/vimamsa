@@ -41,6 +41,11 @@ def log_error(message)
   #TODO
 end
 
+def show_caller
+  puts caller().join("\n")
+end
+
+
 def crash(message, e = nil)
   puts "FATAL ERROR:#{message}"
   puts caller().join("\n")

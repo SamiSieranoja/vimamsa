@@ -23,12 +23,13 @@ setcnf :extensions_to_open, [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", 
 
 class State
   attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level, :cursor_type
-  attr_reader :cur_mode
+  attr_reader :cur_mode, :scope
 
-  def initialize(key_name, eval_rule = "", ctype = :command)
+  def initialize(key_name, eval_rule = "", ctype = :command, scope: :buffer)
     @key_name = key_name
     @eval_rule = eval_rule
     @children = []
+    @scope = scope
     @major_modes = []
     @action = nil
     @level = 0
@@ -65,34 +66,57 @@ class KeyBindingTree
     @act_bindings = Hash.new { |h, k| h[k] = Hash.new(&h.default_proc) }
   end
 
+  def set_mode(label)
+    @match_state = [@modes[label]] # used for matching input
+    @mode_root_state = @modes[label]
+    # @default_mode = label
+    @default_mode_stack << label
+    __set_mode(label)
+    if !vma.buf.nil?
+      # vma.buf.mode_stack = @default_mode_stack.clone
+    end
+  end
+
   def set_default_mode(label)
     @match_state = [@modes[label]] # used for matching input
     @mode_root_state = @modes[label]
     @default_mode = label
-    @default_mode_stack << label
+    set_mode_stack [label]
     if !vma.buf.nil?
       # vma.buf.mode_stack = @default_mode_stack.clone
     end
   end
 
   def set_mode_stack(ms)
+    debug "set_mode_stack(#{ms})",2
+    show_caller
     @default_mode_stack = ms
+  end
+
+  def dump_state
+    debug "dump_state", 2
+    pp ["@default_mode_stack", @default_mode_stack]
+    pp ["@default_mode", @default_mode]
+    pp ["scope", self.get_scope]
+    # pp ["@mode_root_state", @mode_root_state]
+    # pp ["@match_state", @match_state]
   end
 
   def set_mode_to_default()
     # set_mode(@default_mode)
-    set_mode(@default_mode_stack[-1])
+    set_mode_stack [@default_mode_stack[0]]
+    __set_mode(@default_mode_stack[0])
   end
 
   def to_previous_mode()
     if @default_mode_stack.size > 1
       @default_mode_stack.pop
     end
-    set_mode_to_default()
+    __set_mode(@default_mode_stack[-1])
   end
 
-  def add_mode(id, label, cursortype = :command, name: nil)
-    mode = State.new(id, "", cursortype)
+  def add_mode(id, label, cursortype = :command, name: nil, scope: :buffer)
+    mode = State.new(id, "", cursortype, scope: scope)
     mode.level = 1
     @modes[label] = mode
     @root.children << mode
@@ -166,7 +190,7 @@ class KeyBindingTree
     vma.gui.statnfo.markup = "<span weight='ultrabold'>#{st}</span>"
   end
 
-  def set_mode(label)
+  def __set_mode(label)
     @mode_history << @mode_root_state
 
     # Check if label in form :label
@@ -186,6 +210,10 @@ class KeyBindingTree
     if !vma.gui.view.nil?
       vma.gui.view.draw_cursor()  #TODO: handle outside this class
     end
+  end
+
+  def get_scope
+    @mode_root_state.scope
   end
 
   def cur_mode_str()

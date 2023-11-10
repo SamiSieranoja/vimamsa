@@ -4,10 +4,10 @@ vma.kbd.add_mode("V", :visual, :visual)
 vma.kbd.add_mode("M", :minibuffer) #TODO: needed?
 vma.kbd.add_mode("R", :readchar)
 vma.kbd.add_minor_mode("audio", :audio, :command)
-vma.kbd.add_mode("B", :browse, :command)
+vma.kbd.add_mode("B", :browse, :command, scope: :editor)
 vma.kbd.add_mode("X", :replace, :command, name: "Replace")
 vma.kbd.set_default_mode(:command)
-vma.kbd.set_mode(:command)
+vma.kbd.__set_mode(:command) #TODO:needed?
 # vma.kbd.show_state_trail
 
 
@@ -58,7 +58,7 @@ bindkey "audio f || audio right", [:audio_forward, proc { Audio.seek_forward }, 
 bindkey "audio left", [:audio_backward, proc { Audio.seek_forward(-5.0) }, "Seek backward in audio stream"]
 
 bindkey "audio space", :audio_stop
-bindkey "audio q || audio esc", "vma.kbd.set_mode_to_default"
+bindkey "audio q || audio esc", "vma.kbd.to_previous_mode"
 
 # bindkey "C , f o", :open_file_dialog
 bindkey "CI ctrl-o", :open_file_dialog
@@ -172,6 +172,7 @@ default_keys = {
   "C , d b" => "debug_print_buffer",
   "C , d c" => "debug_dump_clipboard",
   "C , d d" => "debug_dump_deltas",
+  "C , d m" => :kbd_dump_state,
   
   "VC O" => "buf.jump(END_OF_LINE)",
   "VC $" => "buf.jump(END_OF_LINE)",
@@ -252,10 +253,8 @@ default_keys = {
   "C ctrl!" => "vma.kbd.set_mode(:insert)",
   "C ctrl!" => "vma.kbd.set_mode(:insert)",
   
-
-  # "R esc || R ctrl!" => "vma.kbd.set_mode(:command)",
-  "X esc" => "vma.kbd.set_mode(:command)",
-  "X ctrl!" => "vma.kbd.set_mode(:command)",
+  # Replace mode
+  "X esc || X ctrl!" => "vma.kbd.to_previous_mode",
   "X <char>" => "buf.replace_with_char(<char>);buf.move(FORWARD_CHAR)",
 
   # Macros
@@ -280,7 +279,7 @@ default_keys = {
   # "I ctrl!" => "vma.kbd.to_previous_mode",
   "C shift!" => "buf.save",
   "I <char>" => "buf.insert_txt(<char>)",
-  "I esc || I ctrl!" => "vma.kbd.set_mode_to_default",
+  "I esc || I ctrl!" => "vma.kbd.to_previous_mode",
 
   "I ctrl-d" => "buf.delete2(:to_word_end)",
 

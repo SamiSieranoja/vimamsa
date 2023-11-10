@@ -44,6 +44,7 @@ module Vimamsa
       add_to_menu "Actions.experimental.DisableDebug", { :label => "Disable debug", :action => :disable_debug }
       add_to_menu "Actions.experimental.ShowImages", { :label => "Show images ⟦img:path⟧", :action => :show_images }
       
+      add_to_menu "Actions.debug.dumpkbd", { :label => "Dump kbd state", :action => :kbd_dump_state }
       
       add_to_menu "View.TwoColumn", { :label => "Toggle two column mode", :action => :toggle_two_column }
       

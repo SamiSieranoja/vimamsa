@@ -111,7 +111,8 @@ class BufferList < Array
   def set_current_buffer(buffer_i, update_history = true)
     buffer_i = self.size -1 if buffer_i > self.size
     buffer_i = 0 if buffer_i < 0
-    if !vma.buf.nil? and vma.kbd.get_mode != :browse #TODO
+    # if !vma.buf.nil? and vma.kbd.get_mode != :browse #TODO
+    if !vma.buf.nil? and vma.kbd.get_scope != :editor
       # Save keyboard mode status of old buffer when switching buffer
       vma.buf.mode_stack = vma.kbd.default_mode_stack.clone
     end
@@ -133,13 +134,14 @@ class BufferList < Array
 
     vma.gui.set_current_buffer(vma.buf.id)
 
-    if !vma.buf.mode_stack.nil? and vma.kbd.get_mode != :browse #TODO
+    if !vma.buf.mode_stack.nil? and vma.kbd.get_scope != :editor #TODO
+
       debug "set kbd mode stack #{vma.buf.mode_stack}  #{vma.buf.id}", 2
       # Reload previously saved keyboard mode status
       # vma.kbd.set_mode_stack(vma.buf.mode_stack.clone) #TODO:needed?
       vma.kbd.set_mode_stack([vma.buf.default_mode])
     end
-    vma.kbd.set_mode_to_default
+    vma.kbd.set_mode_to_default if vma.kbd.get_scope != :editor
 
     gui_set_window_title(vma.buf.title, vma.buf.subtitle)
 

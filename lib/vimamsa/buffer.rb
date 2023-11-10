@@ -95,7 +95,7 @@ class Buffer < String
     if !@active_kbd_mode.nil?
       # $kbd.set_mode(@active_kbd_mode) #TODO: remove?
     else
-      $kbd.set_mode_to_default
+      vma.kbd.set_mode_to_default if vma.kbd.get_scope != :editor #TODO:needed here?
     end
   end
 

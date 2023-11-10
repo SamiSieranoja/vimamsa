@@ -1,9 +1,3 @@
-class Grep
-  attr_accessor :history
-
-  def initialize()
-  end
-end
 
 class FileSelector
   def initialize()
@@ -156,7 +150,6 @@ class Grep
     @buf.default_mode = :grep
     @buf.module = self
 
-    vma.kbd.set_mode(:grep) #TODO: allow to work with other keybindings also
     vma.kbd.set_default_mode(:grep)
     @buf.line_action_handler = proc { |lineno|
       debug "GREP HANDLER:#{lineno}"
