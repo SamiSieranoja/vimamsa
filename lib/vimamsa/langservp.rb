@@ -28,7 +28,22 @@ class LangSrv
     lspconf = ret[1] unless ret.nil?
 
     if !lspconf.nil?
-      @io = IO.popen(lspconf[:command], "r+")
+      error = false
+      begin
+        @io = IO.popen(lspconf[:command], "r+")
+      rescue Errno::ENOENT => e
+        pp e
+        error = true
+      rescue StandardError => e
+        debug "StandardError @io = IO.popen(lspconf[:command] ...", 2
+        pp e
+        error = true
+      end
+      if error or @io.nil?
+        message("Could not start lsp server #{lspconf[:name]}")
+        error = true
+        return nil
+      end
     else
       return nil
     end
@@ -40,8 +55,8 @@ class LangSrv
     for c in conf(:workspace_folders)
       wf << LSP::Interface::WorkspaceFolder.new(uri: c[:uri], name: c[:name])
     end
-    debug "WORKSPACE FOLDERS",2
-    debug wf.inspect,2
+    debug "WORKSPACE FOLDERS", 2
+    debug wf.inspect, 2
 
     pid = Process.pid
 
