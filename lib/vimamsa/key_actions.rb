@@ -34,13 +34,9 @@ reg_act(:lsp_jump_to_definition, proc { vma.buf.lsp_jump_to_def }, "LSP jump to 
 reg_act(:enable_debug, proc { cnf.debug = true }, "Enable debug")
 reg_act(:disable_debug, proc { cnf.debug = false }, "Disable debug")
 
-
-
 reg_act(:easy_jump, proc { EasyJump.start }, "Easy jump")
 reg_act(:gui_ensure_cursor_visible, proc { vma.gui.view.ensure_cursor_visible }, "Scroll to current cursor position")
 reg_act(:gui_refresh_cursor, proc { vma.buf.refresh_cursor }, "Refresh cursor")
-
-
 
 reg_act(:savedebug, "savedebug", "Save debug info", { :group => :debug })
 reg_act(:open_file_dialog, "open_file_dialog", "Open file", { :group => :file })
@@ -98,13 +94,14 @@ reg_act :delete_to_next_word_start, proc { buf.delete2(:to_next_word) }, "Delete
 reg_act :delete_to_line_start, proc { buf.delete2(:to_line_start) }, "Delete to line start", { :group => [:edit, :basic] }
 
 # reg_act :start_browse_mode, proc { $kbd.set_mode(:browse); $kbd.set_default_mode(:browse) }, "Start browse mode"
-reg_act :start_browse_mode, proc { $kbd.set_mode(:browse); }, "Start browse mode"
+reg_act :start_browse_mode, proc {
+  vma.kbd.set_mode(:browse)
+  bufs.reset_navigation
+}, "Start browse mode"
 reg_act :kbd_dump_state, proc { vma.kbd.dump_state }, "Dump keyboard tree state"
 
-
-
 reg_act :exit_browse_mode, proc {
-  bufs.add_current_buf_to_history; 
+  bufs.add_current_buf_to_history
   vma.kbd.set_mode_stack([vma.buf.default_mode])
   vma.kbd.set_mode_to_default
 }, "Exit browse mode"

@@ -12,7 +12,7 @@ $update_highlight = false
 $ifuncon = false
 
 class Buffer < String
-  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images, :last_save
+  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images, :last_save, :access_time
   attr_writer :call_func, :update_highlight
   attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle, :paste_lines, :mode_stack, :default_mode
 
@@ -22,6 +22,7 @@ class Buffer < String
     debug "Buffer.rb: def initialize"
     super(str)
 
+    update_access_time
     @images = []
     @audiofiles = []
     @lang = nil
@@ -93,13 +94,18 @@ class Buffer < String
 
   #Check if this buffer is attached to any windows
   def is_active
-    for k in @windows.keys
-      return true if @windows[k][:sw].child.bufo == self
+    for k in vma.gui.windows.keys
+      return true if vma.gui.windows[k][:sw].child.bufo == self
     end
     return false
   end
 
+  def update_access_time
+    @access_time = Time.now
+  end
+
   def set_active
+    
     if !@active_kbd_mode.nil?
       # $kbd.set_mode(@active_kbd_mode) #TODO: remove?
     else

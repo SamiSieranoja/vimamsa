@@ -105,7 +105,7 @@ default_keys = {
   "C ctrl-s" => :buf_save,
 
   # Buffer handling
-  "C B" => "bufs.switch",
+  # "C B" => "bufs.switch",
   "C tab" => "bufs.switch_to_last_buf",
   #    'C , s'=> 'gui_select_buffer',
   "C , r v b" => :buf_revert,
