@@ -114,28 +114,18 @@ class BufferList
 
   def set_current_buffer(idx, update_history = true)
     # Set update_history = false if we are only browsing
-    # buffer_i = self.size -1 if buffer_i > self.size
-    # buffer_i = 0 if buffer_i < 0
-    # if !vma.buf.nil? and vma.kbd.get_mode != :browse #TODO
 
-    # if !vma.buf.nil? and vma.kbd.get_scope != :editor
-    # # Save keyboard mode status of old buffer when switching buffer
-    # vma.buf.mode_stack = vma.kbd.default_mode_stack.clone
-    # end
+    if !vma.buf.nil? and vma.kbd.get_scope != :editor
+      # Save keyboard mode status of old buffer when switching buffer
+      vma.buf.mode_stack = vma.kbd.default_mode_stack.clone
+    end
     return if !@h[idx]
     vma.buf = bu = @h[idx]
     update_last_dir(vma.buf)
     @current_buf = idx
     debug "SWITCH BUF. bufsize:#{@list.size}, curbuf: #{@current_buf}"
-    # fpath = vma.buf.fname
-    # if fpath and fpath.size > 50
-    # fpath = fpath[-50..-1]
-    # end
 
-    # if update_history
-    # add_current_buf_to_history
-    # end
-    # vma.hook.call(:change_buffer, vma.buf)
+    vma.hook.call(:change_buffer, vma.buf)
 
     bu.set_active # TODO
     bu.update_access_time if update_history
@@ -143,17 +133,17 @@ class BufferList
 
     # if !vma.buf.mode_stack.nil? and vma.kbd.get_scope != :editor #TODO
     # debug "set kbd mode stack #{vma.buf.mode_stack}  #{vma.buf.id}", 2
-    # # Reload previously saved keyboard mode status
-    # # vma.kbd.set_mode_stack(vma.buf.mode_stack.clone) #TODO:needed?
+    # Reload previously saved keyboard mode status
+    # vma.kbd.set_mode_stack(vma.buf.mode_stack.clone) #TODO:needed?
     # vma.kbd.set_mode_stack([vma.buf.default_mode])
     # end
-    # vma.kbd.set_mode_to_default if vma.kbd.get_scope != :editor
+    vma.kbd.set_mode_to_default if vma.kbd.get_scope != :editor
 
-    # gui_set_window_title(vma.buf.title, vma.buf.subtitle)
+    gui_set_window_title(vma.buf.title, vma.buf.subtitle)
 
-    # if vma.buf.fname
-    # @last_dir = File.dirname(vma.buf.fname)
-    # end
+    if vma.buf.fname
+      @last_dir = File.dirname(vma.buf.fname)
+    end
 
     # hpt_scan_images() if cnf.debug? # experimental
   end
