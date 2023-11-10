@@ -725,7 +725,7 @@ class VMAgui
     return if !@two_column
     @windows[2][:sw].set_child(nil)
     @windows.delete(2)
-    
+
     @pane.set_start_child(nil)
     @pane.set_end_child(nil)
 
@@ -859,11 +859,30 @@ class VMAgui
       #TODO: should not need !@sw2.child.nil? here. If this happens then other column is empty.
       toggle_active_window
     else
+      #TODO: improve
+      @overlay.remove_overlay(@sw)
+      @sw.set_child(nil)
+      # Creating a new ScrolledWindow every time to avoid a layout bug
+      # https://gitlab.gnome.org/GNOME/gtk/-/issues/6189
+      @sw = new_scrolled_window
       @sw.set_child(view)
+      @overlay.add_overlay(@sw)
+      @windows[1][:sw] = @sw
+      @sw1 = @sw
     end
     view.grab_focus
 
     idle_ensure_cursor_drawn
+  end
+
+  def new_scrolled_window
+    sw = Gtk::ScrolledWindow.new
+    sw.set_policy(:automatic, :automatic)
+    @last_adj_time = Time.now
+    sw.vadjustment.signal_connect("value-changed") { |x|
+      @last_adj_time = Time.now
+    }
+    return sw
   end
 
   def idle_ensure_cursor_drawn
