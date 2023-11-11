@@ -88,7 +88,7 @@ class KeyBindingTree
   end
 
   def set_mode_stack(ms)
-    debug "set_mode_stack(#{ms})",2
+    debug "set_mode_stack(#{ms})", 2
     show_caller
     @default_mode_stack = ms
   end
@@ -438,6 +438,8 @@ class KeyBindingTree
 
   def bindkey(key, action)
     if key.class != Array
+      # Handle syntax like :
+      # "X esc || X ctrl!" => "vma.kbd.to_previous_mode",
       key = key.split("||")
     end
 
@@ -468,10 +470,19 @@ class KeyBindingTree
     end
 
     m = key.match(/^(\S+)\s(\S.*)$/)
+    # Match/split e.g. "VC , , s" to "VC" and ", , s"
     if m
       modetmp = m[1]
       debug [key, modetmp, m].inspect
+
+      # If all of first word are uppercase, e.g. in
+      # "VCIX left" => "buf.move(BACKWARD_CHAR)",
+      # interpret as each char representing a mode
       modes = modetmp.split("") if modetmp.match(/^\p{Lu}+$/) # Uppercase
+
+      # If all of first word is down case, like in:
+      # bindkey "audio space", :audio_stop
+      # interpret as whole word representing a mode.
       modes = [modetmp] if modetmp.match(/^\p{Ll}+$/) # Lowercase
       keydef = m[2]
     else
@@ -484,7 +495,15 @@ class KeyBindingTree
     }
   end
 
+  # Binds a keyboard key combination to an action,
+  # for a given keyboard mode like insert ("I") or command ("C")
   def mode_bind_key(mode_id, keydef, action)
+    # debug "mode_bind_key #{mode_id.inspect}, #{keydef.inspect}, #{action.inspect}", 2
+    # Example:
+    # bindkey "C , f", :gui_file_finder
+    # mode_id = "C", keydef = ", f"
+    # and action = :gui_file_finder
+
     set_state(mode_id, "") # TODO: check is ok?
     start_state = @cur_state
 
@@ -492,23 +511,32 @@ class KeyBindingTree
 
     prev_state = nil
     s1 = start_state
-    k_arr.each { |i|
+    
+    k_arr.each_with_index { |k, idx|
       # check if key has rules for context like q has in
       # "C q(cntx.recording_macro==true)"
-      match = /(.+)\((.*)\)/.match(i)
+      last_item = false
+      if k_arr.size - 1 == idx
+        last_item = true
+      end
+      match = /(.+)\((.*)\)/.match(k)
       eval_rule = ""
       if match
         key_name = match[1]
         eval_rule = match[2]
       else
-        key_name = i
+        key_name = k
       end
 
       prev_state = s1
       # Create a new state for key if it doesn't exist
       s1 = find_state(key_name, eval_rule)
-      if s1 == nil
+      if s1 == nil or last_item
         new_state = State.new(key_name, eval_rule)
+        if last_item
+          # Override existing key definition
+          @cur_state.children.delete(s1)
+        end
         s1 = new_state
         @cur_state.children << new_state
       end

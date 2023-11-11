@@ -79,8 +79,6 @@ bindkey "B z", "center_on_current_line();call_action(:exit_browse_mode)"
 bindkey "B enter || B return || B esc || B j || B ctrl!", :exit_browse_mode
 bindkey "B s", :page_up
 bindkey "B d", :page_down
-bindkey "B s", :page_up
-bindkey "B d", :page_down
 bindkey "B i", :jump_to_start_of_buffer
 bindkey "B o", :jump_to_end_of_buffer
 bindkey "B c", :close_current_buffer
