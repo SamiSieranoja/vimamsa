@@ -32,6 +32,7 @@ require "vimamsa/gui_menu"
 require "vimamsa/gui_dialog"
 require "vimamsa/gui_select_window"
 require "vimamsa/gui_sourceview"
+require "vimamsa/gui_sourceview_autocomplete"
 require "vimamsa/gui_image"
 require "vimamsa/hyper_plain_text"
 

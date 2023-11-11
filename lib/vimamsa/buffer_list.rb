@@ -81,6 +81,10 @@ class BufferList
       set_current_buffer(last_buf.id)
     end
   end
+  
+  def size
+    return @list.size
+  end
 
   def get_buffer_by_filename(fname)
     #TODO: check using stat/inode?  http://ruby-doc.org/core-1.9.3/File/Stat.html#method-i-ino

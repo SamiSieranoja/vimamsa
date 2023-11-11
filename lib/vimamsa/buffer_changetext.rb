@@ -135,6 +135,20 @@ class Buffer < String
     return true
   end
 
+  def complete_current_word(rep)
+    debug "complete_current_word", 2
+    (word, range) = get_word_in_pos(@pos - 1)
+    debug [word, range].to_s, 2
+    endpos = range.begin+rep.size
+    replace_range(range, rep)
+    set_pos(endpos)
+  end
+
+  def replace_range(range, text)
+    delete_range(range.first, range.last)
+    insert_txt_at(text, range.begin)
+  end
+
   def delete2(range_id, mark = nil)
     @paste_lines = false
     range = get_range(range_id, mark: mark)

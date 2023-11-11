@@ -1,6 +1,6 @@
 # class VSourceView < Gtk::TextView
 class VSourceView < GtkSource::View
-  attr_accessor :bufo
+  attr_accessor :bufo, :autocp_active, :cpl_list
   # :highlight_matching_brackets
 
   # def set_highlight_current_line(vbool)
@@ -18,7 +18,7 @@ class VSourceView < GtkSource::View
     @highlight_matching_brackets = true
     @idle_func_running = false
     super()
-    @bufo = bufo #object of Buffer class buffer.rb
+    @bufo = bufo #object of Buffer class (buffer.rb)
     debug "vsource init"
     @last_keyval = nil
     @last_event = [nil, nil]
@@ -43,6 +43,11 @@ class VSourceView < GtkSource::View
     # end
     # end
     # true
+    # end
+
+    # signal_connect("show-completion") do |x, y, z|
+    # debug "SHOW-COMPLETION", 2
+    # false
     # end
 
     # Mainly after page-up or page-down
@@ -371,6 +376,10 @@ class VSourceView < GtkSource::View
     (x, y) = buffer_to_window_coords(Gtk::TextWindowType::TEXT, x, y)
 
     return [x, y]
+  end
+  
+  def cur_pos_xy
+    return pos_to_coord(buffer.cursor_position)
   end
 
   def handle_deltas()

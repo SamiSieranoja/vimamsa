@@ -17,7 +17,6 @@ bindkey "VC s", :easy_jump
 bindkey "VC , m f", [:find_macro_gui, proc { vma.macro.find_macro_gui }, "Find named macro"]
 bindkey "C , m n", [:gui_name_macro, proc { vma.macro.gui_name_macro }, "Name last macro"]
 bindkey "C , j r", :jump_to_random
-bindkey "I enter", :insert_new_line
 bindkey "C , ; s k", :show_key_bindings #TODO: better binding
 bindkey "C , , c b", :put_file_path_to_clipboard #TODO: better binding or remove?
 bindkey "C , , e", :encrypt_file #TODO: better binding
@@ -120,6 +119,12 @@ default_keys = {
 
   "VC pagedown" => "page_down",
   "VC pageup" => "page_up",
+
+  "I down(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
+  "I up(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
+  "I enter(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select",
+  
+  "I enter" => :insert_new_line,
 
   "VCIX left" => "buf.move(BACKWARD_CHAR)",
   "VCIX right" => "buf.move(FORWARD_CHAR)",
@@ -291,6 +296,9 @@ default_keys = {
   "IX alt-f" => "buf.jump_word(FORWARD,WORD_START)",
   "IX alt-b" => "buf.jump_word(BACKWARD,WORD_START)",
 
+  "I ctrl-h" => :show_autocomplete,
+  "I ctrl-j" => "vma.buf.view.hide_completions",
+  
   "I tab" => 'buf.insert_tab',
   "I shift-tab" => 'buf.unindent',
   "I space" => 'buf.insert_txt(" ")',

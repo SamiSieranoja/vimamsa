@@ -1,5 +1,25 @@
 $idle_scroll_to_mark = false
 
+$removed_controllers = []
+
+def gui_remove_controllers(widget)
+  clist = widget.observe_controllers
+  to_remove = []
+  (0..(clist.n_items - 1)).each { |x|
+    ctr = clist.get_item(x)
+    to_remove << ctr
+  }
+  if to_remove.size > 0
+    debug "Removing controllers:"
+    pp to_remove
+    to_remove.each { |x|
+      # To avoid GC. https://github.com/ruby-gnome/ruby-gnome/issues/15790
+      $removed_controllers << x
+      widget.remove_controller(x)
+    }
+  end
+end
+
 def gui_open_file_dialog(dirpath)
   dialog = Gtk::FileChooserDialog.new(:title => "Open file",
                                       :action => :open,
@@ -674,6 +694,7 @@ class VMAgui
         min-width: 15px;
       }
   
+ popover background > contents { padding: 8px; border-radius: 20px; } 
          ")
       @window.style_context.add_provider(prov)
 

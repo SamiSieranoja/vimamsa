@@ -105,7 +105,6 @@ class Buffer < String
   end
 
   def set_active
-    
     if !@active_kbd_mode.nil?
       # $kbd.set_mode(@active_kbd_mode) #TODO: remove?
     else
@@ -692,11 +691,6 @@ class Buffer < String
     end
   end
 
-  def replace_range(range, text)
-    delete_range(range.first, range.last)
-    insert_txt_at(text, range.begin)
-  end
-
   def current_line_range()
     range = line_range(@lpos, 1)
     return range
@@ -1051,15 +1045,28 @@ class Buffer < String
     end
   end
 
-  def get_cur_nonwhitespace_word()
-    wem = scan_marks(@pos, @pos + 200, /(?<=\S)\s/, -1)
-    wsm = scan_marks(@pos - 200, @pos, /((?<=\s)\S)|^\S/)
+  def get_word_in_pos(p)
+    wem = scan_marks(p, p + 200, /(?<=\S)\s/, -1)
+    wsm = scan_marks(p - 200, p, /((?<=\s)\S)|^\S/)
 
     word_start = wsm[-1]
     word_end = wem[0]
     word_start = pos if word_start == nil
     word_end = pos if word_end == nil
     word = self[word_start..word_end]
+    return [word, (word_start..word_end)]
+  end
+
+  def get_cur_nonwhitespace_word()
+    # wem = scan_marks(@pos, @pos + 200, /(?<=\S)\s/, -1)
+    # wsm = scan_marks(@pos - 200, @pos, /((?<=\s)\S)|^\S/)
+
+    # word_start = wsm[-1]
+    # word_end = wem[0]
+    # word_start = pos if word_start == nil
+    # word_end = pos if word_end == nil
+    # word = self[word_start..word_end]
+    (word,range) = get_word_in_pos(@pos)
     debug "'WORD: #{word}'"
     # message("Open link #{word}")
     linep = get_file_line_pointer(word)

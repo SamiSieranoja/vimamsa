@@ -31,6 +31,9 @@ module Vimamsa
       add_to_menu "Edit.Redo", { :label => "Redo edit", :action => :edit_redo }
       add_to_menu "Edit.SearchReplace", { :label => "Search and replace", :action => :gui_search_replace }
       add_to_menu "Edit.Find", { :label => "Find", :action => :find_in_buffer }
+      
+      add_to_menu "Edit.StartCompletion", { :label => "StartCompletion", :action => :start_autocomplete }
+      add_to_menu "Edit.ShowCompletion", { :label => "ShowCompletion", :action => :show_autocomplete }
 
       add_to_menu "Actions.SearchForActions", { :label => "Search for Actions", :action => :search_actions }
 

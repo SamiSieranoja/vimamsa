@@ -184,6 +184,17 @@ act_list = {
   :debug_buf_hex => { :proc => proc { puts "SHA256: " + (Digest::SHA2.hexdigest vma.buf.to_s) },
                       :desc => "Output SHA256 hex digest of curent buffer" },
 
+  :start_autocomplete => { :proc => proc { vma.buf.view.start_autocomplete },
+                      :desc => "Start autocomplete" },
+                      
+  :show_autocomplete => { :proc => proc { 
+  # vma.buf.view.signal_emit("show-completion")
+  # vma.buf.view.show_completion
+  vma.buf.view.show_completions
+   },
+                      :desc => "Show autocomplete" },
+                     
+
 }
 
 for k, v in act_list
