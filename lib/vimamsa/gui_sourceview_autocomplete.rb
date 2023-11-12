@@ -76,6 +76,10 @@ class VSourceView < GtkSource::View
     hide_completions
   end
 
+
+  def try_autocomplete
+  end
+
   def show_completions
     hide_completions
     bu = vma.buf

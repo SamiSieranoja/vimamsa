@@ -105,14 +105,18 @@ class Buffer < String
   end
 
   # This function is to be called whenever keyboard events start affecting this buffer
-  # e.g. switching between buffers, opening a new (this) file 
+  # e.g. switching between buffers, opening a new (this) file
   def set_active
     debug "def set_active", 2
     if vma.kbd.get_scope != :editor
       # If current keyboard mode is not an editor wide mode spanning multiple buffers(e.g. browsing)
-      # restore the previous mode specific to this buffer
-      vma.kbd.set_mode_stack(@mode_stack.clone)
+      restore_kbd_mode
     end
+  end
+
+  # Restore the previous keyboard mode specific to this buffer
+  def restore_kbd_mode
+    vma.kbd.set_mode_stack(@mode_stack.clone)
   end
 
   def set_executable
@@ -1363,8 +1367,7 @@ class Buffer < String
   def end_visual_mode()
     return if !visual_mode?
     debug "End visual mode"
-    #TODO:take previous mode (insert|command) from stack?
-    vma.kbd.set_mode_to_default
+    vma.kbd.to_previous_mode
     @visual_mode = false
     return true
   end

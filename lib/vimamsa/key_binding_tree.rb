@@ -72,9 +72,6 @@ class KeyBindingTree
     # @default_mode = label
     @default_mode_stack << label
 
-    if self.get_scope != :editor
-      vma.buf.mode_stack = @default_mode_stack.clone
-    end
     __set_mode(label)
     if !vma.buf.nil?
       # vma.buf.mode_stack = @default_mode_stack.clone
@@ -96,7 +93,7 @@ class KeyBindingTree
     show_caller
     @default_mode_stack = ms
     label = @default_mode_stack[-1]
-    @match_state = [@modes[label]] 
+    @match_state = [@modes[label]]
     @mode_root_state = @modes[label]
   end
 
@@ -137,6 +134,10 @@ class KeyBindingTree
   def add_minor_mode(id, label, major_mode_label)
     mode = State.new(id)
     @modes[label] = mode
+    if @root.nil?
+      show_caller
+      Ripl.start :binding => binding
+    end
     @root.children << mode
     mode.major_modes << major_mode_label
   end
@@ -214,6 +215,10 @@ class KeyBindingTree
       end
     end
     @cur_mode = label
+
+    if self.get_scope != :editor and !vma.buf.nil?
+      vma.buf.mode_stack = @default_mode_stack.clone
+    end
 
     if !vma.gui.view.nil?
       vma.gui.view.draw_cursor()  #TODO: handle outside this class

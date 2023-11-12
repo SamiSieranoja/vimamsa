@@ -102,8 +102,8 @@ reg_act :kbd_dump_state, proc { vma.kbd.dump_state }, "Dump keyboard tree state"
 
 reg_act :exit_browse_mode, proc {
   bufs.add_current_buf_to_history
-  vma.kbd.set_mode_stack([vma.buf.default_mode])
-  vma.kbd.set_mode_to_default
+  # Load previously saved buffer specific mode stack
+  buf.restore_kbd_mode
 }, "Exit browse mode"
 
 reg_act :page_down, proc { page_down }, "Page down", :group => [:move, :basic]
