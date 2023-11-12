@@ -18,7 +18,7 @@ class FileManager
   end
 
   def self.init()
-    reg_act(:start_file_selector, proc { FileManager.new.run; vma.kbd.set_mode(:file_exp); vma.kbd.set_default_mode(:file_exp) }, "File selector")
+    reg_act(:start_file_selector, proc { FileManager.new.run; vma.kbd.set_mode(:file_exp); }, "File selector")
 
     reg_act(:fexp_chdir_parent, proc { FileManager.chdir_parent }, "File selector")
     reg_act(:fexp_select, proc { buf.module.select_line }, "")
@@ -263,8 +263,11 @@ class FileManager
       # elsif vma.can_open_extension?(fn)
       # jump_to_file(fn)
     elsif file_is_text_file(fn)
-      bufs.close_current_buffer
+      # bufs.close_current_buffer
       jump_to_file(fn)
+      # vma.buffers.set_current_buffer(idx)
+      vma.buffers.close_other_buffer(@buf.id)
+
     else
       open_with_default_program(fn)
     end

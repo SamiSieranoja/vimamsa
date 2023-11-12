@@ -42,7 +42,7 @@ class State
 end
 
 class KeyBindingTree
-  attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action, :modifiers, :next_command_count, :method_handles_repeat
+  attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action, :modifiers, :next_command_count, :method_handles_repeat, :default_mode
   attr_reader :mode_root_state, :state_trail, :act_bindings, :default_mode_stack
 
   def initialize()
@@ -71,6 +71,10 @@ class KeyBindingTree
     @mode_root_state = @modes[label]
     # @default_mode = label
     @default_mode_stack << label
+
+    if self.get_scope != :editor
+      vma.buf.mode_stack = @default_mode_stack.clone
+    end
     __set_mode(label)
     if !vma.buf.nil?
       # vma.buf.mode_stack = @default_mode_stack.clone
@@ -91,12 +95,16 @@ class KeyBindingTree
     debug "set_mode_stack(#{ms})", 2
     show_caller
     @default_mode_stack = ms
+    label = @default_mode_stack[-1]
+    @match_state = [@modes[label]] 
+    @mode_root_state = @modes[label]
   end
 
   def dump_state
     debug "dump_state", 2
     pp ["@default_mode_stack", @default_mode_stack]
     pp ["@default_mode", @default_mode]
+    pp ["vma.buf.mode_stack", vma.buf.mode_stack]
     pp ["scope", self.get_scope]
     # pp ["@mode_root_state", @mode_root_state]
     # pp ["@match_state", @match_state]
@@ -511,7 +519,7 @@ class KeyBindingTree
 
     prev_state = nil
     s1 = start_state
-    
+
     k_arr.each_with_index { |k, idx|
       # check if key has rules for context like q has in
       # "C q(cntx.recording_macro==true)"

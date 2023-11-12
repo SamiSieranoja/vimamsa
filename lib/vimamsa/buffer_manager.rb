@@ -44,7 +44,6 @@ class BufferManager
     idx = buf_of_current_line()
     return if idx.nil?
 
-    # vma.buffers.close_current_buffer() #TODO:??
     vma.buffers.set_current_buffer(idx)
     vma.buffers.close_other_buffer(@buf.id)
     @@cur = nil

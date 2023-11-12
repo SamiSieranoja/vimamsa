@@ -29,8 +29,8 @@ class Buffer < String
     @id = @@num_buffers
     @@num_buffers += 1
     @version = 0
-    @mode_stack = [:command] # TODO
-    @default_mode = :command # TODO
+    @default_mode = vma.kbd.default_mode
+    @mode_stack = [@default_mode]
     gui_create_buffer(@id, self)
     debug "NEW BUFFER fn=#{fname} ID:#{@id}"
 
@@ -104,11 +104,14 @@ class Buffer < String
     @access_time = Time.now
   end
 
+  # This function is to be called whenever keyboard events start affecting this buffer
+  # e.g. switching between buffers, opening a new (this) file 
   def set_active
-    if !@active_kbd_mode.nil?
-      # $kbd.set_mode(@active_kbd_mode) #TODO: remove?
-    else
-      vma.kbd.set_mode_to_default if vma.kbd.get_scope != :editor #TODO:needed here?
+    debug "def set_active", 2
+    if vma.kbd.get_scope != :editor
+      # If current keyboard mode is not an editor wide mode spanning multiple buffers(e.g. browsing)
+      # restore the previous mode specific to this buffer
+      vma.kbd.set_mode_stack(@mode_stack.clone)
     end
   end
 

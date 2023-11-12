@@ -2,7 +2,7 @@ def save_buffer_list()
   message("Save buffer list")
   buffn = get_dot_path("buffers.txt")
   f = File.open(buffn, "w")
-  bufstr = vma.buffers.collect { |buf| buf.fname }.inspect
+  bufstr = vma.buffers.list.collect { |buf| buf.fname }.inspect
   f.write(bufstr)
   f.close()
 end
@@ -135,13 +135,14 @@ class BufferList
     bu.update_access_time if update_history
     vma.gui.set_current_buffer(idx)
 
+    #TODO: delete?
     # if !vma.buf.mode_stack.nil? and vma.kbd.get_scope != :editor #TODO
     # debug "set kbd mode stack #{vma.buf.mode_stack}  #{vma.buf.id}", 2
     # Reload previously saved keyboard mode status
     # vma.kbd.set_mode_stack(vma.buf.mode_stack.clone) #TODO:needed?
     # vma.kbd.set_mode_stack([vma.buf.default_mode])
     # end
-    vma.kbd.set_mode_to_default if vma.kbd.get_scope != :editor
+    # vma.kbd.set_mode_to_default if vma.kbd.get_scope != :editor
 
     gui_set_window_title(vma.buf.title, vma.buf.subtitle)
 

@@ -68,6 +68,11 @@ class Editor
     $search = Search.new
     register_plugin(:Search, $search)
 
+    # build_key_bindings_tree
+    @kbd = KeyBindingTree.new()
+    $kbd = @kbd
+    require "vimamsa/key_bindings_vimlike"
+
     $buffers = BufferList.new
     $minibuffer = Buffer.new(">", "")
     @langsrv = {}
@@ -75,10 +80,7 @@ class Editor
     require "vimamsa/text_transforms"
 
     debug "ARGV: " + ARGV.inspect
-    # build_key_bindings_tree
-    @kbd = KeyBindingTree.new()
-    $kbd = @kbd
-    require "vimamsa/key_bindings_vimlike"
+
     sleep(0.03)
 
     BufferManager.init
@@ -487,7 +489,7 @@ GUESS_ENCODING_ORDER = [
 ]
 
 def create_new_file(filename = nil, file_contents = "\n")
-  buffer = Buffer.new(file_contents,filename)
+  buffer = Buffer.new(file_contents, filename)
 
   debug "NEW FILE CREATED: #{buffer.id}"
   vma.buffers.add(buffer)
