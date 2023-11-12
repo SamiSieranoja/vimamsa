@@ -79,13 +79,10 @@ class KeyBindingTree
   end
 
   def set_default_mode(label)
-    @match_state = [@modes[label]] # used for matching input
+    @match_state = [@modes[label]]
     @mode_root_state = @modes[label]
     @default_mode = label
     set_mode_stack [label]
-    if !vma.buf.nil?
-      # vma.buf.mode_stack = @default_mode_stack.clone
-    end
   end
 
   def set_mode_stack(ms)

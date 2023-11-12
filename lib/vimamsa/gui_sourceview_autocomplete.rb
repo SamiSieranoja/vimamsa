@@ -3,7 +3,16 @@ require "rambling-trie"
 
 class Autocomplete
   @@trie = Rambling::Trie.create
-  
+
+  def self.init
+    vma.hook.register(:file_saved, self.method("update_index"))
+  end
+
+  def self.update_index(bu)
+    debug "self.update_index", 2
+    add_words bu.scan_all_words
+  end
+
   def self.update_dict
     for bu in vma.buffers.list
       for w in bu.scan_all_words
@@ -75,7 +84,6 @@ class VSourceView < GtkSource::View
     @autocp_active = true
     hide_completions
   end
-
 
   def try_autocomplete
   end

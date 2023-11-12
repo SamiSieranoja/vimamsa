@@ -32,6 +32,10 @@ def buf()
   return vma.buf
 end
 
+def hook
+  return vma.hook
+end
+
 def bufs()
   return vma.buffers
 end

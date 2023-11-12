@@ -1535,13 +1535,14 @@ class Buffer < String
   end
 
   def save()
-    check_if_modified_outside
+    check_if_modified_outside #TODO
     if !@fname
       save_as()
       return
     end
     message("Saving file #{@fname}")
     write_contents_to_file(@fname)
+    hook.call(:file_saved, self)
   end
 
   def close()

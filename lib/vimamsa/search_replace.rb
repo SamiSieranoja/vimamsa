@@ -150,7 +150,7 @@ class Grep
     @buf.default_mode = :grep
     @buf.module = self
 
-    vma.kbd.set_default_mode(:grep)
+    vma.kbd.set_mode(:grep)
     @buf.line_action_handler = proc { |lineno|
       debug "GREP HANDLER:#{lineno}"
       jumpto = @grep_matches[lineno]

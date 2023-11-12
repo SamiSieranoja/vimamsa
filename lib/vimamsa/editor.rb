@@ -123,6 +123,7 @@ class Editor
 
     Grep.init
     FileManager.init
+    Autocomplete.init
 
     if cnf.lsp.enabled?
       require "vimamsa/langservp"
