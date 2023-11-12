@@ -239,6 +239,11 @@ class Buffer < String
     return false
   end
 
+  def scan_all_words
+    words = self.scan(/\b\w+\b/).uniq
+    return words
+  end
+
   def add_image(imgpath, pos)
     return if !is_legal_pos(pos)
 
@@ -365,6 +370,8 @@ class Buffer < String
 
     self.replace(str)
     @line_ends = scan_indexes(self, /\n/)
+    words = scan_all_words
+    Autocomplete.add_words(words)
 
     if cnf.btree.experimental?
       @bt = BufferTree.new(self)
@@ -1066,7 +1073,7 @@ class Buffer < String
     # word_start = pos if word_start == nil
     # word_end = pos if word_end == nil
     # word = self[word_start..word_end]
-    (word,range) = get_word_in_pos(@pos)
+    (word, range) = get_word_in_pos(@pos)
     debug "'WORD: #{word}'"
     # message("Open link #{word}")
     linep = get_file_line_pointer(word)

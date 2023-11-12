@@ -121,8 +121,13 @@ default_keys = {
   "VC pageup" => "page_up",
 
   "I down(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
+  "I tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
   "I up(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
+  "I shift-tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
   "I enter(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select",
+  
+  "I tab" => 'buf.insert_tab',
+  "I shift-tab" => 'buf.unindent',
   
   "I enter" => :insert_new_line,
 
@@ -299,8 +304,7 @@ default_keys = {
   "I ctrl-h" => :show_autocomplete,
   "I ctrl-j" => "vma.buf.view.hide_completions",
   
-  "I tab" => 'buf.insert_tab',
-  "I shift-tab" => 'buf.unindent',
+
   "I space" => 'buf.insert_txt(" ")',
 #  "I return" => 'buf.insert_new_line()',
 }

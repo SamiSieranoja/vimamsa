@@ -1,3 +1,32 @@
+# require "trie"
+require "rambling-trie"
+
+class Autocomplete
+  @@trie = Rambling::Trie.create
+  
+  def self.update_dict
+    for bu in vma.buffers.list
+      for w in bu.scan_all_words
+        trie << w
+      end
+    end
+    @@trie = trie
+  end
+
+  def self.add_words(words)
+    for w in words
+      @@trie << w
+    end
+  end
+
+  def self.word_list
+    return @@dict.keys
+  end
+
+  def self.matching_words(beginning)
+    return @@trie.scan(beginning)
+  end
+end
 
 class VSourceView < GtkSource::View
   def hide_completions
@@ -49,15 +78,16 @@ class VSourceView < GtkSource::View
 
   def show_completions
     hide_completions
+    bu = vma.buf
+    (w, range) = bu.get_word_in_pos(bu.pos - 1)
+    matches = Autocomplete.matching_words w
+    return if matches.empty?
     @autocp_active = true
-    @cpl_list = cpl_list = ["completion ", "Antidisestablishment", "buf", "gtk_source_view", "GTK_SOURCE_VIEW"]
-    # win = Gtk::Window.new()
+    @cpl_list = cpl_list = matches
     win = Gtk::Popover.new()
     win.parent = self
-    # win.decorated = false
     vbox = Gtk::Grid.new()
     win.set_child(vbox)
-    # vpaned = Gtk::Paned.new(:vertical)
 
     i = 0
     @autocp_items = []
@@ -70,9 +100,6 @@ class VSourceView < GtkSource::View
       i += 1
     end
     autocp_hilight(0)
-    # win.show
-    # win.set_position(Gtk::PositionType::TOP)
-    # win.set_offset(10,100)
     (x, y) = cur_pos_xy
     rec = Gdk::Rectangle.new(x, y + 8, 10, 10)
     win.has_arrow = false
@@ -81,11 +108,6 @@ class VSourceView < GtkSource::View
     win.popup
     gui_remove_controllers(win)
     @acwin = win
-
-    debug cur_pos_xy.inspect, 2
-    # buf = gtk_text_view_get_buffer (GTK_TEXT_VIEW (priv->view));
-
-    # provider
   end
 
   def start_autocomplete
@@ -104,4 +126,3 @@ class VSourceView < GtkSource::View
     self.show_completion
   end
 end
-
