@@ -91,7 +91,8 @@ class VSourceView < GtkSource::View
   def show_completions
     hide_completions
     bu = vma.buf
-    (w, range) = bu.get_word_in_pos(bu.pos - 1)
+    (w, range) = bu.get_word_in_pos(bu.pos - 1, boundary: :word)
+    debug [w, range].to_s, 2
     matches = Autocomplete.matching_words w
     return if matches.empty?
     @autocp_active = true

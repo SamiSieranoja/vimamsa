@@ -1059,28 +1059,28 @@ class Buffer < String
     end
   end
 
-  def get_word_in_pos(p)
-    wem = scan_marks(p, p + 200, /(?<=\S)\s/, -1)
-    wsm = scan_marks(p - 200, p, /((?<=\s)\S)|^\S/)
+  def get_word_in_pos(p, boundary: :space)
+    maxws = 200 # max word size
+    if boundary == :space
+      wem = scan_marks(p, p + maxws, /(?<=\S)\s/, -1)
+      wsm = scan_marks(p - maxws, p, /((?<=\s)\S)|^\S/)
+      word_start = wsm[-1]
+      word_end = wem[0]
+    elsif boundary == :word
+      wsm = scan_marks(p - maxws, p, /\b\w/)
+      word_start = wsm[-1]
+      word_end = p
+    end
 
-    word_start = wsm[-1]
-    word_end = wem[0]
-    word_start = pos if word_start == nil
-    word_end = pos if word_end == nil
+    word_start = p if word_start == nil
+    word_end = p if word_end == nil
     word = self[word_start..word_end]
+
     return [word, (word_start..word_end)]
   end
 
   def get_cur_nonwhitespace_word()
-    # wem = scan_marks(@pos, @pos + 200, /(?<=\S)\s/, -1)
-    # wsm = scan_marks(@pos - 200, @pos, /((?<=\s)\S)|^\S/)
-
-    # word_start = wsm[-1]
-    # word_end = wem[0]
-    # word_start = pos if word_start == nil
-    # word_end = pos if word_end == nil
-    # word = self[word_start..word_end]
-    (word, range) = get_word_in_pos(@pos)
+    (word, range) = get_word_in_pos(@pos, boundary: :space)
     debug "'WORD: #{word}'"
     # message("Open link #{word}")
     linep = get_file_line_pointer(word)

@@ -31,5 +31,6 @@ class Clipboard
 end
 
 def set_system_clipboard(arg)
+  debug arg,2
   vma.gui.window.display.clipboard.set(arg)
 end

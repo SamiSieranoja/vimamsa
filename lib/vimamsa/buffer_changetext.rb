@@ -137,7 +137,9 @@ class Buffer < String
 
   def complete_current_word(rep)
     debug "complete_current_word", 2
-    (word, range) = get_word_in_pos(@pos - 1)
+    p = @pos - 1
+    return if !is_legal_pos(p)
+    (word, range) = get_word_in_pos(p, boundary: :word)
     debug [word, range].to_s, 2
     endpos = range.begin+rep.size
     replace_range(range, rep)
@@ -152,7 +154,7 @@ class Buffer < String
   def delete2(range_id, mark = nil)
     @paste_lines = false
     range = get_range(range_id, mark: mark)
-    return if range == nil
+    return false if range == nil
     debug "RANGE"
     debug range.inspect
     debug range.inspect
@@ -160,6 +162,7 @@ class Buffer < String
     delete_range(range.first, range.last)
     pos = [range.first, @pos].min
     set_pos(pos)
+    return true
   end
 
   def delete(op, x = nil)
