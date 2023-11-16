@@ -23,8 +23,16 @@ def file_is_text_file(fpath)
   debug "file_is_text_file(#{fpath})"
   fpath = File.expand_path(fpath)
   return false if !File.exist?(fpath)
+
+  if File.size(fpath) < 1000e3 #smaler than 1MB
+    str = IO.read(fpath)
+    str.force_encoding("UTF-8")
+    debug "Small file with valid utf-8"
+    return true if str.valid_encoding?
+  end
+
+  #TODO: not sure if needed
   r = exec_cmd("file", fpath)
-  debug "DEBUG:#{r}"
   return true if r.match(/UTF-8.*text/)
   return true if r.match(/ASCII.*text/)
   return false
