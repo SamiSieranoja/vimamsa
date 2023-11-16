@@ -1,3 +1,4 @@
+
 def exec_in_terminal(cmd, autoclose = false)
   # debug "CMD:#{cmd}"
 
@@ -19,4 +20,15 @@ def exec_in_terminal(cmd, autoclose = false)
   fork { exec "gnome-terminal", "--tab", "--", "bash", "-i", $initf.path, "-c", "exec bash" }
 end
 
+def command_to_buf_callback(cmd)
+  require "open3"
+  stdout, stderr, status = Open3.capture3(cmd)
+  b = create_new_buffer(stdout, cmd)
+end
 
+
+load "terminal_extra.rb" if File.exist?("terminal_extra.rb")
+def command_to_buf
+  callback = method("command_to_buf_callback")
+  gui_one_input_action("Execute command in shell, output to buffer", "Command:", "Execute", callback)
+end

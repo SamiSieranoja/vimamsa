@@ -154,3 +154,8 @@ cnf.workspace_folders = []
 cnf.match.highlight.color = "#10bd8e"
 
 cnf.lsp.enabled = false
+
+cnf.font.size = 11
+cnf.font.family = "Monospace"
+
+

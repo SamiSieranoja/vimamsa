@@ -5,6 +5,7 @@ def handle_drag_and_drop(fname)
   buf.handle_drag_and_drop(fname)
 end
 
+
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook, :macro
   attr_accessor :converters, :fh, :paint_stack, :kbd, :langsrv, :register, :cur_register, :clipboard

@@ -103,7 +103,8 @@ def gui_create_buffer(id, bufo)
   view.set_buffer(buf1)
 
   provider = Gtk::CssProvider.new
-  provider.load(data: "textview { font-family: Monospace; font-size: 11pt; }")
+  
+  provider.load(data: "textview { font-family: #{cnf.font.family!}; font-size: #{cnf.font.size!}pt; }")
   view.style_context.add_provider(provider)
   view.wrap_mode = :char
   pp $cnf

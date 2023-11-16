@@ -28,6 +28,8 @@ def is_visual_mode()
   return 0
 end
 
+reg_act(:command_to_buf, proc { command_to_buf }, "Execute command, output to buffer")
+
 reg_act(:lsp_debug, proc { vma.buf.lsp_get_def }, "LSP get definition")
 reg_act(:lsp_jump_to_definition, proc { vma.buf.lsp_jump_to_def }, "LSP jump to definition")
 
