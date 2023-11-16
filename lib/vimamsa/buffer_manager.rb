@@ -33,6 +33,8 @@ class BufferManager
 
   def close_selected
     idx = buf_of_current_line()
+    r = @buf.current_line_range
+    Gui.hilight_range(@buf,r, color:"#666666ff")
     if idx.nil?
       message("buf already closed")
       return

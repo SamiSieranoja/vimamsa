@@ -23,6 +23,7 @@ def file_is_text_file(fpath)
   debug "file_is_text_file(#{fpath})"
   fpath = File.expand_path(fpath)
   return false if !File.exist?(fpath)
+  return false if !File.file?(fpath)
 
   if File.size(fpath) < 1000e3 #smaler than 1MB
     str = IO.read(fpath)
