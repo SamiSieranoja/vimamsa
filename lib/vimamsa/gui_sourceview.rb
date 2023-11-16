@@ -53,10 +53,6 @@ class VSourceView < GtkSource::View
     # Mainly after page-up or page-down
     signal_connect("move-cursor") do |widget, event|
       if event.name == "GTK_MOVEMENT_PAGES" and (last_action == "page_up" or last_action == "page_down")
-        # Ripl.start :binding => binding
-
-        debug("MOVE-CURSOR", 2)
-        # $update_cursor = true
         handle_scrolling()
       end
 
@@ -238,6 +234,7 @@ class VSourceView < GtkSource::View
   end
 
   def handle_scrolling()
+    return # TODO
     delete_cursorchar
     # curpos = buffer.cursor_position
     # debug "MOVE CURSOR: #{curpos}"
@@ -255,6 +252,19 @@ class VSourceView < GtkSource::View
       end
       $update_cursor = false
     }
+  end
+
+  def set_cursor_to_top
+    debug "set_cursor_to_top",2
+    delete_cursorchar
+    bc = window_to_buffer_coords(Gtk::TextWindowType::WIDGET, gutter_width + 2, 60)
+    if !bc.nil?
+      i = coord_to_iter(bc[0], bc[1])
+      if !i.nil?
+        @bufo.set_pos(i)
+        set_cursor_pos(i)
+      end
+    end
   end
 
   # def handle_key_event(event, sig)
@@ -377,7 +387,7 @@ class VSourceView < GtkSource::View
 
     return [x, y]
   end
-  
+
   def cur_pos_xy
     return pos_to_coord(buffer.cursor_position)
   end
@@ -425,7 +435,6 @@ class VSourceView < GtkSource::View
 
   def set_cursor_pos(pos)
     delete_cursorchar
-    # return
     itr = buffer.get_iter_at(:offset => pos)
     itr2 = buffer.get_iter_at(:offset => pos + 1)
     buffer.place_cursor(itr)
@@ -450,7 +459,7 @@ class VSourceView < GtkSource::View
   end
 
   def cursor_visible_idle_func
-    return false
+    # return false
     debug "cursor_visible_idle_func"
     # From https://picheta.me/articles/2013/08/gtk-plus--a-method-to-guarantee-scrolling.html
 

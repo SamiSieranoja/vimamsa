@@ -105,8 +105,10 @@ reg_act :exit_browse_mode, proc {
   buf.restore_kbd_mode
 }, "Exit browse mode"
 
-reg_act :page_down, proc { page_down }, "Page down", :group => [:move, :basic]
-reg_act :page_up, proc { page_up }, "Page up", :group => [:move, :basic]
+# reg_act :page_down, proc { page_down }, "Page down", :group => [:move, :basic]
+reg_act :page_down, proc { vma.gui.page_down }, "Page down", :group => [:move, :basic]
+
+reg_act :page_up, proc { vma.gui.page_up }, "Page up", :group => [:move, :basic]
 reg_act :jump_to_start_of_buffer, proc { buf.jump(START_OF_BUFFER) }, "Jump to start of buffer"
 reg_act :jump_to_end_of_buffer, proc { buf.jump(END_OF_BUFFER) }, "Jump to end of buffer"
 reg_act(:auto_indent_buffer, proc { buf.indent }, "Auto format buffer")

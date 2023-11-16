@@ -73,15 +73,15 @@ def get_visible_area()
   return [startpos, endpos]
 end
 
-def page_up
-  $view.signal_emit("move-cursor", Gtk::MovementStep.new(:PAGES), -1, false)
-  return true
-end
+# def page_up
+# $view.signal_emit("move-cursor", Gtk::MovementStep.new(:PAGES), -1, false)
+# return true
+# end
 
-def page_down
-  $view.signal_emit("move-cursor", Gtk::MovementStep.new(:PAGES), 1, false)
-  return true
-end
+# def page_down
+# $view.signal_emit("move-cursor", Gtk::MovementStep.new(:PAGES), 1, false)
+# return true
+# end
 
 def gui_create_buffer(id, bufo)
   debug "gui_create_buffer(#{id})"
@@ -601,7 +601,6 @@ class VMAgui
         # pp x.value
         # pp x
         @last_adj_time = Time.now
-        # puts "@sw.vadjustment"
       }
 
       @overlay = Gtk::Overlay.new
@@ -881,8 +880,24 @@ class VMAgui
     @last_adj_time = Time.now
     sw.vadjustment.signal_connect("value-changed") { |x|
       @last_adj_time = Time.now
+      debug "@sw.vadjustment #{x.value}", 2
     }
     return sw
+  end
+
+  def page_down(multip: 1.0)
+    va = @sw.vadjustment
+    newval = va.value + va.page_increment * multip
+    va.value = newval
+    @sw.child.set_cursor_to_top
+  end
+
+  def page_up(multip: 1.0)
+    va = @sw.vadjustment
+    newval = va.value - va.page_increment * multip
+    newval = 0 if newval < 0
+    va.value = newval
+    @sw.child.set_cursor_to_top
   end
 
   def idle_ensure_cursor_drawn

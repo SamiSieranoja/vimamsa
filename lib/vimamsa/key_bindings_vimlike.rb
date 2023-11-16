@@ -78,6 +78,9 @@ bindkey "B z", "center_on_current_line();call_action(:exit_browse_mode)"
 bindkey "B enter || B return || B esc || B j || B ctrl!", :exit_browse_mode
 bindkey "B s", :page_up
 bindkey "B d", :page_down
+bindkey "B e", proc { vma.gui.page_down(multip:0.25)}
+bindkey "B r", proc { vma.gui.page_up(multip:0.25)}
+
 bindkey "B i", :jump_to_start_of_buffer
 bindkey "B o", :jump_to_end_of_buffer
 bindkey "B c", :close_current_buffer
@@ -117,8 +120,8 @@ default_keys = {
   "VC j" => "buf.move(FORWARD_LINE)",
   "VC k" => "buf.move(BACKWARD_LINE)",
 
-  "VC pagedown" => "page_down",
-  "VC pageup" => "page_up",
+  "VC pagedown" => :page_down,
+  "VC pageup" => :page_up,
 
   "I down(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
   "I tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
