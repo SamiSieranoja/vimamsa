@@ -767,8 +767,8 @@ class VMAgui
     @sw2.show
     @two_column = true
 
-    if vma.buffers.size > 1
-      last = vma.buffers.get_last_visited_id
+    last = vma.buffers.get_last_visited_id
+    if !last.nil?
       set_buffer_to_window(last, 2)
     else
       bf = create_new_buffer "\n\n", "buff", false

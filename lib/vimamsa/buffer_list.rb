@@ -67,7 +67,11 @@ class BufferList
   end
 
   def get_last_visited_id
-    last_buf = slist[0] #TODO: not including current buf?
+    last_buf = nil
+    for i in 0..(slist.size - 1)
+      next if slist[i].is_active?
+      last_buf = slist[i].id
+    end
     return last_buf
   end
 
@@ -81,7 +85,7 @@ class BufferList
       set_current_buffer(last_buf.id)
     end
   end
-  
+
   def size
     return @list.size
   end
