@@ -318,6 +318,9 @@ default_keys = {
 #  "I return" => 'buf.insert_new_line()',
 }
 
+bindkey "C , i p", "generate_password_to_buf(15)"
+
+
 default_keys.each { |key, value|
   bindkey(key, value)
 }

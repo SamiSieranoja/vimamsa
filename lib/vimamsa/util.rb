@@ -1,5 +1,29 @@
 require "open3"
 
+VOWELS = %w(a e i o u)
+CONSONANTS = %w(b c d f g h j k l m n p q r s t v w x y z)
+
+def generate_password(length)
+  password = ""
+  while password.size < length
+    i = password.size + 1
+    if i.even?
+      char = CONSONANTS.sample
+    else
+      char = VOWELS.sample
+    end
+    char.upcase! if rand < 0.2
+    password << char
+    password << (1..10).to_a.sample.to_s if rand < 0.25
+  end
+  password
+end
+
+def generate_password_to_buf(length)
+  passw = generate_password(length)
+  vma.buf.insert_txt(passw)
+end
+
 # Get all indexes for start of matching regexp
 def scan_indexes(txt, regex)
   # indexes = txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0) + 1 }
