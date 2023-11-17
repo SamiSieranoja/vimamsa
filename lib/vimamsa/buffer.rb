@@ -1263,6 +1263,13 @@ class Buffer < String
     $kbd.set_mode(:visual)
   end
 
+  def start_selection()
+    @visual_mode = true
+    @selection_start = @pos
+    $kbd.set_mode(:visual)
+    #TODO: implement without setting kbd mode
+  end
+
   def copy_active_selection(x = nil)
     debug "!COPY SELECTION"
     @paste_lines = false
@@ -1365,7 +1372,13 @@ class Buffer < String
   end
 
   def end_visual_mode()
-    return if !visual_mode?
+    debug "end_visual_mode, #{vma.kbd.get_mode}, #{visual_mode?}", 2
+    vma.kbd.dump_state
+    return if vma.kbd.get_mode != :visual
+    if !visual_mode?
+      debug "end_visual_mode, !visual_mode?"
+      # TODO: should not happen
+    end
     debug "End visual mode"
     vma.kbd.to_previous_mode
     @visual_mode = false

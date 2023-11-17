@@ -144,17 +144,17 @@ class VSourceView < GtkSource::View
       i = coord_to_iter(x, y, true)
       pp i
       @range_start = i
-      if !buf.visual_mode?
-        buf.start_visual_mode
-      end
+      buf.start_selection
     end
 
     @cnt_drag.signal_connect "drag-end" do |gesture, offsetx, offsety|
       debug "drag-end", 2
-
-      # Not enough drag
       if offsetx.abs < 5 and offsety.abs < 5
-        buf.end_visual_mode
+        debug "Not enough drag",2
+        @range_start = nil
+      elsif !buf.visual_mode? and vma.kbd.get_scope != :editor
+        # Can't transition from editor wide mode to buffer specific mode
+        buf.start_visual_mode
       end
       @range_start = nil
     end
@@ -255,7 +255,7 @@ class VSourceView < GtkSource::View
   end
 
   def set_cursor_to_top
-    debug "set_cursor_to_top",2
+    debug "set_cursor_to_top", 2
     delete_cursorchar
     bc = window_to_buffer_coords(Gtk::TextWindowType::WIDGET, gutter_width + 2, 60)
     if !bc.nil?
