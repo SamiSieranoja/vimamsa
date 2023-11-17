@@ -179,7 +179,7 @@ class Buffer < String
       debug "Guessed LANG: #{lang.id}"
       @lang = lang.id
     end
-    puts @lang.inspect
+    debug @lang.inspect
 
     if @lang
       gui_set_file_lang(@id, @lang)
@@ -1509,7 +1509,7 @@ class Buffer < String
         #TODO: show message box
       end
       @last_save = Time.now
-      puts "file saved on #{@last_save}"
+      debug "file saved on #{@last_save}"
       sleep 3
     }
   end

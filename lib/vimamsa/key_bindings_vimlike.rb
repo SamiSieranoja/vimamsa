@@ -117,8 +117,8 @@ default_keys = {
   # MOVING
   #    'VC h' => 'buf.move(BACKWARD_CHAR)',
   "VC l" => "buf.move(FORWARD_CHAR)",
-  "VC j" => "buf.move(FORWARD_LINE)",
-  "VC k" => "buf.move(BACKWARD_LINE)",
+  # "VC j" => "buf.move(FORWARD_LINE)",
+  # "VC k" => "buf.move(BACKWARD_LINE)",
 
   "VC pagedown" => :page_down,
   "VC pageup" => :page_up,
@@ -201,7 +201,6 @@ default_keys = {
 
   # Command mode only:
   "C ctrl-r" => "buf.redo()", # TODO:???
-  "C R" => "buf.redo()",
   "C v" => "buf.start_visual_mode",
   "C P" => "buf.paste(BEFORE)", # TODO: implement as replace for visual mode
   "C space <char>" => "buf.insert_txt(<char>)",
@@ -258,10 +257,9 @@ default_keys = {
   'CV \' <char>' => "buf.jump_to_mark(<char>)",
   # "CV ''" =>'jump_to_mark(NEXT_MARK)', #TODO
 
-  # Switch to other mode
+  # Switch to another mode
   "C i" => "vma.kbd.set_mode(:insert)",
   "C R" => "vma.kbd.set_mode(:replace)",
-  "C ctrl!" => "vma.kbd.set_mode(:insert)",
   "C ctrl!" => "vma.kbd.set_mode(:insert)",
   
   # Replace mode

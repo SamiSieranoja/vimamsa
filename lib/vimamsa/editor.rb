@@ -448,7 +448,7 @@ def minibuffer_delete()
 end
 
 def error(str)
-  puts caller[0]
+  show_caller
   debug "#{caller[0]} ERROR: #{str}", 2
 end
 

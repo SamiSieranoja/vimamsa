@@ -121,9 +121,8 @@ def search_actions_select_callback(search_str, idx)
 end
 
 def filter_items(item_list, item_key, search_str)
-  #    Ripl.start :binding => binding
   item_hash = {}
-  puts item_list.inspect
+  # debug item_list.inspect
   scores = Parallel.map(item_list, in_threads: 8) do |item|
     if item[:str].class != String
       puts item.inspect

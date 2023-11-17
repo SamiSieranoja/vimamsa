@@ -87,7 +87,7 @@ class KeyBindingTree
 
   def set_mode_stack(ms)
     debug "set_mode_stack(#{ms})", 2
-    show_caller
+    show_caller if cnf.debug? # TODO: remove 
     @default_mode_stack = ms
     label = @default_mode_stack[-1]
     @match_state = [@modes[label]]

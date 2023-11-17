@@ -86,7 +86,7 @@ class FileManager
       # Thread.new {
       for fn in @cut_files
         FileUtils.move(fn, @ld)
-        puts "FileUtils.move(#{fn}, #{@ld})"
+        debug "FileUtils.move(#{fn}, #{@ld})"
       end
     elsif !@copied_files.empty?
       for fn in @copied_files

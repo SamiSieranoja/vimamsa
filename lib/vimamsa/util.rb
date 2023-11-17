@@ -110,7 +110,7 @@ class HSafe
     hh = @h
     while !b.empty?
       x = b.pop
-      puts "x=#{x}"
+      debug "x=#{x}"
       pp b
       ok = false
       if hh.class == Hash or hh.class == Array

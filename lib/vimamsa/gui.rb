@@ -10,8 +10,8 @@ def gui_remove_controllers(widget)
     to_remove << ctr
   }
   if to_remove.size > 0
-    debug "Removing controllers:"
-    pp to_remove
+    # debug "Removing controllers:"
+    # pp to_remove
     to_remove.each { |x|
       # To avoid GC. https://github.com/ruby-gnome/ruby-gnome/issues/15790
       $removed_controllers << x
@@ -89,7 +89,6 @@ def gui_create_buffer(id, bufo)
   view = VSourceView.new(nil, bufo)
 
   view.register_signals()
-  cnf.debug = true
 
   ssm = GtkSource::StyleSchemeManager.new
   ssm.set_search_path(ssm.search_path << ppath("styles/"))
@@ -107,7 +106,6 @@ def gui_create_buffer(id, bufo)
   provider.load(data: "textview { font-family: #{cnf.font.family!}; font-size: #{cnf.font.size!}pt; }")
   view.style_context.add_provider(provider)
   view.wrap_mode = :char
-  pp $cnf
   view.set_tab_width(conf(:tab_width))
 
   $vmag.buffers[id] = view
@@ -484,8 +482,8 @@ class VMAgui
       end
     }
     if to_remove.size > 0
-      puts "Removing controllers:"
-      pp to_remove
+      # debug "Removing controllers:"
+      # pp to_remove
       to_remove.each { |x| @window.remove_controller(x) }
     end
 
@@ -499,7 +497,7 @@ class VMAgui
       name = Gdk::Keyval.to_name(keyval)
       uki = Gdk::Keyval.to_unicode(keyval)
       keystr = uki.chr("UTF-8")
-      puts "key-pressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
+      debug "key pressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
       buf.view.handle_key_event(keyval, keystr, :key_press)
       true
     end
@@ -520,19 +518,16 @@ class VMAgui
       # button1_mask?
       # ...
       # button5_mask?
-      true
+      true # = handled, do not propagate further
     end
 
     press.signal_connect "key-released" do |gesture, keyval, keycode, y|
       name = Gdk::Keyval.to_name(keyval)
       uki = Gdk::Keyval.to_unicode(keyval)
       keystr = uki.chr("UTF-8")
-      puts "key released #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
+      debug "key released #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
       buf.view.handle_key_event(keyval, keystr, :key_release)
-      # vma.kbd.match_key_conf(keystr, nil, :key_press)
-      # buf.view.handle_deltas
-      # buf.view.handle_key_event(keyval, keystr, :key_press)
-      true
+      true # = handled, do not propagate further
     end
   end
 
@@ -546,8 +541,8 @@ class VMAgui
       end
     }
     if to_remove.size > 0
-      puts "Removing controllers:"
-      pp to_remove
+      # puts "Removing controllers:"
+      # pp to_remove
       to_remove.each { |x| vma.gui.window.remove_controller(x) }
     end
   end

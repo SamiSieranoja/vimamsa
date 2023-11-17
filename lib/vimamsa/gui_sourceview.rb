@@ -112,8 +112,6 @@ class VSourceView < GtkSource::View
       end
     }
     if to_remove.size > 0
-      debug "Removing controllers:"
-      pp to_remove
       to_remove.each { |x|
         # To avoid GC. https://github.com/ruby-gnome/ruby-gnome/issues/15790
         @removed_controllers << x
@@ -311,7 +309,7 @@ class VSourceView < GtkSource::View
     keyval_trans[Gdk::Keyval::KEY_Shift_L] = "shift"
     keyval_trans[Gdk::Keyval::KEY_Shift_R] = "shift"
     keyval_trans[Gdk::Keyval::KEY_Tab] = "tab"
-    keyval_trans[Gdk::Keyval::GDK_KEY_ISO_Left_Tab] = "tab"
+    keyval_trans[Gdk::Keyval::KEY_ISO_Left_Tab] = "tab"
 
     key_trans = {}
     key_trans["\e"] = "esc"

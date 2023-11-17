@@ -4,9 +4,6 @@ class FileHistory
   attr_accessor :history
 
   def initialize()
-    # puts self.method("update")
-    # x = self.method("update")
-    # x.call("ASFASF")
 
     vma.hook.register(:change_buffer, self.method("update"))
     vma.hook.register(:shutdown, self.method("save"))
@@ -16,9 +13,6 @@ class FileHistory
     @history = vma.marshal_load("file_history", {})
     $search_list = []
   end
-
-  # def self.init()
-  # end
 
   def update(buf)
     debug "FileHistory.update(buf=#{buf.fname})"
@@ -30,8 +24,6 @@ class FileHistory
       @history[buf.fname] += 1
     end
     debug @history
-
-    # puts "FileHistory.update(buf=#{buf})"
   end
 
   def save()
