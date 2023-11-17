@@ -1373,7 +1373,6 @@ class Buffer < String
 
   def end_visual_mode()
     debug "end_visual_mode, #{vma.kbd.get_mode}, #{visual_mode?}", 2
-    vma.kbd.dump_state
     return if vma.kbd.get_mode != :visual
     if !visual_mode?
       debug "end_visual_mode, !visual_mode?"

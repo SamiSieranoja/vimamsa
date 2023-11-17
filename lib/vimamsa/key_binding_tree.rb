@@ -112,11 +112,11 @@ class KeyBindingTree
 
   def to_previous_mode()
     debug "to_previous_mode",2
-    pp @default_mode_stack
+    debug @default_mode_stack
     if @default_mode_stack.size > 1
       @default_mode_stack.pop
     end
-    pp @default_mode_stack
+    debug @default_mode_stack
     __set_mode(@default_mode_stack[-1])
   end
 

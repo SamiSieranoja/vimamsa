@@ -4,12 +4,20 @@ vma.kbd.add_mode("V", :visual, :visual)
 vma.kbd.add_mode("M", :minibuffer) #TODO: needed?
 vma.kbd.add_mode("R", :readchar)
 vma.kbd.add_minor_mode("audio", :audio, :command)
-vma.kbd.add_mode("B", :browse, :command, scope: :editor)
-vma.kbd.add_mode("X", :replace, :command, name: "Replace")
+vma.kbd.add_mode("B", :browse, :browse, scope: :editor)
+vma.kbd.add_mode("X", :replace, :replace, name: "Replace")
 vma.kbd.set_default_mode(:command)
 vma.kbd.__set_mode(:command) #TODO:needed?
+# cnf.mode.command.cursor.background = "#fc6f03"
+cnf.mode.command.cursor.background = "#05c5a0"
+cnf.mode.default.cursor.background = "#03fcca"
+# cnf.mode.visual.cursor.background = "#10bd8e"
+# cnf.mode.visual.cursor.background = "#e95420"
+# cnf.mode.visual.cursor.background = "#cb3804"
+cnf.mode.visual.cursor.background = "#bc6040"
+cnf.mode.replace.cursor.background = "#fc0331"
+cnf.mode.browse.cursor.background = "#f803fc"
 # vma.kbd.show_state_trail
-
 
 bindkey ["VCB M", "B m"], :run_last_macro
 

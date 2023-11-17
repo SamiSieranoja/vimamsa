@@ -148,7 +148,7 @@ class VSourceView < GtkSource::View
     @cnt_drag.signal_connect "drag-end" do |gesture, offsetx, offsety|
       debug "drag-end", 2
       if offsetx.abs < 5 and offsety.abs < 5
-        debug "Not enough drag",2
+        debug "Not enough drag", 2
         @range_start = nil
       elsif !buf.visual_mode? and vma.kbd.get_scope != :editor
         # Can't transition from editor wide mode to buffer specific mode
@@ -523,6 +523,22 @@ class VSourceView < GtkSource::View
     end
   end
 
+  def set_cursor_color(ctype)
+    if @ctype != ctype
+      bg = $confh[:mode][ctype][:cursor][:background]
+      if bg.class == String
+        if !@cursor_prov.nil?
+          self.style_context.remove_provider(@cursor_prov)
+        end
+        prov = Gtk::CssProvider.new
+        prov.load(data: ".view text selection { background-color: #{bg}; color: #ffffff; }")
+        self.style_context.add_provider(prov)
+        @cursor_prov = prov
+      end
+      @ctype == ctype
+    end
+  end
+
   def draw_cursor
     # if @tt.nil?
     # @tt = buffer.create_tag("font_tag")
@@ -533,7 +549,8 @@ class VSourceView < GtkSource::View
     ctype = vma.kbd.get_cursor_type
     delete_cursorchar
     vma.gui.remove_overlay_cursor
-    if ctype == :command
+    if [:command, :replace, :browse].include?(ctype)
+      set_cursor_color(ctype)
       if @bufo[@bufo.pos] == "\n"
         # If we are at end of line, it's not possible to draw the cursor by making a selection. I tried to do this by drawing an overlay, but that generates issues. If moving the cursor causes the ScrolledWindow to be scrolled, these errors randomly appear and the whole view shows blank:
         # (ruby:21016): Gtk-WARNING **: 19:52:23.181: Trying to snapshot GtkSourceView 0x55a97524c8c0 without a current allocation
@@ -559,7 +576,9 @@ class VSourceView < GtkSource::View
         buffer.select_range(itr, itr2)
       end
       # elsif @bufo.visual_mode?
+
     elsif ctype == :visual
+      set_cursor_color(ctype)
       # debug "VISUAL MODE"
       (_start, _end) = @bufo.get_visual_mode_range2
       # debug "#{_start}, #{_end}"
