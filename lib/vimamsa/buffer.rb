@@ -93,8 +93,9 @@ class Buffer < String
   end
 
   #Check if this buffer is attached to any windows
-  def is_active
+  def is_active?
     for k in vma.gui.windows.keys
+      next if vma.gui.windows[k][:sw].child.nil?
       return true if vma.gui.windows[k][:sw].child.bufo == self
     end
     return false

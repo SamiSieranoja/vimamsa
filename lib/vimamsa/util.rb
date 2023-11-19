@@ -3,6 +3,11 @@ require "open3"
 VOWELS = %w(a e i o u)
 CONSONANTS = %w(b c d f g h j k l m n p q r s t v w x y z)
 
+def tilde_path(abspath)
+  userhome = File.expand_path("~/")
+  abspath.sub(/^#{Regexp.escape(userhome)}\//, "~/")
+end
+
 def generate_password(length)
   password = ""
   while password.size < length

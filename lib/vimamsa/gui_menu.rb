@@ -49,6 +49,8 @@ module Vimamsa
       
       add_to_menu "Actions.debug.dumpkbd", { :label => "Dump kbd state", :action => :kbd_dump_state }
       
+      
+      add_to_menu "View.BufferManager", { :label => "Show open files", :action => :start_buf_manager }
       add_to_menu "View.TwoColumn", { :label => "Toggle two column mode", :action => :toggle_two_column }
       
 

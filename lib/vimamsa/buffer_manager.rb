@@ -34,7 +34,7 @@ class BufferManager
   def close_selected
     idx = buf_of_current_line()
     r = @buf.current_line_range
-    Gui.hilight_range(@buf,r, color:"#666666ff")
+    Gui.hilight_range(@buf, r, color: "#666666ff")
     if idx.nil?
       message("buf already closed")
       return
@@ -68,21 +68,34 @@ class BufferManager
     s << "\n"
     i = 0
     jump_to_line = 0
-    for b in vma.buffers.list.sort_by { |x| x.list_str }
-      if b.id == vma.buf.id # current file
-        # s << "   "
-        jump_to_line = i
+    lastdir = nil
+    bh = {}
+    for b in vma.buffers.list
+      if !b.fname.nil?
+        bname = File.basename(b.fname)
+        dname = File.dirname(b.dirname)
+      else
+        bname = b.list_str
+        dname = "*"
       end
-      x = b.list_str
-      s << "#{x}\n"
-      @line_to_id[i] = b.id
-      i += 1
+      bh[dname] ||= []
+      bh[dname] << {bname: bname, buf: b}
     end
-
-
-
+    for k in bh.keys.sort
+      d = tilde_path(k)
+      s << "📂#{d}:\n" # Note: to close?: 📁 
+      i += 1
+      for bnfo in bh[k].sort_by{|x|x[:bname]}
+        s << "╰─#{bnfo[:bname]}\n"
+        
+        @line_to_id[i] = bnfo[:buf].id
+        jump_to_line = i if bnfo[:buf].id == vma.buf.id # current file
+        i += 1
+      end
+    end
+    
     if @buf.nil?
-      @buf = create_new_buffer(s,"bufmgr")
+      @buf = create_new_buffer(s, "bufmgr")
       @buf.default_mode = :buf_mgr
       @buf.module = self
       @buf.active_kbd_mode = :buf_mgr

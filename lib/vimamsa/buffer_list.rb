@@ -199,7 +199,7 @@ class BufferList
 
   def get_last_non_active_buffer
     for bu in slist.reverse
-      return bu.id if !bu.is_active
+      return bu.id if !bu.is_active?
     end
     return nil
   end
