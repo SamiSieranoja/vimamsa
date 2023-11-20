@@ -8,6 +8,14 @@ def tilde_path(abspath)
   abspath.sub(/^#{Regexp.escape(userhome)}\//, "~/")
 end
 
+def to_camel_case(str)
+  words = str.split(/\W+/) # Split the input string into words
+  camel_case_words = words.map.with_index do |word, index|
+    index == 0 ? word.downcase : word.capitalize
+  end
+  camel_case_words.join
+end
+
 def generate_password(length)
   password = ""
   while password.size < length

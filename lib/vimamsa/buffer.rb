@@ -1297,6 +1297,7 @@ class Buffer < String
     txt.gsub!(/\w+/, &:capitalize) if op == :capitalize
     txt.swapcase! if op == :swapcase
     txt.reverse! if op == :reverse
+    txt = to_camel_case(txt) if op == :camelcase
 
     replace_range(r, txt)
     end_visual_mode
