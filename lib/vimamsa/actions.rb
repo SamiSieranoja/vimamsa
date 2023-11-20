@@ -54,7 +54,10 @@ end
 
 def search_actions()
   l = []
-  opt = { :title => "Search for actions", :desc => "Fuzzy search for actions. <up> or <down> to change selcted. <enter> to select current." }
+  opt = { :title => "Search for actions", :desc => "Fuzzy search for actions. <up> or <down> to change selcted. <enter> to select current.",
+  :columns => [{:title=>'Shortcut',:id=>0}, {:title=>'Action',:id=>1}]
+    }
+  
   $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
 
   gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
@@ -77,7 +80,8 @@ def search_actions_update_callback(search_str = "")
     for mode_str in ["C", "V"]
       c_kbd = vma.kbd.act_bindings[mode_str][act_id]
       if c_kbd.class == String
-        item[:key] = "[#{mode_str} #{c_kbd}] "
+        item[:key] = "[#{mode_str}] #{c_kbd} "
+        item[:key] = "" if item[:key].size > 15
         break
       end
     end
@@ -99,9 +103,7 @@ def search_actions_update_callback(search_str = "")
   debug r.inspect
   $item_list = r
 
-  # Ripl.start :binding => binding
-
-  r = a.collect { |x| ["#{x[0][:key]}#{x[0][:str]}", 0, x] }
+  r = a.collect { |x| [x[0][:key], x[0][:str] ] }
   return r
 end
 

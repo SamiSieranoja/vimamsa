@@ -76,12 +76,12 @@ end
 
 def gui_file_history_update_callback(search_str = "")
   debug "gui_file_history_update_callback: #{search_str}"
-  return [] if $vma.fh.history.empty?
+  return [] if vma.fh.history.empty?
   $search_list = []
-  files = $vma.fh.history.keys.sort.collect { |x| [x, 0] }
+  files = vma.fh.history.keys.sort.collect { |x| [x, 0] }
 
   if (search_str.size > 1)
-    files = fuzzy_filter(search_str, $vma.fh.history.keys, 40)
+    files = fuzzy_filter(search_str, vma.fh.history.keys, 40)
   end
 
   $search_list = files

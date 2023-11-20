@@ -12,6 +12,8 @@ class SelectUpdateWindow
 
   def update_item_list(item_list)
     # debug item_list.inspect
+    return if item_list.empty?
+
     @model.clear
     for item in item_list
       iter = @model.append
