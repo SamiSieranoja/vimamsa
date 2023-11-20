@@ -159,3 +159,6 @@ cnf.font.size = 11
 cnf.font.family = "Monospace"
 
 
+cnf.macro.animation_delay = 0.02
+
+

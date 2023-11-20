@@ -127,9 +127,12 @@ class Macro
         ret = exec_action(a)
         if ret == false
           error "Error while running macro"
-          isok=false
+          isok = false
           break
         end
+
+        vma.buf.view.after_action
+        sleep cnf.macro.animation_delay!
       end
     end
     @running_macro = false

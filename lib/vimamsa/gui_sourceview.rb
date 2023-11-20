@@ -53,7 +53,7 @@ class VSourceView < GtkSource::View
     # Mainly after page-up or page-down
     signal_connect("move-cursor") do |widget, event|
       # if event.name == "GTK_MOVEMENT_PAGES" and (vma.actions.last_action == "page_up" or vma.actions.last_action == "page_down")
-        # handle_scrolling()
+      # handle_scrolling()
       # end
 
       # handle_scrolling()
@@ -521,6 +521,17 @@ class VSourceView < GtkSource::View
       buffer.delete(itr, itr2)
       @cursorchar = nil
     end
+  end
+
+  def after_action
+    delete_cursorchar
+    # Run one iteration of GMainLoop
+    # https://developer.gnome.org/documentation/tutorials/main-contexts.html
+    GLib::MainContext.default.iteration(true)
+    handle_deltas
+    GLib::MainContext.default.iteration(true)
+    draw_cursor
+    GLib::MainContext.default.iteration(true)
   end
 
   def set_cursor_color(ctype)
