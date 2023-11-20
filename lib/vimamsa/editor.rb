@@ -5,9 +5,8 @@ def handle_drag_and_drop(fname)
   buf.handle_drag_and_drop(fname)
 end
 
-
 class Editor
-  attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook, :macro
+  attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook, :macro, :actions
   attr_accessor :converters, :fh, :paint_stack, :kbd, :langsrv, :register, :cur_register, :clipboard
   #attr_writer :call_func, :update_highlight
 
@@ -63,6 +62,10 @@ class Editor
 
     $hook = Hook.new
     @hook = $hook
+    require "vimamsa/actions"
+    @actions = ActionList.new
+    require "vimamsa/key_actions"
+
     register_plugin(:Hook, @hook)
     @macro = Macro.new
     register_plugin(:Macro, @macro)

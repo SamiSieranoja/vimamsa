@@ -18,9 +18,7 @@ require "vimamsa/util"
 require "vimamsa/main"
 require "vimamsa/terminal"
 
-require "vimamsa/actions"
 require "vimamsa/key_binding_tree"
-require "vimamsa/key_actions"
 
 require "vimamsa/clipboard"
 

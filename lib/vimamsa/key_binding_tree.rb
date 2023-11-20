@@ -290,8 +290,8 @@ class KeyBindingTree
       else
         method_desc = t.action
         if t.action.class == Symbol
-          if !$actions[t.action].nil?
-            a = $actions[t.action].method_name
+          if vma.actions.include?(t.action)
+            a = vma.actions[t.action].method_name
             if !a.nil? and !a.empty?
               method_desc = a
             end
@@ -477,7 +477,7 @@ class KeyBindingTree
     # return
     # end
     # $action_list << { :action => action, :key => key }
-    if !$actions.has_key?(action)
+    if !vma.actions.include?(action)
       if action.class == String
         reg_act(action, proc { eval(action) }, action)
       end
@@ -566,7 +566,7 @@ class KeyBindingTree
   end
 
   def handle_key_bindigs_action(action, c)
-    $acth << action
+    # $acth << action #TODO:needed here?
     @method_handles_repeat = false #TODO:??
     n = 1
     if @next_command_count and !(action.class == String and action.include?("set_next_command_count"))
@@ -618,8 +618,6 @@ end
 def bindkey(key, action)
   $kbd.bindkey(key, action)
 end
-
-$action_list = []
 
 def exec_action(action)
   $kbd.last_action = $kbd.cur_action

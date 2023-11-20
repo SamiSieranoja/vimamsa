@@ -52,9 +52,9 @@ class VSourceView < GtkSource::View
 
     # Mainly after page-up or page-down
     signal_connect("move-cursor") do |widget, event|
-      if event.name == "GTK_MOVEMENT_PAGES" and (last_action == "page_up" or last_action == "page_down")
-        handle_scrolling()
-      end
+      # if event.name == "GTK_MOVEMENT_PAGES" and (vma.actions.last_action == "page_up" or vma.actions.last_action == "page_down")
+        # handle_scrolling()
+      # end
 
       # handle_scrolling()
       # curpos = buffer.cursor_position

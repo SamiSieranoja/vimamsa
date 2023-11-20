@@ -166,7 +166,7 @@ act_list = {
   # { :proc => proc {  },
   # :desc => "", :group => : },
 
-  :search_actions => { :proc => proc { search_actions },
+  :search_actions => { :proc => proc { vma.actions.gui_search },
                        :desc => "Search actions", :group => :search },
 
   :toggle_active_window => { :proc => proc { vma.gui.toggle_active_window },
