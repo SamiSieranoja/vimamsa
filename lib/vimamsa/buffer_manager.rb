@@ -73,7 +73,7 @@ class BufferManager
     for b in vma.buffers.list
       if !b.fname.nil?
         bname = File.basename(b.fname)
-        dname = File.dirname(b.dirname)
+        dname = File.dirname(b.fname)
       else
         bname = b.list_str
         dname = "*"
