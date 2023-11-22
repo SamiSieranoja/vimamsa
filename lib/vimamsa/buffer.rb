@@ -1274,6 +1274,12 @@ class Buffer < String
     @selection_active = true
     @visual_mode = true
   end
+  
+  # Start selection if not already started
+  def continue_selection()
+    start_selection if !@selection_active
+  end
+ 
 
   def copy_active_selection(x = nil)
     debug "!COPY SELECTION"

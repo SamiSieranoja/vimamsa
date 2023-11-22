@@ -17,11 +17,31 @@ cnf.mode.default.cursor.background = "#03fcca"
 cnf.mode.visual.cursor.background = "#bc6040"
 cnf.mode.replace.cursor.background = "#fc0331"
 cnf.mode.browse.cursor.background = "#f803fc"
-# vma.kbd.show_state_trail
+
+def _insert_move(op)
+  if op == :pagedown
+    vma.gui.page_down
+  elsif op == :pageup
+    vma.gui.page_up
+  else
+    buf.move(op)
+  end
+end
+
+def insert_select_move(op)
+  buf.continue_selection
+  _insert_move(op)
+end
+
+def insert_move(op)
+  buf.end_selection
+  _insert_move(op)
+end
 
 bindkey ["VCB M", "B m"], :run_last_macro
 
 bindkey "VC s", :easy_jump
+bindkey "I alt-s", :easy_jump
 bindkey "VC , m f", [:find_macro_gui, proc { vma.macro.find_macro_gui }, "Find named macro"]
 bindkey "C , m n", [:gui_name_macro, proc { vma.macro.gui_name_macro }, "Name last macro"]
 bindkey "C , j r", :jump_to_random
@@ -86,8 +106,8 @@ bindkey "B z", "center_on_current_line();call_action(:exit_browse_mode)"
 bindkey "B enter || B return || B esc || B j || B ctrl!", :exit_browse_mode
 bindkey "B s", :page_up
 bindkey "B d", :page_down
-bindkey "B r", proc { vma.gui.page_down(multip:0.25)}
-bindkey "B e", proc { vma.gui.page_up(multip:0.25)}
+bindkey "B r", proc { vma.gui.page_down(multip: 0.25) }
+bindkey "B e", proc { vma.gui.page_up(multip: 0.25) }
 
 bindkey "B i", :jump_to_start_of_buffer
 bindkey "B o", :jump_to_end_of_buffer
@@ -128,24 +148,41 @@ default_keys = {
   # "VC j" => "buf.move(FORWARD_LINE)",
   # "VC k" => "buf.move(BACKWARD_LINE)",
 
-  "VC pagedown" => :page_down,
-  "VC pageup" => :page_up,
+  "VCI pagedown" => :page_down,
+  "VCI pageup" => :page_up,
 
   "I down(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
   "I tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
   "I up(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
   "I shift-tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
   "I enter(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select",
-  
-  "I tab" => 'buf.insert_tab',
-  "I shift-tab" => 'buf.unindent',
-  
+
+  "I tab" => "buf.insert_tab",
+  "I shift-tab" => "buf.unindent",
+
   "I enter" => :insert_new_line,
 
-  "VCIX left" => "buf.move(BACKWARD_CHAR)",
-  "VCIX right" => "buf.move(FORWARD_CHAR)",
-  "VCIX down" => "buf.move(FORWARD_LINE)",
-  "VCIX up" => "buf.move(BACKWARD_LINE)",
+  "I shift-down" => "insert_select_move(BACKWARD_CHAR)",
+  "I shift-right" => "insert_select_move(FORWARD_CHAR)",
+  "I shift-down" => "insert_select_move(FORWARD_LINE)",
+  "I shift-up" => "insert_select_move(BACKWARD_LINE)",
+  "I shift-pagedown" => "insert_select_move(:pagedown)",
+  "I shift-pageup" => "insert_select_move(:pageup)",
+
+  "I left" => "insert_move(BACKWARD_CHAR)",
+  "I right" => "insert_move(FORWARD_CHAR)",
+  "I down" => "insert_move(FORWARD_LINE)",
+  "I up" => "insert_move(BACKWARD_LINE)",
+  "I pagedown" => "insert_move(:pagedown)",
+  "I pageup" => "insert_move(:pageup)",
+
+  #TODO:
+  "I @shift-click" => "insert_mode_shift_click(charpos)",
+
+  "VCX left" => "buf.move(BACKWARD_CHAR)",
+  "VCX right" => "buf.move(FORWARD_CHAR)",
+  "VCX down" => "buf.move(FORWARD_LINE)",
+  "VCX up" => "buf.move(BACKWARD_LINE)",
 
   "VC w" => "buf.jump_word(FORWARD,WORD_START)",
   "VC b" => "buf.jump_word(BACKWARD,WORD_START)",
@@ -192,7 +229,7 @@ default_keys = {
   "C , d c" => "debug_dump_clipboard",
   "C , d d" => "debug_dump_deltas",
   "C , d m" => :kbd_dump_state,
-  
+
   "VC O" => "buf.jump(END_OF_LINE)",
   "VC $" => "buf.jump(END_OF_LINE)",
 
@@ -269,7 +306,7 @@ default_keys = {
   "C i" => "vma.kbd.set_mode(:insert)",
   "C R" => "vma.kbd.set_mode(:replace)",
   "C ctrl!" => "vma.kbd.set_mode(:insert)",
-  
+
   # Replace mode
   "X esc || X ctrl!" => "vma.kbd.to_previous_mode",
   "X <char>" => "buf.replace_with_char(<char>);buf.move(FORWARD_CHAR)",
@@ -312,14 +349,12 @@ default_keys = {
 
   "I ctrl-h" => :show_autocomplete,
   "I ctrl-j" => "vma.buf.view.hide_completions",
-  
 
   "I space" => 'buf.insert_txt(" ")',
 #  "I return" => 'buf.insert_new_line()',
 }
 
 bindkey "C , i p", "generate_password_to_buf(15)"
-
 
 default_keys.each { |key, value|
   bindkey(key, value)
