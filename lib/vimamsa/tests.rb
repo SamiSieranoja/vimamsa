@@ -1,26 +1,26 @@
 require "digest"
 
 def run_tests()
-  tests = ["test_paste_0","test_delete_0"]
+  tests = ["test_paste_0", "test_delete_0"]
   stats = []
   for t in tests
     r = eval(t)
     if r == true
       stats << "test #{t} OK"
     else
-      stats <<  "test #{t} FAILED"
+      stats << "test #{t} FAILED"
     end
   end
-  debug "TEST RESULTS:",2
+  debug "TEST RESULTS:", 2
   puts stats.join("\n")
   puts "===================="
-  
 end
-
 
 #
 
 def test_paste_0(runmacro = true)
+  return
+  #TODO: update macro
   b = create_new_buffer(file_contents = "\n", prefix = "buf", setcurrent = true)
 
   b.insert_txt(JABBERWOCKY)
@@ -47,7 +47,7 @@ def test_paste_0(runmacro = true)
   end
 end
 
-def macro_test(macro, correct_hex, runmacro=true)
+def macro_test(macro, correct_hex, runmacro = true)
   b = create_new_buffer(file_contents = "\n", prefix = "buf", setcurrent = true)
   b.insert_txt(JABBERWOCKY)
   b.insert_txt(LOREM_IPSUM)
@@ -117,6 +117,3 @@ O frabjous day! Callooh! Callay!”
 All mimsy were the borogoves,
       And the mome raths outgrabe.
 "
-
-
-

@@ -149,10 +149,13 @@ class VSourceView < GtkSource::View
       debug "drag-end", 2
       if offsetx.abs < 5 and offsety.abs < 5
         debug "Not enough drag", 2
-        @range_start = nil
-      elsif !buf.visual_mode? and vma.kbd.get_scope != :editor
+        buf.end_selection
+        # elsif !buf.visual_mode? and vma.kbd.get_scope != :editor
+      elsif vma.kbd.get_scope != :editor 
         # Can't transition from editor wide mode to buffer specific mode
-        buf.start_visual_mode
+        vma.kbd.set_mode(:visual)
+      else
+        buf.end_selection
       end
       @range_start = nil
     end
@@ -558,6 +561,8 @@ class VSourceView < GtkSource::View
 
     mode = vma.kbd.get_mode
     ctype = vma.kbd.get_cursor_type
+    ctype = :visual if vma.buf.selection_active?
+
     delete_cursorchar
     vma.gui.remove_overlay_cursor
     if [:command, :replace, :browse].include?(ctype)

@@ -67,6 +67,7 @@ class KeyBindingTree
   end
 
   def set_mode(label)
+    return if get_mode == :label
     @match_state = [@modes[label]] # used for matching input
     @mode_root_state = @modes[label]
     # @default_mode = label

@@ -209,7 +209,7 @@ default_keys = {
 
   # Command mode only:
   "C ctrl-r" => "buf.redo()", # TODO:???
-  "C v" => "buf.start_visual_mode",
+  "C v" => "buf.start_selection;vma.kbd.set_mode(:visual)",
   "C P" => "buf.paste(BEFORE)", # TODO: implement as replace for visual mode
   "C space <char>" => "buf.insert_txt(<char>)",
   "C space space" => "buf.insert_txt(' ')",

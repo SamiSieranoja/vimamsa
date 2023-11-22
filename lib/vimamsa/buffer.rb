@@ -12,7 +12,7 @@ $update_highlight = false
 $ifuncon = false
 
 class Buffer < String
-  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images, :last_save, :access_time
+  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images, :last_save, :access_time, :selection_active
   attr_writer :call_func, :update_highlight
   attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle, :paste_lines, :mode_stack, :default_mode
 
@@ -1258,17 +1258,21 @@ class Buffer < String
     @need_redraw = false
   end
 
-  def start_visual_mode()
-    @visual_mode = true
-    @selection_start = @pos
-    $kbd.set_mode(:visual)
+  def selection_active?
+    @selection_active
   end
 
+  def end_selection()
+    @selection_start = nil
+    @selection_active = false
+    @visual_mode = false
+    #TODO: remove @visual_mode
+  end
+  
   def start_selection()
-    @visual_mode = true
     @selection_start = @pos
-    $kbd.set_mode(:visual)
-    #TODO: implement without setting kbd mode
+    @selection_active = true
+    @visual_mode = true
   end
 
   def copy_active_selection(x = nil)
@@ -1381,6 +1385,7 @@ class Buffer < String
       # TODO: should not happen
     end
     debug "End visual mode"
+    end_selection
     vma.kbd.to_previous_mode
     @visual_mode = false
     return true
