@@ -13,7 +13,6 @@ Will search all .txt files in the following directories:
   </span>"
 
     callback = proc { |x| FileContentSearch.search_buffer(x) }
-    # gui_one_input_action(nfo, "Search:", "search", callback)
 
     params = {}
     params["inputs"] = {}
@@ -21,7 +20,6 @@ Will search all .txt files in the following directories:
     params["inputs"]["extensions"] = { :label => "Limit to file extensions:", :type => :entry }
     params["inputs"]["extensions"][:initial_text] = conf(:default_search_extensions).join(",")
     params["inputs"]["btn1"] = { :label => "Search", :type => :button }
-    # callback = proc { |x| gui_replace_callback(x) }
 
     params[:callback] = callback
     PopupFormGenerator.new(params).run
@@ -106,20 +104,100 @@ Will search the following directories:
  If .vma_project exists in parent directory of current file, searches within that directory.
   </span>"
 
-  callback = proc { |x| ack_buffer(x) }
+  callback = proc { |x| Ack.new.ack_buffer(x) }
   gui_one_input_action(nfo, "Search:", "search", callback)
 end
 
-def ack_buffer(_instr, b = nil)
-  instr = Shellwords.escape(_instr)
-  bufstr = ""
-  for path in vma.get_content_search_paths
-    bufstr += run_cmd("ack -Q --type-add=gd=.gd -ki --nohtml --nojs --nojson #{instr} #{path}")
+def group_by_folder(list)
+  bh = {}
+  for b in list
+    fpath = b[:fpath]
+    if !fpath.nil?
+      bname = File.basename(b[:fpath])
+      dname = File.dirname(b[:fpath])
+    else
+      #TODO
+    end
+    bh[dname] ||= {}
+    bh[dname][:files] ||= []
+    bh[dname][:files] << { bname: bname, nfo: b }
   end
-  if bufstr.size > 5
-    b = create_new_buffer(bufstr, "ack")
-    Gui.highlight_match(b, _instr, color: cnf.match.highlight.color!)
-  else
-    message("No results for input:#{instr}")
+  arr = []
+
+  for k in bh.keys.sort
+    tp = tilde_path(k)
+    arr << { type: :dir, path: tp }
+    for f in bh[k][:files].sort_by { |x| x[:bname] }
+      arr << { type: :file, bname: f[:bname], nfo: f[:nfo] }
+    end
+  end
+  return arr
+end
+
+class Ack
+  attr_reader :buf
+  @@cur = nil # Current object of class
+
+  def self.cur()
+    return @@cur
+  end
+
+  def self.init()
+  end
+
+  def initialize()
+    @buf = nil
+    @line_to_id = {}
+  end
+
+  def ack_buffer(_instr, b = nil)
+    instr = Shellwords.escape(_instr)
+    bufstr = ""
+    for path in vma.get_content_search_paths
+      bufstr += run_cmd("ack -Q --type-add=gd=.gd -ki --nohtml --nojs --nojson #{instr} #{path}")
+    end
+
+    b = ""
+    list = []
+    for x in bufstr.lines
+      if x.match(/(.*?):(\d+):(.+)/) # non greedy: *?
+        fn = $1
+        lineno = $2
+        matchpart = $3
+        pp [fn, lineno, matchpart]
+        b << "[#{fn},#{lineno},#{matchpart}]\n"
+        list << { fpath: fn, lineno: lineno, matchpart: matchpart }
+      end
+    end
+
+    gb = group_by_folder(list)
+    s = ""
+    @line_to_nfo = {}
+    i = 0
+    for x in gb
+      if x[:type] == :file
+        s << "╰─#{x[:bname]}:#{x[:nfo][:lineno]}:#{x[:nfo][:matchpart]}\n"
+        @line_to_nfo[i] = x
+      end
+      if x[:type] == :dir
+        s << "📂#{x[:path]}:\n"
+      end
+      i += 1
+    end
+
+    if s.size > 5
+      @buf = create_new_buffer(s, "ack")
+      @buf.module = self
+      @buf.line_action_handler = self.method("select_line")
+      Gui.highlight_match(@buf, _instr, color: cnf.match.highlight.color!)
+    else
+      message("No results for input:#{instr}")
+    end
+  end
+
+  def select_line(lineno)
+    debug "def select_line #{lineno}", 2
+    nfo = @line_to_nfo[lineno][:nfo]
+    jump_to_file(nfo[:fpath], nfo[:lineno].to_i)
   end
 end

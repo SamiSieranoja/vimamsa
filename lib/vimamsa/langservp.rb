@@ -176,7 +176,9 @@ class LangSrv
   def open_file(fp, fc = nil)
     debug "open_file", 2
     fc = IO.read(fp) if fc.nil?
-    fpuri = URI.join("file:///", fp).to_s
+
+    encoded_filepath = URI.encode_www_form_component(fp)
+    fpuri = URI.parse("file://#{encoded_filepath}")
 
     a = LSP::Interface::DidOpenTextDocumentParams.new(
       text_document: LSP::Interface::TextDocumentItem.new(

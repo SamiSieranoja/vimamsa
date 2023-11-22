@@ -1051,7 +1051,7 @@ class Buffer < String
 
   # Activated when enter/return pressed
   def handle_line_action()
-    if line_action_handler.class == Proc
+    if line_action_handler.class == Proc or line_action_handler.class == Method
       # Custom handler
       line_action_handler.call(lpos)
     else

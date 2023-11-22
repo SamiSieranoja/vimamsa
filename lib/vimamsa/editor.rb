@@ -551,12 +551,13 @@ def load_buffer(fname)
 end
 
 def jump_to_file(filename, tnum = nil, charn = nil)
-  open_new_file(filename)
+  b = open_new_file(filename)
+  # debug "open_new_file #{filename}, #{tnum} = nil, #{charn}",2
 
   # Link to character position
   if !charn.nil?
     if charn == "c"
-      buf.jump_to_pos(tnum) # tnum=character position
+      b.jump_to_pos(tnum) # tnum=character position
       center_on_current_line
       return
     end
@@ -564,7 +565,7 @@ def jump_to_file(filename, tnum = nil, charn = nil)
 
   # Link to line
   if !tnum.nil?
-    buf.jump_to_line(tnum) # tnum=line position
+    b.jump_to_line(tnum) # tnum=line position
     center_on_current_line
     return
   end
@@ -582,7 +583,7 @@ def open_new_file(filename, file_contents = "")
   # File is already opened to existing buffer
   if b != nil
     message "Switching to: #{filename}"
-    vma.buffers.set_current_buffer(b)
+    bu = vma.buffers.set_current_buffer(b)
   else
     if !is_path_writable(filename)
       message("Path #{filename} cannot be written to")
@@ -596,9 +597,10 @@ def open_new_file(filename, file_contents = "")
     end
     message "New file opened: #{filename}"
     fname = filename
-    bf = load_buffer(fname)
-    vma.buffers.set_current_buffer_by_id(bf.id)
+    bu = load_buffer(fname)
+    vma.buffers.set_current_buffer_by_id(bu.id)
   end
+  return bu
 end
 
 def scan_word_start_marks(search_str)

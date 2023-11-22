@@ -155,6 +155,7 @@ class BufferList
     end
 
     # hpt_scan_images() if cnf.debug? # experimental
+    return bu
   end
 
   def to_s
