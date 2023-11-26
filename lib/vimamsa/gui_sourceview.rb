@@ -528,13 +528,11 @@ class VSourceView < GtkSource::View
 
   def after_action
     delete_cursorchar
-    # Run one iteration of GMainLoop
-    # https://developer.gnome.org/documentation/tutorials/main-contexts.html
-    GLib::MainContext.default.iteration(true)
+    iterate_gui_main_loop
     handle_deltas
-    GLib::MainContext.default.iteration(true)
+    iterate_gui_main_loop
     draw_cursor
-    GLib::MainContext.default.iteration(true)
+    iterate_gui_main_loop
   end
 
   def set_cursor_color(ctype)

@@ -2,6 +2,31 @@ $idle_scroll_to_mark = false
 
 $removed_controllers = []
 
+# Run one iteration of GMainLoop
+# https://developer.gnome.org/documentation/tutorials/main-contexts.html
+def iterate_gui_main_loop
+  GLib::MainContext.default.iteration(true)
+end
+
+# Wait for window resize to take effect
+# GTk3 had a resize notify event which got removed in gtk4
+# https://discourse.gnome.org/t/gtk4-any-way-to-connect-to-a-window-resize-signal/14869/3
+def wait_for_resize(window, tries = 200)
+  i = 0
+  widthold = @window.width
+  heightold = @window.height
+  while true
+    iterate_gui_main_loop
+    break if widthold != window.width
+    break if heightold != window.height
+    if i >= tries
+      debug "i >= tries", 2
+      break
+    end
+    i += 1
+  end
+end
+
 def gui_remove_controllers(widget)
   clist = widget.observe_controllers
   to_remove = []
@@ -102,7 +127,7 @@ def gui_create_buffer(id, bufo)
   view.set_buffer(buf1)
 
   provider = Gtk::CssProvider.new
-  
+
   provider.load(data: "textview { font-family: #{cnf.font.family!}; font-size: #{cnf.font.size!}pt; }")
   view.style_context.add_provider(provider)
   view.wrap_mode = :char
@@ -549,11 +574,24 @@ class VMAgui
 
   def idle_set_size()
     # Need to wait for a while to window to be maximized to get correct @window.width
-    sleep 0.1
+    @window.maximize
+    wait_for_resize(@window)
+    # Set new size as half of the screeen
     width = @window.width / 2
     height = @window.height - 5
-    @window.unmaximize
+    width = 600 if width < 600
+    height = 600 if height < 600
+
+    #Minimum size:
+    @window.set_size_request(600, 600)
     @window.set_default_size(width, height)
+    debug "size #{[width, height]}", 2
+    @window.unmaximize
+
+    #set_default_size doesn't always have effect if run immediately
+    wait_for_resize(@window)
+    @window.set_default_size(width, height)
+
     return false
   end
 
@@ -568,10 +606,6 @@ class VMAgui
     app.signal_connect "activate" do
       @window = Gtk::ApplicationWindow.new(app)
       @window.set_application(app)
-
-      @window.maximize
-      # Need to let Gtk process after maximize
-      run_as_idle proc { idle_set_size }
 
       @window.title = "Multiple Views"
       @vpaned = Gtk::Paned.new(:vertical)
@@ -663,6 +697,8 @@ class VMAgui
       @active_window = @windows[1]
 
       @window.show
+
+      run_as_idle proc { idle_set_size }
 
       prov = Gtk::CssProvider.new
       # See gtk-4.9.4/gtk/theme/Default/_common.scss  on how to theme
