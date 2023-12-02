@@ -1,9 +1,9 @@
 require "pty"
 
-def handle_drag_and_drop(fname)
-  debug "EDITOR:handle_drag_and_drop"
-  buf.handle_drag_and_drop(fname)
-end
+# def handle_drag_and_drop(fname)
+  # debug "EDITOR:handle_drag_and_drop"
+  # buf.handle_drag_and_drop(fname)
+# end
 
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook, :macro, :actions

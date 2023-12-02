@@ -304,7 +304,7 @@ class Buffer < String
     if is_image_file(fname)
       debug "Dropped image file"
       insert_image_after_current_line(fname)
-    elsif vma.can_open_extension?(fname)
+    elsif file_is_text_file(fname)
       debug "Dropped text file"
       open_new_file(fname)
     else

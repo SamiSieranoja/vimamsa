@@ -8,6 +8,17 @@ def iterate_gui_main_loop
   GLib::MainContext.default.iteration(true)
 end
 
+def start_profiler
+  require "ruby-prof"
+  RubyProf.start
+end
+
+def end_profiler
+  result = RubyProf.stop
+  printer = RubyProf::FlatPrinter.new(result)
+  printer.print(STDOUT)
+end
+
 # Wait for window resize to take effect
 # GTk3 had a resize notify event which got removed in gtk4
 # https://discourse.gnome.org/t/gtk4-any-way-to-connect-to-a-window-resize-signal/14869/3

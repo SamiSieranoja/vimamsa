@@ -46,13 +46,16 @@ end
 
 def file_mime_type(fpath)
   fpath = File.expand_path(fpath)
-  return false if !File.readable?(fpath)
+  return nil if !File.readable?(fpath)
   r = exec_cmd("file", "--mime-type", "--mime-encoding", fpath)
-  return false if r.class != String
-  return false if r.size < 2
+  return nil if r.class != String
+  return nil if r.size < 2
   m = r.match(".*:\s*(.*)")
-  mimetype = m[1].match(/(.*);/)
-  charset = m[1].match(/charset=(.*)/)
+  b = m[1].match(/(.*);/)
+  c = m[1].match(/charset=(.*)/)
+  return nil if b.nil? or c.nil?
+  mimetype = b[1]
+  charset = c[1]
   return [mimetype, charset]
 end
 
@@ -299,17 +302,22 @@ end
 
 def is_image_file(fpath)
   return false if !File.exist?(fpath)
-  return false if !fpath.match(/.(jpg|jpeg|png)$/i)
-  #TODO: check contents of file
-  return true
+  # return false if !fpath.match(/.(jpg|jpeg|png)$/i)
+  mime = file_mime_type(fpath)
+  if !mime.nil?
+    if mime[0].match(/image\//)
+      return true
+    end
+  end
+  return false
 end
 
-def is_text_file(fpath)
-  return false if !File.exist?(fpath)
-  return false if !fpath.match(/.(txt|cpp|h|rb|c|php|java|py)$/i)
-  #TODO: check contents of file
-  return true
-end
+# def is_text_file(fpath)
+  # return false if !File.exist?(fpath)
+  # return false if !fpath.match(/.(txt|cpp|h|rb|c|php|java|py)$/i)
+  # #TODO: check contents of file
+  # return true
+# end
 
 def is_path(s)
   m = s.match(/(~[a-z]*)?\/.*\//)

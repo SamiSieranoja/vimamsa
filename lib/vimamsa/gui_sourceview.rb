@@ -123,6 +123,45 @@ class VSourceView < GtkSource::View
   def register_signals()
     check_controllers
 
+    @dt = Gtk::DropTarget.new(GLib::Type::STRING, [Gdk::DragAction::COPY, Gdk::DragAction::MOVE])
+
+    self.add_controller(@dt)
+    @dt.signal_connect "drop" do |obj, v, x, y|
+      debug "dt,drop #{v.value},#{x},#{y}", 2
+      begin
+        fp = URI(v.value.gsub(/\r\n$/, "")).path
+        buf.handle_drag_and_drop(fp)
+      rescue URI::InvalidURIError
+      end
+      true
+    end
+
+    @dt.signal_connect "enter" do |gesture, x, y, z, m|
+      debug "dt,enter", 2
+      Gdk::DragAction::COPY
+    end
+
+    @dt.signal_connect "motion" do |obj, x, y|
+      debug "dt,move", 2
+
+      Gdk::DragAction::COPY
+    end
+
+    # dc = Gtk::DropControllerMotion.new
+    # self.add_controller(dc)
+    # dc.signal_connect "enter" do |gesture, x, y|
+      # debug "enter", 2
+      # debug [x, y]
+      # # Ripl.start :binding => binding
+      # true
+    # end
+
+    # dc.signal_connect "motion" do |gesture, x, y|
+      # debug "move", 2
+      # debug [x, y]
+      # true
+    # end
+
     # Implement mouse selections using @cnt_mo and @cnt_drag
     @cnt_mo = Gtk::EventControllerMotion.new
     self.add_controller(@cnt_mo)
@@ -151,7 +190,7 @@ class VSourceView < GtkSource::View
         debug "Not enough drag", 2
         buf.end_selection
         # elsif !buf.visual_mode? and vma.kbd.get_scope != :editor
-      elsif vma.kbd.get_scope != :editor 
+      elsif vma.kbd.get_scope != :editor
         # Can't transition from editor wide mode to buffer specific mode
         vma.kbd.set_mode(:visual)
       else
