@@ -1,6 +1,44 @@
 require "openssl"
 
+def decrypt_dialog(filename:, wrong_pass: false)
+  callback = proc { |x| Encrypt.open(filename, x) }
+  msg = ""
+  msg = "\nWRONG PASSWORD!\n" if wrong_pass
+  gui_one_input_action("Decrypt file \n #{filename}\n#{msg}", "Password:", "Decrypt", callback, { :hide => true })
+end
+
 class Encrypt
+  def self.is_encrypted?(fn)
+    debug "self.is_encrypted?(fn)", 2
+    begin
+      file = File.open(fn, "r")
+      first_11_characters = file.read(11)
+      return true if first_11_characters == "VMACRYPT001"
+    rescue Errno::ENOENT
+      puts "File not found: #{file_path}"
+    rescue => e
+      puts "An error occurred: #{e.message}"
+    ensure
+      file&.close
+    end
+    return false
+  end
+
+  def self.open(fn, password)
+    debug "open_encrypted(filename,password)", 2
+    encrypted = read_file("", fn)[11..-1]
+    begin
+      crypt = Encrypt.new(password)
+      str = crypt.decrypt(encrypted)
+      # debug "PASS OK!", 2
+      bu = create_new_buffer(str)
+      bu.init_encrypted(crypt: crypt, filename: fn, encrypted: encrypted)
+    rescue OpenSSL::Cipher::CipherError => e
+      # Wrong password
+      decrypt_dialog(filename: fn, wrong_pass: true)
+    end
+  end
+
   def initialize(pass_phrase)
     salt = "uvgixEtU"
     @enc = OpenSSL::Cipher.new "AES-128-CBC"
@@ -30,7 +68,6 @@ class Encrypt
     return plain
   end
 end
-
 
 def encrypt_cur_buffer()
   callback = proc { |x| encrypt_cur_buffer_callback(x) }

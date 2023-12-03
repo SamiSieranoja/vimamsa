@@ -1,8 +1,8 @@
 require "pty"
 
 # def handle_drag_and_drop(fname)
-  # debug "EDITOR:handle_drag_and_drop"
-  # buf.handle_drag_and_drop(fname)
+# debug "EDITOR:handle_drag_and_drop"
+# buf.handle_drag_and_drop(fname)
 # end
 
 class Editor
@@ -552,6 +552,7 @@ end
 
 def jump_to_file(filename, tnum = nil, charn = nil)
   b = open_new_file(filename)
+  return if b.nil?
   # debug "open_new_file #{filename}, #{tnum} = nil, #{charn}",2
 
   # Link to character position
@@ -594,6 +595,10 @@ def open_new_file(filename, file_contents = "")
     elsif !file_is_text_file(filename)
       message("File #{filename} does not contain text")
       return false
+    end
+    if Encrypt.is_encrypted?(filename)
+      decrypt_dialog(filename: filename)
+      return nil
     end
     message "New file opened: #{filename}"
     fname = filename

@@ -24,6 +24,7 @@ class Buffer < String
 
     update_access_time
     @images = []
+    @prefix = prefix
     @audiofiles = []
     @lang = nil
     @id = @@num_buffers
@@ -47,27 +48,10 @@ class Buffer < String
     @is_parsing_syntax = false
     @last_update = Time.now - 100
     @highlights = {}
-    if fname != nil
-      @fname = File.expand_path(fname)
-      detect_file_language()
-    else
-      @fname = fname
-    end
+
+    set_filename(fname)
     @hl_queue = []
     @line_action_handler = nil
-
-    @dirname = nil
-    @title = "*#{prefix}-#{@id}*"
-    @subtitle = ""
-
-    if @fname
-      @title = File.basename(@fname)
-      @dirname = File.dirname(@fname)
-      userhome = File.expand_path("~")
-      # @subtitle = @dirname.gsub(/^#{userhome}/, "~")
-      @subtitle = @fname.gsub(/^#{userhome}/, "~")
-    end
-
     t1 = Time.now
 
     set_content(str)
@@ -325,15 +309,10 @@ class Buffer < String
     self.set_content(str)
   end
 
-  def decrypt(password)
-    return if @encrypted_str.nil?
-    begin
-      @crypt = Encrypt.new(password)
-      str = @crypt.decrypt(@encrypted_str)
-    rescue OpenSSL::Cipher::CipherError => e
-      str = "incorrect password"
-    end
-    self.set_content(str)
+  def init_encrypted(crypt:, filename:, encrypted:)
+    @crypt = crypt
+    @encrypted_str = encrypted
+    set_filename(filename)
   end
 
   def sanitycheck_btree()
@@ -365,12 +344,6 @@ class Buffer < String
     @encrypted_str = nil
     @gui_update_highlight = true
     @ftype = nil
-    if str[0..10] == "VMACRYPT001"
-      @encrypted_str = str[11..-1]
-      callback = proc { |x| self.decrypt(x) }
-      gui_one_input_action("Decrypt file \n #{@fname}", "Password:", "decrypt", callback, { :hide => true })
-      str = "ENCRYPTED"
-    end
 
     if (str[-1] != "\n")
       str << "\n"
@@ -424,7 +397,10 @@ class Buffer < String
   end
 
   def set_filename(filename)
+    debug "set_filename(filename) #{filename}"
     @fname = filename
+    @title = "*#{@prefix}-#{@id}*"
+    return if @fname.nil?
     @pathname = Pathname.new(fname) if @fname
     @basename = @pathname.basename if @fname
 
@@ -435,6 +411,7 @@ class Buffer < String
     vma.buffers.last_dir = @dirname
 
     detect_file_language
+    gui_set_window_title(@title, @subtitle)
   end
 
   def get_short_path()
@@ -1268,18 +1245,17 @@ class Buffer < String
     @visual_mode = false
     #TODO: remove @visual_mode
   end
-  
+
   def start_selection()
     @selection_start = @pos
     @selection_active = true
     @visual_mode = true
   end
-  
+
   # Start selection if not already started
   def continue_selection()
     start_selection if !@selection_active
   end
- 
 
   def copy_active_selection(x = nil)
     debug "!COPY SELECTION"
