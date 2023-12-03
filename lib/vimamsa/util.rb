@@ -188,6 +188,17 @@ end
 # Used for image scaling after window resize
 
 class DelayExecutioner
+
+  # Run 'callable.call' if 'wait' time elapsed from last exec call for this id
+  def self.exec(id:, wait:, callable:)
+    @@h ||= {}
+    h = @@h
+    if h[id].nil?
+      h[id] = DelayExecutioner.new(wait, callable)
+    end
+    h[id].run
+  end
+
   def initialize(wait_time, _proc)
     @wait_time = wait_time
     @proc = _proc
@@ -209,7 +220,10 @@ class DelayExecutioner
   end
 
   def run()
+    # Reset @lastt to further delay execution until @wait_time from now
     @lastt = Time.now
+
+    # If already executed after last call to run()
     if @thread_running == false
       @thread_running = true
       start_thread
@@ -313,10 +327,10 @@ def is_image_file(fpath)
 end
 
 # def is_text_file(fpath)
-  # return false if !File.exist?(fpath)
-  # return false if !fpath.match(/.(txt|cpp|h|rb|c|php|java|py)$/i)
-  # #TODO: check contents of file
-  # return true
+# return false if !File.exist?(fpath)
+# return false if !fpath.match(/.(txt|cpp|h|rb|c|php|java|py)$/i)
+# #TODO: check contents of file
+# return true
 # end
 
 def is_path(s)

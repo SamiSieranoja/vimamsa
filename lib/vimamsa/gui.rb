@@ -204,21 +204,6 @@ class VMAgui
     @img_resizer_active = false
     @windows = {}
     @app = nil
-    # imgproc = proc {
-    # GLib::Idle.add(proc {
-    # if !buf.images.empty?
-    # vma.gui.scale_all_images
-
-    # w = Gtk::Window.new(:toplevel)
-    # w.set_default_size(1, 1)
-    # w.show_all
-    # Thread.new { sleep 0.1; w.destroy }
-    # end
-
-    # false
-    # })
-    # }
-    # @delex = DelayExecutioner.new(1, imgproc)
   end
 
   def run
@@ -236,16 +221,13 @@ class VMAgui
     end
   end
 
-  def delay_scale()
-    if Time.now - @dtime > 2.0
-    end
-  end
-
   def scale_all_images
-    debug "scale all", 2
-    for img in buf.images
-      if !img[:obj].destroyed?
-        img[:obj].scale_image
+    for k, window in @windows
+      bu = window[:sw].child.bufo
+      for img in bu.images
+        if !img[:obj].destroyed?
+          img[:obj].scale_image
+        end
       end
     end
     false
@@ -746,10 +728,26 @@ class VMAgui
     end
 
     # Vimamsa::Menu.new(@menubar) #TODO:gtk4
+    GLib::Idle.add(proc { self.monitor })
+
     app.run
 
     # @window.show_all
     # @window.show
+  end
+
+  def monitor
+    @monitor_time ||= Time.now
+    @sw_width ||= @sw.width
+    return true if Time.now - @monitor_time < 0.2
+    # Detect element resize
+    if @sw.width != @sw_width
+      # puts "@sw.width=#{@sw.width}"
+      @sw_width = @sw.width
+      DelayExecutioner.exec(id: :scale_images, wait: 0.7, callable: proc { vma.gui.scale_all_images })
+    end
+    @monitor_time = Time.now
+    return true
   end
 
   def init_menu

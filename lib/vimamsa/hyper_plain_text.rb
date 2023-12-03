@@ -128,7 +128,7 @@ def hpt_scan_images(bf = nil)
   }
 
   # Need to scale after buffer loaded
-  GLib::Idle.add(proc { vma.gui.scale_all_images })
+  run_as_idle proc { vma.gui.scale_all_images }
 
   # vma.gui.delex.run #TODO:gtk4
 end
