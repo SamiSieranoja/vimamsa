@@ -65,6 +65,12 @@ class BufferList
     # TODO: implement using heap/priorityque
     @list.sort_by! { |x| x.access_time }
   end
+  
+  def each(&block)
+    for x in slist
+      block.call(x)
+    end
+  end
 
   def get_last_visited_id
     last_buf = nil
