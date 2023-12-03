@@ -123,13 +123,20 @@ class VSourceView < GtkSource::View
   def register_signals()
     check_controllers
 
-    @dt = Gtk::DropTarget.new(GLib::Type::STRING, [Gdk::DragAction::COPY, Gdk::DragAction::MOVE])
-
+    # TODO: accept GLib::Type::STRING also?
+    @dt = Gtk::DropTarget.new(GLib::Type["GFile"], [Gdk::DragAction::COPY, Gdk::DragAction::MOVE])
+    # GLib::Type::INVALID
+    
     self.add_controller(@dt)
     @dt.signal_connect "drop" do |obj, v, x, y|
+      if v.value.gtype == GLib::Type["GLocalFile"]
+        uri = v.value.uri
+      elsif v.value.class == String
+        uri = v.value.gsub(/\r\n$/, "")
+      end
       debug "dt,drop #{v.value},#{x},#{y}", 2
       begin
-        fp = URI(v.value.gsub(/\r\n$/, "")).path
+        fp = URI(uri).path
         buf.handle_drag_and_drop(fp)
       rescue URI::InvalidURIError
       end
@@ -150,16 +157,16 @@ class VSourceView < GtkSource::View
     # dc = Gtk::DropControllerMotion.new
     # self.add_controller(dc)
     # dc.signal_connect "enter" do |gesture, x, y|
-      # debug "enter", 2
-      # debug [x, y]
-      # # Ripl.start :binding => binding
-      # true
+    # debug "enter", 2
+    # debug [x, y]
+    # # Ripl.start :binding => binding
+    # true
     # end
 
     # dc.signal_connect "motion" do |gesture, x, y|
-      # debug "move", 2
-      # debug [x, y]
-      # true
+    # debug "move", 2
+    # debug [x, y]
+    # true
     # end
 
     # Implement mouse selections using @cnt_mo and @cnt_drag
