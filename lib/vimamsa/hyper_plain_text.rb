@@ -7,7 +7,7 @@ def hpt_check_cur_word(w)
       dn = File.dirname(vma.buf.fname)
 
       fcands = []
-      if fpfx[0] != "/"
+      if fpfx[0] != "/" and fpfx[0] != "~"
         fcands << "#{dn}/#{fpfx}"
         fcands << "#{dn}/#{fpfx}.txt"
       end
@@ -51,6 +51,7 @@ def hpt_check_cur_word(w)
   end
   return nil
 end
+
 
 def hpt_create_new_file(fn)
   create_new_file(fn)

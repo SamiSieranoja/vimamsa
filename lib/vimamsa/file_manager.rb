@@ -123,7 +123,7 @@ class FileManager
   def cut_file
     fn = cur_file
     debug "CUT FILE #{fn}", 2
-    @cut_files << fn
+    @cut_files << fn if !@cut_files.include?(fn)
     @copied_files = []
   end
 

@@ -27,10 +27,10 @@ Gem::Specification.new do |spec|
   
   spec.add_runtime_dependency 'ripl', '~> 0.7.1'
   spec.add_runtime_dependency 'ripl-multi_line', '~> 0.3.1'
-  spec.add_runtime_dependency 'gdk4', '~> 4.2.0'
-  spec.add_runtime_dependency 'gtk4', '~> 4.2.0'
-  spec.add_runtime_dependency 'gtksourceview5', '~> 4.2.0'
-  spec.add_runtime_dependency 'gstreamer', '~> 4.2.0'
+  spec.add_runtime_dependency 'gdk4', '~> 4.2.1'
+  spec.add_runtime_dependency 'gtk4', '~> 4.2.1'
+  spec.add_runtime_dependency 'gtksourceview5', '~> 4.2.1'
+  spec.add_runtime_dependency 'gstreamer', '~> 4.2.1'
   spec.add_runtime_dependency 'rambling-trie', '~> 2.3.1'
   
   spec.add_runtime_dependency 'differ', '~>  0.1.2'

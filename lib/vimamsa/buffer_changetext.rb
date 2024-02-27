@@ -246,9 +246,9 @@ class Buffer < String
   end
 
   def insert_tab
-    convert = conf(:tab_to_spaces_default)
-    convert = true if conf(:tab_to_spaces_languages).include?(@lang)
-    convert = false if conf(:tab_to_spaces_not_languages).include?(@lang)
+    convert = cnf.tab.to_spaces_default?
+    convert = true if cnf.tab.to_spaces_languages?.include?(@lang)
+    convert = false if cnf.tab.to_spaces_not_languages?.include?(@lang)
     tw = conf(:tab_width)
     if convert
       indent_to = (@cpos / tw) * tw + tw

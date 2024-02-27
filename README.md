@@ -4,7 +4,7 @@ Vi/Vim -inspired experimental GUI-oriented text editor written with Ruby and GTK
 
 
 ## Requirements
- - Ruby 2.0+
+ - Ruby 3.0+
  - GTK 4
 
 ## Installation
