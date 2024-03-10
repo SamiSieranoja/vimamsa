@@ -26,7 +26,7 @@ def hpt_check_cur_word(w)
       if fn
         if m[2] == "audio"
           # Thread.new { Audio.play(fn) }
-          Audio.play(fn)
+          Audio.play(fn) if cnf.audio.enabled?
         else
           if !file_is_text_file(fn)
             message "Not text file #{fn}"

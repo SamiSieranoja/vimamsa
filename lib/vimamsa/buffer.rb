@@ -1075,6 +1075,7 @@ class Buffer < String
       else
         wtype = :file
       end
+      word = path
       # elsif hpt_check_cur_word(word) #TODO: check only
       # debug word
     elsif linep != nil
@@ -1088,6 +1089,7 @@ class Buffer < String
         return [fn, :hpt_link]
       end
     end
+    
     return [word, wtype]
   end
 

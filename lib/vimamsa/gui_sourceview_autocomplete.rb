@@ -24,7 +24,9 @@ class Autocomplete
 
   def self.add_words(words)
     for w in words
-      @@trie << w
+      if w.size < 100
+        @@trie << w
+      end
     end
   end
 

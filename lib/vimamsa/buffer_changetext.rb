@@ -74,20 +74,35 @@ class Buffer < String
     set_pos(l.end + 1)
   end
 
+  # Workaround for https://github.com/ruby-gnome/ruby-gnome/issues/1609
+  def paste_start_xclip(at, register)
+    @clipboard_paste_running = true
+    Thread.new {
+      text = `xclip -selection c -o`
+      paste_finish(text, at, register)
+    }
+    return nil
+  end
+
   # Start asynchronous read of system clipboard
   def paste_start(at, register)
     @clipboard_paste_running = true
+
+    if running_wayland? and !GLib::Version::or_later?(2, 79, 0)
+      return paste_start_xclip(at, register)
+    end
+    
     clipboard = vma.gui.window.display.clipboard
     clipboard.read_text_async do |_clipboard, result|
       begin
         text = clipboard.read_text_finish(result)
       rescue Gio::IOError::NotSupported
-        # Happens when pasting from KeePassX and clipboard cleared
         debug Gio::IOError::NotSupported
       else
         paste_finish(text, at, register)
       end
     end
+    return nil
   end
 
   def paste_finish(text, at, register)
@@ -141,7 +156,7 @@ class Buffer < String
     return if !is_legal_pos(p)
     (word, range) = get_word_in_pos(p, boundary: :word)
     debug [word, range].to_s, 2
-    endpos = range.begin+rep.size
+    endpos = range.begin + rep.size
     replace_range(range, rep)
     set_pos(endpos)
   end

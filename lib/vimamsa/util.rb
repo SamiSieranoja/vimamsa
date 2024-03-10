@@ -3,6 +3,18 @@ require "open3"
 VOWELS = %w(a e i o u)
 CONSONANTS = %w(b c d f g h j k l m n p q r s t v w x y z)
 
+def running_wayland?
+  sess = ENV["DESKTOP_SESSION"]
+  sess ||= ENV["XDG_SESSION_DESKTOP"]
+  sess ||= ENV["GDMSESSION"]
+  sess ||= ""
+  if sess.match(/wayland/)
+    return true
+  else
+    return false
+  end
+end
+
 def tilde_path(abspath)
   userhome = File.expand_path("~/")
   abspath.sub(/^#{Regexp.escape(userhome)}\//, "~/")

@@ -332,6 +332,7 @@ default_keys = {
   "CV , R" => "restart_application",
   # "I ctrl!" => "vma.kbd.to_previous_mode",
   "C shift!" => "buf.save",
+  "I ctrl-s" => "buf.save",
   "I <char>" => "buf.insert_txt(<char>)",
   "I esc || I ctrl!" => "vma.kbd.to_previous_mode",
 

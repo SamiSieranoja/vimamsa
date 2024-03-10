@@ -129,9 +129,12 @@ class Editor
     FileManager.init
     Autocomplete.init
 
+    if cnf.audio.enabled?
+      require "vimamsa/audio"
+    end
+
     if cnf.lsp.enabled?
       require "vimamsa/langservp"
-      require "vimamsa/audio" # TODO:config
       @langsrv["ruby"] = LangSrv.new("ruby")
       @langsrv["cpp"] = LangSrv.new("cpp")
     end
