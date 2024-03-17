@@ -587,6 +587,7 @@ class VSourceView < GtkSource::View
     # end
 
     sv = vma.gui.sw.child
+    return if sv.nil? #TODO: should not happen?
     mode = vma.kbd.get_mode
     ctype = vma.kbd.get_cursor_type
     ctype = :visual if vma.buf.selection_active?

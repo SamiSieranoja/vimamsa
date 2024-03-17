@@ -765,6 +765,10 @@ class VMAgui
 
   def set_one_column
     return if !@two_column
+    #This always closes the leftmost column/window
+    #TODO: close rightmost column if left active
+    set_active_window(1)
+    
     @windows[2][:sw].set_child(nil)
     @windows.delete(2)
 
