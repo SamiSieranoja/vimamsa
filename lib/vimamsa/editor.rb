@@ -290,7 +290,6 @@ end
 
 def _quit()
   vma.shutdown
-  # Gtk.main_quit
 end
 
 def fatal_error(msg)

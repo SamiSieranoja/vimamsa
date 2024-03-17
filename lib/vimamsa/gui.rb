@@ -219,6 +219,7 @@ class VMAgui
         t.exit
       end
     end
+    @app.quit
   end
 
   def scale_all_images
