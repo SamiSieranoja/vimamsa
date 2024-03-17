@@ -88,7 +88,7 @@ class Buffer < String
   def paste_start(at, register)
     @clipboard_paste_running = true
 
-    if running_wayland? and !GLib::Version::or_later?(2, 79, 0)
+    if true or running_wayland? and !GLib::Version::or_later?(2, 79, 0)
       return paste_start_xclip(at, register)
     end
     

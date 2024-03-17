@@ -79,7 +79,6 @@ class VSourceView < GtkSource::View
   end
 
   def set_content(str)
-    delete_cursorchar
     self.buffer.set_text(str)
   end
 
@@ -126,7 +125,7 @@ class VSourceView < GtkSource::View
     # TODO: accept GLib::Type::STRING also?
     @dt = Gtk::DropTarget.new(GLib::Type["GFile"], [Gdk::DragAction::COPY, Gdk::DragAction::MOVE])
     # GLib::Type::INVALID
-    
+
     self.add_controller(@dt)
     @dt.signal_connect "drop" do |obj, v, x, y|
       if v.value.gtype == GLib::Type["GLocalFile"]
@@ -282,14 +281,12 @@ class VSourceView < GtkSource::View
 
   def handle_scrolling()
     return # TODO
-    delete_cursorchar
     # curpos = buffer.cursor_position
     # debug "MOVE CURSOR: #{curpos}"
     return nil if vma.gui.nil?
     return nil if @bufo.nil?
     vma.gui.run_after_scrolling proc {
       debug "START UPDATE POS AFTER SCROLLING", 2
-      delete_cursorchar
       bc = window_to_buffer_coords(Gtk::TextWindowType::WIDGET, gutter_width + 2, 60)
       if !bc.nil?
         i = coord_to_iter(bc[0], bc[1])
@@ -303,7 +300,6 @@ class VSourceView < GtkSource::View
 
   def set_cursor_to_top
     debug "set_cursor_to_top", 2
-    delete_cursorchar
     bc = window_to_buffer_coords(Gtk::TextWindowType::WIDGET, gutter_width + 2, 60)
     if !bc.nil?
       i = coord_to_iter(bc[0], bc[1])
@@ -316,7 +312,6 @@ class VSourceView < GtkSource::View
 
   # def handle_key_event(event, sig)
   def handle_key_event(keyval, keyname, sig)
-    delete_cursorchar
     if $update_cursor
       handle_scrolling
     end
@@ -440,7 +435,6 @@ class VSourceView < GtkSource::View
   end
 
   def handle_deltas()
-    delete_cursorchar
     any_change = false
     while d = @bufo.deltas.shift
       any_change = true
@@ -481,7 +475,6 @@ class VSourceView < GtkSource::View
   end
 
   def set_cursor_pos(pos)
-    delete_cursorchar
     itr = buffer.get_iter_at(:offset => pos)
     itr2 = buffer.get_iter_at(:offset => pos + 1)
     buffer.place_cursor(itr)
@@ -500,7 +493,7 @@ class VSourceView < GtkSource::View
     $idle_scroll_to_mark = true
     ensure_cursor_visible
 
-    draw_cursor
+    # draw_cursor
 
     return true
   end
@@ -562,18 +555,7 @@ class VSourceView < GtkSource::View
     end
   end
 
-  # Delete the extra char added to buffer to represent the cursor
-  def delete_cursorchar
-    if !@cursorchar.nil?
-      itr = buffer.get_iter_at(:offset => @cursorchar)
-      itr2 = buffer.get_iter_at(:offset => @cursorchar + 1)
-      buffer.delete(itr, itr2)
-      @cursorchar = nil
-    end
-  end
-
   def after_action
-    delete_cursorchar
     iterate_gui_main_loop
     handle_deltas
     iterate_gui_main_loop
@@ -589,7 +571,8 @@ class VSourceView < GtkSource::View
           self.style_context.remove_provider(@cursor_prov)
         end
         prov = Gtk::CssProvider.new
-        prov.load(data: ".view text selection { background-color: #{bg}; color: #ffffff; }")
+        # prov.load(data: ".view text selection { background-color: #{bg}; color: #ffffff; }")
+        prov.load(data: ".view text selection { background-color: #{bg}; color: #ffffff; } .view { caret-color: #{bg};  }")
         self.style_context.add_provider(prov)
         @cursor_prov = prov
       end
@@ -603,40 +586,28 @@ class VSourceView < GtkSource::View
     # @tt.font = "Arial"
     # end
 
+    sv = vma.gui.sw.child
     mode = vma.kbd.get_mode
     ctype = vma.kbd.get_cursor_type
     ctype = :visual if vma.buf.selection_active?
 
-    delete_cursorchar
     vma.gui.remove_overlay_cursor
     if [:command, :replace, :browse].include?(ctype)
       set_cursor_color(ctype)
-      if @bufo[@bufo.pos] == "\n"
-        # If we are at end of line, it's not possible to draw the cursor by making a selection. I tried to do this by drawing an overlay, but that generates issues. If moving the cursor causes the ScrolledWindow to be scrolled, these errors randomly appear and the whole view shows blank:
-        # (ruby:21016): Gtk-WARNING **: 19:52:23.181: Trying to snapshot GtkSourceView 0x55a97524c8c0 without a current allocation
-        # (ruby:21016): Gtk-WARNING **: 19:52:23.181: Trying to snapshot GtkGizmo 0x55a9727d2580 without a current allocation
-        # (ruby:21016): Gtk-WARNING **: 19:52:23.243: Trying to snapshot GtkSourceView 0x55a97524c8c0 without a current allocation
-        # vma.gui.overlay_draw_cursor(@bufo.pos)
 
-        # Current workaround is to add an empty space to the place where the cursor is and then remove this whenever we get any kind of event that might cause this class to be accessed.
-        itr = buffer.get_iter_at(:offset => @bufo.pos)
-        buffer.insert(itr, " ") # normal space
-        # buffer.insert(itr, " ") # thin space (U+2009)
-        # buffer.insert(itr, "l")
-        @cursorchar = @bufo.pos
-
-        # Apparently we need to redo this after buffer.insert:
-        itr = buffer.get_iter_at(:offset => @bufo.pos)
-        itr2 = buffer.get_iter_at(:offset => @bufo.pos + 1)
-        # buffer.apply_tag(@tt, itr, itr2)
-        buffer.select_range(itr, itr2)
-      else
-        itr = buffer.get_iter_at(:offset => @bufo.pos)
-        itr2 = buffer.get_iter_at(:offset => @bufo.pos + 1)
-        buffer.select_range(itr, itr2)
-      end
-      # elsif @bufo.visual_mode?
-
+      sv.overwrite = true
+      # sv.cursor_visible = true
+      # sv.reset_cursor_blink
+      
+      # (Via trial and error) This combination is needed to make cursor visible:
+      sv.cursor_visible = false
+      sv.cursor_visible = true
+      
+      # sv.reset_cursor_blink
+      Gtk::Settings.default.gtk_cursor_blink = false
+      # Gtk::Settings.default.gtk_cursor_blink_time = 8000
+      # vma.gui.sw.child.toggle_cursor_visible
+      # vma.gui.sw.child.cursor_visible = true
     elsif ctype == :visual
       set_cursor_color(ctype)
       # debug "VISUAL MODE"
@@ -647,16 +618,19 @@ class VSourceView < GtkSource::View
       # Pango-CRITICAL **: pango_layout_get_cursor_pos: assertion 'index >= 0 && index <= layout->length' failed
       buffer.select_range(itr, itr2)
     elsif ctype == :insert
-      # Not sure why this is needed
-      itr = buffer.get_iter_at(:offset => @bufo.pos)
-      buffer.select_range(itr, itr)
-
-      # Via trial and error, this combination is only thing that seems to work:
-      vma.gui.sw.child.toggle_cursor_visible
-      vma.gui.sw.child.cursor_visible = true
-
+      set_cursor_color(ctype)
+      sv.overwrite = false
+      # sv.cursor_visible = false
+      # sv.cursor_visible = true
       debug "INSERT MODE"
     else # TODO
+    end
+    if [:insert, :command, :replace, :browse].include?(ctype)
+      # Place cursor where it already is
+      # Without this hack, the cursor doesn't always get drawn
+      pos = @bufo.pos
+      itr = buffer.get_iter_at(:offset => pos)
+      buffer.place_cursor(itr)
     end
   end
 end
