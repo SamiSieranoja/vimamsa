@@ -65,7 +65,7 @@ class BufferList
     # TODO: implement using heap/priorityque
     @list.sort_by! { |x| x.access_time }
   end
-  
+
   def each(&block)
     for x in slist
       block.call(x)
@@ -187,21 +187,53 @@ class BufferList
     @navigation_idx = 0
   end
 
-  def history_switch_backwards
-    @navigation_idx += 1
+  def history_switch(dir = -1)
+    # -1: from newest towards oldest
+    # +1: from oldest towards newest
+
+    @navigation_idx += dir * -1
     @navigation_idx = 0 if @navigation_idx >= list.size
+    @navigation_idx = list.size - 1 if @navigation_idx < 0
+
+    # most recent is at end of slist
     b = slist[-1 - @navigation_idx]
-    debug "IND:#{@navigation_idx} RECENT:#{slist.collect { |x| x.fname }.join(" ")}"
+    puts "@navigation_idx=#{@navigation_idx}"
+
+    # Take another one from the history if buffer is already open in a window (active)
+    navtmp = @navigation_idx
+    i = 1
+    while b.is_active?
+      pp "b.is_active b=#{b.id}"
+      navtmp += dir * -1
+      b = slist[-1 - navtmp]
+      if b.nil? # went past the beginning or end of array slist
+        # Start from the end
+        if navtmp != 0 and dir == -1 # did not already start from the end
+          navtmp = 0
+          i = 0
+          b = slist[-1 - navtmp]
+        elsif navtmp == list.size and dir == 1
+          navtmp = list.size
+          i = 0
+          b = slist[-1 - navtmp]
+        else
+          return # No buffer exists which is not active already
+        end
+      end
+      i += 1
+    end
+    @navigation_idx = navtmp
+
+    pp "IND:#{@navigation_idx} RECENT:#{slist.collect { |x| x.fname }.join("\n")}"
     set_current_buffer(b.id, false)
   end
 
-  def history_switch_forwards()
-    @navigation_idx -= 1
-    @navigation_idx = list.size - 1 if @navigation_idx < 0
+  def history_switch_backwards()
+    history_switch(-1)
+  end
 
-    b = slist[-1 - @navigation_idx]
-    debug "IND:#{@navigation_idx} RECENT:#{slist.collect { |x| x.fname }.join(" ")}"
-    set_current_buffer(b.id, false)
+  def history_switch_forwards()
+    history_switch(+1)
   end
 
   def get_last_non_active_buffer

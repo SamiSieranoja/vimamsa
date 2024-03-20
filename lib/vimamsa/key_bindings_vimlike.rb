@@ -101,9 +101,7 @@ bindkey "VC h", :e_move_backward_char
 bindkey "C , , .", :backup_all_buffers
 bindkey "C z ", :start_browse_mode
 bindkey "B h", :history_switch_backwards
-# bindkey "B h", [:browse_file_backwards, proc { vma.kbd.to_previous_mode; call_action(:history_switch_backwards);  }, "Browse previous file"]
 bindkey "B l", :history_switch_forwards
-#bindkey 'B z', :center_on_current_line
 bindkey "B z", "center_on_current_line();call_action(:exit_browse_mode)"
 bindkey "B enter || B return || B esc || B j || B ctrl!", :exit_browse_mode
 bindkey "B s", :page_up

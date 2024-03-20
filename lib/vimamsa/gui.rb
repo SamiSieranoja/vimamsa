@@ -787,16 +787,15 @@ class VMAgui
     end
   end
 
-  # activate that window which has the given view
+  # Activate that window which has the given view
   def set_current_view(view)
+    # Window of current view:
     w = @windows.find { |k, v| v[:sw].child == view }
-    otherw = @windows.find { |k, v| v[:sw].child != view }
-    debug "set_current_view", 2
-    pp otherw
+    # All other windows:
+    otherw = @windows.find_all { |k, v| v[:sw].child != view }
     if !w.nil?
       set_active_window(w[0])
-      for x in otherw
-        debug "otherw", 2
+      for k, x in otherw
         x[:sw].child.focus_out()
       end
     end
