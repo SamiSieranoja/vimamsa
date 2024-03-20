@@ -18,6 +18,7 @@ cnf.mode.visual.cursor.background = "#bc6040"
 cnf.mode.replace.cursor.background = "#fc0331"
 cnf.mode.browse.cursor.background = "#f803fc"
 cnf.mode.insert.cursor.background = "#ffffff"
+cnf.mode.inactive.cursor.background = "#777777"
 
 def _insert_move(op)
   if op == :pagedown

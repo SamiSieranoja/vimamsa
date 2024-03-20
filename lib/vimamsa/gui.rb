@@ -189,8 +189,8 @@ def gui_set_window_title(wtitle, subtitle = "")
 end
 
 class VMAgui
-  attr_accessor :buffers, :sw, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c
-  attr_reader :two_column, :windows, :subtitle, :app
+  attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c
+  attr_reader :two_column, :windows, :subtitle, :app, :active_window
 
   def initialize()
     @two_column = false
@@ -252,7 +252,7 @@ class VMAgui
 
   def start_overlay_draw()
     @da = Gtk::Fixed.new
-    @overlay.add_overlay(@da)
+    @active_window[:overlay].add_overlay(@da)
 
     # @overlay.set_overlay_pass_through(@da, true) #TODO:gtk4
   end
@@ -260,7 +260,7 @@ class VMAgui
   def clear_overlay()
     if @da != nil
       # @overlay.remove(@da)
-      @overlay.remove_overlay(@da)
+      @active_window[:overlay].remove_overlay(@da)
     end
   end
 
@@ -277,20 +277,6 @@ class VMAgui
     @da.show
   end
 
-  def remove_overlay_cursor()
-    if !@cursorov.nil?
-      @overlay.remove_overlay(@cursorov)
-      @cursorov = nil
-    end
-  end
-
-  def overlay_draw_cursor(textpos)
-    # return
-    remove_overlay_cursor
-    GLib::Idle.add(proc { self.overlay_draw_cursor_(textpos) })
-    # overlay_draw_cursor_(textpos)
-  end
-
   # Run proc after animated scrolling has stopped (e.g. after page down)
   def run_after_scrolling(p)
     Thread.new {
@@ -305,31 +291,6 @@ class VMAgui
       debug "SCROLLING ENDED", 2
       run_as_idle p
     }
-  end
-
-  # To draw on empty lines and line-ends (where select_range doesn't work)
-  def overlay_draw_cursor_(textpos)
-    # Thread.new {
-    # GLib::Idle.add(proc { p.call; false })
-    # }
-
-    # while Time.now - @last_adj_time < 0.3
-    # return true
-    # end
-
-    remove_overlay_cursor
-    @cursorov = Gtk::Fixed.new
-    @overlay.add_overlay(@cursorov)
-
-    (x, y) = @view.pos_to_coord(textpos)
-    pp [x, y]
-
-    # Trying to draw only background of character "I"
-    label = Gtk::Label.new("<span background='#00ffaaff' foreground='#00ffaaff' weight='ultrabold'>I</span>")
-    label.use_markup = true
-    @cursorov.put(label, x, y)
-    @cursorov.show
-    return false
   end
 
   def handle_deltas()
@@ -596,6 +557,8 @@ class VMAgui
 
     Gtk::Settings.default.gtk_application_prefer_dark_theme = true
     Gtk::Settings.default.gtk_theme_name = "Adwaita"
+    Gtk::Settings.default.gtk_cursor_blink = false
+    Gtk::Settings.default.gtk_cursor_blink_time = 4000
 
     app.signal_connect "activate" do
       @window = Gtk::ApplicationWindow.new(app)
@@ -613,22 +576,9 @@ class VMAgui
 
       reset_controllers
 
-      @sw = Gtk::ScrolledWindow.new
-      @sw.set_policy(:automatic, :automatic)
+      @windows[1] = new_window(1)
 
       @last_adj_time = Time.now
-      @sw.vadjustment.signal_connect("value-changed") { |x|
-        # pp x.page_increment
-        # pp x.page_size
-        # pp x.step_increment
-        # pp x.upper
-        # pp x.value
-        # pp x
-        @last_adj_time = Time.now
-      }
-
-      @overlay = Gtk::Overlay.new
-      @overlay.add_overlay(@sw)
 
       @statnfo = Gtk::Label.new
       @subtitle = Gtk::Label.new("")
@@ -644,42 +594,12 @@ class VMAgui
       @statnfo.style_context.add_provider(provider)
 
       # numbers: left, top, width, height
-      @vbox.attach(@overlay, 0, 2, 2, 1)
-      @sw.vexpand = true
-      @sw.hexpand = true
+      @vbox.attach(@windows[1][:overlay], 0, 2, 2, 1)
 
       # column, row, width height
       @vbox.attach(@statbox, 1, 1, 1, 1)
 
-      @overlay.vexpand = true
-      @overlay.hexpand = true
-
       init_minibuffer
-
-      name = "save"
-      window = @window
-      action = Gio::SimpleAction.new(name)
-      action.signal_connect "activate" do |_simple_action, _parameter|
-        dialog = Gtk::MessageDialog.new(:parent => window,
-                                        :flags => :destroy_with_parent,
-                                        :buttons => :close,
-                                        :message => "Action FOOBAR activated.")
-        dialog.signal_connect(:response) do
-          dialog.destroy
-        end
-        dialog.show
-      end
-
-      @window.add_action(action)
-      doc_actions = Gio::SimpleActionGroup.new
-      doc_actions.add_action(action)
-
-      act_quit = Gio::SimpleAction.new("quit")
-      app.add_action(act_quit)
-      act_quit.signal_connect "activate" do |_simple_action, _parameter|
-        window.destroy
-        exit!
-      end
 
       menubar = Gio::Menu.new
       app.menubar = menubar
@@ -687,7 +607,6 @@ class VMAgui
 
       @menubar = menubar
 
-      @windows[1] = { :sw => @sw, :overlay => @overlay, :id => 1 }
       @active_window = @windows[1]
 
       @window.show
@@ -728,23 +647,20 @@ class VMAgui
       vma.start
     end
 
-    # Vimamsa::Menu.new(@menubar) #TODO:gtk4
     GLib::Idle.add(proc { self.monitor })
 
     app.run
-
-    # @window.show_all
-    # @window.show
   end
 
   def monitor
+    swa = @windows[1][:sw]
     @monitor_time ||= Time.now
-    @sw_width ||= @sw.width
+    @sw_width ||= swa.width
     return true if Time.now - @monitor_time < 0.2
     # Detect element resize
-    if @sw.width != @sw_width
+    if swa.width != @sw_width
       # puts "@sw.width=#{@sw.width}"
-      @sw_width = @sw.width
+      @sw_width = swa.width
       DelayExecutioner.exec(id: :scale_images, wait: 0.7, callable: proc { vma.gui.scale_all_images })
     end
     @monitor_time = Time.now
@@ -768,55 +684,83 @@ class VMAgui
     #This always closes the leftmost column/window
     #TODO: close rightmost column if left active
     set_active_window(1)
-    
+
     @windows[2][:sw].set_child(nil)
     @windows.delete(2)
+    w1 = @windows[1]
 
     @pane.set_start_child(nil)
     @pane.set_end_child(nil)
 
     @vbox.remove(@pane)
-    @vbox.attach(@overlay, 0, 2, 2, 1)
+    @vbox.attach(w1[:overlay], 0, 2, 2, 1)
     @vbox.attach(@statbox, 1, 1, 1, 1)
     @two_column = false
   end
 
+  def new_window(win_id)
+    n_sw = Gtk::ScrolledWindow.new
+    n_sw.set_policy(:automatic, :automatic)
+    n_overlay = Gtk::Overlay.new
+    n_overlay.add_overlay(n_sw)
+    # @pane = Gtk::Paned.new(:horizontal)
+
+    win = { :sw => n_sw, :overlay => n_overlay, :id => win_id }
+    # @windows[2] = { :sw => @sw2, :overlay => @overlay2, :id => 2 }
+
+    # @vbox.remove(@overlay)
+
+    # @pane.set_start_child(@overlay2)
+    # @pane.set_end_child(@overlay)
+
+    # numbers: left, top, width, height
+    # @vbox.attach(@pane, 0, 2, 2, 1)
+
+    n_sw.vexpand = true
+    n_sw.hexpand = true
+
+    n_overlay.vexpand = true
+    n_overlay.hexpand = true
+
+    # TODO: remove??
+    n_sw.vadjustment.signal_connect("value-changed") { |x|
+ # pp x.page_increment
+           # pp x.page_size
+           # pp x.step_increment
+           # pp x.upper
+           # pp x.value
+           # pp x
+           # @last_adj_time = Time.now
+      }
+
+    # @sw2.show
+    return win
+  end
+
   def set_two_column
     return if @two_column
-    # @window.set_default_size(800, 600) #TODO:gtk4
-    # @vpaned = Gtk::Paned.new(:vertical)
-    # @vbox = Gtk::Grid.new()
-    # @window.add(@vbox)
+    @windows[2] = new_window(2)
 
-    @sw2 = Gtk::ScrolledWindow.new
-    @sw2.set_policy(:automatic, :automatic)
-    @overlay2 = Gtk::Overlay.new
-    @overlay2.add_overlay(@sw2)
+    w1 = @windows[1]
+    w2 = @windows[2]
+
+    # Remove overlay from @vbox and add the Gtk::Paned instead
     @pane = Gtk::Paned.new(:horizontal)
-
-    @windows[2] = { :sw => @sw2, :overlay => @overlay2, :id => 2 }
-
-    @vbox.remove(@overlay)
-
-    @pane.set_start_child(@overlay2)
-    @pane.set_end_child(@overlay)
+    @vbox.remove(w1[:overlay])
+    @pane.set_start_child(w2[:overlay])
+    @pane.set_end_child(w1[:overlay])
 
     # numbers: left, top, width, height
     @vbox.attach(@pane, 0, 2, 2, 1)
 
-    @sw2.vexpand = true
-    @sw2.hexpand = true
-
-    @overlay2.vexpand = true
-    @overlay2.hexpand = true
-
-    @sw2.show
+    w2[:sw].show
     @two_column = true
 
     last = vma.buffers.get_last_visited_id
     if !last.nil?
       set_buffer_to_window(last, 2)
     else
+      # If there is only one buffer, create a new one and add to the new window/column
       bf = create_new_buffer "\n\n", "buff", false
       set_buffer_to_window(bf.id, 2)
     end
@@ -839,8 +783,15 @@ class VMAgui
   # activate that window which has the given view
   def set_current_view(view)
     w = @windows.find { |k, v| v[:sw].child == view }
+    otherw = @windows.find { |k, v| v[:sw].child != view }
+    debug "set_current_view", 2
+    pp otherw
     if !w.nil?
       set_active_window(w[0])
+      for x in otherw
+        debug "otherw", 2
+        x[:sw].child.focus_out()
+      end
     end
   end
 
@@ -855,19 +806,29 @@ class VMAgui
     end
 
     @active_window = @windows[id]
-    @active_column = id #TODO: remove
+    @active_column = id
+    pp "set active window #{id}, bufo:#{@active_window[:sw].child.bufo.id}"
 
-    @sw = @windows[id][:sw]
-    @overlay = @windows[id][:overlay]
+    @active_window[:sw].child.focus_in()
+    for k, w in @windows
+      if w != @active_window
+        fochild = w[:sw].child
+        run_as_idle proc {
+                      # Thread.new{
+                      # sleep 0.6
+                      pp "idle proc start"
+                      pp fochild.bufo.id
+                      fochild.focus_out()
+                      pp "idle proc end"
+                    }
+      end
+    end
 
-    vma.buffers.set_current_buffer_by_id(@sw.child.bufo.id)
-
-    #TODO: set buf & view of active window??
-
+    vma.buffers.set_current_buffer_by_id(@active_window[:sw].child.bufo.id)
   end
 
   def current_view
-    return @sw.child
+    return @active_window[:sw].child
   end
 
   def set_buffer_to_window(bufid, winid)
@@ -878,9 +839,6 @@ class VMAgui
     @windows[winid][:sw].set_child(view)
     idle_ensure_cursor_drawn
 
-    # @overlay = Gtk::Overlay.new
-    # @overlay.add_overlay(view)
-
     #TODO:???
     # @view = view
     # @buf1 = buf1
@@ -890,10 +848,10 @@ class VMAgui
   end
 
   def set_current_buffer(id)
-    view = @buffers[id]
+    view2 = @buffers[id]
     debug "vma.gui.set_current_buffer(#{id}), view=#{view}"
-    buf1 = view.buffer
-    @view = view
+    buf1 = view2.buffer
+    @view = view2
     @buf1 = buf1
     $view = view
     $vbuf = buf1
@@ -906,14 +864,17 @@ class VMAgui
       toggle_active_window
     else
       #TODO: improve
-      @overlay.remove_overlay(@sw)
-      @sw.set_child(nil)
+      swa = @active_window[:sw]
+      ol = @active_window[:overlay]
+      ol.remove_overlay(swa)
+      swa.set_child(nil)
       # Creating a new ScrolledWindow every time to avoid a layout bug
       # https://gitlab.gnome.org/GNOME/gtk/-/issues/6189
-      @sw = new_scrolled_window
-      @sw.set_child(view)
-      @overlay.add_overlay(@sw)
-      @active_window[:sw] = @sw
+      swb = new_scrolled_window
+      swb.set_child(view2)
+      ol.add_overlay(swb)
+      @active_window[:view] = view
+      @active_window[:sw] = swb
     end
     view.grab_focus
 
@@ -932,18 +893,20 @@ class VMAgui
   end
 
   def page_down(multip: 1.0)
-    va = @sw.vadjustment
+    sw = @active_window[:sw]
+    va = sw.vadjustment
     newval = va.value + va.page_increment * multip
     va.value = newval
-    @sw.child.set_cursor_to_top
+    sw.child.set_cursor_to_top
   end
 
   def page_up(multip: 1.0)
-    va = @sw.vadjustment
+    sw = @active_window[:sw]
+    va = sw.vadjustment
     newval = va.value - va.page_increment * multip
     newval = 0 if newval < 0
     va.value = newval
-    @sw.child.set_cursor_to_top
+    sw.child.set_cursor_to_top
   end
 
   def idle_ensure_cursor_drawn

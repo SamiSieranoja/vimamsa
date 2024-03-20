@@ -119,6 +119,23 @@ class VSourceView < GtkSource::View
     end
   end
 
+  def focus_out()
+      pp "focus_out #{@bufo.id}"
+      
+      set_cursor_color(:inactive)
+      
+      # This does not seem to work: (TODO:why?)
+      # self.cursor_visible = false
+  end
+  
+  def focus_in()
+      set_cursor_color(@ctype)
+      self.cursor_visible = false
+      self.cursor_visible = true
+      self.grab_focus
+  end
+ 
+  
   def register_signals()
     check_controllers
 
@@ -581,34 +598,29 @@ class VSourceView < GtkSource::View
   end
 
   def draw_cursor
-    # if @tt.nil?
-    # @tt = buffer.create_tag("font_tag")
-    # @tt.font = "Arial"
-    # end
 
-    sv = vma.gui.sw.child
-    return if sv.nil? #TODO: should not happen?
+    sv = vma.gui.active_window[:sw].child
+    return if sv.nil?
+    if sv != self # if we are not the current buffer
+      sv.draw_cursor
+      return
+    end
+
     mode = vma.kbd.get_mode
     ctype = vma.kbd.get_cursor_type
     ctype = :visual if vma.buf.selection_active?
 
-    vma.gui.remove_overlay_cursor
     if [:command, :replace, :browse].include?(ctype)
       set_cursor_color(ctype)
 
-      sv.overwrite = true
-      # sv.cursor_visible = true
-      # sv.reset_cursor_blink
-      
-      # (Via trial and error) This combination is needed to make cursor visible:
-      sv.cursor_visible = false
-      sv.cursor_visible = true
-      
-      # sv.reset_cursor_blink
-      Gtk::Settings.default.gtk_cursor_blink = false
-      # Gtk::Settings.default.gtk_cursor_blink_time = 8000
-      # vma.gui.sw.child.toggle_cursor_visible
-      # vma.gui.sw.child.cursor_visible = true
+      if !self.overwrite?
+        self.overwrite = true
+
+        # (Via trial and error) This combination is needed to make cursor visible:
+        # TODO: determine why "self.cursor_visible = true" is not enough
+        self.cursor_visible = false
+        self.cursor_visible = true
+      end
     elsif ctype == :visual
       set_cursor_color(ctype)
       # debug "VISUAL MODE"
@@ -620,12 +632,11 @@ class VSourceView < GtkSource::View
       buffer.select_range(itr, itr2)
     elsif ctype == :insert
       set_cursor_color(ctype)
-      sv.overwrite = false
-      # sv.cursor_visible = false
-      # sv.cursor_visible = true
+      self.overwrite = false
       debug "INSERT MODE"
     else # TODO
     end
+
     if [:insert, :command, :replace, :browse].include?(ctype)
       # Place cursor where it already is
       # Without this hack, the cursor doesn't always get drawn
@@ -633,5 +644,13 @@ class VSourceView < GtkSource::View
       itr = buffer.get_iter_at(:offset => pos)
       buffer.place_cursor(itr)
     end
-  end
+
+    # Sometimes we lose focus and the cursor vanishes because of that
+    # TODO: determine why&when
+    if !self.has_focus?
+      self.grab_focus
+      self.cursor_visible = false
+      self.cursor_visible = true
+    end
+  end #end draw_cursor
 end
