@@ -1,6 +1,11 @@
 module Vimamsa
   class Menu
     def add_to_menu(_mpath, x)
+      # If no menu label provided, take from the action definition
+      if !x[:action].nil? and x[:label].nil?
+        x[:label] = vma.actions[x[:action]].method_name
+      end
+
       mpath = _mpath.split(".")
       curnfo = @nfo
       for y in mpath
@@ -31,9 +36,10 @@ module Vimamsa
       add_to_menu "Edit.Redo", { :label => "Redo edit", :action => :edit_redo }
       add_to_menu "Edit.SearchReplace", { :label => "Search and replace", :action => :gui_search_replace }
       add_to_menu "Edit.Find", { :label => "Find", :action => :find_in_buffer }
-      
-      add_to_menu "Edit.StartCompletion", { :label => "StartCompletion", :action => :start_autocomplete }
-      add_to_menu "Edit.ShowCompletion", { :label => "ShowCompletion", :action => :show_autocomplete }
+
+      # add_to_menu "Edit.StartCompletion", { :label => "StartCompletion", :action => :start_autocomplete }
+      # add_to_menu "Edit.ShowCompletion", { :label => "ShowCompletion", :action => :show_autocomplete }
+      add_to_menu "Edit.CustomRb", { :action => :edit_customrb }
 
       add_to_menu "Actions.SearchForActions", { :label => "Search for Actions", :action => :search_actions }
 
@@ -46,13 +52,11 @@ module Vimamsa
       add_to_menu "Actions.experimental.EnableDebug", { :label => "Enable debug", :action => :enable_debug }
       add_to_menu "Actions.experimental.DisableDebug", { :label => "Disable debug", :action => :disable_debug }
       add_to_menu "Actions.experimental.ShowImages", { :label => "Show images ⟦img:path⟧", :action => :show_images }
-      
+
       add_to_menu "Actions.debug.dumpkbd", { :label => "Dump kbd state", :action => :kbd_dump_state }
-      
-      
+
       add_to_menu "View.BufferManager", { :label => "Show open files", :action => :start_buf_manager }
       add_to_menu "View.TwoColumn", { :label => "Toggle two column mode", :action => :toggle_two_column }
-      
 
       add_to_menu "Actions.EncryptFile", { :label => "Encrypt file", :action => :encrypt_file }
       add_to_menu "Help.KeyBindings", { :label => "Show key bindings", :action => :show_key_bindings }
@@ -89,7 +93,7 @@ module Vimamsa
         label_str = nfo[:label] + kbd_str
         actkey = nfo[:action].to_s
         menuitem = Gio::MenuItem.new(label_str, "app.#{actkey}")
-        
+
         # This worked in GTK3:
         # But seems there is no way to access the Label object in GTK4
         # menuitem.children[0].set_markup(label_str)
@@ -110,7 +114,6 @@ module Vimamsa
       # menuitem.set_attribute_value("use-markup", true)
       # This might change in the future(?), but the string version still works in gtk-4.13.0 (gtk/gtkmenutrackeritem.c)
 
-
       if !nfo[:items].nil? and !nfo[:items].empty?
         for k2, item in nfo[:items]
           build_menu(item, menu)
@@ -118,7 +121,6 @@ module Vimamsa
         menuitem.submenu = menu
       end
       o = parent.append_item(menuitem)
-
     end
   end #end class
 end

@@ -169,6 +169,9 @@ act_list = {
   :search_actions => { :proc => proc { vma.actions.gui_search },
                        :desc => "Search actions", :group => :search },
 
+  :edit_customrb => { :proc => proc { jump_to_file("~/.config/vimamsa/custom.rb") },
+                      :desc => "Customize (edit custom.rb)", :group => :search },
+
   :toggle_active_window => { :proc => proc { vma.gui.toggle_active_window },
                              :desc => "Toggle active window", :group => :search },
 
@@ -188,15 +191,14 @@ act_list = {
                       :desc => "Output SHA256 hex digest of curent buffer" },
 
   :start_autocomplete => { :proc => proc { vma.buf.view.start_autocomplete },
-                      :desc => "Start autocomplete" },
-                      
-  :show_autocomplete => { :proc => proc { 
-  # vma.buf.view.signal_emit("show-completion")
-  # vma.buf.view.show_completion
-  vma.buf.view.show_completions
-   },
-                      :desc => "Show autocomplete" },
-                     
+                           :desc => "Start autocomplete" },
+
+  :show_autocomplete => { :proc => proc {
+    # vma.buf.view.signal_emit("show-completion")
+    # vma.buf.view.show_completion
+    vma.buf.view.show_completions
+  },
+                          :desc => "Show autocomplete" },
 
 }
 
