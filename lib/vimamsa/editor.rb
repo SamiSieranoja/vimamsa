@@ -91,23 +91,23 @@ class Editor
 
     @gui.init_menu
 
-    mkdir_if_not_exists("~/.vimamsa")
-    mkdir_if_not_exists("~/.vimamsa/backup")
-    mkdir_if_not_exists("~/.vimamsa/listen")
-    listen_dir = File.expand_path "~/.vimamsa/listen"
+    mkdir_if_not_exists("~/.config/vimamsa")
+    mkdir_if_not_exists("~/.config/vimamsa/backup")
+    mkdir_if_not_exists("~/.config/vimamsa/listen")
+    listen_dir = File.expand_path "~/.config/vimamsa/listen"
     listener = Listen.to(listen_dir) do |modified, added, removed|
       debug([modified: modified, added: added, removed: removed])
       open_file_listener(added)
     end
     listener.start
 
-    custom_fn = File.expand_path("~/.vimamsa/custom.rb")
+    custom_fn = File.expand_path("~/.config/vimamsa/custom.rb")
     if !File.exist?(custom_fn)
       example_custom = IO.read(ppath("custom_example.rb"))
       IO.write(custom_fn, example_custom)
     end
 
-    mkdir_if_not_exists("~/.vimamsa/custom.rb")
+    mkdir_if_not_exists("~/.config/vimamsa/custom.rb")
 
     $cnf[:theme] = "Twilight_edit"
     $cnf[:syntax_highlight] = true
@@ -119,7 +119,7 @@ class Editor
     # set_gui_style(1)
 
     #TODO: remove
-    dotfile = read_file("", "~/.vimamsarc")
+    dotfile = read_file("", "~/.config/vimamsarc")
     eval(dotfile) if dotfile
 
     custom_script = read_file("", custom_fn)
@@ -622,7 +622,7 @@ def hook_draw()
 end
 
 def get_dot_path(sfx)
-  dot_dir = File.expand_path("~/.vimamsa")
+  dot_dir = File.expand_path("~/.config/vimamsa")
   Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
   dpath = "#{dot_dir}/#{sfx}"
   return dpath

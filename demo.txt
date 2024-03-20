@@ -15,7 +15,7 @@ Extension .txt can be omitted:
 ⟦help:keybindings⟧
 
 Customizations:
-⟦~/.vimamsa/custom.rb⟧
+⟦~/.config/vimamsa/custom.rb⟧
 
 ◼ Images
 Images work in .txt-files by drag&drop. (experimental)

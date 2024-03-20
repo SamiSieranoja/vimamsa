@@ -9,7 +9,7 @@ selfpath = File.readlink(selfpath) if File.lstat(selfpath).symlink?
 scriptdir = File.expand_path(File.dirname(selfpath) + "/..")
 
 # If process is already running, open the parameter file in the running process and exit.
-listen_dir = File.expand_path("~/.vimamsa/listen")
+listen_dir = File.expand_path("~/.config/vimamsa/listen")
 if File.exist?(listen_dir) and !ARGV[0].nil?
   tmpf = Tempfile.new("vmarun", listen_dir)
   fp = tmpf.path

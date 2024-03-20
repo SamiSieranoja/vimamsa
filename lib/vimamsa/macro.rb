@@ -165,7 +165,7 @@ class Macro
     m = @recorded_macros[name]
     return if !(m.kind_of?(Array) and m.any?)
     contents = m.join(";")
-    dot_dir = File.expand_path("~/.vimamsa")
+    dot_dir = File.expand_path("~/.config/.vimamsa")
     Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
     save_fn = "#{dot_dir}/macro_#{name}.rb"
 
