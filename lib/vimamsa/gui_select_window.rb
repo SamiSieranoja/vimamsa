@@ -154,7 +154,9 @@ class SelectUpdateWindow
     sw = Gtk::ScrolledWindow.new(nil, nil)
     # sw.shadow_type = :etched_in #TODO:gtk4
     sw.set_policy(:never, :automatic)
-    vbox.pack_end(sw, :expand => true, :fill => true, :padding => 0)
+    vbox.append(sw)
+    sw.vexpand = true
+    sw.hexpand = true
 
     # sw.add(treeview) #TODO:gtk4
     sw.set_child(treeview)

@@ -347,6 +347,7 @@ class VMAgui
     sw.set_child(view)
   end
 
+    #TODO: implement in gtk4
   def init_header_bar()
     header = Gtk::HeaderBar.new
     @header = header
@@ -369,13 +370,13 @@ class VMAgui
     # icon = Gio::ThemedIcon.new("open-menu-symbolic")
     # image = Gtk::Image.new(:icon => icon, :size => :button)
     # button.add(image)
-    # header.pack_end(button)
+    # header.append(button)
 
     button = Gtk::Button.new
     icon = Gio::ThemedIcon.new("document-open-symbolic")
     image = Gtk::Image.new(:icon => icon, :size => :button)
     button.add(image)
-    header.pack_end(button)
+    header.append(button)
 
     button.signal_connect "clicked" do |_widget|
       open_file_dialog
@@ -385,7 +386,7 @@ class VMAgui
     icon = Gio::ThemedIcon.new("document-save-symbolic")
     image = Gtk::Image.new(:icon => icon, :size => :button)
     button.add(image)
-    header.pack_end(button)
+    header.append(button)
     button.signal_connect "clicked" do |_widget|
       buf.save
     end
@@ -394,7 +395,7 @@ class VMAgui
     icon = Gio::ThemedIcon.new("document-new-symbolic")
     image = Gtk::Image.new(:icon => icon, :size => :button)
     button.add(image)
-    header.pack_end(button)
+    header.append(button)
     button.signal_connect "clicked" do |_widget|
       create_new_file
     end
@@ -580,12 +581,18 @@ class VMAgui
 
       @last_adj_time = Time.now
 
+
+      # To show keyboard key binding state
       @statnfo = Gtk::Label.new
+      
+      # To show e.g. current folder
       @subtitle = Gtk::Label.new("")
+      
       @statbox = Gtk::Box.new(:horizontal, 2)
       @statnfo.set_size_request(150, 10)
-      @statbox.pack_end(@subtitle, :expand => true, :fill => true, :padding => 0)
-      @statbox.pack_end(@statnfo, :expand => false, :fill => false, :padding => 0)
+      @statbox.append(@subtitle)
+      @subtitle.hexpand = true
+      @statbox.append(@statnfo)
       provider = Gtk::CssProvider.new
       @statnfo.add_css_class("statnfo")
       provider.load(data: "label.statnfo {   background-color:#353535; font-size: 10pt; margin-top:2px; margin-bottom:2px; align:right;}")
@@ -694,7 +701,7 @@ class VMAgui
 
     @vbox.remove(@pane)
     @vbox.attach(w1[:overlay], 0, 2, 2, 1)
-    @vbox.attach(@statbox, 1, 1, 1, 1)
+    # @vbox.attach(@statbox, 1, 1, 1, 1)
     @two_column = false
   end
 
@@ -807,20 +814,12 @@ class VMAgui
 
     @active_window = @windows[id]
     @active_column = id
-    pp "set active window #{id}, bufo:#{@active_window[:sw].child.bufo.id}"
 
     @active_window[:sw].child.focus_in()
     for k, w in @windows
       if w != @active_window
         fochild = w[:sw].child
-        run_as_idle proc {
-                      # Thread.new{
-                      # sleep 0.6
-                      pp "idle proc start"
-                      pp fochild.bufo.id
-                      fochild.focus_out()
-                      pp "idle proc end"
-                    }
+        run_as_idle proc { fochild.focus_out() }
       end
     end
 

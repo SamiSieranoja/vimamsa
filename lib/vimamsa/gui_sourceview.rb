@@ -120,8 +120,6 @@ class VSourceView < GtkSource::View
   end
 
   def focus_out()
-      pp "focus_out #{@bufo.id}"
-      
       set_cursor_color(:inactive)
       
       # This does not seem to work: (TODO:why?)

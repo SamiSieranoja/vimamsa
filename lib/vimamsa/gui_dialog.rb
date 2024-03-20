@@ -55,9 +55,8 @@ class OneInputAction
     frame.set_child(vbox)
 
     hbox = Gtk::Box.new(:horizontal, 8)
-    # @window.add(hbox)
-    vbox.pack_end(infolabel, :expand => false, :fill => false, :padding => 0)
-    vbox.pack_end(hbox, :expand => false, :fill => false, :padding => 0)
+    vbox.append(infolabel)
+    vbox.append(hbox)
 
     button = Gtk::Button.new(:label => button_title)
     cancel_button = Gtk::Button.new(:label => "Cancel")
@@ -95,10 +94,10 @@ class OneInputAction
       end
     end
 
-    hbox.pack_end(label, :expand => false, :fill => false, :padding => 0)
-    hbox.pack_end(@entry1, :expand => false, :fill => false, :padding => 0)
-    hbox.pack_end(button, :expand => false, :fill => false, :padding => 0)
-    hbox.pack_end(cancel_button, :expand => false, :fill => false, :padding => 0)
+    hbox.append(label)
+    hbox.append(@entry1)
+    hbox.append(button)
+    hbox.append(cancel_button)
     return
   end
 
