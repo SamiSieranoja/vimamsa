@@ -174,10 +174,10 @@ act_list = {
                       :desc => "Customize (edit custom.rb)", :group => :search },
 
   :toggle_active_window => { :proc => proc { vma.gui.toggle_active_window },
-                             :desc => "Toggle active window", :group => :search },
+                             :desc => "Switch active column in two column mode", :group => :search },
 
   :toggle_two_column => { :proc => proc { vma.gui.toggle_two_column },
-                          :desc => "Set two column mode", :group => :search },
+                          :desc => "Toggle two column mode", :group => :search },
 
   :content_search => { :proc => proc { FileContentSearch.start_gui },
                        :desc => "Search content of files", :group => :search },

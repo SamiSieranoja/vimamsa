@@ -40,8 +40,9 @@ class OneInputAction
   def initialize(main_window, title, field_label, button_title, callback, opt = {})
     @window = Gtk::Window.new()
     # @window.screen = main_window.screen
-    # @window.title = title
     @window.title = ""
+    # @window.width_request = 800
+    # @window.hexpand = false
 
     frame = Gtk::Frame.new()
     # frame.margin = 20
@@ -49,6 +50,9 @@ class OneInputAction
 
     infolabel = Gtk::Label.new
     infolabel.markup = title
+    infolabel.wrap = true
+    infolabel.max_width_chars = 80
+
 
     vbox = Gtk::Box.new(:vertical, 8)
     vbox.margin = 10

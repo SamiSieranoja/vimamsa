@@ -4,14 +4,6 @@ class FileContentSearch
   def self.start_gui()
     search_paths = vma.get_content_search_paths.join("<br/>")
 
-    nfo = "<span size='x-large'>Search contents of text files</span>
-Will search all .txt files in the following directories:
-#{search_paths}
-  
-<span>Hint: add empty file named .vma_project to directories you want to search in. 
- If .vma_project exists in parent directory of current file, searches within that directory.
-  </span>"
-
     callback = proc { |x| FileContentSearch.search_buffer(x) }
 
     params = {}
@@ -92,17 +84,12 @@ end
 def gui_ack()
   search_paths = vma.get_content_search_paths.join("<br/>")
 
-  nfo = "<html><h2>Search contents of all files using ack</h2>
-  <div style='width:300px'>
-  <p>Hint: add empty file named .vma_project to dirs you want to search.</p>\n<p>If .vma_project exists in parent dir of current file, searches within that dir</p></div></html>"
-
   nfo = "<span size='x-large'>Search contents of all files using ack</span>
 Will search the following directories:
 #{search_paths}
   
-<span>Hint: add empty file named .vma_project to directories you want to search in. 
- If .vma_project exists in parent directory of current file, searches within that directory.
-  </span>"
+<span>Note: Directory determined automatically as the first parent directory of a last accessed file which includes file/dir named .git or .vma_project. Or, if not found, the last accessed directory.
+</span>"
 
   callback = proc { |x| Ack.new.ack_buffer(x) }
   gui_one_input_action(nfo, "Search:", "search", callback)

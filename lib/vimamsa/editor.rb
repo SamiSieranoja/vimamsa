@@ -636,10 +636,14 @@ def find_project_dir_of_fn(fn)
   parent_dirs = (0..(pcomp.size - 2)).collect { |x| "/" + pcomp[0..x].join("/") }.reverse
   projdir = nil
   for pdir in parent_dirs
-    candfn = "#{pdir}/.vma_project"
-    if File.exist?(candfn)
-      projdir = pdir
-      break
+    candfns = []
+    candfns << "#{pdir}/.vma_project"
+    candfns << "#{pdir}/.git"
+    for candfn in candfns
+      if File.exist?(candfn)
+        projdir = pdir
+        break
+      end
     end
   end
   return projdir
