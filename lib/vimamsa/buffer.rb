@@ -271,7 +271,7 @@ class Buffer < String
 
   def unindent
     debug("unindent", 2)
-    conf(:tab_width).times {
+    cnf.tab.width!.times {
       p = @pos - 1
       if p >= 0
         if self[p] == " "
@@ -754,7 +754,7 @@ class Buffer < String
   end
 
   def update_highlights(pos, changeamount, changestr)
-    return if !self.is_highlighted # $cnf[:syntax_highlight]
+    return if !self.is_highlighted
     lpos, cpos = get_line_and_col_pos(pos)
     if @highlights and @highlights[lpos]
       hl = @highlights[lpos]
@@ -1158,7 +1158,7 @@ class Buffer < String
     c = c.force_encoding("UTF-8");  #TODO:correct?
 
     c = "\n" if c == "\r"
-    if $cnf[:indent_based_on_last_line] and c == "\n" and @lpos > 0
+    if cnf.indent_based_on_last_line? and c == "\n" and @lpos > 0
       # Indent start of new line based on last line
       last_line = line(@lpos)
       m = /^( +)([^ ]+|$)/.match(last_line)

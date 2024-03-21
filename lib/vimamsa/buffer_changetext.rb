@@ -264,7 +264,7 @@ class Buffer < String
     convert = cnf.tab.to_spaces_default?
     convert = true if cnf.tab.to_spaces_languages?.include?(@lang)
     convert = false if cnf.tab.to_spaces_not_languages?.include?(@lang)
-    tw = conf(:tab_width)
+    tw = cnf.tab.width!
     if convert
       indent_to = (@cpos / tw) * tw + tw
       indentdiff = indent_to - @cpos

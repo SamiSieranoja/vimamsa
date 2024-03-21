@@ -142,7 +142,8 @@ def gui_create_buffer(id, bufo)
   provider.load(data: "textview { font-family: #{cnf.font.family!}; font-size: #{cnf.font.size!}pt; }")
   view.style_context.add_provider(provider)
   view.wrap_mode = :char
-  view.set_tab_width(conf(:tab_width))
+
+  view.set_tab_width(cnf.tab.width!)
 
   $vmag.buffers[id] = view
 end
@@ -430,7 +431,6 @@ class VMAgui
 
     header.pack_start(box)
     @window.titlebar = header
-    # @window.add(Gtk::TextView.new)
   end
 
   def debug_idle_func
@@ -441,7 +441,7 @@ class VMAgui
       # @view.check_controllers
     end
 
-    ctrl_fn = File.expand_path("~/.vimamsa/ripl_ctrl")
+    ctrl_fn = File.expand_path(get_dot_path("ripl_ctrl"))
     # Allows to debug in case keyboard handling is lost
     if File.exist?(ctrl_fn)
       File.delete(ctrl_fn)

@@ -52,7 +52,7 @@ class LangSrv
     @id = 0
 
     wf = []
-    for c in conf(:workspace_folders)
+    for c in cnf.workspace_folders!
       wf << LSP::Interface::WorkspaceFolder.new(uri: c[:uri], name: c[:name])
     end
     debug "WORKSPACE FOLDERS", 2
@@ -157,7 +157,6 @@ class LangSrv
     @writer.write(id: id, params: a, method: "textDocument/definition")
     r = wait_for_response(id)
     return nil if r.nil?
-    # Ripl.start :binding => binding
     pp r
     line = HSafe.new(r)[:result][0][:range][:start][:line].val
     uri = HSafe.new(r)[:result][0][:uri].val

@@ -91,36 +91,28 @@ class Editor
 
     @gui.init_menu
 
-    mkdir_if_not_exists("~/.config/vimamsa")
-    mkdir_if_not_exists("~/.config/vimamsa/backup")
-    mkdir_if_not_exists("~/.config/vimamsa/listen")
-    listen_dir = File.expand_path "~/.config/vimamsa/listen"
+    mkdir_if_not_exists(get_dot_path(""))
+    mkdir_if_not_exists(get_dot_path("backup"))
+    mkdir_if_not_exists(get_dot_path("testfoobar")) #TODO
+    listen_dir = get_dot_path("listen")
+    mkdir_if_not_exists(listen_dir)
     listener = Listen.to(listen_dir) do |modified, added, removed|
       debug([modified: modified, added: added, removed: removed])
       open_file_listener(added)
     end
     listener.start
 
-    custom_fn = File.expand_path("~/.config/vimamsa/custom.rb")
+    custom_fn = get_dot_path("custom.rb")
     if !File.exist?(custom_fn)
       example_custom = IO.read(ppath("custom_example.rb"))
       IO.write(custom_fn, example_custom)
     end
 
-    mkdir_if_not_exists("~/.config/vimamsa/custom.rb")
-
-    $cnf[:theme] = "Twilight_edit"
-    $cnf[:syntax_highlight] = true
     settings_path = get_dot_path("settings.rb")
     if File.exist?(settings_path)
-      $cnf = eval(IO.read(settings_path))
+      #  = eval(IO.read(settings_path))
+      #TODO
     end
-
-    # set_gui_style(1)
-
-    #TODO: remove
-    dotfile = read_file("", "~/.config/vimamsarc")
-    eval(dotfile) if dotfile
 
     custom_script = read_file("", custom_fn)
     eval(custom_script) if custom_script
@@ -137,13 +129,12 @@ class Editor
       require "vimamsa/langservp"
       @langsrv["ruby"] = LangSrv.new("ruby")
       @langsrv["cpp"] = LangSrv.new("cpp")
+      #TODO: if language enabled in config?
     end
 
-    # build_options
-
     fname = nil
-    if conf(:startup_file)
-      fname_ = File.expand_path(conf(:startup_file))
+    if cnf.startup_file?
+      fname_ = File.expand_path(cnf.startup_file!)
       if File.exist?(fname_)
         fname = fname_
       end
@@ -275,7 +266,7 @@ class Editor
   end
 
   def can_open_extension?(filepath)
-    exts = $cnf[:extensions_to_open]
+    exts = cnf.extensions_to_open!
     extname = Pathname.new(filepath).extname.downcase
     can_open = exts.include?(extname)
     debug "CAN OPEN?: #{can_open}"

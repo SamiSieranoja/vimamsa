@@ -18,7 +18,7 @@ Will search all .txt files in the following directories:
     params["inputs"] = {}
     params["inputs"]["search"] = { :label => "Search:", :type => :entry }
     params["inputs"]["extensions"] = { :label => "Limit to file extensions:", :type => :entry }
-    params["inputs"]["extensions"][:initial_text] = conf(:default_search_extensions).join(",")
+    params["inputs"]["extensions"][:initial_text] = cnf.default_search_extensions!.join(",")
     params["inputs"]["btn1"] = { :label => "Search", :type => :button }
 
     params[:callback] = callback
