@@ -645,6 +645,7 @@ def find_project_dir_of_fn(fn)
         break
       end
     end
+    return if !projdir.nil?
   end
   return projdir
 end

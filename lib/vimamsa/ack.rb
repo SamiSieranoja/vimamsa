@@ -138,6 +138,10 @@ class Ack
   end
 
   def ack_buffer(_instr, b = nil)
+    if _instr.nil? or _instr.strip.size <= 1
+      message("No input for ack")
+      return
+    end
     instr = Shellwords.escape(_instr)
     bufstr = ""
     for path in vma.get_content_search_paths
