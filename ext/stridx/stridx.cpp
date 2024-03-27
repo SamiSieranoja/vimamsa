@@ -311,9 +311,6 @@ VALUE str_idx_find_similar(VALUE self, VALUE str) {
 
 void Init_stridx(void) {
   printf("Init_stridx\n");
-  std::vector<int> vect(10, 0); // size 10 with values initialized to 0
-  vect[0] = 5;
-  std::cout << vect[0] << std::endl;
   idxo = new StringIndex();
   rb_define_global_function("str_idx_addToIndex", addToIndex, 2);
   rb_define_global_function("str_idx_debug", str_idx_debug, 0);

@@ -23,7 +23,7 @@ class FileFinder
     i = 0
     for x in @@dir_list
       i += 1
-      str_idx_addToIndex
+      str_idx_addToIndex(x,i)
     end
   end
 

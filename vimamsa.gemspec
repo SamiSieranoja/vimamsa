@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(refcode|spec|features)/})
   end
-  spec.files         = Dir["{ext}/**/*"]
+  # spec.files         = Dir["{ext}/**/*"]
 
   spec.bindir        = "exe"
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
