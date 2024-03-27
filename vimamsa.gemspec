@@ -16,6 +16,8 @@ Gem::Specification.new do |spec|
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(refcode|spec|features)/})
   end
+  spec.files         = Dir["{ext}/**/*"]
+
   spec.bindir        = "exe"
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib","ext"]
@@ -38,8 +40,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'listen', '~> 3.4'  #TODO: update?
   spec.add_runtime_dependency 'language_server-protocol', '~> 3.17.0.3'
 
-  spec.extensions = ["ext/vmaext/extconf.rb"]
+  spec.extensions = ["ext/vmaext/extconf.rb","ext/stridx/extconf.rb"]
   spec.licenses    = ['GPL-3.0+']
-  # FileList["ext/**/extconf.rb"]
 
 end

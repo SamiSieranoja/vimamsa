@@ -16,10 +16,23 @@ class FileFinder
   def initialize()
     vma.hook.register(:shutdown, self.method("save"))
     @@dir_list = vma.marshal_load("file_index")
+    update_search_idx
+  end
+
+  def self.update_search_idx
+    i = 0
+    for x in @@dir_list
+      i += 1
+      str_idx_addToIndex
+    end
+  end
+
+  def update_search_idx
+    FileFinder.update_search_idx
   end
 
   def save()
-   debug "SAVE FILE INDEX", 2
+    debug "SAVE FILE INDEX", 2
     vma.marshal_save("file_index", @@dir_list)
   end
 
@@ -46,7 +59,7 @@ class FileFinder
 
   def gui_file_finder_update_callback(search_str = "")
     debug "FILE FINDER UPDATE CALLBACK: #{search_str}"
-    if (search_str.size > 1)
+    if (search_str.size >= 3)
       files = filter_files(search_str)
       @file_search_list = files
       return files
@@ -73,12 +86,32 @@ class FileFinder
       debug("FIND FILEs IN #{d} END")
     end
     @@dir_list = dlist
+    update_search_idx
     debug("END find files")
     return @@dir_list
   end
 
   def filter_files(search_str)
+    puts "search list: #{@@dir_list.size}"
     dir_hash = {}
+
+    # i = 0
+    # for x in @@dir_list
+    # i += 1
+    # addToIndex(x, i)
+    # end
+
+    res = str_idx_find_similar(search_str)
+    resultarr = []
+    for (idx, score) in res
+      fn = @@dir_list[idx - 1]
+      puts "#{idx} #{score} #{fn}"
+      resultarr << [fn, score]
+      #
+    end
+    return resultarr
+
+    # Ripl.start :binding => binding
 
     scores = Parallel.map(@@dir_list, in_threads: 8) do |file|
       [file, srn_dst(search_str, file)]
@@ -95,4 +128,3 @@ class FileFinder
     return dir_hash
   end
 end
-

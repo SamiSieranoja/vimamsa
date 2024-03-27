@@ -198,6 +198,8 @@ class BufferList
     # most recent is at end of slist
     b = slist[-1 - @navigation_idx]
     puts "@navigation_idx=#{@navigation_idx}"
+    non_active =  slist.select{|x|!x.is_active?}
+    return if non_active.size == 0
 
     # Take another one from the history if buffer is already open in a window (active)
     navtmp = @navigation_idx

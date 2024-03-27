@@ -4,10 +4,11 @@
 require 'mkmf'
 
 module_name = "vimamsa"
-extension_name = 'vmaext'
+extension_name = 'stridx'
 
-$CFLAGS << " -Wall -fpermissive "
-$CXXFLAGS << " -Wall -fpermissive "
+$CFLAGS << " -Wall "
+
+$CXXFLAGS << " -Wall -Wno-unused-variable -O3"
 
 have_library( 'stdc++' );
 
