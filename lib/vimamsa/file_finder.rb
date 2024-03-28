@@ -7,7 +7,7 @@ $search_dirs = []
 
 class StringIndex
   def initialize()
-    @idx = CppStringIndex.new(2)
+    @idx = CppStringIndex.new
   end
 
   def find(str, minChars: 2)
@@ -26,11 +26,12 @@ end
 # ruby -e "$:.unshift File.dirname(__FILE__); require 'stridx'; idx = CppStringIndex.new(2); idx.add('foobar00',3); idx.add('fo0br',5); pp idx.find('foo');"
 
 class FileFinder
+  @@idx_updating = true
+
   def self.update_index()
     message("Start updating file index")
     Thread.new {
       recursively_find_files()
-      message("Finnish updating file index")
     }
   end
 
@@ -41,13 +42,30 @@ class FileFinder
   end
 
   def self.update_search_idx
-    @@idx = StringIndex.new
-    i = 0
-    for x in @@dir_list
-      i += 1
-      # str_idx_addToIndex(x, i)
-      @@idx.add(x, i)
-    end
+    Thread.new {
+      sleep 0.1
+      @@idx = StringIndex.new
+      @@idx_updating = true
+
+      aa = []; @@dir_list.each_with_index { |x, i| aa << [x, i] }
+
+      # Parallel.map(aa, in_threads: 8) do |(x, i)|
+      # @@idx.add(x, i)
+      # end
+
+      i = 0
+      for x in @@dir_list
+        i += 1
+        # str_idx_addToIndex(x, i)
+        @@idx.add(x, i)
+      end
+      @@idx_updating = false
+      message("Finish updating file index")
+    }
+  end
+
+  def updating?
+    @@idx_updating
   end
 
   def update_search_idx

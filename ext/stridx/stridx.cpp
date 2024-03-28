@@ -106,8 +106,6 @@ class StringIndex {
 public:
   int tmp;
 
-  std::unordered_map<int64_t, int> ng3map;
-  std::unordered_map<int64_t, std::set<int> *> ng3map2;
   std::vector<HashMap *> ngmaps;
 
   std::unordered_map<int, std::string> strlist;
@@ -326,8 +324,17 @@ VALUE str_idx_alloc(VALUE self) {
   return TypedData_Wrap_Struct(self, &str_idx_type, data);
 }
 
-VALUE str_idx_m_initialize(VALUE self) {
-  return self;
+VALUE str_idx_m_initialize(VALUE self) { return self; }
+
+void *add_to_idx_slow(void *_data) {
+
+	void **data = (void*) _data;
+  StringIndex *idx = (StringIndex *)(data[0]);
+  std::string *str = (std::string *)(data[1]);
+  int* fid = (int *)(data[2]);
+  
+  idx->add(*str, *fid);
+  return 0;
 }
 
 VALUE StringIndexAddToIndex(VALUE self, VALUE str, VALUE fileId) {
@@ -338,6 +345,15 @@ VALUE StringIndexAddToIndex(VALUE self, VALUE str, VALUE fileId) {
 
   void *data;
   TypedData_Get_Struct(self, int, &str_idx_type, data);
+  // StringIndex * idx = (StringIndex *) data;
+  
+  void **params = malloc(sizeof(void *) * 5);
+  params[0] = data;
+  params[1] = &s1;
+  params[2] = &fid;
+  // rb_thread_call_without_gvl(add_to_idx_slow, params, NULL, NULL);
+  // free(params);
+  
   ((StringIndex *)data)->add(s1, fid);
 
   return ret;
