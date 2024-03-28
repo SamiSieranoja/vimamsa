@@ -1,8 +1,29 @@
 require "parallel"
+require "stridx"
 
 # Limit file search to these extensions:
 $find_extensions = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb"]
 $search_dirs = []
+
+class StringIndex
+  def initialize()
+    @idx = CppStringIndex.new(2)
+  end
+
+  def find(str, minChars: 2)
+    minChars = 3 if minChars.class != Integer
+    minChars = 2 if minChars < 2
+    minChars = 6 if minChars > 6
+
+    @idx.find(str, minChars)
+  end
+
+  def add(str, id)
+    @idx.add(str, id)
+  end
+end
+
+# ruby -e "$:.unshift File.dirname(__FILE__); require 'stridx'; idx = CppStringIndex.new(2); idx.add('foobar00',3); idx.add('fo0br',5); pp idx.find('foo');"
 
 class FileFinder
   def self.update_index()
@@ -20,10 +41,12 @@ class FileFinder
   end
 
   def self.update_search_idx
+    @@idx = StringIndex.new
     i = 0
     for x in @@dir_list
       i += 1
-      str_idx_addToIndex(x,i)
+      # str_idx_addToIndex(x, i)
+      @@idx.add(x, i)
     end
   end
 
@@ -95,19 +118,12 @@ class FileFinder
     puts "search list: #{@@dir_list.size}"
     dir_hash = {}
 
-    # i = 0
-    # for x in @@dir_list
-    # i += 1
-    # addToIndex(x, i)
-    # end
-
-    res = str_idx_find_similar(search_str)
+    res = @@idx.find(search_str)
     resultarr = []
     for (idx, score) in res
       fn = @@dir_list[idx - 1]
       puts "#{idx} #{score} #{fn}"
       resultarr << [fn, score]
-      #
     end
     return resultarr
 

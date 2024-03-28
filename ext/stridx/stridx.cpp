@@ -12,6 +12,10 @@
 #include <set>
 #include <algorithm>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include "unordered_dense.h"
 
 using std::cout;
@@ -76,10 +80,10 @@ public:
   }
 
   int operator[](int idx) { return v_charscore[idx]; }
-  //TODO: all
-
+  // TODO: all
 };
 
+// Convert a int64_t representation of a string to std::string
 std::string int64str(int64_t ngram, int nchars) {
 
   std::string res = "";
@@ -94,9 +98,8 @@ std::string int64str(int64_t ngram, int nchars) {
   return res;
 }
 
-
 // This seems to give 10x speed improvement over std::unordered_map
-typedef ankerl::unordered_dense::map<int64_t, std::set<int> * > HashMap;
+typedef ankerl::unordered_dense::map<int64_t, std::set<int> *> HashMap;
 // typedef std::unordered_map<int64_t, std::set<int> *> HashMap;
 
 class StringIndex {
@@ -108,17 +111,21 @@ public:
   std::vector<HashMap *> ngmaps;
 
   std::unordered_map<int, std::string> strlist;
+  // int minChars = 3;
 
   StringIndex() {
 
     for (int i = 0; i <= 8; i++) {
       ngmaps.push_back(new HashMap);
     }
-    
+
+#ifdef _OPENMP
+    std::cout << "OPENMP enabled\n";
+#endif
+
     // for (auto const& [key, val] : map) {
-        // std::cout << key << " => " << val << std::endl;
+    // std::cout << key << " => " << val << std::endl;
     // }
-    
   }
 
   void dumpStatus() {
@@ -141,7 +148,7 @@ public:
     }
   }
 
-	// Return int64_t representation of the first nchars in str, starting from index i
+  // Return int64_t representation of the first nchars in str, starting from index i
   int64_t getKeyAtIdx(std::string str, int i, int nchars) {
     int64_t key = 0;
     for (int i_char = 0; i_char < nchars; i_char++) {
@@ -159,17 +166,8 @@ public:
     HashMap *ngmap = ngmaps[nchars];
 
     for (int i = 0; i <= s1.size() - nchars; i++) {
-      // std::string t = s1.substr(i, nchars);
-      // int64_t key = 0;
-      // for (int i_char = 0; i_char < nchars; i_char++) {
-        // key = key | static_cast<int>(t[i_char]);
-        // if (i_char < nchars - 1) {
-          // // Shift 8 bits to the left except on the last iteration
-          // key = key << 8;
-        // }
-      // }
       // std::cout << "key: " << int64ToBinaryString(key) << "\n";
-      int64_t key = getKeyAtIdx(s1,i,nchars);
+      int64_t key = getKeyAtIdx(s1, i, nchars);
 
       // Create a new std::set for key if doesn't exist already
       auto it = (*ngmap).find(key);
@@ -190,7 +188,7 @@ public:
     // std::cout << "findSimilar " << str << " " << nchars << "\n";
     auto it = ngmap.find(key);
     if (it != ngmap.end()) { // key found
-    	auto set = it->second;
+      auto set = it->second;
       for (int value : *set) {
         res.push_back(value);
         // std::cout << value << " \n";
@@ -215,7 +213,15 @@ public:
     }
   }
 
-  vector<pair<float, int>> findSimilar(std::string str) {
+  /** @brief Find similar strings for given input str
+   *
+   * @param[in]  str  String to find in index
+   * @param[in]  minChars Minimum substring size to consider in the matching. Set between 2 and 5.
+   * Higher time consumption but better results with lower values.
+   * @return matches the top 15 strings that most closely resemble the input
+   */
+  vector<pair<float, int>> findSimilar(std::string str, int minChars) {
+    // minChars
 
     std::unordered_map<int, Candidate> candmap;
 
@@ -224,22 +230,35 @@ public:
       nchars = str.size();
     }
 
-    for (; nchars >= 3; nchars--) {
-      // std::cout << "nchars=" << nchars << "\n";
-      for (int i = 0; i + nchars <= str.size(); i++) {
+#ifdef _OPENMP
+    omp_lock_t writelock;
+    omp_init_lock(&writelock);
+#endif
+
+    for (; nchars >= minChars; nchars--) {
+      int count = str.size() - nchars + 1;
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+      for (int i = 0; i < count; i++) {
         auto res = findSimilarForNgram(str, i, nchars);
         // std::cout << "i=" << i << " ";
         // int64str(getKeyAtIdx(str, i, nchars), nchars);
         // printVector(res);
         for (const auto &fid : res) {
-          // std::cout << " " << fid << "(" << strlist[fid] << ") ";
+// std::cout << " " << fid << "(" << strlist[fid] << ") ";
+#ifdef _OPENMP
+          omp_set_lock(&writelock);
+#endif
           addToResults(fid, str, i, nchars, candmap);
+#ifdef _OPENMP
+          omp_unset_lock(&writelock);
+#endif
         }
         // std::cout << " ";
         // std::cout << "\n";
       }
     }
-
 
     // 2d array with file id's and scores
     vector<pair<float, int>> results;
@@ -257,7 +276,6 @@ public:
     std::sort(results.begin(), results.end(),
               [](pair<float, int> a, pair<float, int> b) { return a.first > b.first; });
     return results;
-
   }
 
   void add(std::string str, int fileId) {
@@ -268,53 +286,97 @@ public:
       }
     }
   }
-
 };
 
-StringIndex *idxo;
+// StringIndex *idxo;
 
 extern "C" {
-VALUE addToIndex(VALUE self, VALUE str, VALUE fileId) {
+
+void str_idx_free(void *data) {
+  // free(data);
+  // TODO
+}
+
+size_t str_idx_size(const void *data) {
+  // TODO: give correct size, although this is not 100% needed
+  return sizeof(int);
+}
+
+static const rb_data_type_t str_idx_type = {
+    .wrap_struct_name = "foo",
+    .function =
+        {
+            .dmark = NULL,
+            .dfree = str_idx_free,
+            .dsize = str_idx_size,
+        },
+    .data = NULL,
+    .flags = RUBY_TYPED_FREE_IMMEDIATELY,
+};
+
+VALUE str_idx_alloc(VALUE self) {
+  /* allocate */
+  // void* data = malloc(10*sizeof(int));
+
+  // StringIndex* ind = new StringIndex();
+  void *data = new StringIndex();
+
+  cout << "ALLOC2\n";
+  /* wrap */
+  return TypedData_Wrap_Struct(self, &str_idx_type, data);
+}
+
+VALUE str_idx_m_initialize(VALUE self) {
+  return self;
+}
+
+VALUE StringIndexAddToIndex(VALUE self, VALUE str, VALUE fileId) {
   VALUE ret;
   ret = rb_float_new(5.5);
   std::string s1 = StringValueCStr(str);
   int fid = NUM2INT(fileId);
-  idxo->add(s1, fid);
+
+  void *data;
+  TypedData_Get_Struct(self, int, &str_idx_type, data);
+  ((StringIndex *)data)->add(s1, fid);
+
   return ret;
 }
 
-VALUE str_idx_debug(VALUE self) {
-  VALUE ret;
-  ret = rb_float_new(0);
-  idxo->dumpStatus();
-  return ret;
-}
-
-VALUE str_idx_find_similar(VALUE self, VALUE str) {
+VALUE StringIndexFind(VALUE self, VALUE str, VALUE minChars) {
   VALUE ret;
   std::string s1 = StringValueCStr(str);
 
+  void *data;
+  TypedData_Get_Struct(self, int, &str_idx_type, data);
+  StringIndex *idx = (StringIndex *)data;
+
   ret = rb_ary_new();
-  const vector<pair<float, int>> &results = idxo->findSimilar(s1);
+  const vector<pair<float, int>> &results = idx->findSimilar(s1, NUM2INT(minChars));
   int limit = 15;
-  int i=0;
+  int i = 0;
   for (const auto &res : results) {
-  	VALUE arr = rb_ary_new();
-    rb_ary_push(arr,INT2NUM(res.second));
-    rb_ary_push(arr,DBL2NUM(res.first));
-    rb_ary_push(ret,arr);
+    VALUE arr = rb_ary_new();
+    rb_ary_push(arr, INT2NUM(res.second));
+    rb_ary_push(arr, DBL2NUM(res.first));
+    rb_ary_push(ret, arr);
     i++;
-    if (i >= limit) {break;}
+    if (i >= limit) {
+      break;
+    }
   }
   return ret;
 }
 
 void Init_stridx(void) {
-  printf("Init_stridx\n");
-  idxo = new StringIndex();
-  rb_define_global_function("str_idx_addToIndex", addToIndex, 2);
-  rb_define_global_function("str_idx_debug", str_idx_debug, 0);
-  rb_define_global_function("str_idx_find_similar", str_idx_find_similar, 1);
+  printf("Init_stridx4\n");
+
+  VALUE cFoo = rb_define_class("CppStringIndex", rb_cObject);
+
+  rb_define_alloc_func(cFoo, str_idx_alloc);
+  rb_define_method(cFoo, "initialize", str_idx_m_initialize, 0);
+  rb_define_method(cFoo, "add", StringIndexAddToIndex, 2);
+  rb_define_method(cFoo, "find", StringIndexFind, 2);
 }
 
 } // End extern "C"
