@@ -62,7 +62,7 @@ std::string charToBinaryString(char num) {
   return result;
 }
 
-
+class Candidate;
 enum segmentType { Dir, File };
 // A segment of a file path
 // e.g. if path is /foo/bar/baz.txt
@@ -72,12 +72,14 @@ public:
   // - type: {FILE, DIR}
   std::string str;
   int fileId; // (if FILE)
-  segmentType type = Dir;
+  Candidate *cand;
   PathSegment *parent;
   ankerl::unordered_dense::map<std::string, PathSegment *> children;
-  PathSegment() {}
-  PathSegment(std::string _str) : str(_str) {}
-  PathSegment(std::string _str, int _fileId) : str(_str), fileId(_fileId) {}
+  segmentType type = Dir;
+  PathSegment() : parent(NULL) {}
+  PathSegment(std::string _str) : str(_str), parent(NULL) {}
+  PathSegment(std::string _str, int _fileId)
+      : str(_str), fileId(_fileId), cand(NULL), parent(NULL) {}
   // - vector<PathSegment*> children
   // PathMap children; //or Set
   // - addChild(PathSegment*);
@@ -89,17 +91,17 @@ public:
 class Candidate {
 public:
   std::vector<int> v_charscore;
-  int fileId;
   PathSegment *seg;
-  int len; // Search string length
+  int fileId;
+  // The string that this candidate represents
+  string str;
+  int len; // Query string length
+
   float minscore;
   float maxscore;
   int candLen; // Length of candidate
 
-  // The string that this candidate represents
-  string str;
-
-  Candidate(){};
+  Candidate() { v_charscore.resize(20, 8888); };
   Candidate(int _fileId, string _str, int _len) : fileId(_fileId), str(_str), len(_len) {
     // Initialize v_charscores with zeros
     v_charscore.resize(len, 0);
@@ -108,17 +110,16 @@ public:
     seg = NULL;
   }
 
-  Candidate(PathSegment * _seg, int _len) : seg(_seg), len(_len) {
+  Candidate(PathSegment *_seg, int _len) : seg(_seg), len(_len) {
     // Initialize v_charscores with zeros
     v_charscore.resize(len, 0);
     candLen = seg->str.size();
     // cout << "len:" << len << " " << candLen << " " << seg->str << "\n";
   }
 
-
   // Candidate(PathSegment *_seg, string _str, int _len) : seg(_seg), str(_str), len(_len) {
-    // Initialize v_charscores with zeros
-    // v_charscore.resize(len, 0);
+  // Initialize v_charscores with zeros
+  // v_charscore.resize(len, 0);
   // }
 
   float getScore() {
@@ -144,9 +145,10 @@ public:
 typedef ankerl::unordered_dense::map<int64_t, std::set<int> *> HashMap;
 // typedef std::unordered_map<int64_t, std::set<int> *> HashMap;
 
-
 typedef ankerl::unordered_dense::map<std::string, std::set<PathSegment> *> StringMap;
 typedef ankerl::unordered_dense::map<int64_t, std::set<PathSegment *> *> SegMap;
+
+typedef std::unordered_map<int, Candidate> CandMap;
 
 class StringIndex {
 public:
@@ -157,12 +159,17 @@ public:
   std::vector<SegMap *> dirmaps;
   std::vector<SegMap *> filemaps;
 
+  std::vector<PathSegment *> segsToClean;
+
   std::unordered_map<int, std::string> strlist;
-  std::unordered_map<int, PathSegment* > seglist;
+  std::unordered_map<int, PathSegment *> seglist;
   // int minChars = 3;
   PathSegment root;
+  int dirId = 0;
 
   StringIndex() {
+    root.parent = NULL;
+    root.str = "[ROOT]";
 
     // PathSegment root("/");
 
@@ -229,25 +236,25 @@ public:
     // for (auto x : segs) {
     for (auto _x = segs.begin(); _x != segs.end(); ++_x) {
       auto x = *_x;
-      cout << "(" << x << ")";
+      // cout << "(" << x << ")";
       PathSegment *p;
-
-      auto it1 = root.children.find(x);
 
       auto it = prev->children.find(x);
       if (it != prev->children.end()) {
-        cout << "<f>"; // Found
+        // cout << "<f>"; // Found
         p = it->second;
       } else {
         p = new PathSegment(x, fileId);
         p->parent = prev;
         // If this is last item in segs
         if (_x == std::prev(segs.end())) {
-          cout << "[L]";
+          // cout << "[L]";
           p->type = File;
           seglist[fileId] = p;
         } else {
           p->type = Dir;
+          p->fileId = dirId;
+          dirId++;
         }
         prev->children[x] = p;
         addPathSegmentKeys(p);
@@ -258,7 +265,7 @@ public:
 
       prev = p;
     }
-    cout << " \n";
+    // cout << " \n";
   }
 
   // template <typename T>
@@ -280,40 +287,79 @@ public:
     return res;
   }
 
-  vector<pair<float, int>> findSimilar2(std::string str, int minChars) {
-    // minChars
-
-    std::unordered_map<int, Candidate> candmap;
-
+  void addToCandMap(CandMap &candmap, std::string query,
+                    std::vector<SegMap *> &map // filemaps or dirmaps
+  ) {
     int nchars = 8;
-    if (str.size() < nchars) {
-      nchars = str.size();
+    int minChars = 2; // TODO
+    if (query.size() < nchars) {
+      nchars = query.size();
     }
 
     for (; nchars >= minChars; nchars--) {
-      int count = str.size() - nchars + 1;
+      int count = query.size() - nchars + 1;
       for (int i = 0; i < count; i++) {
-        auto res = findSimilarForNgram2(str, i, nchars, *(filemaps[nchars]));
+        auto res = findSimilarForNgram2(query, i, nchars, *(map[nchars]));
         for (PathSegment *p : res) {
-          cout << nchars << "|" << p->str << "\n";
-          addToResults2(p, str, i, nchars, candmap);
+          // cout << nchars << "|" << p->str << "\n";
+          addToResults2(p, query, i, nchars, candmap);
         }
       }
     }
+  }
 
-    // for (; nchars >= minChars; nchars--) {
-    // int count = str.size() - nchars + 1;
-    // for (int i = 0; i < count; i++) {
-    // auto res = findSimilarForNgram(str, i, nchars);
-    // for (const auto &fid : res) {
-    // addToResults(fid, str, i, nchars, candmap);
-    // }
-    // }
-    // }
+  void mergeCandMaps(CandMap &fileCandMap, CandMap &dirCandMap) {
+
+    // vector<pair<float, int>> results;
+    // cout << "cand map size: " << candmap.size() << "\n";
+    for (auto &[fid, cand] : fileCandMap) {
+      PathSegment *p = cand.seg->parent;
+      // cout << cand.seg->str << "|";
+      while (p->parent != NULL) {
+        // cout << p->str << "!";
+        if (p->cand != NULL) {
+          auto &scoreA = cand.v_charscore;
+          auto &scoreB = p->cand->v_charscore;
+          // cout << "[:]" << scoreB.size() << "|";
+
+          for (int i = 0; i < cand.len; i++) {
+            // cout << "[" << i << ":" << scoreA[i] << ":" << scoreB[i] << "]";
+            // Todo: segfault for scoreB
+            if (scoreA[i] < scoreB[i]) {
+
+              scoreA[i] = scoreB[i];
+            }
+          }
+        }
+        p = p->parent;
+      }
+      // cout << "\n";
+    }
+  }
+
+  vector<pair<float, int>> findSimilar2(std::string query, int minChars) {
+    // minChars
+
+    cout << "query " << query << "\n";
+    CandMap fileCandMap;
+    CandMap dirCandMap;
+    CandMap &candmap = fileCandMap;
+    // std::unordered_map<int, Candidate> &candmap = fileCandMap;
+
+    addToCandMap(fileCandMap, query, filemaps);
+    // cout << "======DIRS=================\n";
+    addToCandMap(dirCandMap, query, dirmaps);
+
+    mergeCandMaps(fileCandMap, dirCandMap);
+
+    for (auto seg : segsToClean) {
+      seg->cand = NULL;
+    }
+    segsToClean.resize(0);
 
     // 2d array with file id's and scores
     vector<pair<float, int>> results;
-    cout << "cand map size: " << candmap.size() << "\n";
+    // cout << "cand map size: " << candmap.size() << "\n";
     for (auto &[fid, cand] : candmap) {
       pair<float, int> v;
       float sc = cand.getScore();
@@ -398,12 +444,15 @@ public:
     return res;
   }
 
-  void addToResults2(PathSegment* seg, std::string str, int i, int nchars,
-                    std::unordered_map<int, Candidate> &candmap) {
+  void addToResults2(PathSegment *seg, std::string str, int i, int nchars,
+                     std::unordered_map<int, Candidate> &candmap) {
 
     auto it2 = candmap.find(seg->fileId);
     if (it2 == candmap.end()) {
+      // cout << "candmap " << seg->fileId << "\n";
       Candidate cand(seg, str.size());
+      seg->cand = &(candmap[seg->fileId]);
+      segsToClean.push_back(seg);
       candmap[seg->fileId] = cand;
     }
 
@@ -412,8 +461,12 @@ public:
         candmap[seg->fileId].v_charscore[j] = nchars;
       }
     }
-  }
 
+    // Candidate &cand = candmap[seg->fileId];
+    // for (int i = 0; i < cand.v_charscore.size(); i++) {
+    // cand.v_charscore[i] = 0;
+    // }
+  }
 
   void addToResults(int fid, std::string str, int i, int nchars,
                     std::unordered_map<int, Candidate> &candmap) {
@@ -539,7 +592,6 @@ VALUE str_idx_alloc(VALUE self) {
   // StringIndex* ind = new StringIndex();
   void *data = new StringIndex();
 
-  cout << "ALLOC2\n";
   /* wrap */
   return TypedData_Wrap_Struct(self, &str_idx_type, data);
 }
@@ -548,7 +600,7 @@ VALUE str_idx_m_initialize(VALUE self) { return self; }
 
 void *add_to_idx_slow(void *_data) {
 
-  void **data = (void *)_data;
+  void **data = (void **)_data;
   StringIndex *idx = (StringIndex *)(data[0]);
   std::string *str = (std::string *)(data[1]);
   int *fid = (int *)(data[2]);
@@ -567,7 +619,7 @@ VALUE StringIndexAddToIndex(VALUE self, VALUE str, VALUE fileId) {
   TypedData_Get_Struct(self, int, &str_idx_type, data);
   // StringIndex * idx = (StringIndex *) data;
 
-  void **params = malloc(sizeof(void *) * 5);
+  void **params = (void **)malloc(sizeof(void *) * 5);
   params[0] = data;
   params[1] = &s1;
   params[2] = &fid;
@@ -630,10 +682,10 @@ void Init_stridx(void) {
 
   rb_define_method(cFoo, "find", StringIndexFind, 2);
 
-  StringIndex idx;
+  // StringIndex idx;
   // idx.addSegments("/foo/b\\ar/sdf\\ sdfsdf/baz.txt", 2, '/');
-  idx.addSegments("/foo/bar/sdfsdfsdf/baz.txt", 2, '/');
-  idx.addSegments("/foo/bar/0dfsdfsdf/zaz.txt", 3, '/');
+  // idx.addSegments("/foo/bar/sdfsdfsdf/baz.txt", 2, '/');
+  // idx.addSegments("/foo/bar/0dfsdfsdf/zaz.txt", 3, '/');
 }
 
 } // End extern "C"
