@@ -62,61 +62,6 @@ std::string charToBinaryString(char num) {
   return result;
 }
 
-// Candidate for result in string (filename) search
-class Candidate {
-public:
-  std::vector<int> v_charscore;
-  int fileId;
-  int len;
-  float minscore;
-  float maxscore;
-
-  // The string that this candidate represents
-  string str;
-
-  Candidate(){};
-  Candidate(int _fileId, string _str, int _len) : fileId(_fileId), str(_str), len(_len) {
-    // Initialize v_charscores with zeros
-    v_charscore.resize(len, 0);
-  }
-
-  float getScore() {
-    int i = 0;
-    float score = 0.0;
-    for (int &charscore : v_charscore) {
-      score += charscore;
-      i++;
-    }
-    float div = len * len;
-    float div2 = len * str.size();
-    float score1 = score / div;
-    float score2 = score / div2;
-    score = score1 * 0.97 + score2 * 0.03;
-    return score;
-  }
-
-  int operator[](int idx) { return v_charscore[idx]; }
-  // TODO: all
-};
-
-// Convert a int64_t representation of a string to std::string
-std::string int64str(int64_t ngram, int nchars) {
-
-  std::string res = "";
-  int64_t x;
-  int multip = nchars * 8;
-  for (int i = 0; i <= nchars; i++) {
-    char c = (ngram >> multip) & 255;
-    // std::cout << c;
-    multip -= 8;
-    res.push_back(c);
-  }
-  return res;
-}
-
-// This seems to give 10x speed improvement over std::unordered_map
-typedef ankerl::unordered_dense::map<int64_t, std::set<int> *> HashMap;
-// typedef std::unordered_map<int64_t, std::set<int> *> HashMap;
 
 enum segmentType { Dir, File };
 // A segment of a file path
@@ -140,7 +85,68 @@ public:
   // parent dirs of file are a candidate
 };
 
+// Candidate for result in string (filename) search
+class Candidate {
+public:
+  std::vector<int> v_charscore;
+  int fileId;
+  PathSegment *seg;
+  int len; // Search string length
+  float minscore;
+  float maxscore;
+  int candLen; // Length of candidate
+
+  // The string that this candidate represents
+  string str;
+
+  Candidate(){};
+  Candidate(int _fileId, string _str, int _len) : fileId(_fileId), str(_str), len(_len) {
+    // Initialize v_charscores with zeros
+    v_charscore.resize(len, 0);
+    // cout << "zz len:" << len << " " << str.size() << "\n";
+    candLen = str.size();
+    seg = NULL;
+  }
+
+  Candidate(PathSegment * _seg, int _len) : seg(_seg), len(_len) {
+    // Initialize v_charscores with zeros
+    v_charscore.resize(len, 0);
+    candLen = seg->str.size();
+    // cout << "len:" << len << " " << candLen << " " << seg->str << "\n";
+  }
+
+
+  // Candidate(PathSegment *_seg, string _str, int _len) : seg(_seg), str(_str), len(_len) {
+    // Initialize v_charscores with zeros
+    // v_charscore.resize(len, 0);
+  // }
+
+  float getScore() {
+    int i = 0;
+    float score = 0.0;
+    for (int &charscore : v_charscore) {
+      score += charscore;
+      i++;
+    }
+    float div = len * len;
+    float div2 = len * candLen;
+    float score1 = score / div;
+    float score2 = score / div2;
+    score = score1 * 0.97 + score2 * 0.03;
+    return score;
+  }
+
+  int operator[](int idx) { return v_charscore[idx]; }
+  // TODO: all
+};
+
+// This seems to give 10x speed improvement over std::unordered_map
+typedef ankerl::unordered_dense::map<int64_t, std::set<int> *> HashMap;
+// typedef std::unordered_map<int64_t, std::set<int> *> HashMap;
+
+
 typedef ankerl::unordered_dense::map<std::string, std::set<PathSegment> *> StringMap;
+typedef ankerl::unordered_dense::map<int64_t, std::set<PathSegment *> *> SegMap;
 
 class StringIndex {
 public:
@@ -148,10 +154,11 @@ public:
 
   std::vector<HashMap *> ngmaps;
 
-  std::vector<HashMap *> dirmaps;
-  std::vector<HashMap *> filemaps;
+  std::vector<SegMap *> dirmaps;
+  std::vector<SegMap *> filemaps;
 
   std::unordered_map<int, std::string> strlist;
+  std::unordered_map<int, PathSegment* > seglist;
   // int minChars = 3;
   PathSegment root;
 
@@ -161,8 +168,8 @@ public:
 
     for (int i = 0; i <= 8; i++) {
       ngmaps.push_back(new HashMap);
-      dirmaps.push_back(new HashMap);
-      filemaps.push_back(new HashMap);
+      dirmaps.push_back(new SegMap);
+      filemaps.push_back(new SegMap);
     }
 
 #ifdef _OPENMP
@@ -178,8 +185,8 @@ public:
 
   void addPathSegmentKeys(PathSegment *p) {
     // Input p is part of a path, e.g. 'barxyz' if path is /foo/barxyz/baz.txt
-    // This function generates int64 representations (keys) of all substrings of size 2..8
-    // and stores pointer to p in hash tables using these int values as keys.
+    // This function generates int64 representations (keys) of all substrings of size 2..8 in that
+    // path segment and stores pointer to p in hash tables using these int values as keys.
 
     int nchars = 8;
     std::string str = p->str;
@@ -191,22 +198,22 @@ public:
     }
 
     for (; nchars >= 2; nchars--) {
-      HashMap *ngmap;
-      if (p->type == Dir) {
-        ngmap = filemaps[nchars];
+      SegMap *map;
+      if (p->type == File) {
+        map = filemaps[nchars];
       } else {
-        ngmap = dirmaps[nchars];
+        map = dirmaps[nchars];
       }
 
       for (int i = 0; i <= str.size() - nchars; i++) {
         int64_t key = getKeyAtIdx(str, i, nchars);
 
         // Create a new std::set for key if doesn't exist already
-        auto it = ngmap->find(key);
-        if (it == ngmap->end()) {
-          (*ngmap)[key] = new std::set<int>;
+        auto it = map->find(key);
+        if (it == map->end()) {
+          (*map)[key] = new std::set<PathSegment *>;
         }
-        (*ngmap)[key]->insert(p->fileId);
+        (*map)[key]->insert(p);
       }
     }
   }
@@ -238,6 +245,7 @@ public:
         if (_x == std::prev(segs.end())) {
           cout << "[L]";
           p->type = File;
+          seglist[fileId] = p;
         } else {
           p->type = Dir;
         }
@@ -251,6 +259,74 @@ public:
       prev = p;
     }
     cout << " \n";
+  }
+
+  // template <typename T>
+  std::vector<PathSegment *> findSimilarForNgram2(std::string str, int i, int nchars, SegMap &map) {
+
+    assert(i + nchars <= str.size());
+    std::vector<PathSegment *> res;
+
+    int64_t key = getKeyAtIdx(str, i, nchars);
+    // std::cout << "findSimilar " << str << " " << nchars << "\n";
+    auto it = map.find(key);
+    if (it != map.end()) { // key found
+      auto set = it->second;
+      for (auto value : *set) {
+        res.push_back(value);
+        // std::cout << value << " \n";
+      }
+    }
+    return res;
+  }
+
+  vector<pair<float, int>> findSimilar2(std::string str, int minChars) {
+    // minChars
+
+    std::unordered_map<int, Candidate> candmap;
+
+    int nchars = 8;
+    if (str.size() < nchars) {
+      nchars = str.size();
+    }
+
+    for (; nchars >= minChars; nchars--) {
+      int count = str.size() - nchars + 1;
+      for (int i = 0; i < count; i++) {
+        auto res = findSimilarForNgram2(str, i, nchars, *(filemaps[nchars]));
+        for (PathSegment *p : res) {
+          cout << nchars << "|" << p->str << "\n";
+          addToResults2(p, str, i, nchars, candmap);
+        }
+      }
+    }
+
+    // for (; nchars >= minChars; nchars--) {
+    // int count = str.size() - nchars + 1;
+    // for (int i = 0; i < count; i++) {
+    // auto res = findSimilarForNgram(str, i, nchars);
+    // for (const auto &fid : res) {
+    // addToResults(fid, str, i, nchars, candmap);
+    // }
+    // }
+    // }
+
+    // 2d array with file id's and scores
+    vector<pair<float, int>> results;
+    cout << "cand map size: " << candmap.size() << "\n";
+    for (auto &[fid, cand] : candmap) {
+      pair<float, int> v;
+      float sc = cand.getScore();
+      v.first = sc;
+      v.second = fid;
+      results.push_back(v);
+      // cout << "score2: " << v.first;
+    }
+    // std::sort(results.begin(), results.end());
+    // Sort largest score first
+    std::sort(results.begin(), results.end(),
+              [](pair<float, int> a, pair<float, int> b) { return a.first > b.first; });
+    return results;
   }
 
   void dumpStatus() {
@@ -321,6 +397,23 @@ public:
     }
     return res;
   }
+
+  void addToResults2(PathSegment* seg, std::string str, int i, int nchars,
+                    std::unordered_map<int, Candidate> &candmap) {
+
+    auto it2 = candmap.find(seg->fileId);
+    if (it2 == candmap.end()) {
+      Candidate cand(seg, str.size());
+      candmap[seg->fileId] = cand;
+    }
+
+    for (int j = i; j < i + nchars; j++) {
+      if (candmap[seg->fileId][j] < nchars) {
+        candmap[seg->fileId].v_charscore[j] = nchars;
+      }
+    }
+  }
+
 
   void addToResults(int fid, std::string str, int i, int nchars,
                     std::unordered_map<int, Candidate> &candmap) {
@@ -508,7 +601,7 @@ VALUE StringIndexFind(VALUE self, VALUE str, VALUE minChars) {
   StringIndex *idx = (StringIndex *)data;
 
   ret = rb_ary_new();
-  const vector<pair<float, int>> &results = idx->findSimilar(s1, NUM2INT(minChars));
+  const vector<pair<float, int>> &results = idx->findSimilar2(s1, NUM2INT(minChars));
   int limit = 15;
   int i = 0;
   for (const auto &res : results) {
@@ -531,8 +624,9 @@ void Init_stridx(void) {
 
   rb_define_alloc_func(cFoo, str_idx_alloc);
   rb_define_method(cFoo, "initialize", str_idx_m_initialize, 0);
-  rb_define_method(cFoo, "add", StringIndexAddToIndex, 2);
-  rb_define_method(cFoo, "add2", StringIndexAddSegments, 2);
+  // rb_define_method(cFoo, "add", StringIndexAddToIndex, 2);
+  // rb_define_method(cFoo, "add2", StringIndexAddSegments, 2);
+  rb_define_method(cFoo, "add", StringIndexAddSegments, 2);
 
   rb_define_method(cFoo, "find", StringIndexFind, 2);
 
