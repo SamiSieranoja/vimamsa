@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <set>
 #include <algorithm>
+#include <sstream>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -22,6 +23,21 @@ using std::cout;
 using std::pair;
 using std::string;
 using std::vector;
+
+std::vector<std::string> splitString(const std::string &input, const char &separator) {
+  std::vector<std::string> result;
+  std::stringstream ss(input);
+  std::string item;
+
+  // while (std::getline(ss, item, '/') || std::getline(ss, item, '\\')) {
+  while (std::getline(ss, item, separator)) {
+    if (item.size() > 0) {
+      result.push_back(item);
+    }
+  }
+
+  return result;
+}
 
 // Function to convert int64_t to binary string,
 std::string int64ToBinaryString(int64_t num) {
@@ -102,19 +118,51 @@ std::string int64str(int64_t ngram, int nchars) {
 typedef ankerl::unordered_dense::map<int64_t, std::set<int> *> HashMap;
 // typedef std::unordered_map<int64_t, std::set<int> *> HashMap;
 
+enum segmentType { Dir, File };
+// A segment of a file path
+// e.g. if path is /foo/bar/baz.txt
+// segments are [{root}, foo, bar, baz.txt]
+class PathSegment {
+public:
+  // - type: {FILE, DIR}
+  std::string str;
+  int fileId; // (if FILE)
+  segmentType type = Dir;
+  PathSegment *parent;
+  ankerl::unordered_dense::map<std::string, PathSegment *> children;
+  PathSegment() {}
+  PathSegment(std::string _str) : str(_str) {}
+  PathSegment(std::string _str, int _fileId) : str(_str), fileId(_fileId) {}
+  // - vector<PathSegment*> children
+  // PathMap children; //or Set
+  // - addChild(PathSegment*);
+  // - FileCandidate* cand; // Null if not a candidate. Clear these at the end. used to find if
+  // parent dirs of file are a candidate
+};
+
+typedef ankerl::unordered_dense::map<std::string, std::set<PathSegment> *> StringMap;
+
 class StringIndex {
 public:
   int tmp;
 
   std::vector<HashMap *> ngmaps;
 
+  std::vector<HashMap *> dirmaps;
+  std::vector<HashMap *> filemaps;
+
   std::unordered_map<int, std::string> strlist;
   // int minChars = 3;
+  PathSegment root;
 
   StringIndex() {
 
+    // PathSegment root("/");
+
     for (int i = 0; i <= 8; i++) {
       ngmaps.push_back(new HashMap);
+      dirmaps.push_back(new HashMap);
+      filemaps.push_back(new HashMap);
     }
 
 #ifdef _OPENMP
@@ -124,6 +172,85 @@ public:
     // for (auto const& [key, val] : map) {
     // std::cout << key << " => " << val << std::endl;
     // }
+
+    // children
+  }
+
+  void addPathSegmentKeys(PathSegment *p) {
+    // Input p is part of a path, e.g. 'barxyz' if path is /foo/barxyz/baz.txt
+    // This function generates int64 representations (keys) of all substrings of size 2..8
+    // and stores pointer to p in hash tables using these int values as keys.
+
+    int nchars = 8;
+    std::string str = p->str;
+    if (p->str.size() < 2) {
+      return;
+    }
+    if (p->str.size() < nchars) {
+      nchars = p->str.size();
+    }
+
+    for (; nchars >= 2; nchars--) {
+      HashMap *ngmap;
+      if (p->type == Dir) {
+        ngmap = filemaps[nchars];
+      } else {
+        ngmap = dirmaps[nchars];
+      }
+
+      for (int i = 0; i <= str.size() - nchars; i++) {
+        int64_t key = getKeyAtIdx(str, i, nchars);
+
+        // Create a new std::set for key if doesn't exist already
+        auto it = ngmap->find(key);
+        if (it == ngmap->end()) {
+          (*ngmap)[key] = new std::set<int>;
+        }
+        (*ngmap)[key]->insert(p->fileId);
+      }
+    }
+  }
+
+  void addSegments(std::string str, int fileId, const char &separator) {
+    auto segs = splitString(str, separator);
+    PathSegment *prev = NULL;
+    // auto it = root.children.find(segs[0]);
+    // if (it != root.children.end()) {
+    // cout << "found in root";
+    // }
+    prev = &root;
+    // for (auto x : segs) {
+    for (auto _x = segs.begin(); _x != segs.end(); ++_x) {
+      auto x = *_x;
+      cout << "(" << x << ")";
+      PathSegment *p;
+
+      auto it1 = root.children.find(x);
+
+      auto it = prev->children.find(x);
+      if (it != prev->children.end()) {
+        cout << "<f>"; // Found
+        p = it->second;
+      } else {
+        p = new PathSegment(x, fileId);
+        p->parent = prev;
+        // If this is last item in segs
+        if (_x == std::prev(segs.end())) {
+          cout << "[L]";
+          p->type = File;
+        } else {
+          p->type = Dir;
+        }
+        prev->children[x] = p;
+        addPathSegmentKeys(p);
+      }
+
+      // if (prev != NULL) {
+      // }
+
+      prev = p;
+    }
+    cout << " \n";
   }
 
   void dumpStatus() {
@@ -328,11 +455,11 @@ VALUE str_idx_m_initialize(VALUE self) { return self; }
 
 void *add_to_idx_slow(void *_data) {
 
-	void **data = (void*) _data;
+  void **data = (void *)_data;
   StringIndex *idx = (StringIndex *)(data[0]);
   std::string *str = (std::string *)(data[1]);
-  int* fid = (int *)(data[2]);
-  
+  int *fid = (int *)(data[2]);
+
   idx->add(*str, *fid);
   return 0;
 }
@@ -346,15 +473,28 @@ VALUE StringIndexAddToIndex(VALUE self, VALUE str, VALUE fileId) {
   void *data;
   TypedData_Get_Struct(self, int, &str_idx_type, data);
   // StringIndex * idx = (StringIndex *) data;
-  
+
   void **params = malloc(sizeof(void *) * 5);
   params[0] = data;
   params[1] = &s1;
   params[2] = &fid;
   // rb_thread_call_without_gvl(add_to_idx_slow, params, NULL, NULL);
   // free(params);
-  
+
   ((StringIndex *)data)->add(s1, fid);
+
+  return ret;
+}
+
+VALUE StringIndexAddSegments(VALUE self, VALUE str, VALUE fileId) {
+  VALUE ret;
+  ret = rb_float_new(5.5);
+  std::string s1 = StringValueCStr(str);
+  int fid = NUM2INT(fileId);
+
+  void *data;
+  TypedData_Get_Struct(self, int, &str_idx_type, data);
+  ((StringIndex *)data)->addSegments(s1, fid, '/');
 
   return ret;
 }
@@ -392,7 +532,14 @@ void Init_stridx(void) {
   rb_define_alloc_func(cFoo, str_idx_alloc);
   rb_define_method(cFoo, "initialize", str_idx_m_initialize, 0);
   rb_define_method(cFoo, "add", StringIndexAddToIndex, 2);
+  rb_define_method(cFoo, "add2", StringIndexAddSegments, 2);
+
   rb_define_method(cFoo, "find", StringIndexFind, 2);
+
+  StringIndex idx;
+  // idx.addSegments("/foo/b\\ar/sdf\\ sdfsdf/baz.txt", 2, '/');
+  idx.addSegments("/foo/bar/sdfsdfsdf/baz.txt", 2, '/');
+  idx.addSegments("/foo/bar/0dfsdfsdf/zaz.txt", 3, '/');
 }
 
 } // End extern "C"
