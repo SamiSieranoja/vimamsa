@@ -48,6 +48,19 @@ std::string int64ToBinaryString(int64_t num) {
   return result;
 }
 
+std::string int64ToStr(int64_t key) {
+
+  int nchars = 8;
+  std::string str;
+  int multip = nchars * 8;
+  for (int i = 0; i <= nchars; i++) {
+    char c = (key >> multip) & 255;
+    str.push_back(c);
+    multip -= 8;
+  }
+  return str;
+}
+
 void printVector(const std::vector<int> &vec) {
   for (const auto &value : vec) {
     std::cout << value << " ";
@@ -69,7 +82,6 @@ enum segmentType { Dir, File };
 // segments are [{root}, foo, bar, baz.txt]
 class PathSegment {
 public:
-  // - type: {FILE, DIR}
   std::string str;
   int fileId; // (if FILE)
   Candidate *cand;
@@ -80,11 +92,6 @@ public:
   PathSegment(std::string _str) : str(_str), parent(NULL) {}
   PathSegment(std::string _str, int _fileId)
       : str(_str), fileId(_fileId), cand(NULL), parent(NULL) {}
-  // - vector<PathSegment*> children
-  // PathMap children; //or Set
-  // - addChild(PathSegment*);
-  // - FileCandidate* cand; // Null if not a candidate. Clear these at the end. used to find if
-  // parent dirs of file are a candidate
 };
 
 // Candidate for result in string (filename) search
@@ -105,7 +112,6 @@ public:
   Candidate(int _fileId, string _str, int _len) : fileId(_fileId), str(_str), len(_len) {
     // Initialize v_charscores with zeros
     v_charscore.resize(len, 0);
-    // cout << "zz len:" << len << " " << str.size() << "\n";
     candLen = str.size();
     seg = NULL;
   }
@@ -114,13 +120,7 @@ public:
     // Initialize v_charscores with zeros
     v_charscore.resize(len, 0);
     candLen = seg->str.size();
-    // cout << "len:" << len << " " << candLen << " " << seg->str << "\n";
   }
-
-  // Candidate(PathSegment *_seg, string _str, int _len) : seg(_seg), str(_str), len(_len) {
-  // Initialize v_charscores with zeros
-  // v_charscore.resize(len, 0);
-  // }
 
   float getScore() {
     int i = 0;
@@ -142,19 +142,14 @@ public:
 };
 
 // This seems to give 10x speed improvement over std::unordered_map
-typedef ankerl::unordered_dense::map<int64_t, std::set<int> *> HashMap;
-// typedef std::unordered_map<int64_t, std::set<int> *> HashMap;
-
-typedef ankerl::unordered_dense::map<std::string, std::set<PathSegment> *> StringMap;
 typedef ankerl::unordered_dense::map<int64_t, std::set<PathSegment *> *> SegMap;
+// typedef std::unordered_map<int64_t, std::set<PathSegment *> *> SegMap;
 
-typedef std::unordered_map<int, Candidate> CandMap;
+typedef std::unordered_map<float, Candidate> CandMap;
 
 class StringIndex {
 public:
   int tmp;
-
-  std::vector<HashMap *> ngmaps;
 
   std::vector<SegMap *> dirmaps;
   std::vector<SegMap *> filemaps;
@@ -163,18 +158,15 @@ public:
 
   std::unordered_map<int, std::string> strlist;
   std::unordered_map<int, PathSegment *> seglist;
-  // int minChars = 3;
-  PathSegment root;
+  PathSegment *root;
   int dirId = 0;
 
   StringIndex() {
-    root.parent = NULL;
-    root.str = "[ROOT]";
-
-    // PathSegment root("/");
+    root = new PathSegment();
+    root->parent = NULL;
+    root->str = "[ROOT]";
 
     for (int i = 0; i <= 8; i++) {
-      ngmaps.push_back(new HashMap);
       dirmaps.push_back(new SegMap);
       filemaps.push_back(new SegMap);
     }
@@ -182,12 +174,34 @@ public:
 #ifdef _OPENMP
     std::cout << "OPENMP enabled\n";
 #endif
+  }
 
-    // for (auto const& [key, val] : map) {
-    // std::cout << key << " => " << val << std::endl;
-    // }
-
-    // children
+  ~StringIndex() {
+    for (auto x : dirmaps) {
+      for (auto y : *x) {
+        y.second->clear();
+        delete (y.second);
+      }
+      x->clear();
+      delete x;
+    }
+    for (auto x : filemaps) {
+      for (auto y : *x) {
+        y.second->clear();
+        delete (y.second);
+      }
+      x->clear();
+      delete x;
+    }
+    clearPathSegmentChildren(root);
+  }
+  void clearPathSegmentChildren(PathSegment *p) {
+    if (p->children.size() > 0) {
+      for (auto x : p->children) {
+        clearPathSegmentChildren(x.second);
+      }
+    }
+    delete p;
   }
 
   void addPathSegmentKeys(PathSegment *p) {
@@ -232,7 +246,7 @@ public:
     // if (it != root.children.end()) {
     // cout << "found in root";
     // }
-    prev = &root;
+    prev = root;
     // for (auto x : segs) {
     for (auto _x = segs.begin(); _x != segs.end(); ++_x) {
       auto x = *_x;
@@ -308,91 +322,56 @@ public:
     }
   }
 
-  void mergeCandMaps(CandMap &fileCandMap, CandMap &dirCandMap) {
+  // Add parent directories scores to files
+  void mergeCandidateMaps(CandMap &fileCandMap, CandMap &dirCandMap) {
 
-    // vector<pair<float, int>> results;
-    // cout << "cand map size: " << candmap.size() << "\n";
+    // TODO: make configurable
+    float multip = 0.7; // Give only 70% of score if match is for directory
     for (auto &[fid, cand] : fileCandMap) {
       PathSegment *p = cand.seg->parent;
-      // cout << cand.seg->str << "|";
       while (p->parent != NULL) {
-        // cout << p->str << "!";
         if (p->cand != NULL) {
           auto &scoreA = cand.v_charscore;
           auto &scoreB = p->cand->v_charscore;
-          // cout << "[:]" << scoreB.size() << "|";
-
           for (int i = 0; i < cand.len; i++) {
-            // cout << "[" << i << ":" << scoreA[i] << ":" << scoreB[i] << "]";
-            // Todo: segfault for scoreB
-            if (scoreA[i] < scoreB[i]) {
-
-              scoreA[i] = scoreB[i];
+            if (scoreA[i] < scoreB[i] * multip) {
+              scoreA[i] = scoreB[i] * multip;
             }
           }
         }
         p = p->parent;
       }
-      // cout << "\n";
     }
   }
 
   vector<pair<float, int>> findSimilar2(std::string query, int minChars) {
-    // minChars
-
-    cout << "query " << query << "\n";
     CandMap fileCandMap;
     CandMap dirCandMap;
-    CandMap &candmap = fileCandMap;
-    // std::unordered_map<int, Candidate> &candmap = fileCandMap;
 
     addToCandMap(fileCandMap, query, filemaps);
-    // cout << "======DIRS=================\n";
     addToCandMap(dirCandMap, query, dirmaps);
 
-    mergeCandMaps(fileCandMap, dirCandMap);
+    mergeCandidateMaps(fileCandMap, dirCandMap);
 
+    // Set all candidate pointers to NULL so they won't mess up future searches
     for (auto seg : segsToClean) {
       seg->cand = NULL;
     }
-    segsToClean.resize(0);
+    segsToClean.clear();
 
-    // 2d array with file id's and scores
+    // Form return result, 2d array with file id's and scores
     vector<pair<float, int>> results;
-    // cout << "cand map size: " << candmap.size() << "\n";
-    for (auto &[fid, cand] : candmap) {
+    for (auto &[fid, cand] : fileCandMap) {
       pair<float, int> v;
       float sc = cand.getScore();
       v.first = sc;
       v.second = fid;
       results.push_back(v);
-      // cout << "score2: " << v.first;
     }
-    // std::sort(results.begin(), results.end());
-    // Sort largest score first
+    // Sort highest score first
     std::sort(results.begin(), results.end(),
               [](pair<float, int> a, pair<float, int> b) { return a.first > b.first; });
     return results;
-  }
-
-  void dumpStatus() {
-
-    int nchars = 6;
-    for (const auto &[key, value] : (*ngmaps[nchars])) {
-      int64_t x;
-      x = key;
-      int multip = nchars * 8;
-      for (int i = 0; i <= nchars; i++) {
-        char c = (x >> multip) & 255;
-        std::cout << c;
-        multip -= 8;
-      }
-      std::cout << "\n";
-      for (auto y : *value) {
-        std::cout << y << " ";
-      }
-      std::cout << "\n";
-    }
   }
 
   // Return int64_t representation of the first nchars in str, starting from index i
@@ -408,44 +387,7 @@ public:
     return key;
   }
 
-  void addToIdx(std::string s1, int fileId, int nchars) {
-
-    HashMap *ngmap = ngmaps[nchars];
-
-    for (int i = 0; i <= s1.size() - nchars; i++) {
-      // std::cout << "key: " << int64ToBinaryString(key) << "\n";
-      int64_t key = getKeyAtIdx(s1, i, nchars);
-
-      // Create a new std::set for key if doesn't exist already
-      auto it = (*ngmap).find(key);
-      if (it == (*ngmap).end()) {
-        (*ngmap)[key] = new std::set<int>;
-      }
-      (*ngmap)[key]->insert(fileId);
-    }
-  }
-
-  std::vector<int> findSimilarForNgram(std::string str, int i, int nchars) {
-
-    assert(i + nchars <= str.size());
-    std::vector<int> res;
-
-    auto ngmap = *(ngmaps[nchars]);
-    int64_t key = getKeyAtIdx(str, i, nchars);
-    // std::cout << "findSimilar " << str << " " << nchars << "\n";
-    auto it = ngmap.find(key);
-    if (it != ngmap.end()) { // key found
-      auto set = it->second;
-      for (int value : *set) {
-        res.push_back(value);
-        // std::cout << value << " \n";
-      }
-    }
-    return res;
-  }
-
-  void addToResults2(PathSegment *seg, std::string str, int i, int nchars,
-                     std::unordered_map<int, Candidate> &candmap) {
+  void addToResults2(PathSegment *seg, std::string str, int i, int nchars, CandMap &candmap) {
 
     auto it2 = candmap.find(seg->fileId);
     if (it2 == candmap.end()) {
@@ -461,101 +403,6 @@ public:
         candmap[seg->fileId].v_charscore[j] = nchars;
       }
     }
-
-    // Candidate &cand = candmap[seg->fileId];
-    // for (int i = 0; i < cand.v_charscore.size(); i++) {
-    // cand.v_charscore[i] = 0;
-    // }
-  }
-
-  void addToResults(int fid, std::string str, int i, int nchars,
-                    std::unordered_map<int, Candidate> &candmap) {
-
-    auto it2 = candmap.find(fid);
-    if (it2 == candmap.end()) {
-      Candidate cand(fid, strlist[fid], str.size());
-      candmap[fid] = cand;
-    }
-
-    for (int j = i; j < i + nchars; j++) {
-      if (candmap[fid][j] < nchars) {
-        candmap[fid].v_charscore[j] = nchars;
-      }
-    }
-  }
-
-  /** @brief Find similar strings for given input str
-   *
-   * @param[in]  str  String to find in index
-   * @param[in]  minChars Minimum substring size to consider in the matching. Set between 2 and 5.
-   * Higher time consumption but better results with lower values.
-   * @return matches the top 15 strings that most closely resemble the input
-   */
-  vector<pair<float, int>> findSimilar(std::string str, int minChars) {
-    // minChars
-
-    std::unordered_map<int, Candidate> candmap;
-
-    int nchars = 8;
-    if (str.size() < nchars) {
-      nchars = str.size();
-    }
-
-#ifdef _OPENMP
-    omp_lock_t writelock;
-    omp_init_lock(&writelock);
-#endif
-
-    for (; nchars >= minChars; nchars--) {
-      int count = str.size() - nchars + 1;
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-      for (int i = 0; i < count; i++) {
-        auto res = findSimilarForNgram(str, i, nchars);
-        // std::cout << "i=" << i << " ";
-        // int64str(getKeyAtIdx(str, i, nchars), nchars);
-        // printVector(res);
-        for (const auto &fid : res) {
-// std::cout << " " << fid << "(" << strlist[fid] << ") ";
-#ifdef _OPENMP
-          omp_set_lock(&writelock);
-#endif
-          addToResults(fid, str, i, nchars, candmap);
-#ifdef _OPENMP
-          omp_unset_lock(&writelock);
-#endif
-        }
-        // std::cout << " ";
-        // std::cout << "\n";
-      }
-    }
-
-    // 2d array with file id's and scores
-    vector<pair<float, int>> results;
-    // cout << "cand map size: " << candmap.size() << "\n";
-    for (auto &[fid, cand] : candmap) {
-      pair<float, int> v;
-      float sc = cand.getScore();
-      v.first = sc;
-      v.second = fid;
-      results.push_back(v);
-      // cout << "score2: " << v.first;
-    }
-    // std::sort(results.begin(), results.end());
-    // Sort largest score first
-    std::sort(results.begin(), results.end(),
-              [](pair<float, int> a, pair<float, int> b) { return a.first > b.first; });
-    return results;
-  }
-
-  void add(std::string str, int fileId) {
-    strlist[fileId] = str;
-    for (int nchars = 2; nchars <= 8; nchars++) {
-      if (str.size() >= nchars) {
-        addToIdx(str, fileId, nchars);
-      }
-    }
   }
 };
 
@@ -564,76 +411,32 @@ public:
 extern "C" {
 
 void str_idx_free(void *data) {
-  // free(data);
-  // TODO
+  delete (StringIndex *)data;
 }
 
-size_t str_idx_size(const void *data) {
-  // TODO: give correct size, although this is not 100% needed
-  return sizeof(int);
-}
 
+// Wrap StringIndex inside ruby variable
 static const rb_data_type_t str_idx_type = {
-    .wrap_struct_name = "foo",
+		// .wrap_struct_name: "doesn’t really matter what it is as long as it’s sensible and unique"
+    .wrap_struct_name = "StringIndexW9q4We",
+    
+    // Used by Carbage Collector:
     .function =
         {
             .dmark = NULL,
             .dfree = str_idx_free,
-            .dsize = str_idx_size,
+            .dsize = NULL, // TODO
         },
     .data = NULL,
     .flags = RUBY_TYPED_FREE_IMMEDIATELY,
 };
 
 VALUE str_idx_alloc(VALUE self) {
-  /* allocate */
-  // void* data = malloc(10*sizeof(int));
-
-  // StringIndex* ind = new StringIndex();
   void *data = new StringIndex();
-
-  /* wrap */
   return TypedData_Wrap_Struct(self, &str_idx_type, data);
 }
 
-VALUE str_idx_m_initialize(VALUE self) { return self; }
-
-void *add_to_idx_slow(void *_data) {
-
-  void **data = (void **)_data;
-  StringIndex *idx = (StringIndex *)(data[0]);
-  std::string *str = (std::string *)(data[1]);
-  int *fid = (int *)(data[2]);
-
-  idx->add(*str, *fid);
-  return 0;
-}
-
-VALUE StringIndexAddToIndex(VALUE self, VALUE str, VALUE fileId) {
-  VALUE ret;
-  ret = rb_float_new(5.5);
-  std::string s1 = StringValueCStr(str);
-  int fid = NUM2INT(fileId);
-
-  void *data;
-  TypedData_Get_Struct(self, int, &str_idx_type, data);
-  // StringIndex * idx = (StringIndex *) data;
-
-  void **params = (void **)malloc(sizeof(void *) * 5);
-  params[0] = data;
-  params[1] = &s1;
-  params[2] = &fid;
-  // rb_thread_call_without_gvl(add_to_idx_slow, params, NULL, NULL);
-  // free(params);
-
-  ((StringIndex *)data)->add(s1, fid);
-
-  return ret;
-}
-
 VALUE StringIndexAddSegments(VALUE self, VALUE str, VALUE fileId) {
-  VALUE ret;
-  ret = rb_float_new(5.5);
   std::string s1 = StringValueCStr(str);
   int fid = NUM2INT(fileId);
 
@@ -641,7 +444,7 @@ VALUE StringIndexAddSegments(VALUE self, VALUE str, VALUE fileId) {
   TypedData_Get_Struct(self, int, &str_idx_type, data);
   ((StringIndex *)data)->addSegments(s1, fid, '/');
 
-  return ret;
+  return self;
 }
 
 VALUE StringIndexFind(VALUE self, VALUE str, VALUE minChars) {
@@ -670,22 +473,12 @@ VALUE StringIndexFind(VALUE self, VALUE str, VALUE minChars) {
 }
 
 void Init_stridx(void) {
-  printf("Init_stridx4\n");
 
   VALUE cFoo = rb_define_class("CppStringIndex", rb_cObject);
 
   rb_define_alloc_func(cFoo, str_idx_alloc);
-  rb_define_method(cFoo, "initialize", str_idx_m_initialize, 0);
-  // rb_define_method(cFoo, "add", StringIndexAddToIndex, 2);
-  // rb_define_method(cFoo, "add2", StringIndexAddSegments, 2);
   rb_define_method(cFoo, "add", StringIndexAddSegments, 2);
-
   rb_define_method(cFoo, "find", StringIndexFind, 2);
-
-  // StringIndex idx;
-  // idx.addSegments("/foo/b\\ar/sdf\\ sdfsdf/baz.txt", 2, '/');
-  // idx.addSegments("/foo/bar/sdfsdfsdf/baz.txt", 2, '/');
-  // idx.addSegments("/foo/bar/0dfsdfsdf/zaz.txt", 3, '/');
 }
 
 } // End extern "C"
