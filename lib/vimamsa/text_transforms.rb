@@ -30,5 +30,8 @@ Converter.new(lambda { |x|
   x + "\n" + nums.join("+") + "=#{sum}"
 }, :lambda, :sum_of_numbers)
 
-c = Converter.new(lambda { |x| x.scan(/[\w\.]+@[\w\.]+/).join("\n") }, :lambda, :get_emails)
+Converter.new(lambda { |x| x.scan(/[\w\.]+@[\w\.]+/).join("\n") }, :lambda, :get_emails)
+
+# Eval selection as ruby code
+Converter.new(lambda { |x| b = "eval failed"; begin; b = eval(x, TOPLEVEL_BINDING); rescue; end; "#{x}\n#{b}\n" }, :lambda, :eval)
 

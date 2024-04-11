@@ -2,8 +2,8 @@ require "parallel"
 require "stridx"
 
 # Limit file search to these extensions:
-$find_extensions = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb"]
-$search_dirs = []
+cnf.find_extensions = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".java", ".js", ".py"]
+cnf.search_dirs = []
 
 class StringIndex
   def initialize()
@@ -27,6 +27,7 @@ end
 
 class FileFinder
   @@idx_updating = true
+  @@dir_list = []
 
   def self.update_index()
     message("Start updating file index")
@@ -38,6 +39,7 @@ class FileFinder
   def initialize()
     vma.hook.register(:shutdown, self.method("save"))
     @@dir_list = vma.marshal_load("file_index")
+    @@dir_list ||= []
     update_search_idx
   end
 
@@ -78,8 +80,8 @@ class FileFinder
   end
 
   def start_gui()
-    if $search_dirs.empty?
-      message("FileFinder: No $search_dirs defined")
+    if cnf.search_dirs!.empty?
+      message("FileFinder: No cnf.search_dirs defined")
       return
     end
     l = []
@@ -121,9 +123,9 @@ class FileFinder
     debug("START find files")
     dlist = []
 
-    for d in $search_dirs
+    for d in cnf.search_dirs!
       debug("FIND FILEs IN #{d}")
-      dlist = dlist + Dir.glob("#{d}/**/*").select { |e| File.file?(e) and $find_extensions.include?(File.extname(e)) }
+      dlist = dlist + Dir.glob("#{d}/**/*").select { |e| File.file?(e) and cnf.find_extensions!.include?(File.extname(e)) }
       debug("FIND FILEs IN #{d} END")
     end
     @@dir_list = dlist

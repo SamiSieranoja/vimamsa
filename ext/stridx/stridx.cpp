@@ -24,12 +24,14 @@ using std::pair;
 using std::string;
 using std::vector;
 
+// Transforms input string as follows:
+// '/foo/bar/file1.txt'
+// => vector{"foo", "bar", "file1.txt"}
 std::vector<std::string> splitString(const std::string &input, const char &separator) {
   std::vector<std::string> result;
   std::stringstream ss(input);
   std::string item;
 
-  // while (std::getline(ss, item, '/') || std::getline(ss, item, '\\')) {
   while (std::getline(ss, item, separator)) {
     if (item.size() > 0) {
       result.push_back(item);
@@ -39,7 +41,7 @@ std::vector<std::string> splitString(const std::string &input, const char &separ
   return result;
 }
 
-// Function to convert int64_t to binary string,
+// Convert int64_t to binary string
 std::string int64ToBinaryString(int64_t num) {
   std::string result;
   for (int i = 63; i >= 0; --i) {
@@ -48,8 +50,8 @@ std::string int64ToBinaryString(int64_t num) {
   return result;
 }
 
+// Convert a (8 char) string represented as int64_t to std::string
 std::string int64ToStr(int64_t key) {
-
   int nchars = 8;
   std::string str;
   int multip = nchars * 8;
@@ -77,6 +79,7 @@ std::string charToBinaryString(char num) {
 
 class Candidate;
 enum segmentType { Dir, File };
+
 // A segment of a file path
 // e.g. if path is /foo/bar/baz.txt
 // segments are [{root}, foo, bar, baz.txt]
@@ -108,7 +111,7 @@ public:
   float maxscore;
   int candLen; // Length of candidate
 
-  Candidate() { v_charscore.resize(20, 8888); };
+  Candidate(){};
   Candidate(int _fileId, string _str, int _len) : fileId(_fileId), str(_str), len(_len) {
     // Initialize v_charscores with zeros
     v_charscore.resize(len, 0);
@@ -195,6 +198,7 @@ public:
     }
     clearPathSegmentChildren(root);
   }
+
   void clearPathSegmentChildren(PathSegment *p) {
     if (p->children.size() > 0) {
       for (auto x : p->children) {
@@ -239,63 +243,62 @@ public:
     }
   }
 
-  void addSegments(std::string str, int fileId, const char &separator) {
-    auto segs = splitString(str, separator);
+  void addSegments(std::string filePath, int fileId, const char &separator) {
+    // Split path to segments
+    auto segs = splitString(filePath, separator);
     PathSegment *prev = NULL;
-    // auto it = root.children.find(segs[0]);
-    // if (it != root.children.end()) {
-    // cout << "found in root";
-    // }
     prev = root;
-    // for (auto x : segs) {
+    // Add segments to a tree type data structure
+    // e.g. addSegments('/foo/bar/file1.txt' ..)
+    //      addSegments('/foo/faa/file2.txt' ..)
+    // forms structure:
+    // root -> foo |-> bar -> file1,txt
+    //             |-> faa -> file2.txt
     for (auto _x = segs.begin(); _x != segs.end(); ++_x) {
       auto x = *_x;
-      // cout << "(" << x << ")";
       PathSegment *p;
 
       auto it = prev->children.find(x);
       if (it != prev->children.end()) {
-        // cout << "<f>"; // Found
         p = it->second;
       } else {
         p = new PathSegment(x, fileId);
         p->parent = prev;
         // If this is last item in segs
         if (_x == std::prev(segs.end())) {
-          // cout << "[L]";
+          // therefore, it is a file.
           p->type = File;
           seglist[fileId] = p;
         } else {
           p->type = Dir;
           p->fileId = dirId;
+          // Files use user input Id. Directories need to have it generated
           dirId++;
         }
         prev->children[x] = p;
         addPathSegmentKeys(p);
       }
 
-      // if (prev != NULL) {
-      // }
-
       prev = p;
     }
-    // cout << " \n";
   }
 
-  // template <typename T>
-  std::vector<PathSegment *> findSimilarForNgram2(std::string str, int i, int nchars, SegMap &map) {
+  // Find pathsegments from <map> that include the substring of <str> which starts at index <i> and
+  // is of length <nchars>.
+  std::vector<PathSegment *> findSimilarForNgram(std::string str, int i, int nchars, SegMap &map) {
 
     assert(i + nchars <= str.size());
     std::vector<PathSegment *> res;
 
+    // Take substring of str, starting at i, spanning nchars
+    // transform that to 64 bit integer
     int64_t key = getKeyAtIdx(str, i, nchars);
-    // std::cout << "findSimilar " << str << " " << nchars << "\n";
+    // Find all path segments in map that have the same substring
     auto it = map.find(key);
     if (it != map.end()) { // key found
       auto set = it->second;
       for (auto value : *set) {
         res.push_back(value);
-        // std::cout << value << " \n";
       }
     }
     return res;
@@ -313,10 +316,10 @@ public:
     for (; nchars >= minChars; nchars--) {
       int count = query.size() - nchars + 1;
       for (int i = 0; i < count; i++) {
-        auto res = findSimilarForNgram2(query, i, nchars, *(map[nchars]));
+        auto res = findSimilarForNgram(query, i, nchars, *(map[nchars]));
         for (PathSegment *p : res) {
           // cout << nchars << "|" << p->str << "\n";
-          addToResults2(p, query, i, nchars, candmap);
+          addToResults(p, query, i, nchars, candmap);
         }
       }
     }
@@ -325,8 +328,7 @@ public:
   // Add parent directories scores to files
   void mergeCandidateMaps(CandMap &fileCandMap, CandMap &dirCandMap) {
 
-    // TODO: make configurable
-    float multip = 0.7; // Give only 70% of score if match is for directory
+    float dirMultip = 0.7; // Give only 70% of score if match is for directory
     for (auto &[fid, cand] : fileCandMap) {
       PathSegment *p = cand.seg->parent;
       while (p->parent != NULL) {
@@ -334,8 +336,8 @@ public:
           auto &scoreA = cand.v_charscore;
           auto &scoreB = p->cand->v_charscore;
           for (int i = 0; i < cand.len; i++) {
-            if (scoreA[i] < scoreB[i] * multip) {
-              scoreA[i] = scoreB[i] * multip;
+            if (scoreA[i] < scoreB[i] * dirMultip) {
+              scoreA[i] = scoreB[i] * dirMultip;
             }
           }
         }
@@ -344,13 +346,39 @@ public:
     }
   }
 
-  vector<pair<float, int>> findSimilar2(std::string query, int minChars) {
+  vector<pair<float, int>> findSimilar(std::string query, int minChars) {
     CandMap fileCandMap;
     CandMap dirCandMap;
 
+    /* The search will find filepaths similar to the input string
+    
+    To be considered a candidate path, the file component of the path (e.g. file.txt)
+    is required to have at least a substring of two characters in common with the
+    query string.
+
+		If that condition is true, then the directories will also add to the score,
+		although with a smaller weight. */
+
+    // The similarity measure between query and PathSegment in index
+    // works (somewhat simplified) as follows:
+    // For each character c in the query string:
+    //   - find the largest substring in the query which includes the character c and
+    //     is also included in the PathSegment
+    //   - take the lenght of that substring as score
+    // sum up these values and divide by (string length)^2
+    // e.g.
+    // query = "loopevents"
+    // candidate = "/src/event-loop.c"
+    //          loopeventsr
+    // scores = 44445555522
+    // final score = (4+4+4+4+5+5+5+5+5+2+2)/(11*11) = 0.37
+
+    // Find both files and directories that match the input query
     addToCandMap(fileCandMap, query, filemaps);
     addToCandMap(dirCandMap, query, dirmaps);
 
+    /* If parent dir of a file matches the input string add the scores of the direcotry to the
+     scores of the file */
     mergeCandidateMaps(fileCandMap, dirCandMap);
 
     // Set all candidate pointers to NULL so they won't mess up future searches
@@ -387,7 +415,7 @@ public:
     return key;
   }
 
-  void addToResults2(PathSegment *seg, std::string str, int i, int nchars, CandMap &candmap) {
+  void addToResults(PathSegment *seg, std::string str, int i, int nchars, CandMap &candmap) {
 
     auto it2 = candmap.find(seg->fileId);
     if (it2 == candmap.end()) {
@@ -406,20 +434,15 @@ public:
   }
 };
 
-// StringIndex *idxo;
-
 extern "C" {
 
-void str_idx_free(void *data) {
-  delete (StringIndex *)data;
-}
+void str_idx_free(void *data) { delete (StringIndex *)data; }
 
-
-// Wrap StringIndex inside ruby variable
+// Wrap StringIndex class inside a ruby variable
 static const rb_data_type_t str_idx_type = {
-		// .wrap_struct_name: "doesn’t really matter what it is as long as it’s sensible and unique"
+    // .wrap_struct_name: "doesn’t really matter what it is as long as it’s sensible and unique"
     .wrap_struct_name = "StringIndexW9q4We",
-    
+
     // Used by Carbage Collector:
     .function =
         {
@@ -456,7 +479,7 @@ VALUE StringIndexFind(VALUE self, VALUE str, VALUE minChars) {
   StringIndex *idx = (StringIndex *)data;
 
   ret = rb_ary_new();
-  const vector<pair<float, int>> &results = idx->findSimilar2(s1, NUM2INT(minChars));
+  const vector<pair<float, int>> &results = idx->findSimilar(s1, NUM2INT(minChars));
   int limit = 15;
   int i = 0;
   for (const auto &res : results) {

@@ -4,6 +4,7 @@
 # c = Converter.new(lambda { |x| h = {}; x.split(/\s+/).each { |y| h[y] = 1 }; h.keys.join(" ") }, :lambda, :uniqwords)
 
 # Eval selected text as ruby code (e.g. use as calculator)
+
 # bindkey "V , e", "vma.buf.convert_selected_text(:eval)"
 # syntax: bindkey "mode key1 key2 ..."
 
@@ -22,7 +23,6 @@
 
 # cnf.lsp.server.clangd = { name: "clangd", command: "clangd-12 --offset-encoding=utf-8", type: "stdio" }
 # cnf.lsp.server.clangd.languages = ["c", "cpp"]
-
 
 
 
