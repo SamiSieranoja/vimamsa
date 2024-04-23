@@ -1063,7 +1063,11 @@ class Buffer < String
     # message("Open link #{word}")
     linep = get_file_line_pointer(word)
     debug "linep'#{linep}'"
-    path = File.expand_path(word)
+    if word[0] != "/" and word[0] != "~"
+      path = File.expand_path("#{bufs.last_dir}/#{word}")
+    else
+      path = File.expand_path(word)
+    end
     wtype = nil
     if is_url(word)
       wtype = :url
@@ -1089,7 +1093,7 @@ class Buffer < String
         return [fn, :hpt_link]
       end
     end
-    
+
     return [word, wtype]
   end
 
@@ -1593,3 +1597,4 @@ def backup_all_buffers()
   end
   message("Backup all buffers")
 end
+
