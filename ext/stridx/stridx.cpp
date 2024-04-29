@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <sstream>
 
+// #undef _OPENMP
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -259,6 +260,7 @@ public:
       PathSegment *p;
 
       auto it = prev->children.find(x);
+      // this part of the path already exists in the tree
       if (it != prev->children.end()) {
         p = it->second;
       } else {
@@ -307,19 +309,39 @@ public:
   void addToCandMap(CandMap &candmap, std::string query,
                     std::vector<SegMap *> &map // filemaps or dirmaps
   ) {
-    int nchars = 8;
+    int maxChars = 8;
     int minChars = 2; // TODO
-    if (query.size() < nchars) {
-      nchars = query.size();
+    if (query.size() < maxChars) {
+      maxChars = query.size();
     }
 
-    for (; nchars >= minChars; nchars--) {
-      int count = query.size() - nchars + 1;
+#ifdef _OPENMP
+    omp_lock_t writelock;
+    omp_init_lock(&writelock);
+    std::cout << "OPENMP enabled2\n";
+#endif
+
+    // std::vector<std::vector<PathSegment *>*> vec;
+    // Loop all substring lengths between minChars..maxChars
+    for (int sublen = minChars; sublen <= maxChars; sublen++) {
+      int count = query.size() - maxChars + 1;
+
+      // #ifdef _OPENMP
+      // #pragma omp parallel for
+      // #endif
+      // Loop all possible start positions
       for (int i = 0; i < count; i++) {
-        auto res = findSimilarForNgram(query, i, nchars, *(map[nchars]));
+        std::vector<PathSegment *> res = findSimilarForNgram(query, i, sublen, *(map[sublen]));
+
         for (PathSegment *p : res) {
-          // cout << nchars << "|" << p->str << "\n";
-          addToResults(p, query, i, nchars, candmap);
+          // #ifdef _OPENMP
+          // omp_set_lock(&writelock);
+          // #endif
+          addToResults(p, query, i, sublen, candmap);
+
+          // #ifdef _OPENMP
+          // omp_unset_lock(&writelock);
+          // #endif
         }
       }
     }
@@ -351,13 +373,13 @@ public:
     CandMap dirCandMap;
 
     /* The search will find filepaths similar to the input string
-    
+
     To be considered a candidate path, the file component of the path (e.g. file.txt)
     is required to have at least a substring of two characters in common with the
     query string.
 
-		If that condition is true, then the directories will also add to the score,
-		although with a smaller weight. */
+                If that condition is true, then the directories will also add to the score,
+                although with a smaller weight. */
 
     // The similarity measure between query and PathSegment in index
     // works (somewhat simplified) as follows:
