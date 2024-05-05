@@ -38,9 +38,9 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'differ', '~>  0.1.2'
   spec.add_runtime_dependency 'parallel', '~> 1.14' #TODO: update?
   spec.add_runtime_dependency 'listen', '~> 3.4'  #TODO: update?
+  spec.add_runtime_dependency 'StrIdx', '~> 0.1.1'
   spec.add_runtime_dependency 'language_server-protocol', '~> 3.17.0.3'
 
-  spec.extensions = ["ext/vmaext/extconf.rb","ext/stridx/extconf.rb"]
+  spec.extensions = ["ext/vmaext/extconf.rb"]
   spec.licenses    = ['GPL-3.0+']
-
 end

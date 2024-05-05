@@ -7,15 +7,15 @@ cnf.search_dirs = []
 
 class StringIndex
   def initialize()
-    @idx = CppStringIndex.new
+    @idx = StrIdx::StringIndex.new
   end
 
   def find(str, minChars: 2)
     minChars = 3 if minChars.class != Integer
     minChars = 2 if minChars < 2
-    minChars = 6 if minChars > 6
+    minChars = 6 if minChars > 6 #TODO: implement option in C++
 
-    @idx.find(str, minChars)
+    @idx.find(str)
   end
 
   def add(str, id)
