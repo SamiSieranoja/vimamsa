@@ -632,11 +632,12 @@ end
 
 # Try to clear modifiers when program loses focus
 # e.g. after alt-tab
-def focus_out
-  debug "RB Clear modifiers"
-  $kbd.clear_modifiers()
-end
+# TODO
+# def focus_out
+  # debug "RB Clear modifiers"
+  # $kbd.clear_modifiers()
+# end
 
-def handle_key_event(event)
-  $kbd.handle_key_event(event)
-end
+# def handle_key_event(event)
+  # $kbd.handle_key_event(event)
+# end

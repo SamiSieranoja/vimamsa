@@ -1295,6 +1295,16 @@ class Buffer < String
     end_visual_mode
   end
 
+  def eval_whole_buf(x = 888)
+    s = self.to_s
+    begin
+      eval(s)
+    rescue Exception
+      message("Error running eval")
+    else
+    end
+  end
+
   def convert_selected_text(converter_id)
     return if !@visual_mode
     r = get_visual_mode_range
@@ -1597,4 +1607,3 @@ def backup_all_buffers()
   end
   message("Backup all buffers")
 end
-

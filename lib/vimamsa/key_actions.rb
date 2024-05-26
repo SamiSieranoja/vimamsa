@@ -33,6 +33,8 @@ reg_act(:command_to_buf, proc { command_to_buf }, "Execute command, output to bu
 reg_act(:lsp_debug, proc { vma.buf.lsp_get_def }, "LSP get definition")
 reg_act(:lsp_jump_to_definition, proc { vma.buf.lsp_jump_to_def }, "LSP jump to definition")
 
+reg_act(:eval_buf, proc { vma.buf.eval_whole_buf }, "Eval whole current buffer as ruby code (DANGEROUS)")
+
 reg_act(:enable_debug, proc { cnf.debug = true }, "Enable debug")
 reg_act(:disable_debug, proc { cnf.debug = false }, "Disable debug")
 

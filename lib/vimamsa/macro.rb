@@ -118,8 +118,10 @@ class Macro
 
   # Run the provided list of actions
   def run_actions(acts)
+    acts = [acts] if acts.class != Array
     isok = true
-    if acts.kind_of?(Array) and acts.any?
+    # if acts.kind_of?(Array) and acts.any?
+    if acts.any?
       @running_macro = true
       # TODO:needed?
       # set_last_command({ method: vma.macro.method("run_macro"), params: [name] })

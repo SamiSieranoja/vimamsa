@@ -8,6 +8,7 @@ cnf.search_dirs = []
 class StringIndex
   def initialize()
     @idx = StrIdx::StringIndex.new
+    @idx.setDirSeparator("/")
   end
 
   def find(str, minChars: 2)
@@ -94,10 +95,15 @@ class FileFinder
     select_callback = self.method("gui_file_finder_select_callback")
     update_callback = self.method("gui_file_finder_update_callback")
 
+
+    opt = { :title => "Fuzzy filename search",
+            :desc => "Search for files in folders defined in cnf.search_dirs" ,
+            :columns => [{:title=>'Filename',:id=>0}]
+            }
+                             
     gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
-                             # "gui_file_finder_select_callback",
                              select_callback,
-                             update_callback)
+                             update_callback, opt)
   end
 
   def gui_file_finder_update_callback(search_str = "")
@@ -105,8 +111,11 @@ class FileFinder
     if (search_str.size >= 3)
       files = filter_files(search_str)
       @file_search_list = files
+      if files.size > 1
+        files = files.collect{|x|[tilde_path(x[0])]}
+      end
+
       return files
-      #debug files.inspect
       #return files.values
     end
     return []

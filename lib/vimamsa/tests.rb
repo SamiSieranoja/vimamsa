@@ -1,7 +1,19 @@
 require "digest"
 
 def run_tests()
-  tests = ["test_paste_0", "test_delete_0"]
+  # DelayExecutioner.exec(id: :run_tests, wait: 0.7, callable: proc { run_tests_0 })
+
+  # Reload class
+  # if Object.constants.include?(:EditorTests)
+  # Object.send(:remove_const, :EditorTests)
+  # end
+  load __FILE__
+
+  run_edit_tests
+end
+
+def run_tests_0()
+  tests = ["test_write_0"]
   stats = []
   for t in tests
     r = eval(t)
@@ -16,7 +28,74 @@ def run_tests()
   puts "===================="
 end
 
-#
+def run_edit_tests()
+  edt = EditorTests.new
+  tests = edt.methods.select { |x| x.match(/test_.*/) }.collect { |x| { :method => edt.method(x), :name => x } }
+  for t in tests
+    b = create_new_buffer(file_contents = "\n", prefix = "buf", setcurrent = true)
+
+    edits = t[:method].call
+    # next if t[:name] != :test_create_close_buf
+    errors = 0
+    edits.each_with_index do |x, i|
+      if x.class == Array
+        (act, target) = x
+        
+        vma.macro.run_actions(act)
+        # bufc = b.to_s
+        bufc = vma.buf.to_s
+        if bufc != target
+          puts "ERROR[#{t[:name]}:#{i}] act=#{act.inspect} content=#{bufc.inspect} != #{target.inspect}"
+          errors += 1
+        end
+      else
+        vma.macro.run_actions(x)
+      end
+    end
+    if errors == 0
+      puts "TEST #{t[:name]} passed"
+    else
+    end
+  end
+end
+
+class EditorTests
+  def test_write
+    #[[action to run, expected buffer contents after], ...]
+    [['buf.insert_txt("zzzz")', "zzzz\n"],
+     # At end of file replace should not change anything
+     ['buf.replace_with_char("-")', "zzzz\n"],
+     'buf.insert_txt("\n")',
+     ['buf.insert_txt("yy")', "zzzz\nyy\n"],
+     :e_move_backward_char, :e_move_backward_char,
+     ['buf.insert_txt("0")', "zzzz\n0yy\n"],
+     "buf.jump(START_OF_BUFFER)",
+     ['buf.replace_with_char("1")', "1zzz\n0yy\n"]]
+  end
+
+  def test_delete
+    [['buf.insert_txt("abcdef")', "abcdef\n"],
+     'buf.insert_txt("\n")',
+     ['buf.insert_txt("yy")', "abcdef\nyy\n"],
+     "buf.jump(START_OF_BUFFER)",
+     :delete_char_forward,
+     [:delete_char_forward, "cdef\nyy\n"],
+     "buf.jump(END_OF_LINE)",
+     "buf.delete(BACKWARD_CHAR)",
+     ["buf.delete(BACKWARD_CHAR)", "cd\nyy\n"]]
+  end
+
+  def test_create_close_buf
+    ['buf.insert_txt("abcdef")',
+     [:buf_new,"\n"],
+     'buf.insert_txt("a")',
+     'buf.insert_txt("b")',
+     'buf.insert_txt("c")',
+     'buf.insert_txt("d")',
+     ['buf.insert_txt("e")',"abcde\n"],
+     [:close_current_buffer, "abcdef\n"]]
+  end
+end
 
 def test_paste_0(runmacro = true)
   return

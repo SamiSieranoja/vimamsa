@@ -266,6 +266,7 @@ default_keys = {
   "C d <num> e" => "delete_next_word",
   "C d ' <char>" => "buf.delete2(:to_mark,<char>)",
   "C r <char>" => "buf.replace_with_char(<char>)", # TODO
+  "C r space" => "buf.replace_with_char(' ')", # TODO
   "C , l b" => "load_buffer_list",
   "C , l l" => "save_buffer_list",
   "C , r <char>" => "vma.set_register(<char>)", # TODO
