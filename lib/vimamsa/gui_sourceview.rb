@@ -120,20 +120,19 @@ class VSourceView < GtkSource::View
   end
 
   def focus_out()
-      set_cursor_color(:inactive)
-      
-      # This does not seem to work: (TODO:why?)
-      # self.cursor_visible = false
+    set_cursor_color(:inactive)
+
+    # This does not seem to work: (TODO:why?)
+    # self.cursor_visible = false
   end
-  
+
   def focus_in()
-      set_cursor_color(@ctype)
-      self.cursor_visible = false
-      self.cursor_visible = true
-      self.grab_focus
+    set_cursor_color(@ctype)
+    self.cursor_visible = false
+    self.cursor_visible = true
+    self.grab_focus
   end
- 
-  
+
   def register_signals()
     check_controllers
 
@@ -332,7 +331,7 @@ class VSourceView < GtkSource::View
     end
     debug $view.visible_rect.inspect
 
-    debug "key event"
+    debug "key event" + [keyval,@last_keyval,keyname,sig].to_s
     # debug event
 
     # key_name = event.string
@@ -353,6 +352,8 @@ class VSourceView < GtkSource::View
     keyval_trans[Gdk::Keyval::KEY_KP_Enter] = "enter"
     keyval_trans[Gdk::Keyval::KEY_Alt_L] = "alt"
     keyval_trans[Gdk::Keyval::KEY_Alt_R] = "alt"
+    keyval_trans[Gdk::Keyval::KEY_Caps_Lock] = "caps"
+    
 
     keyval_trans[Gdk::Keyval::KEY_BackSpace] = "backspace"
     keyval_trans[Gdk::Keyval::KEY_KP_Page_Down] = "pagedown"
@@ -383,6 +384,15 @@ class VSourceView < GtkSource::View
     key_str_parts << "super" if vma.kbd.modifiers[:super]
     key_str_parts << keyname
 
+    # After remapping capslock to control in gnome-tweak tool,
+    # if pressing and immediately releasing the capslock (control) key,
+    # we get first "caps" on keydown and ctrl-"caps" on keyup (keyval 65509, Gdk::Keyval::KEY_Caps_Lock)
+    # If mapping capslock to ctrl in hardware, we get keyval 65507 (Gdk::Keyval::KEY_Control_L) instead
+    if key_str_parts[0] == "ctrl" and key_str_parts[1] == "caps"
+      # Replace ctrl-caps with ctrl
+      key_str_parts.delete_at(1)
+    end
+    
     if key_str_parts[0] == key_str_parts[1]
       # We don't want "ctrl-ctrl" or "alt-alt"
       # TODO:There should be a better way to do this
@@ -407,6 +417,7 @@ class VSourceView < GtkSource::View
     # $kbd.match_key_conf(key_str, nil, :key_press)
     # debug "key_str=#{key_str} key_"
 
+
     if key_str != "" # or prefixed_key_str != ""
       if sig == :key_release and keyval == @last_keyval
         $kbd.match_key_conf(key_str + "!", nil, :key_release)
@@ -415,8 +426,8 @@ class VSourceView < GtkSource::View
         $kbd.match_key_conf(key_str, nil, :key_press)
         @last_event = [keynfo, key_str, :key_press]
       end
-      @last_keyval = keyval #TODO: outside if?
     end
+    @last_keyval = keyval
 
     handle_deltas
 
@@ -596,7 +607,6 @@ class VSourceView < GtkSource::View
   end
 
   def draw_cursor
-
     sv = vma.gui.active_window[:sw].child
     return if sv.nil?
     if sv != self # if we are not the current buffer
