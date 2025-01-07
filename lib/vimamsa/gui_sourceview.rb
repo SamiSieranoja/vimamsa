@@ -172,7 +172,6 @@ class VSourceView < GtkSource::View
     # dc.signal_connect "enter" do |gesture, x, y|
     # debug "enter", 2
     # debug [x, y]
-    # # Ripl.start :binding => binding
     # true
     # end
 
@@ -325,13 +324,13 @@ class VSourceView < GtkSource::View
   end
 
   # def handle_key_event(event, sig)
-  def handle_key_event(keyval, keyname, sig)
+  def handle_key_event(keyval, keyname, sig, keycode)
     if $update_cursor
       handle_scrolling
     end
     debug $view.visible_rect.inspect
 
-    debug "key event" + [keyval,@last_keyval,keyname,sig].to_s
+    debug "key event" + [keyval, @last_keyval, keyname, sig].to_s
     # debug event
 
     # key_name = event.string
@@ -341,9 +340,14 @@ class VSourceView < GtkSource::View
     # Gdk::Keyval.to_name()
     # end
 
+    @keycode_trans ||= {}
+    @keycode_trans[202] = "mode" # F24
+    @keycode_trans[96] = "mode" # F12
+    @keycode_trans[37] = "ctrl_r"
+
     keyval_trans = {}
     keyval_trans[Gdk::Keyval::KEY_Control_L] = "ctrl"
-    keyval_trans[Gdk::Keyval::KEY_Control_R] = "ctrl"
+    keyval_trans[Gdk::Keyval::KEY_Control_R] = "ctrl_r"
 
     keyval_trans[Gdk::Keyval::KEY_Escape] = "esc"
 
@@ -353,7 +357,6 @@ class VSourceView < GtkSource::View
     keyval_trans[Gdk::Keyval::KEY_Alt_L] = "alt"
     keyval_trans[Gdk::Keyval::KEY_Alt_R] = "alt"
     keyval_trans[Gdk::Keyval::KEY_Caps_Lock] = "caps"
-    
 
     keyval_trans[Gdk::Keyval::KEY_BackSpace] = "backspace"
     keyval_trans[Gdk::Keyval::KEY_KP_Page_Down] = "pagedown"
@@ -374,14 +377,44 @@ class VSourceView < GtkSource::View
     key_trans = {}
     key_trans["\e"] = "esc"
     tk = keyval_trans[keyval]
-    keyname = tk if !tk.nil?
+# Ripl.start :binding => binding
+
+    if !@keycode_trans[keycode].nil?
+      keyname = @keycode_trans[keycode]
+    elsif !tk.nil?
+      keyname = tk
+    end
+
 
     key_str_parts = []
-    key_str_parts << "ctrl" if vma.kbd.modifiers[:ctrl]
+    key_str_parts << "ctrl" if vma.kbd.modifiers[:ctrl] and keyname != "ctrl_r"
     key_str_parts << "alt" if vma.kbd.modifiers[:alt]
     key_str_parts << "shift" if vma.kbd.modifiers[:shift]
     key_str_parts << "meta" if vma.kbd.modifiers[:meta]
     key_str_parts << "super" if vma.kbd.modifiers[:super]
+
+    @last_keynfo ||= {}
+
+    # pp ["last key", @last_keynfo.inspect, vma.kbd.modifiers[:ctrl]]
+    if @last_keynfo[:key_str] == "ctrl_r!" and keyname != "ctrl_r" and !vma.kbd.modifiers[:ctrl]
+      key_str_parts << "ctrl"
+    end
+
+    if (@last_keynfo[:key_str] == "shift!") and keyname != "shift"
+      a = "`1234567890-=];'\\,./"
+      b = "~!@#$%^&*()_+}:\"||<>?"
+      h = {}; a.chars.each_with_index { |x, i| h[x] = b[i] }
+
+      if keyname.match(/[a-z]/)
+        keyname.upcase!
+        # elsif keyname.match(/^[0-9]$/)
+      elsif !h[keyname].nil?
+        # i = keyname.to_i
+        keyname = h[keyname]
+      end
+    end
+
+# Ripl.start :binding => binding
     key_str_parts << keyname
 
     # After remapping capslock to control in gnome-tweak tool,
@@ -392,9 +425,9 @@ class VSourceView < GtkSource::View
       # Replace ctrl-caps with ctrl
       key_str_parts.delete_at(1)
     end
-    
+
     if key_str_parts[0] == key_str_parts[1]
-      # We don't want "ctrl-ctrl" or "alt-alt"
+      # Replace "ctrl-ctrl" with "ctrl" and "alt-alt" with "alt"
       # TODO:There should be a better way to do this
       key_str_parts.delete_at(0)
     end
@@ -412,14 +445,15 @@ class VSourceView < GtkSource::View
       key_str = ""
     end
 
-    keynfo = { :key_str => key_str, :key_name => keyname, :keyval => keyval }
+    keynfo = { :key_str => key_str, :key_name => keyname, :keyval => keyval, :keycode => keycode }
     debug keynfo.inspect
     # $kbd.match_key_conf(key_str, nil, :key_press)
     # debug "key_str=#{key_str} key_"
 
-
     if key_str != "" # or prefixed_key_str != ""
-      if sig == :key_release and keyval == @last_keyval
+      # if sig == :key_release and ((keyval != 0 and keyval == @last_keynfo[:keyval]) or ((keycode != 0 and keycode == @last_keynfo[:keycode])))
+      if sig == :key_release and ((keyval != 0 and keyval == @last_keynfo[:keyval]) or ((keycode != 0 and keycode == @last_keynfo[:keycode])))
+        keynfo[:key_str] = keynfo[:key_str] + "!"
         $kbd.match_key_conf(key_str + "!", nil, :key_release)
         @last_event = [keynfo, :key_release]
       elsif sig == :key_press
@@ -428,6 +462,7 @@ class VSourceView < GtkSource::View
       end
     end
     @last_keyval = keyval
+    @last_keynfo = keynfo
 
     handle_deltas
 

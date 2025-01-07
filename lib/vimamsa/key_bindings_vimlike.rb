@@ -103,7 +103,8 @@ bindkey "C z ", :start_browse_mode
 bindkey "B h", :history_switch_backwards
 bindkey "B l", :history_switch_forwards
 bindkey "B z", "center_on_current_line();call_action(:exit_browse_mode)"
-bindkey "B enter || B return || B esc || B j || B ctrl!", :exit_browse_mode
+# bindkey "B enter || B return || B esc || B j || B ctrl!", :exit_browse_mode
+bindkey "B enter || B return || B esc || B j || B mode!", :exit_browse_mode
 bindkey "B s", :page_up
 bindkey "B d", :page_down
 bindkey "B r", proc { vma.gui.page_down(multip: 0.25) }
@@ -279,7 +280,8 @@ default_keys = {
 
   # Visual mode only:
   "V esc" => "buf.end_visual_mode",
-  "V ctrl!" => "buf.end_visual_mode",
+  # "V ctrl!" => "buf.end_visual_mode",
+  "V mode!" => "buf.end_visual_mode",
   "V y" => "buf.copy_active_selection()",
   "V a y" => "buf.copy_active_selection(:append)",
   "V g U" => :selection_upcase,
@@ -306,10 +308,13 @@ default_keys = {
   # Switch to another mode
   "C i" => "vma.kbd.set_mode(:insert)",
   "C R" => "vma.kbd.set_mode(:replace)",
-  "C ctrl!" => "vma.kbd.set_mode(:insert)",
+  # "C ctrl!" => "vma.kbd.set_mode(:insert)",
+  "C mode!" => "vma.kbd.set_mode(:insert)",
 
   # Replace mode
-  "X esc || X ctrl!" => "vma.kbd.to_previous_mode",
+  # "X esc || X ctrl!" => "vma.kbd.to_previous_mode",
+  "X esc || X mode!" => "vma.kbd.to_previous_mode",
+  # "X esc" => "vma.kbd.to_previous_mode",
   "X <char>" => "buf.replace_with_char(<char>);buf.move(FORWARD_CHAR)",
 
   # Macros
@@ -332,10 +337,14 @@ default_keys = {
   "CV ctrl-q" => :quit,
   "CV , R" => "restart_application",
   # "I ctrl!" => "vma.kbd.to_previous_mode",
-  "C shift!" => "buf.save",
-  "I ctrl-s" => "buf.save",
+  "I mode!" => "vma.kbd.to_previous_mode",
+  
+  # "C shift!" => "buf.save",
+  "IC ctrl-s" => "buf.save",
   "I <char>" => "buf.insert_txt(<char>)",
-  "I esc || I ctrl!" => "vma.kbd.to_previous_mode",
+  # "I esc || I ctrl!" => "vma.kbd.to_previous_mode",
+  "I esc || I mode!" => "vma.kbd.to_previous_mode",
+  # "I esc" => "vma.kbd.to_previous_mode",
 
   "I ctrl-d" => "buf.delete2(:to_word_end)",
 

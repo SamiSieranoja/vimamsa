@@ -193,6 +193,9 @@ class Editor
   end
 
   def marshal_load(varname, default_data = nil)
+  
+  
+  
     mdata = load_var_from_file(varname)
     if mdata
       return Marshal.load(mdata)

@@ -479,13 +479,14 @@ class VMAgui
       uki = Gdk::Keyval.to_unicode(keyval)
       keystr = uki.chr("UTF-8")
       debug "key pressed #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
-      buf.view.handle_key_event(keyval, keystr, :key_press)
+      buf.view.handle_key_event(keyval, keystr, :key_press, keycode)
       true
     end
 
     press.signal_connect "modifiers" do |eventctr, modtype|
       # eventctr: Gtk::EventControllerKey
       # modtype: Gdk::ModifierType
+      
       debug "modifier change"
       vma.kbd.modifiers[:ctrl] = modtype.control_mask?
       vma.kbd.modifiers[:alt] = modtype.alt_mask?
@@ -507,7 +508,7 @@ class VMAgui
       uki = Gdk::Keyval.to_unicode(keyval)
       keystr = uki.chr("UTF-8")
       debug "key released #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
-      buf.view.handle_key_event(keyval, keystr, :key_release)
+      buf.view.handle_key_event(keyval, keystr, :key_release, keycode)
       true # = handled, do not propagate further
     end
   end
@@ -550,8 +551,8 @@ class VMAgui
 
     return false
   end
-
-  def init_window
+  
+ def init_window
     @last_debug_idle = Time.now
     app = Gtk::Application.new("net.samiddhi.vimamsa.r#{rand(1000)}", :flags_none)
     @app = app
@@ -658,7 +659,7 @@ class VMAgui
 
     app.run
   end
-
+  
   def monitor
     swa = @windows[1][:sw]
     @monitor_time ||= Time.now
