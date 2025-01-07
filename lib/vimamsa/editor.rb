@@ -139,7 +139,7 @@ class Editor
         fname = fname_
       end
     else
-      fname = ppath("demo.txt")
+      # fname = ppath("demo.txt")
     end
     fname = ARGV[0] if ARGV.size >= 1 and File.file?(File.expand_path(ARGV[0]))
     # vma.add_content_search_path(Dir.pwd)
