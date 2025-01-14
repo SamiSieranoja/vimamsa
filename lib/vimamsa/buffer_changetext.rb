@@ -5,6 +5,7 @@ class Buffer < String
 
   #TODO: change to apply=true as default
   def add_delta(delta, apply = false, auto_update_cpos = false)
+    @t_modified = Time.now
     return if !is_delta_ok(delta)
     if delta[1] == DELETE
       return if delta[0] >= self.size
@@ -26,6 +27,7 @@ class Buffer < String
       add_delta([self.size, INSERT, 1, "\n"], true)
     end
     reset_larger_cpos #TODO: correct here?
+    refresh_title
   end
 
   # TODO: rename ot auto-format. separate module?

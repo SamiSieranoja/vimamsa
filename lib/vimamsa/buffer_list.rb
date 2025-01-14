@@ -154,7 +154,7 @@ class BufferList
     # end
     # vma.kbd.set_mode_to_default if vma.kbd.get_scope != :editor
 
-    gui_set_window_title(vma.buf.title, vma.buf.subtitle)
+    vma.buf.refresh_title
 
     if vma.buf.fname
       @last_dir = File.dirname(vma.buf.fname)

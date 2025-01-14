@@ -41,6 +41,7 @@ class Buffer < String
     @module = nil
 
     @last_save = @last_asked_from_user = @file_last_cheked = Time.now
+    @t_modified = Time.now
 
     @crypt = nil
     @update_highlight = true
@@ -1513,6 +1514,7 @@ class Buffer < String
         #TODO: show message box
       end
       @last_save = Time.now
+      refresh_title
       debug "file saved on #{@last_save}"
       sleep 3
     }
@@ -1522,6 +1524,20 @@ class Buffer < String
     debug "check_if_modified_outside_callback"
     if x["yes_btn"] == "submit"
       revert()
+    end
+  end
+
+  def unsaved_changes?
+    pp [@t_modified, @last_save]
+    return true if @t_modified > @last_save
+    return false
+  end
+
+  def refresh_title
+    if vma.buf == self
+      pfx = ""
+      pfx = "+ " if vma.buf.unsaved_changes?
+      gui_set_window_title(pfx + vma.buf.title, vma.buf.subtitle)
     end
   end
 
