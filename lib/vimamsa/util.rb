@@ -141,6 +141,24 @@ def exec_cmd(bin_name, arg1 = nil, arg2 = nil, arg3 = nil, arg4 = nil, arg5 = ni
   return ret_str
 end
 
+def pipe_to_external(program, text)
+  # Open a pipe to the external program
+  IO.popen(program, "r+") do |pipe|
+    # Send the text to the program
+    pipe.write(text)
+    pipe.close_write # Close the write end to signal EOF to the program
+    # Read and return the output from the program
+    output = pipe.read
+    return output
+  end
+rescue Errno::ENOENT
+  puts "Error: The program '#{program}' was not found."
+  nil
+rescue => e
+  puts "An error occurred: #{e.message}"
+  nil
+end
+
 def mkdir_if_not_exists(_dirpath)
   dirpath = File.expand_path(_dirpath)
   Dir.mkdir(dirpath) unless File.exist?(dirpath)

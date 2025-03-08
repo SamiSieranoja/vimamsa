@@ -1,7 +1,18 @@
 # Vimamsa
 
-Vi/Vim -inspired experimental GUI-oriented text editor written with Ruby and GTK. 
+Vi/Vim -inspired experimental GUI-oriented text editor written with Ruby and GTK.
 
+<!-- toc -->
+
+- [Requirements](#requirements)
+- [Installation](#installation)
+  * [Other install options](#other-install-options)
+- [Run](#run)
+- [Screenshots](#screenshots)
+- [Key bindings](#key-bindings)
+- [Current limitations](#current-limitations)
+
+<!-- tocstop -->
 
 ## Requirements
  - Ruby 3.0+

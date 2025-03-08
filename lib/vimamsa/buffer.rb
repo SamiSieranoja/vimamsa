@@ -41,7 +41,7 @@ class Buffer < String
     @module = nil
 
     @last_save = @last_asked_from_user = @file_last_cheked = Time.now
-    @t_modified = Time.now
+    @t_modified = @last_save
 
     @crypt = nil
     @update_highlight = true
