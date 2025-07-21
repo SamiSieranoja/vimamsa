@@ -93,7 +93,7 @@ end
 
 # file --mime-type --mime-encoding
 
-# Run idle proc once
+# Run idle proc once (return false)
 # Delay execution of proc until Gtk has fully processed the last calls.
 def run_as_idle(p, delay: 0.0)
   if p.class == Proc
