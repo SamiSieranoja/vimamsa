@@ -127,8 +127,6 @@ bindkey "C p", [:paste_after, proc { buf.paste(AFTER) }, ""] # TODO: implement a
 bindkey "V d", [:delete_selection, proc { buf.delete(SELECTION) }, ""]
 bindkey "V a d", [:delete_append_selection, proc { buf.delete(SELECTION, :append) }, "Delete and append selection"]
 
-bindkey "C , , g", [:delete_selection, proc { vma.gui.idle_ensure_cursor_drawn}, "ensure cursor drawn (debug)"]
-
 
 default_keys = {
 

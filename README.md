@@ -63,7 +63,7 @@ For customization, edit ~/.vimamsa/custom.rb
 
 ## Key bindings
 
-Key bindings are very much like in VIm. For details, see file lib/vimamsa/key_bindings.rb and lib/vimamsa/key_bindings_vimlike.rb
+Key bindings are very much like in VIm. For details, see menu item "Help -> Show key bindings" and file lib/vimamsa/key_bindings_vimlike.rb
 
 Keys that work somewhat similarly as in Vim:
 
@@ -81,8 +81,9 @@ d y gU gu
 Keys that work differently to Vim are documented in the tables below
 
 Syntax:  
-ctrl! means press and immediate release of ctrl key. Triggered by key up event.  
-ctrl-x means press and hold ctrl key, press x  
+
+ - ctrl! means press and immediate release of ctrl key. Triggered by key up event when no other keys were pressed between key down and key up events.
+ - ctrl-x means press and hold ctrl key, press x  
 
 <table>
 <colgroup>
@@ -154,6 +155,10 @@ For example, to bind ctrl-n to action "create new file":
 ```
 bindkey 'C ctrl-n',  'create_new_file()'
 ```
+
+
+## Known issues
+ - Cursor sometimes vanishes when dragging or resizing the window. At least some cases are fixed in new GTK4 versions ( >= 4.18, in Ubuntu Ubuntu 25.04). Workaround is to press ctrl key twice.
 
 ## Current limitations
  - UTF8 only

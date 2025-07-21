@@ -104,9 +104,18 @@ class VSourceView < GtkSource::View
       # Sometimes a GestureClick EventController appears from somewhere
       # not initiated from this file.
 
-      # if ctr.class == Gtk::EventControllerKey or ctr.class == Gtk::GestureClick
-      if ctr != @click
-        # to_remove << ctr if ctr.class != Gtk::GestureDrag
+      # TODO: Check which of these are needed:
+      # puts ctr.class
+      # Gtk::DropTarget
+      # Gtk::EventControllerFocus
+      # Gtk::EventControllerKey
+      # Gtk::EventControllerMotion
+      # Gtk::EventControllerScroll
+      # Gtk::GestureClick
+      # Gtk::GestureDrag
+      # Gtk::ShortcutController
+
+      if ctr != @click and [Gtk::DropControllerMotion, Gtk::DropTarget, Gtk::GestureDrag, Gtk::GestureClick, Gtk::EventControllerKey].include?(ctr.class)
         to_remove << ctr
       end
     }
@@ -331,7 +340,7 @@ class VSourceView < GtkSource::View
     end
     debug $view.visible_rect.inspect
 
-    debug "key event" + [keyval,@last_keyval,keyname,sig].to_s
+    debug "key event" + [keyval, @last_keyval, keyname, sig].to_s
     # debug event
 
     # key_name = event.string
@@ -353,7 +362,6 @@ class VSourceView < GtkSource::View
     keyval_trans[Gdk::Keyval::KEY_Alt_L] = "alt"
     keyval_trans[Gdk::Keyval::KEY_Alt_R] = "alt"
     keyval_trans[Gdk::Keyval::KEY_Caps_Lock] = "caps"
-    
 
     keyval_trans[Gdk::Keyval::KEY_BackSpace] = "backspace"
     keyval_trans[Gdk::Keyval::KEY_KP_Page_Down] = "pagedown"
@@ -392,7 +400,7 @@ class VSourceView < GtkSource::View
       # Replace ctrl-caps with ctrl
       key_str_parts.delete_at(1)
     end
-    
+
     if key_str_parts[0] == key_str_parts[1]
       # We don't want "ctrl-ctrl" or "alt-alt"
       # TODO:There should be a better way to do this
@@ -416,7 +424,6 @@ class VSourceView < GtkSource::View
     debug keynfo.inspect
     # $kbd.match_key_conf(key_str, nil, :key_press)
     # debug "key_str=#{key_str} key_"
-
 
     if key_str != "" # or prefixed_key_str != ""
       if sig == :key_release and keyval == @last_keyval

@@ -5,7 +5,7 @@ require "vimamsa/version"
 
 Gem::Specification.new do |spec|
   spec.name          = "vimamsa"
-  spec.version       = Vimamsa::VERSION
+  spec.version       = Vimamsa::VERSION # in lib/vimamsa/version.rb
   spec.authors       = ["Sami Sieranoja"]
   spec.email         = ["sami.sieranoja@gmail.com"]
 
