@@ -74,7 +74,7 @@ class Editor
 
     # build_key_bindings_tree
     @kbd = KeyBindingTree.new()
-    $kbd = @kbd
+    $kbd = @kbd #TODO: remove global
     require "vimamsa/key_bindings_vimlike"
 
     $buffers = BufferList.new
@@ -412,14 +412,14 @@ end
 
 def minibuffer_end()
   debug "minibuffer_end"
-  $kbd.set_mode(:command)
+  vma.kbd.set_mode(:command)
   minibuffer_input = $minibuffer.to_s[0..-2]
   return $minibuffer.call_func.call(minibuffer_input)
 end
 
 def minibuffer_cancel()
   debug "minibuffer_cancel"
-  $kbd.set_mode(:command)
+  vma.kbd.set_mode(:command)
   minibuffer_input = $minibuffer.to_s[0..-2]
   # $minibuffer.call_func.call('')
 end

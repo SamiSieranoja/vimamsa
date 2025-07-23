@@ -422,15 +422,15 @@ class VSourceView < GtkSource::View
 
     keynfo = { :key_str => key_str, :key_name => keyname, :keyval => keyval }
     debug keynfo.inspect
-    # $kbd.match_key_conf(key_str, nil, :key_press)
+    # vma.kbd.match_key_conf(key_str, nil, :key_press)
     # debug "key_str=#{key_str} key_"
 
     if key_str != "" # or prefixed_key_str != ""
       if sig == :key_release and keyval == @last_keyval
-        $kbd.match_key_conf(key_str + "!", nil, :key_release)
+        vma.kbd.match_key_conf(key_str + "!", nil, :key_release)
         @last_event = [keynfo, :key_release]
       elsif sig == :key_press
-        $kbd.match_key_conf(key_str, nil, :key_press)
+        vma.kbd.match_key_conf(key_str, nil, :key_press)
         @last_event = [keynfo, key_str, :key_press]
       end
     end

@@ -141,7 +141,7 @@ class Buffer < String
   end
 
   def jump_to_next_instance_of_word()
-    if $kbd.last_action == $kbd.cur_action and @current_word != nil
+    if vma.kbd.last_action == vma.kbd.cur_action and @current_word != nil
       # debug "REPEATING *"
     else
       start_search = [@pos - 150, 0].max

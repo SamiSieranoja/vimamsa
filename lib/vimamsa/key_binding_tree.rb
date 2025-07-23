@@ -7,8 +7,8 @@
 #
 # Change mode from INSERT into COMMAND when ctrl key is released immediately
 # after it has been pressed (there are no other key events between key press and key release).
-#        'I ctrl!'=> '$kbd.set_mode(:command)',
-#        'C ctrl!'=> '$kbd.set_mode(:insert)',
+#        'I ctrl!'=> 'vma.kbd.set_mode(:command)',
+#        'C ctrl!'=> 'vma.kbd.set_mode(:insert)',
 
 #
 # In command mode: press keys "," "r" "v" and "b" sequentially.
@@ -17,7 +17,6 @@
 # In insert mode: press and hold ctrl, press "a"
 # 'I ctrl-a'=> 'vma.buf.jump(BEGINNING_OF_LINE)',
 #
-
 
 class State
   attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level, :cursor_type
@@ -615,12 +614,12 @@ class KeyBindingTree
 end
 
 def bindkey(key, action)
-  $kbd.bindkey(key, action)
+  vma.kbd.bindkey(key, action)
 end
 
 def exec_action(action)
-  $kbd.last_action = $kbd.cur_action
-  $kbd.cur_action = action
+  vma.kbd.last_action = vma.kbd.cur_action
+  vma.kbd.cur_action = action
   if action.class == Symbol
     return call_action(action)
   elsif action.class == Proc
@@ -635,9 +634,9 @@ end
 # TODO
 # def focus_out
   # debug "RB Clear modifiers"
-  # $kbd.clear_modifiers()
+  # vma.kbd.clear_modifiers()
 # end
 
 # def handle_key_event(event)
-  # $kbd.handle_key_event(event)
+  # vma.kbd.handle_key_event(event)
 # end

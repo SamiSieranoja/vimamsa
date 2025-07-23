@@ -19,12 +19,12 @@ def jump_to_next_edit
 end
 
 def is_command_mode()
-  return true if $kbd.mode_root_state.to_s() == "C"
+  return true if vma.kbd.mode_root_state.to_s() == "C"
   return false
 end
 
 def is_visual_mode()
-  return 1 if $kbd.mode_root_state.to_s() == "V"
+  return 1 if vma.kbd.mode_root_state.to_s() == "V"
   return 0
 end
 
@@ -85,7 +85,7 @@ reg_act(:set_line_style_h4, proc { buf.set_line_style(:h4) }, "Set cur line as H
 reg_act(:set_line_style_bold, proc { buf.set_line_style(:bold) }, "Set style of current line as bold")
 reg_act(:set_line_style_title, proc { buf.set_line_style(:title) }, "Set style of current line as title")
 reg_act(:clear_line_styles, proc { buf.set_line_style(:clear) }, "Clear styles of current line")
-reg_act(:gui_select_buffer, proc { $kbd.set_mode("S"); gui_select_buffer }, "Select buffer")
+reg_act(:gui_select_buffer, proc { vma.kbd.set_mode("S"); gui_select_buffer }, "Select buffer")
 reg_act :open_file_dialog, "open_file_dialog", "Open file"
 reg_act :minibuffer_end, proc { minibuffer_end }
 reg_act(:invoke_replace, "invoke_replace", "")
