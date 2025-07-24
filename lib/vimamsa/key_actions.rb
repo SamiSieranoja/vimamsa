@@ -69,7 +69,6 @@ reg_act(:set_executable, proc { buf.set_executable }, "Set current file permissi
 reg_act(:close_current_buffer, proc { bufs.close_current_buffer(true) }, "Close current buffer")
 reg_act(:comment_selection, proc { buf.comment_selection }, "")
 reg_act(:delete_char_forward, proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward", { :group => [:edit, :basic] })
-reg_act(:load_theme, proc { load_theme }, "Load theme")
 reg_act(:gui_file_finder, proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
 reg_act(:gui_file_history_finder, proc { vma.FileHistory.start_gui }, "Fuzzy file history finder")
 reg_act(:gui_search_replace, proc { gui_search_replace }, "Search and replace")

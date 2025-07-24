@@ -4,6 +4,7 @@ vma.kbd.add_mode("V", :visual, :visual)
 vma.kbd.add_mode("M", :minibuffer) #TODO: needed?
 vma.kbd.add_mode("R", :readchar)
 vma.kbd.add_minor_mode("audio", :audio, :command)
+vma.kbd.add_minor_mode("macro", :macro, :command)
 vma.kbd.add_mode("B", :browse, :browse, scope: :editor)
 vma.kbd.add_mode("X", :replace, :replace, name: "Replace")
 vma.kbd.set_default_mode(:command)
@@ -40,58 +41,7 @@ def insert_move(op)
   _insert_move(op)
 end
 
-bindkey ["VCB M", "B m"], :run_last_macro
-
-bindkey "VC s", :easy_jump
-bindkey "I alt-s", :easy_jump
-bindkey "VC , m f", [:find_macro_gui, proc { vma.macro.find_macro_gui }, "Find named macro"]
-bindkey "C , m n", [:gui_name_macro, proc { vma.macro.gui_name_macro }, "Name last macro"]
-bindkey "C , j r", :jump_to_random
-bindkey "C , ; s k", :show_key_bindings #TODO: better binding
-bindkey "C , , c b", :put_file_path_to_clipboard #TODO: better binding or remove?
-bindkey "C , , e", :encrypt_file #TODO: better binding
-bindkey "C , ; u", :set_unencrypted #TODO: better binding
-bindkey "C , c b", :close_current_buffer
-bindkey "V ctrl-c", :comment_selection
-bindkey "C , , l t", :load_theme
-bindkey "C , f", :gui_file_finder
-bindkey "C , h", :gui_file_history_finder
-bindkey "C , z", :gui_file_finder
-
-bindkey "C ` k", :lsp_debug
-bindkey "C ` j", :lsp_jump_to_definition
-
-bindkey "C , r r", :gui_search_replace
-bindkey "V , r r", :gui_search_replace
-bindkey "V , t b", :set_style_bold
-bindkey "V , t l", :set_style_link
-bindkey "V J", :V_join_lines
-bindkey "V , t c", :clear_formats
-bindkey "C , t h", :set_line_style_heading
-bindkey "C , t 1", :set_line_style_h1
-bindkey "C , t 2", :set_line_style_h2
-bindkey "C , t 3", :set_line_style_h3
-bindkey "C , t 4", :set_line_style_h4
-bindkey "C , t b", :set_line_style_bold
-bindkey "C , t t", :set_line_style_title
-bindkey "C , t c", :clear_line_styles
-bindkey "C , b", :start_buf_manager
-bindkey "C , w", :toggle_active_window
-bindkey "C , , w", :toggle_two_column
-
-
-
-
-# levels:
-# intro, basic, others, experimental/debug
-
-def add_keys(keywords, to_add)
-  to_add.each { |key, value|
-    bindkey(key, value, keywords: keywords)
-  }
-end
-
-core_edit_keys = {
+add_keys "intro", {
   "C y y" => :copy_cur_line,
   "C P" => :paste_before_cursor,
   "C p" => :paste_after_cursor,
@@ -99,6 +49,8 @@ core_edit_keys = {
   "C ctrl-r" => :redo,
   "C u" => :undo,
   "VC O" => :jump_end_of_line,
+  # NOTE: "G(condition)" need to be defined before "G"
+  "VC G(vma.kbd.next_command_count!=nil)" => "buf.jump_to_line()",
   "VC G" => :jump_end_of_buffer,
   "VC g ;" => :jump_last_edit,
   "VC g g" => :jump_start_of_buffer,
@@ -111,7 +63,7 @@ core_edit_keys = {
   "C ctrl!" => :insert_mode,
   "C i" => :insert_mode,
   "I esc || I ctrl!" => :prev_mode,
-  "IX alt-b" => :move_prev_line,
+  "IX alt-b" => :jump_prev_word_start,
   "IX alt-f" => :jump_next_word_start,
   "IX ctrl-e" => :jump_end_of_line,
   "IX ctrl-p" => :move_prev_line,
@@ -125,7 +77,6 @@ add_keys "intro delete", {
   "C d d" => [:delete_line, proc { buf.delete_line }, "Delete current line"]
 }
 
-add_keys "intro", core_edit_keys
 
 add_keys "core", {
 
@@ -193,7 +144,6 @@ add_keys "core", {
   "VC /[1-9]/" => "vma.kbd.set_next_command_count(<char>)",
   #    'VC number=/[0-9]/+ g'=> 'jump_to_line(<number>)',
   #    'VC X=/[0-9]/+ * Y=/[0-9]/+ '=> 'x_times_y(<X>,<Y>)',
-  "VC G(vma.kbd.next_command_count!=nil)" => "buf.jump_to_line()",
   "VC 0(vma.kbd.next_command_count!=nil)" => "set_next_command_count(<char>)",
   "VC 0(vma.kbd.next_command_count==nil)" => "buf.jump(BEGINNING_OF_LINE)",
   # 'C 0'=> 'buf.jump(BEGINNING_OF_LINE)',
@@ -292,9 +242,16 @@ add_keys "core", {
   # Macros
   # (experimental, may not work correctly)
   # "C q a" => 'vma.macro.start_recording("a")',
-  "VC q <char>" => "vma.macro.start_recording(<char>)",
+  
+  "macro q" => "vma.kbd.to_previous_mode; vma.macro.end_recording",
+  "macro q z" => "vma.kbd.to_previous_mode; vma.macro.end_recording",
+  
+  # "VC q(vma.macro.is_recording==true)" => "vma.macro.end_recording", # TODO: does not work
+  # "VC o(vma.macro.is_recording==true)" => "vma.macro.end_recording", # TODO: does not work
+  # "VC q q(vma.macro.is_recording==true)" => "vma.macro.end_recording",
+  "VC q <char>" => "vma.kbd.set_mode(:macro);vma.macro.start_recording(<char>)",
   # 'C q'=> 'vma.macro.end_recording', #TODO
-  "C q v" => "vma.macro.end_recording",
+  "C q v" => "vma.kbd.to_previous_mode; vma.macro.end_recording",
   # 'C v'=> 'vma.macro.end_recording',
   # "C M" => 'vma.macro.run_last_macro',
   "C @ <char>" => "vma.macro.run_macro(<char>)",
@@ -347,15 +304,50 @@ add_keys "core", {
  "C , v" => :auto_indent_buffer,
  "C , , u" => :update_file_index,
  "C , s a" => :buf_save_as,
+ "VC , r r" => :gui_search_replace,
+ "V , t b" => :set_style_bold,
+ "V , t l" => :set_style_link,
+ "V J" => :V_join_lines,
+ "V , t c" => :clear_formats,
+ "C , t h" => :set_line_style_heading,
+ "C , t 1" => :set_line_style_h1,
+ "C , t 2" => :set_line_style_h2,
+ "C , t 3" => :set_line_style_h3,
+ "C , t 4" => :set_line_style_h4,
+ "C , t b" => :set_line_style_bold,
+ "C , t t" => :set_line_style_title,
+ "C , t c" => :clear_line_styles,
+ "C , b" => :start_buf_manager,
+ "C , w" => :toggle_active_window,
+ "C , , w" => :toggle_two_column,
+
+ "VC s" => :easy_jump,
+ "I alt-s" => :easy_jump,
+ "VC , m f" => [:find_macro_gui, proc { vma.macro.find_macro_gui }, "Find named macro"],
+ "C , m n" => [:gui_name_macro, proc { vma.macro.gui_name_macro }, "Name last macro"],
+ "C , j r" => :jump_to_random,
+ "C , ; s k" => :show_key_bindings, #TODO: better binding,
+ "C , , c b" => :put_file_path_to_clipboard, #TODO: better binding or remove?,
+ "C , , e" => :encrypt_file, #TODO: better binding,
+ "C , ; u" => :set_unencrypted, #TODO: better binding,
+ "C , c b" => :close_current_buffer,
+ "V ctrl-c" => :comment_selection,
+ "C , f" => :gui_file_finder,
+ "C , h" => :gui_file_history_finder,
+ "C , z" => :gui_file_finder,
+
  "C enter || C return" => [:line_action, proc { buf.handle_line_action() }, "Line action"],
  "V d" => [:delete_selection, proc { buf.delete(SELECTION) }, ""],
  "V a d" => [:delete_append_selection, proc { buf.delete(SELECTION, :append) }, "Delete and append selection"]
 }
 
+bindkey ["VCB M", "B m"], :run_last_macro
+
 add_keys "experimental", {
+ "C ` k" => :lsp_debug,
+ "C ` j" => :lsp_jump_to_definition,
  "C , u s" => :audio_stop,
-  "VC q(vma.macro.is_recording==true) " => "vma.macro.end_recording", # TODO
-  "VC q q(vma.macro.is_recording==true) " => "vma.macro.end_recording", # TODO
+
   "C , t r" => "run_tests()",
   # "CV , R" => "restart_application", #TODO: does not work
   "I ctrl-h" => :show_autocomplete, #TODO: does not work

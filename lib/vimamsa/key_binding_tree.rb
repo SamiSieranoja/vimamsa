@@ -135,7 +135,6 @@ class KeyBindingTree
     @modes[label] = mode
     if @root.nil?
       show_caller
-      Ripl.start :binding => binding
     end
     @root.children << mode
     mode.major_modes << major_mode_label
@@ -165,6 +164,7 @@ class KeyBindingTree
 
   def match(key_name)
     new_state = []
+    debug = false
     @match_state.each { |parent|
       parent.children.each { |c|
         # printf(" KEY MATCH: ")
@@ -174,6 +174,9 @@ class KeyBindingTree
         elsif c.key_name == key_name and c.eval_rule != ""
           debug "CHECK EVAL: #{c.eval_rule}"
           if eval(c.eval_rule)
+            # if eval_rule.match(/macro/)
+            debug = true
+            # end
             new_state << c
             debug "EVAL TRUE"
           else
@@ -182,6 +185,10 @@ class KeyBindingTree
         end
       }
     }
+
+    if debug
+      # require "pry"; binding.pry
+    end
 
     if new_state.any? # Match found
       @match_state = new_state
@@ -315,7 +322,7 @@ class KeyBindingTree
 
   # Print key bindings to show as documentation or for debugging
   def to_s()
-    # return self.class.to_s
+    return self.class.to_s
     s = ""
     # @cur_state = @root
     stack = [[@root, ""]]
@@ -350,7 +357,7 @@ class KeyBindingTree
         end
 
         kw = ""
-        kw = ", " + t.keywords.join(",") if !t.keywords.empty?
+        # kw = ", " + t.keywords.join(",") if !t.keywords.empty?
         lines << p + " : #{method_desc}#{kw}"
       end
     end
@@ -480,11 +487,15 @@ class KeyBindingTree
     else
 
       # Don't execute action if one of the states has children
+      # TODO: why?
       state_with_children = new_state.select { |s| s.children.any? }
       s_act = new_state.select { |s| s.action != nil }
 
-      if s_act.any? and !state_with_children.any?
+      if s_act.any? #and !state_with_children.any?
         eval_s = s_act.first.action if eval_s == nil
+        # if eval_s.to_s.match(/end_recording/)
+        # require "pry"; binding.pry
+        # end
         debug "FOUND MATCH:#{eval_s}"
         debug "CHAR: #{c}"
         c.gsub!("\\", %q{\\\\} * 4) # Escape \ -chars
@@ -681,6 +692,12 @@ def bindkey(key, action, keywords: "")
   vma.kbd.bindkey(key, action, keywords: keywords)
 end
 
+def add_keys(keywords, to_add)
+  to_add.each { |key, value|
+    bindkey(key, value, keywords: keywords)
+  }
+end
+
 def exec_action(action)
   vma.kbd.last_action = vma.kbd.cur_action
   vma.kbd.cur_action = action
@@ -693,40 +710,57 @@ def exec_action(action)
   end
 end
 
-
 def show_key_bindings()
   kbd_s = "❙Key bindings❙\n"
-  kbd_s << "\n⦁[Mode] keys : action⦁\n"
+  kbd_s << "\n⦁[Mode] <keys> : <action>⦁\n"
+  done = []
 
   kbd_s << "[B]=Browse, [C]=Command, [I]=Insert, [V]=Visual\n"
   kbd_s << "<key>!: Press <key> once, release before pressing any other keys\n"
   kbd_s << "===============================================\n"
-  kbd_s <<  "◼ Basic\n"
-  kbd_s <<  "◼◼ Command mode\n"
-  kbd_s << vma.kbd.get_by_keywords(modes: ["C"], keywords:["intro"])
-  kbd_s << "\n"
-  kbd_s <<  "◼◼ Insert mode\n" 
-  kbd_s << vma.kbd.get_by_keywords(modes: ["I"], keywords:["intro"])
-  kbd_s << "\n"
-  kbd_s <<  "◼◼ Visual mode\n"
-  kbd_s << vma.kbd.get_by_keywords(modes: ["V"], keywords:["intro"])
-  kbd_s << "\n"
-  
-  kbd_s <<  "◼ Core\n"
-  kbd_s << vma.kbd.get_by_keywords(modes: [], keywords:["core"])
-  kbd_s << "\n"
-  
-  kbd_s <<  "◼ Debug / Experimental\n"
-  kbd_s << vma.kbd.get_by_keywords(modes: [], keywords:["experimental"])
-  
-  kbd_s << "\n"
- 
+  kbd_s << "◼ Basic\n"
+  kbd_s << "◼◼ Command mode\n"
 
+  x = vma.kbd.get_by_keywords(modes: ["C"], keywords: ["intro"])
+  done.concat(x.lines); kbd_s << x
+
+  kbd_s << "\n"
+  kbd_s << "◼◼ Insert mode\n"
+  x = vma.kbd.get_by_keywords(modes: ["I"], keywords: ["intro"])
+  done.concat(x.lines); kbd_s << x
+  kbd_s << "\n"
+  kbd_s << "◼◼ Visual mode\n"
+  x = vma.kbd.get_by_keywords(modes: ["V"], keywords: ["intro"])
+  done.concat(x.lines); kbd_s << x
+  kbd_s << "\n"
+
+  kbd_s << "◼ Core\n"
+  x = vma.kbd.get_by_keywords(modes: [], keywords: ["core"])
+  x << vma.kbd.get_by_keywords(modes: ["X"], keywords: ["intro"])
+
+  done.concat(x.lines); kbd_s << x
+  kbd_s << "\n"
+
+  kbd_s << "◼ Debug / Experimental\n"
+  x = vma.kbd.get_by_keywords(modes: [], keywords: ["experimental"])
+  done.concat(x.lines); kbd_s << x
+  kbd_s << "\n"
+
+  kbd_s << "◼ Others\n"
+  # x = vma.kbd.get_by_keywords(modes: [], keywords:["experimental"])
+  # x = vma.kbd.to_s
+  x = vma.kbd.get_by_keywords(modes: [], keywords: [])
+  done << x.lines - done
+  kbd_s << (x.lines - done).join
+  kbd_s << "\n"
 
   kbd_s << "===============================================\n"
-  kbd_s << vma.kbd.to_s
-  kbd_s << "\n"
-  kbd_s << "===============================================\n"
+  # x = vma.kbd.to_s
+  # # require "pry"; binding.pry
+  # done << x.lines - done
+  # kbd_s << (x.lines - done).join
+  # kbd_s << "\n"
+  # kbd_s << "===============================================\n"
   b = create_new_buffer(kbd_s, "key-bindings")
   gui_set_file_lang(b.id, "hyperplaintext")
   #
