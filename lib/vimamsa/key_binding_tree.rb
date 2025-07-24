@@ -711,6 +711,17 @@ def show_key_bindings()
   kbd_s <<  "◼◼ Visual mode\n"
   kbd_s << vma.kbd.get_by_keywords(modes: ["V"], keywords:["intro"])
   kbd_s << "\n"
+  
+  kbd_s <<  "◼ Core\n"
+  kbd_s << vma.kbd.get_by_keywords(modes: [], keywords:["core"])
+  kbd_s << "\n"
+  
+  kbd_s <<  "◼ Debug / Experimental\n"
+  kbd_s << vma.kbd.get_by_keywords(modes: [], keywords:["experimental"])
+  
+  kbd_s << "\n"
+ 
+
 
   kbd_s << "===============================================\n"
   kbd_s << vma.kbd.to_s

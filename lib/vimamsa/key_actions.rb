@@ -99,27 +99,28 @@ reg_act :delete_to_next_word_start, proc { buf.delete2(:to_next_word) }, "Delete
 reg_act :delete_to_line_start, proc { buf.delete2(:to_line_start) }, "Delete to line start", { :group => [:edit, :basic] }
 
 
-reg_act(:ack_search, proc { gui_ack }, "") #invoke_ack_search
-reg_act(:copy_cur_line, proc {buf.copy_line  }, "Copy current line") #invoke_ack_search
+reg_act(:ack_search, proc { gui_ack }, "") 
 
-reg_act(:paste_before_cursor, proc {buf.paste(BEFORE)  }, "Paste before cursor") #invoke_ack_search
-reg_act(:paste_after_cursor, proc {buf.paste(AFTER)  }, "Paste after cursor") #invoke_ack_search
-reg_act(:redo, proc {buf.redo()  }, "Redo")
-reg_act(:undo, proc {buf.undo()  }, "Undo")
-reg_act(:jump_end_of_line, proc { buf.jump(END_OF_LINE) }, "Jump to the end of the line")
-reg_act(:jump_end_of_buffer, proc {buf.jump(END_OF_BUFFER)  }, "Jump to end of buffer")
-reg_act(:jump_start_of_buffer, proc { buf.jump(START_OF_BUFFER) }, "Jump to start of buffer")
-reg_act(:jump_beginning_of_line, proc { buf.jump(BEGINNING_OF_LINE) }, "Jump to the beginning of line")
-reg_act(:jump_next_word_end, proc { buf.jump_word(FORWARD,WORD_END) }, "Jump to next word end")
-reg_act(:jump_prev_word_start, proc { buf.jump_word(BACKWARD,WORD_START) }, "Jump to previous word start")
-reg_act(:jump_next_word_start, proc { buf.jump_word(FORWARD,WORD_START) }, "Jump to next word start")
-reg_act(:insert_mode, proc { vma.kbd.set_mode(:insert) }, "Start INSERT mode")
-reg_act(:prev_mode, proc { vma.kbd.to_previous_mode }, "Go back to previous MODE")
-reg_act(:move_prev_line, proc { buf.move(BACKWARD_LINE) }, "Move to previous line")
-reg_act(:move_next_line, proc { buf.move(FORWARD_LINE) }, "Move to next line")
-reg_act(:move_backward_char, proc { buf.move(BACKWARD_CHAR) }, "Move one char backwards")
-reg_act(:start_visual_mode, proc { buf.start_selection;vma.kbd.set_mode(:visual) }, "Start VISUAL mode (selections)") #invoke_ack_search
-reg_act(:jump_last_edit, proc { buf.jump_to_last_edit }, "Jump to last edited position")
+reg_act(:copy_cur_line, proc {buf.copy_line}, "Copy the current line") 
+reg_act(:paste_before_cursor, proc {buf.paste(BEFORE)}, "Paste text before the cursor") 
+reg_act(:paste_after_cursor, proc {buf.paste(AFTER)}, "Paste text after the cursor") 
+reg_act(:redo, proc {buf.redo()}, "Redo the last undone action")
+reg_act(:undo, proc {buf.undo()}, "Undo the last action")
+reg_act(:jump_end_of_line, proc { buf.jump(END_OF_LINE) }, "Move to the end of the current line")
+reg_act(:jump_end_of_buffer, proc {buf.jump(END_OF_BUFFER)}, "Move to the end of the buffer")
+reg_act(:jump_start_of_buffer, proc { buf.jump(START_OF_BUFFER) }, "Move to the start of the buffer")
+reg_act(:jump_beginning_of_line, proc { buf.jump(BEGINNING_OF_LINE) }, "Move to the beginning of the current line")
+reg_act(:jump_next_word_end, proc { buf.jump_word(FORWARD,WORD_END) }, "Jump to the end of the next word")
+reg_act(:jump_prev_word_start, proc { buf.jump_word(BACKWARD,WORD_START) }, "Jump to the start of the previous word")
+reg_act(:jump_next_word_start, proc { buf.jump_word(FORWARD,WORD_START) }, "Jump to the start of the next word")
+reg_act(:insert_mode, proc { vma.kbd.set_mode(:insert) }, "Switch to INSERT mode")
+reg_act(:prev_mode, proc { vma.kbd.to_previous_mode }, "Return to the previous mode")
+reg_act(:move_prev_line, proc { buf.move(BACKWARD_LINE) }, "Move the cursor to the previous line")
+reg_act(:move_next_line, proc { buf.move(FORWARD_LINE) }, "Move the cursor to the next line")
+reg_act(:move_backward_char, proc { buf.move(BACKWARD_CHAR) }, "Move one character backward")
+reg_act(:start_visual_mode, proc { buf.start_selection;vma.kbd.set_mode(:visual) }, "Enter VISUAL mode (for selections)") 
+reg_act(:jump_last_edit, proc { buf.jump_to_last_edit }, "Jump to the last edit location")
+
 
 reg_act :start_browse_mode, proc {
   vma.kbd.set_mode(:browse)

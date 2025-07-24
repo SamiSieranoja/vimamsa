@@ -79,50 +79,8 @@ bindkey "C , b", :start_buf_manager
 bindkey "C , w", :toggle_active_window
 bindkey "C , , w", :toggle_two_column
 
-bindkey "C , u s", :audio_stop
-bindkey "C , m a", "vma.kbd.set_mode(:audio)"
-bindkey "audio s", :audio_stop
-bindkey "audio f || audio right", [:audio_forward, proc { Audio.seek_forward }, "Seek forward in audio stream"]
-bindkey "audio left", [:audio_backward, proc { Audio.seek_forward(-5.0) }, "Seek backward in audio stream"]
 
-bindkey "audio space", :audio_stop
-bindkey "audio q || audio esc", "vma.kbd.to_previous_mode"
 
-# bindkey "C , f o", :open_file_dialog
-bindkey "CI ctrl-o", :open_file_dialog
-# bindkey "M enter", :minibuffer_end
-bindkey "C , a", :ack_search
-bindkey "C d w", :delete_to_next_word_start
-
-bindkey "C d 0", :delete_to_line_start
-bindkey "C , , f", :file_finder
-bindkey "VC h", :e_move_backward_char
-bindkey "C , , .", :backup_all_buffers
-bindkey "C z ", :start_browse_mode
-bindkey "B h", :history_switch_backwards
-bindkey "B l", :history_switch_forwards
-bindkey "B z", "center_on_current_line();call_action(:exit_browse_mode)"
-bindkey "B enter || B return || B esc || B j || B ctrl!", :exit_browse_mode
-bindkey "B s", :page_up
-bindkey "B d", :page_down
-bindkey "B r", proc { vma.gui.page_down(multip: 0.25) }
-bindkey "B e", proc { vma.gui.page_up(multip: 0.25) }
-
-bindkey "B i", :jump_to_start_of_buffer
-bindkey "B o", :jump_to_end_of_buffer
-bindkey "B c", :close_current_buffer
-bindkey "B ;", :jump_last_edit
-bindkey "B q", :jump_to_last_edit
-bindkey "B w", :jump_to_next_edit
-# bindkey "C , d", :diff_buffer
-#bindkey 'C , g', proc{invoke_grep_search}
-bindkey "C , v", :auto_indent_buffer
-bindkey "C , , d", :savedebug
-bindkey "C , , u", :update_file_index
-bindkey "C , s a", :buf_save_as
-bindkey "C enter || C return", [:line_action, proc { buf.handle_line_action() }, "Line action"]
-bindkey "V d", [:delete_selection, proc { buf.delete(SELECTION) }, ""]
-bindkey "V a d", [:delete_append_selection, proc { buf.delete(SELECTION, :append) }, "Delete and append selection"]
 
 # levels:
 # intro, basic, others, experimental/debug
@@ -147,6 +105,9 @@ core_edit_keys = {
   "VC e" => :jump_next_word_end,
   "VC b" => :jump_prev_word_start,
   "VC w" => :jump_next_word_start,
+  "V esc" => "buf.end_visual_mode",
+  "V ctrl!" => "buf.end_visual_mode", 
+  
   "C ctrl!" => :insert_mode,
   "C i" => :insert_mode,
   "I esc || I ctrl!" => :prev_mode,
@@ -166,8 +127,7 @@ add_keys "intro delete", {
 
 add_keys "intro", core_edit_keys
 
-
-default_keys = {
+add_keys "core", {
 
   # File handling
   "C ctrl-s" => :buf_save,
@@ -254,15 +214,7 @@ default_keys = {
 
   "C C" => :content_search,
 
-  # Debug
-  "C , d r p" => "start_ripl",
-  "C , d o" => "vma.gui.clear_overlay",
-  "C , D" => "debug_print_buffer",
   "C , c s" => "bufs.close_scrap_buffers",
-  "C , d b" => "debug_print_buffer",
-  "C , d c" => "debug_dump_clipboard",
-  "C , d d" => "debug_dump_deltas",
-  "C , d m" => :kbd_dump_state,
 
   "VC $" => "buf.jump(END_OF_LINE)",
 
@@ -306,8 +258,7 @@ default_keys = {
   # 'C 0($next_command_count==nil)'=> 'jump_to_beginning_of_line',
 
   # Visual mode only:
-  "V esc" => "buf.end_visual_mode",
-  "V ctrl!" => "buf.end_visual_mode",
+
   "V y" => "buf.copy_active_selection()",
   "V a y" => "buf.copy_active_selection(:append)",
   "V g U" => :selection_upcase,
@@ -342,7 +293,6 @@ default_keys = {
   # (experimental, may not work correctly)
   # "C q a" => 'vma.macro.start_recording("a")',
   "VC q <char>" => "vma.macro.start_recording(<char>)",
-  "VC q(vma.macro.is_recording==true) " => "$macro.end_recording", # TODO
   # 'C q'=> 'vma.macro.end_recording', #TODO
   "C q v" => "vma.macro.end_recording",
   # 'C v'=> 'vma.macro.end_recording',
@@ -350,13 +300,11 @@ default_keys = {
   "C @ <char>" => "vma.macro.run_macro(<char>)",
   "C , m S" => 'vma.macro.save_macro("a")',
   "C , m s" => "vma.macro.save",
-  "C , t r" => "run_tests()",
 
   # "C ." => "repeat_last_action", # TODO
   "VC ;" => "repeat_last_find",
   # "CV Q" => :quit,
   "CV ctrl-q" => :quit,
-  "CV , R" => "restart_application",
   # "I ctrl!" => "vma.kbd.to_previous_mode",
   "C shift! s" => "buf.save",
   "I ctrl-s" => "buf.save",
@@ -367,15 +315,75 @@ default_keys = {
   # Insert and Replace modes: Moving
   "IX ctrl-f" => "buf.move(FORWARD_CHAR)",
 
-  "I ctrl-h" => :show_autocomplete,
   "I ctrl-j" => "vma.buf.view.hide_completions",
 
   "I space" => 'buf.insert_txt(" ")',
 #  "I return" => 'buf.insert_new_line()',
+
+ "CI ctrl-o" => :open_file_dialog,
+ "C , a" => :ack_search,
+ "C d w" => :delete_to_next_word_start,
+
+ "C d 0" => :delete_to_line_start,
+ "C , , f" => :file_finder,
+ "VC h" => :e_move_backward_char,
+ "C , , ." => :backup_all_buffers,
+ "C z " => :start_browse_mode,
+ "B h" => :history_switch_backwards,
+ "B l" => :history_switch_forwards,
+ "B z" => "center_on_current_line();call_action(:exit_browse_mode)",
+ "B enter || B return || B esc || B j || B ctrl!" => :exit_browse_mode,
+ "B s" => :page_up,
+ "B d" => :page_down,
+ "B r" => proc { vma.gui.page_down(multip: 0.25) },
+ "B e" => proc { vma.gui.page_up(multip: 0.25) },
+
+ "B i" => :jump_to_start_of_buffer,
+ "B o" => :jump_to_end_of_buffer,
+ "B c" => :close_current_buffer,
+ "B ;" => :jump_last_edit,
+ "B q" => :jump_to_last_edit,
+ "B w" => :jump_to_next_edit,
+ "C , v" => :auto_indent_buffer,
+ "C , , u" => :update_file_index,
+ "C , s a" => :buf_save_as,
+ "C enter || C return" => [:line_action, proc { buf.handle_line_action() }, "Line action"],
+ "V d" => [:delete_selection, proc { buf.delete(SELECTION) }, ""],
+ "V a d" => [:delete_append_selection, proc { buf.delete(SELECTION, :append) }, "Delete and append selection"]
 }
+
+add_keys "experimental", {
+ "C , u s" => :audio_stop,
+  "VC q(vma.macro.is_recording==true) " => "vma.macro.end_recording", # TODO
+  "VC q q(vma.macro.is_recording==true) " => "vma.macro.end_recording", # TODO
+  "C , t r" => "run_tests()",
+  # "CV , R" => "restart_application", #TODO: does not work
+  "I ctrl-h" => :show_autocomplete, #TODO: does not work
+  "C , d m" => :kbd_dump_state,
+  "C , d d" => "debug_dump_deltas",
+  "C , d c" => "debug_dump_clipboard",
+  "C , d b" => "debug_print_buffer",
+  "C , D" => "debug_print_buffer",
+  "C , d o" => "vma.gui.clear_overlay",
+  # Debug
+  "C , d r p" => 'require "pry"; binding.pry', #TODO
+#bindkey 'C , g', proc{invoke_grep_search}
+# bindkey "C , d", :diff_buffer
+ "C , , d" => :savedebug,
+ "C , m a" => "vma.kbd.set_mode(:audio)",
+ "audio s" => :audio_stop,
+}
+
+
+bindkey "audio f || audio right", [:audio_forward, proc { Audio.seek_forward }, "Seek forward in audio stream"]
+bindkey "audio left", [:audio_backward, proc { Audio.seek_forward(-5.0) }, "Seek backward in audio stream"]
+
+bindkey "audio space", :audio_stop
+bindkey "audio q || audio esc", "vma.kbd.to_previous_mode"
+
 
 bindkey "C , i p", "generate_password_to_buf(15)"
 
-default_keys.each { |key, value|
-  bindkey(key, value)
-}
+# default_keys.each { |key, value|
+  # bindkey(key, value)
+# }
