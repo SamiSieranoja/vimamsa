@@ -365,21 +365,6 @@ def start_minibuffer_cmd(bufname, bufstr, cmd)
   $minibuffer.call_func = method(cmd)
 end
 
-def show_key_bindings()
-  kbd_s = "❙Key bindings❙\n"
-  kbd_s << "\n⦁[Mode] keys : action⦁\n"
-
-  kbd_s << "[B]=Browse, [C]=Command, [I]=Insert, [V]=Visual\n"
-  kbd_s << "key!: Press key once, release before pressing any other keys\n"
-
-  kbd_s << "===============================================\n"
-  kbd_s << vma.kbd.to_s
-  kbd_s << "\n"
-  kbd_s << "===============================================\n"
-  b = create_new_buffer(kbd_s, "key-bindings")
-  gui_set_file_lang(b.id, "hyperplaintext")
-  #
-end
 
 def diff_buffer()
   bufstr = ""

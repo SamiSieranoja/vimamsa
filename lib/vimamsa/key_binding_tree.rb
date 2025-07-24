@@ -19,7 +19,7 @@
 #
 
 class State
-  attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level, :cursor_type
+  attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level, :cursor_type, :keywords
   attr_reader :cur_mode, :scope
 
   def initialize(key_name, eval_rule = "", ctype = :command, scope: :buffer)
@@ -28,6 +28,7 @@ class State
     @children = []
     @scope = scope
     @major_modes = []
+    @keywords = []
     @action = nil
     @level = 0
     @cursor_type = ctype
@@ -85,7 +86,7 @@ class KeyBindingTree
 
   def set_mode_stack(ms)
     debug "set_mode_stack(#{ms})", 2
-    show_caller if cnf.debug? # TODO: remove 
+    show_caller if cnf.debug? # TODO: remove
     @default_mode_stack = ms
     label = @default_mode_stack[-1]
     @match_state = [@modes[label]]
@@ -109,7 +110,7 @@ class KeyBindingTree
   end
 
   def to_previous_mode()
-    debug "to_previous_mode",2
+    debug "to_previous_mode", 2
     debug @default_mode_stack
     if @default_mode_stack.size > 1
       @default_mode_stack.pop
@@ -261,6 +262,57 @@ class KeyBindingTree
     @state_trail = [@mode_root_state]
   end
 
+  def get_by_keywords(modes: [], keywords: [])
+    s = ""
+    stack = [[@root, ""]]
+    lines = []
+
+    # Traverse the tree (class State objects) using a stack
+    while stack.any?
+      t, p = *stack.pop # t = current state, p = current path
+      if t.children.any?
+        t.children.reverse.each { |c|
+
+          # Restrict by modes if specified
+          if c.level == 1 and !modes.empty?
+            next if !modes.include?(c.key_name)
+          end
+
+          if c.eval_rule.size > 0
+            new_p = "#{p} #{c.key_name}(#{c.eval_rule})"
+          else
+            if c.level == 1
+              new_p = "#{p} [#{c.key_name}]"
+            else
+              new_p = "#{p} #{c.key_name}"
+            end
+          end
+          stack << [c, new_p]
+        }
+        # stack.concat[t.children]
+
+      else
+        method_desc = t.action
+        if t.action.class == Symbol
+          if vma.actions.include?(t.action)
+            a = vma.actions[t.action].method_name
+            if !a.nil? and !a.empty?
+              method_desc = a
+            end
+          end
+        end
+
+        if (keywords - t.keywords).empty? # All keywords are present
+          kw = ""
+          # kw = ", [#{t.keywords.join(",")}]" if !t.keywords.empty?
+          lines << p + " : #{method_desc}#{kw}"
+        end
+      end
+    end
+    s = lines.sort.join("\n")
+    return s
+  end
+
   # Print key bindings to show as documentation or for debugging
   def to_s()
     # return self.class.to_s
@@ -269,6 +321,7 @@ class KeyBindingTree
     stack = [[@root, ""]]
     lines = []
 
+    # Traverse the tree (class State objects) using a stack
     while stack.any?
       t, p = *stack.pop # t = current state, p = current path
       if t.children.any?
@@ -296,7 +349,9 @@ class KeyBindingTree
           end
         end
 
-        lines << p + " : #{method_desc}"
+        kw = ""
+        kw = ", " + t.keywords.join(",") if !t.keywords.empty?
+        lines << p + " : #{method_desc}#{kw}"
       end
     end
     s = lines.sort.join("\n")
@@ -448,7 +503,12 @@ class KeyBindingTree
     return true
   end
 
-  def bindkey(key, action)
+  def bindkey(key, action, keywords: "")
+    # puts "keywords #{keywords}" if !keywords.empty?
+    if keywords.class == String
+      keywords = keywords.split(" ")
+    end
+    # puts "keywords #{keywords}" if !keywords.empty?
     if key.class != Array
       # Handle syntax like :
       # "X esc || X ctrl!" => "vma.kbd.to_previous_mode",
@@ -463,10 +523,10 @@ class KeyBindingTree
       msg = action[2]
       reg_act(label, proc, msg)
     end
-    key.each { |k| _bindkey(k, a) }
+    key.each { |k| _bindkey(k, a, keywords: keywords) }
   end
 
-  def _bindkey(key, action)
+  def _bindkey(key, action, keywords: [])
     key.strip!
     key.gsub!(/\s+/, " ")
 
@@ -501,15 +561,18 @@ class KeyBindingTree
       fatal_error("Error in keydef #{key.inspect}")
     end
 
+    # puts "keywords #{keywords}"
     modes.each { |mode_id|
-      mode_bind_key(mode_id, keydef, action)
+      mode_bind_key(mode_id, keydef, action, keywords: keywords)
+
+      # Map froma actions to keybindings (e.g. to show bindings in menu)
       @act_bindings[mode_id][action] = keydef
     }
   end
 
   # Binds a keyboard key combination to an action,
   # for a given keyboard mode like insert ("I") or command ("C")
-  def mode_bind_key(mode_id, keydef, action)
+  def mode_bind_key(mode_id, keydef, action, keywords: [])
     # debug "mode_bind_key #{mode_id.inspect}, #{keydef.inspect}, #{action.inspect}", 2
     # Example:
     # bindkey "C , f", :gui_file_finder
@@ -519,7 +582,7 @@ class KeyBindingTree
     set_state(mode_id, "") # TODO: check is ok?
     start_state = @cur_state
 
-    k_arr = keydef.split
+    k_arr = keydef.split #e.g. definition: "C y e" = > ["C", "y", "e"]
 
     prev_state = nil
     s1 = start_state
@@ -560,6 +623,7 @@ class KeyBindingTree
     else
       @cur_state.action = action
     end
+    @cur_state.keywords = keywords
     @cur_state = @root
   end
 
@@ -613,8 +677,8 @@ class KeyBindingTree
   end
 end
 
-def bindkey(key, action)
-  vma.kbd.bindkey(key, action)
+def bindkey(key, action, keywords: "")
+  vma.kbd.bindkey(key, action, keywords: keywords)
 end
 
 def exec_action(action)
@@ -629,14 +693,42 @@ def exec_action(action)
   end
 end
 
+
+def show_key_bindings()
+  kbd_s = "❙Key bindings❙\n"
+  kbd_s << "\n⦁[Mode] keys : action⦁\n"
+
+  kbd_s << "[B]=Browse, [C]=Command, [I]=Insert, [V]=Visual\n"
+  kbd_s << "<key>!: Press <key> once, release before pressing any other keys\n"
+  kbd_s << "===============================================\n"
+  kbd_s <<  "◼ Basic\n"
+  kbd_s <<  "◼◼ Command mode\n"
+  kbd_s << vma.kbd.get_by_keywords(modes: ["C"], keywords:["intro"])
+  kbd_s << "\n"
+  kbd_s <<  "◼◼ Insert mode\n" 
+  kbd_s << vma.kbd.get_by_keywords(modes: ["I"], keywords:["intro"])
+  kbd_s << "\n"
+  kbd_s <<  "◼◼ Visual mode\n"
+  kbd_s << vma.kbd.get_by_keywords(modes: ["V"], keywords:["intro"])
+  kbd_s << "\n"
+
+  kbd_s << "===============================================\n"
+  kbd_s << vma.kbd.to_s
+  kbd_s << "\n"
+  kbd_s << "===============================================\n"
+  b = create_new_buffer(kbd_s, "key-bindings")
+  gui_set_file_lang(b.id, "hyperplaintext")
+  #
+end
+
 # Try to clear modifiers when program loses focus
 # e.g. after alt-tab
 # TODO
 # def focus_out
-  # debug "RB Clear modifiers"
-  # vma.kbd.clear_modifiers()
+# debug "RB Clear modifiers"
+# vma.kbd.clear_modifiers()
 # end
 
 # def handle_key_event(event)
-  # vma.kbd.handle_key_event(event)
+# vma.kbd.handle_key_event(event)
 # end

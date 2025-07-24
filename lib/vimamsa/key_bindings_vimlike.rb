@@ -53,7 +53,6 @@ bindkey "C , , e", :encrypt_file #TODO: better binding
 bindkey "C , ; u", :set_unencrypted #TODO: better binding
 bindkey "C , c b", :close_current_buffer
 bindkey "V ctrl-c", :comment_selection
-bindkey "C x", :delete_char_forward
 bindkey "C , , l t", :load_theme
 bindkey "C , f", :gui_file_finder
 bindkey "C , h", :gui_file_history_finder
@@ -112,7 +111,7 @@ bindkey "B e", proc { vma.gui.page_up(multip: 0.25) }
 bindkey "B i", :jump_to_start_of_buffer
 bindkey "B o", :jump_to_end_of_buffer
 bindkey "B c", :close_current_buffer
-bindkey "B ;", "buf.jump_to_last_edit"
+bindkey "B ;", :jump_last_edit
 bindkey "B q", :jump_to_last_edit
 bindkey "B w", :jump_to_next_edit
 # bindkey "C , d", :diff_buffer
@@ -121,11 +120,51 @@ bindkey "C , v", :auto_indent_buffer
 bindkey "C , , d", :savedebug
 bindkey "C , , u", :update_file_index
 bindkey "C , s a", :buf_save_as
-bindkey "C d d", [:delete_line, proc { buf.delete_line }, "Delete current line"]
 bindkey "C enter || C return", [:line_action, proc { buf.handle_line_action() }, "Line action"]
-bindkey "C p", [:paste_after, proc { buf.paste(AFTER) }, ""] # TODO: implement as replace for visual mode
 bindkey "V d", [:delete_selection, proc { buf.delete(SELECTION) }, ""]
 bindkey "V a d", [:delete_append_selection, proc { buf.delete(SELECTION, :append) }, "Delete and append selection"]
+
+# levels:
+# intro, basic, others, experimental/debug
+
+def add_keys(keywords, to_add)
+  to_add.each { |key, value|
+    bindkey(key, value, keywords: keywords)
+  }
+end
+
+core_edit_keys = {
+  "C y y" => :copy_cur_line,
+  "C P" => :paste_before_cursor,
+  "C p" => :paste_after_cursor,
+  "C v" => :start_visual_mode,
+  "C ctrl-r" => :redo,
+  "C u" => :undo,
+  "VC O" => :jump_end_of_line,
+  "VC G" => :jump_end_of_buffer,
+  "VC g ;" => :jump_last_edit,
+  "VC g g" => :jump_start_of_buffer,
+  "VC e" => :jump_next_word_end,
+  "VC b" => :jump_prev_word_start,
+  "VC w" => :jump_next_word_start,
+  "C ctrl!" => :insert_mode,
+  "C i" => :insert_mode,
+  "I esc || I ctrl!" => :prev_mode,
+  "IX alt-b" => :move_prev_line,
+  "IX alt-f" => :jump_next_word_start,
+  "IX ctrl-e" => :jump_end_of_line,
+  "IX ctrl-p" => :move_prev_line,
+  "IX ctrl-n" => :move_next_line,
+  "IX ctrl-b" => :move_backward_char,
+  "IX ctrl-a" => :jump_beginning_of_line,
+}
+
+add_keys "intro delete", {
+  "C x" => :delete_char_forward,
+  "C d d" => [:delete_line, proc { buf.delete_line }, "Delete current line"]
+}
+
+add_keys "intro", core_edit_keys
 
 
 default_keys = {
@@ -185,9 +224,6 @@ default_keys = {
   "VCX down" => "buf.move(FORWARD_LINE)",
   "VCX up" => "buf.move(BACKWARD_LINE)",
 
-  "VC w" => "buf.jump_word(FORWARD,WORD_START)",
-  "VC b" => "buf.jump_word(BACKWARD,WORD_START)",
-  "VC e" => "buf.jump_word(FORWARD,WORD_END)",
   #    'C '=> 'buf.jump_word(BACKWARD,END)',#TODO
   "VC f <char>" => "buf.jump_to_next_instance_of_char(<char>)",
   "VC F <char>" => "buf.jump_to_next_instance_of_char(<char>,BACKWARD)",
@@ -201,10 +237,7 @@ default_keys = {
   "VC 0(vma.kbd.next_command_count!=nil)" => "set_next_command_count(<char>)",
   "VC 0(vma.kbd.next_command_count==nil)" => "buf.jump(BEGINNING_OF_LINE)",
   # 'C 0'=> 'buf.jump(BEGINNING_OF_LINE)',
-  "VC g g" => "buf.jump(START_OF_BUFFER)",
-  "VC g ;" => "buf.jump_to_last_edit",
   "VC ^" => "buf.jump(BEGINNING_OF_LINE)",
-  "VC G" => "buf.jump(END_OF_BUFFER)",
   #    'VC z z' => 'center_on_current_line',
   "VC *" => "buf.jump_to_next_instance_of_word",
 
@@ -231,7 +264,6 @@ default_keys = {
   "C , d d" => "debug_dump_deltas",
   "C , d m" => :kbd_dump_state,
 
-  "VC O" => "buf.jump(END_OF_LINE)",
   "VC $" => "buf.jump(END_OF_LINE)",
 
   "C o" => 'buf.jump(END_OF_LINE);buf.insert_txt("\n");vma.kbd.set_mode(:insert)',
@@ -240,23 +272,18 @@ default_keys = {
   "C I" => "buf.jump(FIRST_NON_WHITESPACE);vma.kbd.set_mode(:insert)",
   "C a" => "buf.move(FORWARD_CHAR);vma.kbd.set_mode(:insert)",
   "C J" => "buf.join_lines()",
-  "C u" => "buf.undo()",
 
   "C ^" => "buf.jump(BEGINNING_OF_LINE)",
   # "C /[1-9]/" => "vma.kbd.set_next_command_count(<char>)",
 
   # Command mode only:
-  "C ctrl-r" => "buf.redo()", # TODO:???
-  "C v" => "buf.start_selection;vma.kbd.set_mode(:visual)",
-  "C P" => "buf.paste(BEFORE)", # TODO: implement as replace for visual mode
   "C space <char>" => "buf.insert_txt(<char>)",
   "C space space" => "buf.insert_txt(' ')",
-  "C y y" => "buf.copy_line",
   "C y O" => "buf.copy(:to_line_end)",
   "C y 0" => "buf.copy(:to_line_start)",
   "C y e" => "buf.copy(:to_word_end)", # TODO
   #### Deleting
-  "C x" => "buf.delete(CURRENT_CHAR_FORWARD)",
+  # "C x" => "buf.delete(CURRENT_CHAR_FORWARD)",
   # 'C d k'=> 'delete_line(BACKWARD)', #TODO
   # 'C d j'=> 'delete_line(FORWARD)', #TODO
   # 'C d d'=> 'buf.delete_cur_line',
@@ -305,9 +332,7 @@ default_keys = {
   # "CV ''" =>'jump_to_mark(NEXT_MARK)', #TODO
 
   # Switch to another mode
-  "C i" => "vma.kbd.set_mode(:insert)",
   "C R" => "vma.kbd.set_mode(:replace)",
-  "C ctrl!" => "vma.kbd.set_mode(:insert)",
 
   # Replace mode
   "X esc || X ctrl!" => "vma.kbd.to_previous_mode",
@@ -336,19 +361,11 @@ default_keys = {
   "C shift! s" => "buf.save",
   "I ctrl-s" => "buf.save",
   "I <char>" => "buf.insert_txt(<char>)",
-  "I esc || I ctrl!" => "vma.kbd.to_previous_mode",
 
   "I ctrl-d" => "buf.delete2(:to_word_end)",
 
   # Insert and Replace modes: Moving
-  "IX ctrl-a" => "buf.jump(BEGINNING_OF_LINE)",
-  "IX ctrl-b" => "buf.move(BACKWARD_CHAR)",
   "IX ctrl-f" => "buf.move(FORWARD_CHAR)",
-  "IX ctrl-n" => "buf.move(FORWARD_LINE)",
-  "IX ctrl-p" => "buf.move(BACKWARD_LINE)",
-  "IX ctrl-e" => "buf.jump(END_OF_LINE)", # context: mode:I, buttons down: {C}
-  "IX alt-f" => "buf.jump_word(FORWARD,WORD_START)",
-  "IX alt-b" => "buf.jump_word(BACKWARD,WORD_START)",
 
   "I ctrl-h" => :show_autocomplete,
   "I ctrl-j" => "vma.buf.view.hide_completions",
