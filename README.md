@@ -18,12 +18,13 @@ Vi/Vim -inspired experimental GUI-oriented text editor written with Ruby and GTK
  - Ruby 3.0+
  - GTK 4
 
+
 ## Installation
 
 
-On Ubuntu:
+On Ubuntu (22.04):
 ```
-sudo apt install ruby-dev
+sudo apt install ruby-dev build-essential
 sudo gem install vimamsa
 ```
 
