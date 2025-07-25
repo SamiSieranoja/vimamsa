@@ -1,16 +1,7 @@
 # class VSourceView < Gtk::TextView
 class VSourceView < GtkSource::View
   attr_accessor :bufo, :autocp_active, :cpl_list
-  # :highlight_matching_brackets
 
-  # def set_highlight_current_line(vbool)
-  # end
-
-  # def set_show_line_numbers(vbool)
-  # end
-
-  # def highlight_matching_brackets=(vbool)
-  # end
 
   # def initialize(title = nil,bufo=nil)
   def initialize(title, bufo)
@@ -26,29 +17,6 @@ class VSourceView < GtkSource::View
     self.highlight_current_line = true
 
     @tt = nil
-
-    #    self.drag_dest_add_image_targets #TODO:gtk4
-    #    self.drag_dest_add_uri_targets #TODO:gtk4
-
-    #    signal_connect("drag-data-received") do |widget, event, x, y, data, info, time| #TODO:gtk4
-    # puts "drag-data-received"
-    # puts
-    # if data.uris.size >= 1
-
-    # imgpath = CGI.unescape(data.uris[0])
-    # m = imgpath.match(/^file:\/\/(.*)/)
-    # if m
-    # fp = m[1]
-    # handle_drag_and_drop(fp)
-    # end
-    # end
-    # true
-    # end
-
-    # signal_connect("show-completion") do |x, y, z|
-    # debug "SHOW-COMPLETION", 2
-    # false
-    # end
 
     # Mainly after page-up or page-down
     signal_connect("move-cursor") do |widget, event|
@@ -70,7 +38,6 @@ class VSourceView < GtkSource::View
 
     return
 
-    #TODO:gtk4
     signal_connect "button-release-event" do |widget, event|
       vma.buf.set_pos(buffer.cursor_position)
       false
@@ -666,3 +633,4 @@ class VSourceView < GtkSource::View
     end
   end #end draw_cursor
 end
+

@@ -28,6 +28,11 @@ sudo apt install ruby-dev build-essential
 sudo gem install vimamsa
 ```
 
+Run:
+```
+vimamsa
+```
+
 ### Other install options
 
 Install from sources:
@@ -52,7 +57,6 @@ vimamsa
 Install packages for optional features:
 ```
 sudo apt install ack-grep clang-format
-gem install ripl ripl-multi_line differ parallel listen rufo language_server-protocol
 ```
 
 For customization, edit ~/.vimamsa/custom.rb
