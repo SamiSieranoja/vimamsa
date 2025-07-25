@@ -3,6 +3,10 @@ require "open3"
 VOWELS = %w(a e i o u)
 CONSONANTS = %w(b c d f g h j k l m n p q r s t v w x y z)
 
+def draw_cursor_bug_workaround()
+  DelayExecutioner.exec(id: :bug_workaround_draw_cursor, wait: 1.0, callable: proc { vma.gui.view.draw_cursor(); debug ":bug_workaround_draw_cursor"; false })
+end
+
 def running_wayland?
   sess = ENV["DESKTOP_SESSION"]
   sess ||= ENV["XDG_SESSION_DESKTOP"]
@@ -218,13 +222,19 @@ end
 # Used for image scaling after window resize
 
 class DelayExecutioner
-
+  attr_accessor :last_run, :wait_before_next
   # Run 'callable.call' if 'wait' time elapsed from last exec call for this id
   def self.exec(id:, wait:, callable:)
     @@h ||= {}
     h = @@h
     if h[id].nil?
       h[id] = DelayExecutioner.new(wait, callable)
+    end
+    o = h[id]
+    if !o.last_run.nil?
+      # if Time.now - o.last_run < o.wait_before_next
+      # return
+      # end
     end
     h[id].run
   end
@@ -234,6 +244,8 @@ class DelayExecutioner
     @proc = _proc
     @lastt = Time.now
     @thread_running = false
+    @last_run = nil
+    @wait_before_next = 0
   end
 
   def start_thread
@@ -242,6 +254,7 @@ class DelayExecutioner
         sleep 0.1
         if Time.now - @lastt > @wait_time
           @proc.call
+          @last_run = Time.now
           @thread_running = false
           break
         end

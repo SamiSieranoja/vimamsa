@@ -348,7 +348,7 @@ class VMAgui
     sw.set_child(view)
   end
 
-    #TODO: implement in gtk4
+  #TODO: implement in gtk4
   def init_header_bar()
     header = Gtk::HeaderBar.new
     @header = header
@@ -577,17 +577,36 @@ class VMAgui
 
       reset_controllers
 
+      focus_controller = Gtk::EventControllerFocus.new
+
+      focus_controller.signal_connect("enter") do
+        debug "Gained focus"
+        draw_cursor_bug_workaround
+      end
+      @window.add_controller(focus_controller)
+
+      motion_controller = Gtk::EventControllerMotion.new
+      motion_controller.signal_connect("motion") do |controller, x, y|
+        # label.set_text("Mouse at: (%.1f, %.1f)" % [x, y])
+        # puts "MOVE #{x} #{y}"
+        
+        # Cursor vanishes when hovering over menubar
+        draw_cursor_bug_workaround if y < 30 
+        @last_cursor = [x, y]
+        @cursor_move_time = Time.now
+      end
+      @window.add_controller(motion_controller)
+
       @windows[1] = new_window(1)
 
       @last_adj_time = Time.now
 
-
       # To show keyboard key binding state
       @statnfo = Gtk::Label.new
-      
+
       # To show e.g. current folder
       @subtitle = Gtk::Label.new("")
-      
+
       @statbox = Gtk::Box.new(:horizontal, 2)
       @statnfo.set_size_request(150, 10)
       @statbox.append(@subtitle)
@@ -617,6 +636,12 @@ class VMAgui
       @active_window = @windows[1]
 
       @window.show
+
+      surface = @window.native.surface
+      tt = Time.now
+      surface.signal_connect("layout") do
+        # puts "Window resized or moved, other redraw."
+      end
 
       run_as_idle proc { idle_set_size }
 
@@ -666,9 +691,9 @@ class VMAgui
     return true if Time.now - @monitor_time < 0.2
     # Detect element resize
     if swa.width != @sw_width
-      # puts "@sw.width=#{@sw.width}"
+      debug "Width change sw_width #{@sw_width}"
       @sw_width = swa.width
-      DelayExecutioner.exec(id: :scale_images, wait: 0.7, callable: proc { vma.gui.scale_all_images })
+      DelayExecutioner.exec(id: :scale_images, wait: 0.7, callable: proc { debug ":scale_images"; vma.gui.scale_all_images })
     end
     @monitor_time = Time.now
     return true
