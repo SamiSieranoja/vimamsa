@@ -344,6 +344,17 @@ def is_existing_file(s)
   return false
 end
 
+def uri_to_path(uri)
+  fp = nil
+  begin
+    x = URI::DEFAULT_PARSER.unescape(URI(uri).path)
+  rescue URI::InvalidURIError
+  else
+    fp = x # only if no exception
+  end
+  return fp
+end
+
 def is_image_file(fpath)
   return false if !File.exist?(fpath)
   # return false if !fpath.match(/.(jpg|jpeg|png)$/i)

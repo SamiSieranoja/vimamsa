@@ -115,7 +115,7 @@ class VSourceView < GtkSource::View
       # Gtk::GestureDrag
       # Gtk::ShortcutController
 
-      if ctr != @click and [Gtk::DropControllerMotion, Gtk::DropTarget, Gtk::GestureDrag, Gtk::GestureClick, Gtk::EventControllerKey].include?(ctr.class)
+      if ![@click, @dt].include?(ctr) and [Gtk::DropControllerMotion, Gtk::DropTarget, Gtk::GestureDrag, Gtk::GestureClick, Gtk::EventControllerKey].include?(ctr.class)
         to_remove << ctr
       end
     }
@@ -157,11 +157,8 @@ class VSourceView < GtkSource::View
         uri = v.value.gsub(/\r\n$/, "")
       end
       debug "dt,drop #{v.value},#{x},#{y}", 2
-      begin
-        fp = URI(uri).path
-        buf.handle_drag_and_drop(fp)
-      rescue URI::InvalidURIError
-      end
+      fp = uri_to_path(uri)
+      buf.handle_drag_and_drop(fp) if !fp.nil?
       true
     end
 
