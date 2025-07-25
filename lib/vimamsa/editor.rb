@@ -261,6 +261,9 @@ class Editor
     if p and !@file_content_search_paths.include?(p)
       r.insert(0, p)
     end
+    
+    # Ensure that paths are in correct format
+    r = r.map{|x|File.expand_path(x)}
 
     return r
   end

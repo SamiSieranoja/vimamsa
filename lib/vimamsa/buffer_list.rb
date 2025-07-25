@@ -180,7 +180,7 @@ class BufferList
   end
 
   def get_last_dir
-    return @last_dir
+    return File.expand_path(@last_dir)
   end
 
   def reset_navigation

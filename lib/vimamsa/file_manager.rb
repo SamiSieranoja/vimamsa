@@ -18,7 +18,7 @@ class FileManager
   end
 
   def self.init()
-    reg_act(:start_file_selector, proc { FileManager.new.run; vma.kbd.set_mode(:file_exp); }, "File selector")
+    reg_act(:start_file_selector, proc { FileManager.new.run; vma.kbd.set_mode(:file_exp) }, "File selector")
 
     reg_act(:fexp_chdir_parent, proc { FileManager.chdir_parent }, "File selector")
     reg_act(:fexp_select, proc { buf.module.select_line }, "")
@@ -162,13 +162,14 @@ class FileManager
     #TODO:
   end
 
+  # Main inteface, show contents of current dir
   def dir_to_buf(dirpath, b = nil)
     # File.stat("testfile").mtime
 
     debug "last file: #{vma.buffers.last_file}", 2
     lastf = vma.buffers.last_file
     jumpto = nil
-    if File.dirname(lastf) == dirpath
+    if !lastf.nil? and File.dirname(lastf) == dirpath
       jumpto = File.basename(lastf)
     end
     vma.buffers.last_dir = dirpath
@@ -231,6 +232,13 @@ class FileManager
     else
       @buf.set_line_and_column_pos(@header.size, 0)
     end
+
+    if @cdirs.size > 0
+      r = vma.buf.line_range(2, @cdirs.size+1)
+      
+      # Hilight works only if done after buffer is drawn
+      run_as_idle proc { Gui.hilight_range(vma.buf, r, color: "#4488ffff") }
+    end
   end
 
   def fullp(fn)
@@ -267,7 +275,6 @@ class FileManager
       jump_to_file(fn)
       # vma.buffers.set_current_buffer(idx)
       vma.buffers.close_other_buffer(@buf.id)
-
     else
       open_with_default_program(fn)
     end
