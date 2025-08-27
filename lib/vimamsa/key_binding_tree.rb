@@ -19,7 +19,7 @@
 #
 
 class State
-  attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level, :cursor_type, :keywords
+  attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level, :cursor_type, :keywords, :root, :parent
   attr_reader :cur_mode, :scope
 
   def initialize(key_name, eval_rule = "", ctype = :command, scope: :buffer)
@@ -31,6 +31,8 @@ class State
     @keywords = []
     @action = nil
     @level = 0
+    @root = self # parent of a parent ... until mode root
+    @parent = nil
     @cursor_type = ctype
   end
 
@@ -55,6 +57,7 @@ class KeyBindingTree
     @last_action = nil
     @cur_action = nil
     @method_handles_repeat = false
+    @overwriting_state = nil # A branch which has priority over other branches
 
     @modifiers = { :ctrl => false, :shift => false, :alt => false } # TODO: create a queue
     @last_event = [nil, nil, nil, nil, nil]
@@ -258,11 +261,17 @@ class KeyBindingTree
   end
 
   def set_state_to_root
+    # if root state is a minor mode
     if @mode_root_state.major_modes.size == 1
-      modelabel = @mode_root_state.major_modes[0]
-      mmode = @modes[modelabel]
-      @match_state = [@mode_root_state, mmode]
+      modelabel = @mode_root_state.major_modes[0] #TODO: support multiple inheritance?
+      parent_mode = @modes[modelabel]
+      # Have two branches for the matching (both major and minor modes)
+      # @mode_root_state = minor, parent_mode = major
+      @match_state = [@mode_root_state, parent_mode]
+      @overwriting_state = @mode_root_state # States from this branch have priority over others.
     else
+      # if root state is a major mode
+      @overwriting_state = nil
       @match_state = [@mode_root_state]
     end
 
@@ -491,7 +500,31 @@ class KeyBindingTree
       state_with_children = new_state.select { |s| s.children.any? }
       s_act = new_state.select { |s| s.action != nil }
 
-      if s_act.any? #and !state_with_children.any?
+      # Multiple matching states/modes (search has forked)
+      if new_state.size > 1
+        # puts "AAA"
+        # Conflict: One of them has actions (matching should stop), 
+        # another has children (matching should continue)
+        if s_act.any? and state_with_children.any?
+          # puts "AAA1"
+          a = s_act[0]
+          b = state_with_children[0]
+          # Running major+minor mode. Minor mode overwriting the major mode
+          if a.root == @overwriting_state or b.root == @overwriting_state
+            # puts "AAA3:del"
+            # Remove those states not belonging to the overwriting branch (minor mode)
+            [s_act, state_with_children, new_state].each { |z| z.delete_if { |x| x.root != @overwriting_state } }
+          end
+        end
+      end
+      # new_state[0].root.key_name
+
+      if s_act.any? and state_with_children.any?
+        # debug "Conflict: s_act.any? and state_with_children.any?"
+        # require "pry"; binding.pry
+      end
+
+      if s_act.any? and !state_with_children.any?
         eval_s = s_act.first.action if eval_s == nil
         # if eval_s.to_s.match(/end_recording/)
         # require "pry"; binding.pry
@@ -625,6 +658,8 @@ class KeyBindingTree
         end
         s1 = new_state
         @cur_state.children << new_state
+        new_state.root = @cur_state.root
+        new_state.parent = @cur_state
       end
 
       set_state(key_name, eval_rule) # TODO: check is ok?

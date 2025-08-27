@@ -244,14 +244,16 @@ add_keys "core", {
   # "C q a" => 'vma.macro.start_recording("a")',
   
   "macro q" => "vma.kbd.to_previous_mode; vma.macro.end_recording",
-  "macro q z" => "vma.kbd.to_previous_mode; vma.macro.end_recording",
+  # "macro q z" => "vma.kbd.to_previous_mode; vma.macro.end_recording",
   
   # "VC q(vma.macro.is_recording==true)" => "vma.macro.end_recording", # TODO: does not work
   # "VC o(vma.macro.is_recording==true)" => "vma.macro.end_recording", # TODO: does not work
   # "VC q q(vma.macro.is_recording==true)" => "vma.macro.end_recording",
   "VC q <char>" => "vma.kbd.set_mode(:macro);vma.macro.start_recording(<char>)",
   # 'C q'=> 'vma.macro.end_recording', #TODO
-  "C q v" => "vma.kbd.to_previous_mode; vma.macro.end_recording",
+  
+  # "C q v" => "vma.kbd.to_previous_mode; vma.macro.end_recording", #TODO
+  
   # 'C v'=> 'vma.macro.end_recording',
   # "C M" => 'vma.macro.run_last_macro',
   "C @ <char>" => "vma.macro.run_macro(<char>)",
