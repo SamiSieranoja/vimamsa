@@ -1045,7 +1045,14 @@ class Buffer < String
       wsm = scan_marks(p - maxws, p, /((?<=\s)\S)|^\S/)
       word_start = wsm[-1]
       word_end = wem[0]
+    elsif boundary == :word2
+      wem = scan_marks(p, p + maxws, /\b/,-1)
+      wsm = scan_marks(p - maxws, p, /\b\w/)
+      word_start = wsm[-1]
+      word_end = wem.select{|x|x>=word_start}[0]
+     
     elsif boundary == :word
+    #TODO: change name :word. This works only with autocomplete
       wsm = scan_marks(p - maxws, p, /\b\w/)
       word_start = wsm[-1]
       word_end = p

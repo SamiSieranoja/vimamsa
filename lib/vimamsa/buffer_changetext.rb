@@ -93,7 +93,7 @@ class Buffer < String
     if true or running_wayland? and !GLib::Version::or_later?(2, 79, 0)
       return paste_start_xclip(at, register)
     end
-    
+
     clipboard = vma.gui.window.display.clipboard
     clipboard.read_text_async do |_clipboard, result|
       begin
@@ -150,6 +150,22 @@ class Buffer < String
       paste_start(at, register)
     end
     return true
+  end
+
+  def increment_current_word()
+    debug "increment_current_word", 2
+    p = @pos
+    return if !is_legal_pos(p)
+    (word, range) = get_word_in_pos(p, boundary: :word2)
+    if word.match(/(true|false)/i)
+      rep = flip_true_false(word)
+    else
+      num = word.to_i
+      num += 1
+      rep = num.to_s
+    end
+    debug [word, range].to_s, 2
+    replace_range(range, rep)
   end
 
   def complete_current_word(rep)
@@ -217,7 +233,7 @@ class Buffer < String
 
   def delete_range(startpos, endpos, x = nil)
     s = self[startpos..endpos]
-    if startpos == endpos or s == ""
+    if startpos > endpos or s == ""
       return
     end
     if x == :append

@@ -354,6 +354,7 @@ add_keys "experimental", {
   # "CV , R" => "restart_application", #TODO: does not work
   "I ctrl-h" => :show_autocomplete, #TODO: does not work
   "C , d m" => :kbd_dump_state,
+  "C , ; ." => :increment_word,
   "C , d d" => "debug_dump_deltas",
   "C , d c" => "debug_dump_clipboard",
   "C , d b" => "debug_print_buffer",

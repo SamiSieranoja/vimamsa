@@ -16,6 +16,7 @@ require "cgi"
 require "uri"
 require "vimamsa/conf"
 require "vimamsa/util"
+require "vimamsa/string_util"
 # exit!
 require "vimamsa/main"
 require "vimamsa/terminal"

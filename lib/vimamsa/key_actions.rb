@@ -188,6 +188,9 @@ act_list = {
 
   :backward_line => { :proc => proc { buf.move(BACKWARD_LINE) },
                       :desc => "Move one line backward", :group => [:move, :basic] },
+                                             
+  :increment_word => { :proc => proc { buf.increment_current_word},
+                      :desc => "Increment word", :group => [:edit, :extra] },                                            
 
   # { :proc => proc {  },
   # :desc => "", :group => : },
