@@ -1619,6 +1619,27 @@ class Buffer < String
     debug "delete autosave failed: #{ex}"
   end
 
+  def check_autosave_load
+    apath = autosave_path
+    return if apath.nil? || !File.exist?(apath)
+    if File.read(apath) == self.to_s
+      delete_autosave_file
+      return
+    end
+    title = "An autosave file was found for <b>#{File.basename(@fname)}</b>. Load autosave?"
+    callback = proc { |x| load_autosave_callback(x) }
+    Gui.confirm(title, callback)
+  end
+
+  def load_autosave_callback(x)
+    return unless x["yes_btn"] == "submit"
+    str = read_file("", autosave_path)
+    set_content(str)
+    @t_modified = Time.now
+    refresh_title
+    message("Loaded autosave for #{@fname}")
+  end
+
   def save()
     check_if_modified_outside #TODO
     if !@fname

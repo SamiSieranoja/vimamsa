@@ -585,6 +585,7 @@ def open_new_file(filename, file_contents = "")
     fname = filename
     bu = load_buffer(fname)
     vma.buffers.set_current_buffer_by_id(bu.id)
+    bu.check_autosave_load
   end
   return bu
 end
