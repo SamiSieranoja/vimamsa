@@ -121,6 +121,7 @@ reg_act(:move_next_line, proc { buf.move(FORWARD_LINE) }, "Move the cursor to th
 reg_act(:move_backward_char, proc { buf.move(BACKWARD_CHAR) }, "Move one character backward")
 reg_act(:start_visual_mode, proc { buf.start_selection;vma.kbd.set_mode(:visual) }, "Enter VISUAL mode (for selections)") 
 reg_act(:jump_last_edit, proc { buf.jump_to_last_edit }, "Jump to the last edit location")
+reg_act(:install_demo_files, proc { install_demo_files }, "Install and show Demo")
 
 
 reg_act :start_browse_mode, proc {

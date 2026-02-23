@@ -648,3 +648,30 @@ def find_project_dir_of_cur_buffer()
   # debug "Proj dir of current file: #{pdir}"
   return pdir
 end
+
+DEMO_FILES = ["demo.txt", "sheep.jpg", "README.md"]
+
+def install_demo_files
+  dest_dir = File.expand_path("~/Documents/VimamsaDemo")
+  mkdir_if_not_exists dest_dir
+  title = "Install demo files to #{dest_dir}?"
+  Gui.confirm(title, proc { |x| install_demo_files_callback(x) })
+end
+
+def install_demo_files_callback(x)
+  return unless x["yes_btn"] == "submit"
+  src_dir = File.expand_path("../..", __dir__)
+  dest_dir = File.expand_path("~/Documents/VimamsaDemo")
+  FileUtils.mkdir_p(dest_dir)
+  DEMO_FILES.each do |fname|
+    src = File.join(src_dir, fname)
+    dst = File.join(dest_dir, fname)
+    if File.exist?(src)
+      FileUtils.cp(src, dst)
+    else
+      message("Demo file not found: #{src}")
+    end
+  end
+  open_new_file(File.join(dest_dir, "demo.txt"))
+  message("Demo files installed to #{dest_dir}")
+end
