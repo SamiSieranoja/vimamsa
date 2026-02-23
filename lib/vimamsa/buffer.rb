@@ -42,6 +42,8 @@ class Buffer < String
 
     @last_save = @last_asked_from_user = @file_last_cheked = Time.now
     @t_modified = @last_save
+    @last_autosave = @last_save
+    @autosave_thread = nil
 
     @crypt = nil
     @update_highlight = true
@@ -65,6 +67,7 @@ class Buffer < String
     if cnf.lsp.enabled?
       init_lsp
     end
+    start_autosave_timer
     return self
   end
 
@@ -1574,6 +1577,48 @@ class Buffer < String
     return false
   end
 
+  AUTOSAVE_INTERVAL = 5 # seconds between autosave checks
+
+  def autosave_path
+    return nil if @fname.nil?
+    dir = File.dirname(@fname)
+    base = File.basename(@fname)
+    File.join(dir, ".#{base}_vma_autosave")
+  end
+
+  def autosave
+    return if @fname.nil?
+    return if @t_modified <= @last_autosave
+    apath = autosave_path
+    contents = self.to_s
+    Thread.new {
+      begin
+        File.open(apath, "w+") { |io| io.set_encoding(self.encoding); io.write(contents) }
+        @last_autosave = Time.now
+        debug "autosaved to #{apath}"
+      rescue => ex
+        debug "autosave failed: #{ex}"
+      end
+    }
+  end
+
+  def start_autosave_timer
+    @autosave_thread = Thread.new {
+      loop do
+        sleep AUTOSAVE_INTERVAL
+        autosave
+      end
+    }
+  end
+
+  def delete_autosave_file
+    apath = autosave_path
+    return if apath.nil?
+    File.delete(apath) if File.exist?(apath)
+  rescue => ex
+    debug "delete autosave failed: #{ex}"
+  end
+
   def save()
     check_if_modified_outside #TODO
     if !@fname
@@ -1582,6 +1627,7 @@ class Buffer < String
     end
     message("Saving file #{@fname}")
     write_contents_to_file(@fname)
+    delete_autosave_file
     hook.call(:file_saved, self)
   end
 
