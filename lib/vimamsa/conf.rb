@@ -112,6 +112,8 @@ cnf.lsp.enabled = false
 cnf.fexp.experimental = false
 cnf.experimental = false
 
+cnf.kbd.show_prev_action = true
+
 cnf.tab.width = 2
 cnf.tab.to_spaces_default = false
 cnf.tab.to_spaces_languages = ["c", "java", "ruby", "hyperplaintext", "php"]

@@ -191,7 +191,7 @@ end
 
 class VMAgui
   attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c
-  attr_reader :two_column, :windows, :subtitle, :app, :active_window
+  attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label
 
   def initialize()
     @two_column = false
@@ -628,10 +628,21 @@ class VMAgui
       init_minibuffer
 
       menubar = Gio::Menu.new
-      app.menubar = menubar
-      @window.show_menubar = true
-
       @menubar = menubar
+
+      # TODO: Doesn't work, why?:
+      # menubar_bar = Gtk::PopoverMenuBar.new(menu_model: menubar)
+      
+      menubar_bar = Gtk::PopoverMenuBar.new()
+      menubar_bar.set_menu_model(menubar)
+      
+      menubar_bar.hexpand = true
+      @action_trail_label = Gtk::Label.new("")
+      @action_trail_label.add_css_class("action-trail")
+      menubar_row = Gtk::Box.new(:horizontal, 0)
+      menubar_row.append(menubar_bar)
+      menubar_row.append(@action_trail_label)
+      @vbox.attach(menubar_row, 0, 0, 2, 1)
 
       @active_window = @windows[1]
 
@@ -670,7 +681,9 @@ class VMAgui
         min-width: 15px;
       }
   
- popover background > contents { padding: 8px; border-radius: 20px; } 
+ popover background > contents { padding: 8px; border-radius: 20px; }
+
+ label.action-trail { font-family: monospace; font-size: 10pt; margin-right: 8px; color: #aaaaaa; }
          ")
       @window.style_context.add_provider(prov)
 

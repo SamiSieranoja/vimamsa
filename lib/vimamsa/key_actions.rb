@@ -38,6 +38,8 @@ reg_act(:eval_buf, proc { vma.buf.eval_whole_buf }, "Eval whole current buffer a
 reg_act(:enable_debug, proc { cnf.debug = true }, "Enable debug")
 reg_act(:disable_debug, proc { cnf.debug = false }, "Disable debug")
 
+reg_act(:experimental_eval, proc { bindkey "V , e", "vma.buf.convert_selected_text(:eval)" }, "Enable key binding:\"[VISUAL] , e:\" Eval selected text")
+
 reg_act(:easy_jump, proc { EasyJump.start }, "Easy jump")
 reg_act(:gui_ensure_cursor_visible, proc { vma.gui.view.ensure_cursor_visible }, "Scroll to current cursor position")
 reg_act(:gui_refresh_cursor, proc { vma.buf.refresh_cursor }, "Refresh cursor")
@@ -46,17 +48,17 @@ reg_act(:savedebug, "savedebug", "Save debug info", { :group => :debug })
 reg_act(:open_file_dialog, "open_file_dialog", "Open file", { :group => :file })
 reg_act(:create_new_file, "create_new_file", "Create new file", { :group => :file })
 reg_act(:backup_all_buffers, proc { backup_all_buffers }, "Backup all buffers", { :group => :file })
-reg_act(:e_move_forward_char, "e_move_forward_char", "", { :group => [:move, :basic] })
-reg_act(:e_move_backward_char, "e_move_backward_char", "", { :group => [:move, :basic] })
+reg_act(:e_move_forward_char, "e_move_forward_char", "Move forward", { :group => [:move, :basic] })
+reg_act(:e_move_backward_char, "e_move_backward_char", "Move forward", { :group => [:move, :basic] })
 # reg_act(:history_switch_backwards, proc{bufs.history_switch_backwards}, "", { :group => :file })
-reg_act(:history_switch_backwards, proc{bufs.history_switch(-1)}, "", { :group => :file })
-reg_act(:history_switch_forwards, proc{bufs.history_switch(+1)}, "", { :group => :file })
+reg_act(:history_switch_backwards, proc{bufs.history_switch(-1)}, "Prev buffer", { :group => :file })
+reg_act(:history_switch_forwards, proc{bufs.history_switch(+1)}, "Next buffer", { :group => :file })
 reg_act(:center_on_current_line, "center_on_current_line", "", { :group => :view })
 reg_act(:run_last_macro, proc { vma.macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
-reg_act(:jump_to_next_edit, "jump_to_next_edit", "")
-reg_act(:jump_to_last_edit, proc { buf.jump_to_last_edit }, "")
+reg_act(:jump_to_next_edit, "jump_to_next_edit", "Jump to next edit pos")
+reg_act(:jump_to_last_edit, proc { buf.jump_to_last_edit }, "Jump to last edit pos")
 reg_act(:jump_to_random, proc { buf.jump_to_random_pos }, "")
-reg_act(:insert_new_line, proc { buf.insert_new_line() }, "")
+reg_act(:insert_new_line, proc { buf.insert_new_line() }, "Insert new line")
 reg_act(:show_key_bindings, proc { show_key_bindings }, "Show key bindings")
 reg_act(:put_file_path_to_clipboard, proc { buf.put_file_path_to_clipboard }, "Put file path of current file to clipboard")
 reg_act(:put_file_ref_to_clipboard, proc { buf.put_file_ref_to_clipboard }, "Put file ref of current file to clipboard")
@@ -67,7 +69,7 @@ reg_act(:set_unencrypted, proc { buf.set_unencrypted }, "Set current file to sav
 reg_act(:set_executable, proc { buf.set_executable }, "Set current file permissions to executable")
 # reg_act(:close_all_buffers, proc { bufs.close_all_buffers() }, "Close all buffers")
 reg_act(:close_current_buffer, proc { bufs.close_current_buffer(true) }, "Close current buffer")
-reg_act(:comment_selection, proc { buf.comment_selection }, "")
+reg_act(:comment_selection, proc { buf.comment_selection }, "Comment selection")
 reg_act(:delete_char_forward, proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward", { :group => [:edit, :basic] })
 reg_act(:gui_file_finder, proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
 reg_act(:gui_file_history_finder, proc { vma.FileHistory.start_gui }, "Fuzzy file history finder")
@@ -87,7 +89,7 @@ reg_act(:clear_line_styles, proc { buf.set_line_style(:clear) }, "Clear styles o
 reg_act(:gui_select_buffer, proc { vma.kbd.set_mode("S"); gui_select_buffer }, "Select buffer")
 reg_act :open_file_dialog, "open_file_dialog", "Open file"
 reg_act :minibuffer_end, proc { minibuffer_end }
-reg_act(:invoke_replace, "invoke_replace", "")
+reg_act(:invoke_replace, "invoke_replace", "Invoke replace")
 reg_act(:diff_buffer, "diff_buffer", "")
 # reg_act(:invoke_grep_search, proc{invoke_grep_search}, "")
 reg_act(:invoke_grep_search, proc { gui_grep }, "Grep current buffer")
@@ -98,7 +100,7 @@ reg_act :delete_to_next_word_start, proc { buf.delete2(:to_next_word) }, "Delete
 reg_act :delete_to_line_start, proc { buf.delete2(:to_line_start) }, "Delete to line start", { :group => [:edit, :basic] }
 
 
-reg_act(:ack_search, proc { gui_ack }, "") 
+reg_act(:ack_search, proc { gui_ack }, "Ack") 
 
 reg_act(:copy_cur_line, proc {buf.copy_line}, "Copy the current line") 
 reg_act(:paste_before_cursor, proc {buf.paste(BEFORE)}, "Paste text before the cursor") 

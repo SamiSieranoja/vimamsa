@@ -387,7 +387,13 @@ class KeyBindingTree
           mmid = st.major_modes.first
           trailpfx = "#{@modes[mmid].to_s}>"
         end
-        s_trail << "[#{trailpfx}#{st.to_s}]"
+        mode_str = st.to_s
+        mode_str = "COMMAND" if mode_str == "C"
+        mode_str = "INSERT" if mode_str == "I"
+        mode_str = "VISUAL" if mode_str == "V"
+        mode_str = "BROWSE" if mode_str == "B"
+
+        s_trail << "[#{trailpfx}#{mode_str}]"
       else
         s_trail << " #{st.to_s}"
       end
@@ -503,7 +509,7 @@ class KeyBindingTree
       # Multiple matching states/modes (search has forked)
       if new_state.size > 1
         # puts "AAA"
-        # Conflict: One of them has actions (matching should stop), 
+        # Conflict: One of them has actions (matching should stop),
         # another has children (matching should continue)
         if s_act.any? and state_with_children.any?
           # puts "AAA1"
@@ -674,6 +680,7 @@ class KeyBindingTree
   end
 
   def handle_key_bindigs_action(action, c)
+    trail_str = get_state_trail_str[0]
     # $acth << action #TODO:needed here?
     @method_handles_repeat = false #TODO:??
     n = 1
@@ -719,6 +726,21 @@ class KeyBindingTree
 
     if !(action.class == String and action.include?("set_next_command_count"))
       @next_command_count = nil
+    end
+
+    if cnf.kbd.show_prev_action? and trail_str.class==String
+      len_limit = 35
+      action_desc = "UNK"
+      if action.class == String && (m = action.match(/\Abuf\.insert_txt\((.+)\)\z/))
+        char_part = m[1].gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
+        action_desc = "insert #{char_part}"
+        puts action_desc.inspect
+      else
+        action_desc = vma.actions[action]&.method_name || action.to_s
+        action_desc = action_desc[0..len_limit] if action_desc.size > len_limit
+      end
+      trail_str = trail_str.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
+      vma.gui.action_trail_label.markup = "<span weight='bold'>#{action_desc}|#{trail_str}</span>"
     end
   end
 end
