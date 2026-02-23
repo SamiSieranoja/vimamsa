@@ -63,8 +63,8 @@ For customization, edit ~/.vimamsa/custom.rb
 
 ## Screenshots
 
-<a href="https://samiddhi.net/vimamsa/screenshot1.png" target="_blank"><img src="https://samiddhi.net/vimamsa/screenshot1.png" width="400"/></a>
-<a href="https://samiddhi.net/vimamsa/screenshot2.png" target="_blank"><img src="https://samiddhi.net/vimamsa/screenshot2.png" width="400"/></a>
+<a href="https://raw.githubusercontent.com/SamiSieranoja/vimamsa/refs/heads/master/img/screenshot1.png" target="_blank"><img src="https://raw.githubusercontent.com/SamiSieranoja/vimamsa/refs/heads/master/img/screenshot1.png" width="400"/></a>
+<a href="https://raw.githubusercontent.com/SamiSieranoja/vimamsa/refs/heads/master/img/screenshot2.png" target="_blank"><img src="https://raw.githubusercontent.com/SamiSieranoja/vimamsa/refs/heads/master/img/screenshot2.png" width="400"/></a>
 
 ## Key bindings
 
