@@ -410,20 +410,29 @@ def start_minibuffer_cmd(bufname, bufstr, cmd)
   $minibuffer.call_func = method(cmd)
 end
 
+def if_cmd_exists(cmd)
+  cmd = cmd.gsub(/[^a-zA-Z0-9_\-]/, '')
+  if !system("which #{cmd} > /dev/null 2>&1")
+    message("Command \"#{cmd}\" not found!")
+    return false
+  end
+ return true
+end
 
 def diff_buffer()
   bufstr = ""
+  return if !if_cmd_exists("diff")
   orig_path = vma.buf.fname
-  infile = Tempfile.new("out")
   infile = Tempfile.new("in")
   infile.write(vma.buf.to_s)
   infile.flush
-  cmd = "diff -w '#{orig_path}' #{infile.path}"
+  cmd = "diff -uw '#{orig_path}' #{infile.path}"
   # debug cmd
   bufstr << run_cmd(cmd)
   # debug bufstr
   infile.close; infile.unlink
   create_new_file(nil, bufstr)
+  gui_set_file_lang(vma.buf.id, "diff")
 end
 
 def invoke_command()
