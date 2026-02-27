@@ -246,7 +246,14 @@ class VSourceView < GtkSource::View
       end
 
       @bufo.set_pos(i) if !i.nil?
-      @bufo.cur_nonwhitespace_word_action() if n_press == 2
+      if n_press == 2
+        #TODO: refactor to have one function for all line actions
+        if @bufo.module&.respond_to?(:select_line)
+          @bufo.module.select_line
+        else
+          @bufo.cur_nonwhitespace_word_action()
+        end
+      end
       true
     end
 
