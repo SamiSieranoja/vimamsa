@@ -647,6 +647,7 @@ class VMAgui
 
       @active_window = @windows[1]
 
+      @window.signal_connect("close-request") { quit; true }
       @window.show
 
       surface = @window.native.surface
