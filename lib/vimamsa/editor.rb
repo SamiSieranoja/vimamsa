@@ -110,8 +110,7 @@ class Editor
 
     settings_path = get_dot_path("settings.rb")
     if File.exist?(settings_path)
-      #  = eval(IO.read(settings_path))
-      #TODO
+      eval(IO.read(settings_path))
     end
 
     custom_script = read_file("", custom_fn)
@@ -654,6 +653,17 @@ def reload_customrb
   custom_script = read_file("", custom_fn)
   eval(custom_script) if custom_script
   message("Reloaded #{custom_fn}")
+end
+
+def save_settings_to_file
+  settings_path = get_dot_path("settings.rb")
+  lines = SETTINGS_DEFS.flat_map { |section| section[:settings] }.map do |s|
+    key_str = "cnf." + s[:key].join(".")
+    val = get(s[:key])
+    "#{key_str} = #{val.inspect}"
+  end
+  IO.write(settings_path, lines.join("\n") + "\n")
+  message("Settings saved to #{settings_path}")
 end
 
 DEMO_FILES = ["demo.txt", "sheep.jpg", "README.md"]

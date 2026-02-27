@@ -13,7 +13,7 @@ $confh = Hash.new { |h, k| h[k] = Hash.new(&h.default_proc) }
 # => $confh = {:foo=>{:bar=>{:baz=>3}}}
 def set(_id, val)
   a = $confh
-  id = _id.to_a
+  id = _id.to_a.dup
   last = id.pop
   for x in id
     a = a[x]

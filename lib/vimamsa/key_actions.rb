@@ -35,6 +35,7 @@ reg_act(:lsp_jump_to_definition, proc { vma.buf.lsp_jump_to_def }, "LSP jump to 
 
 reg_act(:eval_buf, proc { vma.buf.eval_whole_buf }, "Eval whole current buffer as ruby code (DANGEROUS)")
 
+reg_act(:show_settings, proc { show_settings_dialog }, "Show settings")
 reg_act(:enable_debug, proc { cnf.debug = true }, "Enable debug")
 reg_act(:disable_debug, proc { cnf.debug = false }, "Disable debug")
 
