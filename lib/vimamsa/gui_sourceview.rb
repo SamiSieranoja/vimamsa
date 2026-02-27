@@ -199,8 +199,23 @@ class VSourceView < GtkSource::View
     @click = click
 
     @range_start = nil
+
+    # Handle right click
+    rightclick = Gtk::GestureClick.new
+    rightclick.button = 3
+    self.add_controller(rightclick)
+    rightclick.signal_connect "pressed" do |gesture, n_press, x, y, z|
+      puts "SourceView, GestureClick rightclick released button=#{gesture.button} x=#{x} y=#{y}"
+      if gesture.button == 3
+        show_context_menu(x, y)
+        next true
+      end
+    end
+    
+
     click.signal_connect "pressed" do |gesture, n_press, x, y, z|
       debug "SourceView, GestureClick released x=#{x} y=#{y}"
+
 
       if buf.visual_mode?
         buf.end_visual_mode
@@ -224,7 +239,7 @@ class VSourceView < GtkSource::View
     end
 
     click.signal_connect "released" do |gesture, n_press, x, y, z|
-      debug "SourceView, GestureClick released x=#{x} y=#{y}"
+      debug "SourceView, GestureClick released x=#{x} y=#{y} button=#{gesture.button}"
 
       xloc = (x - gutter_width).to_i
       yloc = (y + visible_rect.y).to_i
@@ -633,5 +648,32 @@ class VSourceView < GtkSource::View
       self.cursor_visible = true
     end
   end #end draw_cursor
+
+  CONTEXT_MENU_ITEMS = [
+    ["Previous buffer", :history_switch_backwards],
+  ]
+
+  def build_context_menu
+    menu = Gio::Menu.new
+    CONTEXT_MENU_ITEMS.each do |label, action_id|
+      actkey = "ctx_#{action_id}"
+      unless vma.gui.app.lookup_action(actkey)
+        act = Gio::SimpleAction.new(actkey)
+        vma.gui.app.add_action(act)
+        act.signal_connect("activate") { call_action(action_id) }
+      end
+      menu.append(label, "app.#{actkey}")
+    end
+    @context_menu = Gtk::PopoverMenu.new
+    @context_menu.set_menu_model(menu)
+    @context_menu.set_parent(self)
+    @context_menu.has_arrow = false
+  end
+
+  def show_context_menu(x, y)
+    build_context_menu if @context_menu.nil?
+    @context_menu.set_pointing_to(Gdk::Rectangle.new(x.to_i, y.to_i, 1, 1))
+    @context_menu.popup
+  end
 end
 
