@@ -39,7 +39,9 @@ module Vimamsa
 
       # add_to_menu "Edit.StartCompletion", { :label => "StartCompletion", :action => :start_autocomplete }
       # add_to_menu "Edit.ShowCompletion", { :label => "ShowCompletion", :action => :show_autocomplete }
-      add_to_menu "Edit.CustomRb", { :action => :edit_customrb }
+
+      add_to_menu "Settings.Customize", { :action => :edit_customrb }
+      add_to_menu "Settings.ReloadCustom", { :action => :reload_customrb }
 
       add_to_menu "Actions.SearchForActions", { :label => "Search for Actions", :action => :search_actions }
 

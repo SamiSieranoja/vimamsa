@@ -649,6 +649,13 @@ def find_project_dir_of_cur_buffer()
   return pdir
 end
 
+def reload_customrb
+  custom_fn = get_dot_path("custom.rb")
+  custom_script = read_file("", custom_fn)
+  eval(custom_script) if custom_script
+  message("Reloaded #{custom_fn}")
+end
+
 DEMO_FILES = ["demo.txt", "sheep.jpg", "README.md"]
 
 def install_demo_files
