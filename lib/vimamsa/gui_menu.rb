@@ -52,6 +52,7 @@ module Vimamsa
 
       add_to_menu "Actions.experimental.Diff", { :label => "Show Diff of\nunsaved changes", :action => :diff_buffer }
 
+      add_to_menu "Actions.experimental.PrintBufferAccessList", { :label => "Print buffers by access time", :action => :print_buffer_access_list }
       add_to_menu "Actions.experimental.EnableDebug", { :label => "Enable debug", :action => :enable_debug }
       add_to_menu "Actions.experimental.DisableDebug", { :label => "Disable debug", :action => :disable_debug }
       add_to_menu "Actions.experimental.ShowImages", { :label => "Show images ⟦img:path⟧", :action => :show_images }

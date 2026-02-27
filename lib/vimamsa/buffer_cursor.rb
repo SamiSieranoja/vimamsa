@@ -1,6 +1,5 @@
 # Buffer operations related to cursor position, e.g. moving the cursor (backward, forward, next line etc.)
 class Buffer < String
-
   def line(lpos)
     if @line_ends.size == 0
       return self
@@ -30,15 +29,22 @@ class Buffer < String
   def refresh_cursor
     self.view.set_cursor_pos(@pos)
   end
-  
+
   def set_pos(new_pos)
+    # If user interacts with the buffer, we consider that the buffer has been accessed
+    # And navigation has ended
+    if new_pos != @pos
+      update_access_time
+      bufs.reset_navigation
+    end
     if new_pos >= self.size
       @pos = self.size - 1 # TODO:??right side of last char
     elsif new_pos >= 0
       @pos = new_pos
     end
+
     self.view.set_cursor_pos(pos)
-     # gui_set_cursor_pos(@id, @pos)
+    # gui_set_cursor_pos(@id, @pos)
     calculate_line_and_column_pos
 
     check_if_modified_outside

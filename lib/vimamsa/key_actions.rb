@@ -55,6 +55,7 @@ reg_act(:e_move_backward_char, "e_move_backward_char", "Move forward", { :group 
 # reg_act(:history_switch_backwards, proc{bufs.history_switch_backwards}, "", { :group => :file })
 reg_act(:history_switch_backwards, proc{bufs.history_switch(-1)}, "Prev buffer", { :group => :file })
 reg_act(:history_switch_forwards, proc{bufs.history_switch(+1)}, "Next buffer", { :group => :file })
+reg_act(:print_buffer_access_list, proc { bufs.print_by_access_time }, "Print buffers by access time", { :group => :file })
 reg_act(:center_on_current_line, "center_on_current_line", "", { :group => :view })
 reg_act(:run_last_macro, proc { vma.macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
 reg_act(:jump_to_next_edit, "jump_to_next_edit", "Jump to next edit pos")

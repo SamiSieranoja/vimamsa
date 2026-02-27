@@ -349,88 +349,35 @@ class VMAgui
     sw.set_child(view)
   end
 
-  #TODO: implement in gtk4
+  def make_header_button(action_id, icon, cb)
+    act = Gio::SimpleAction.new(action_id)
+    @app.add_action(act)
+    act.signal_connect("activate") { |_a, _p| cb.call }
+    btn = Gtk::Button.new
+    btn.set_child(Gtk::Image.new(icon_name: icon))
+    btn.action_name = "app.#{action_id}"
+    btn
+  end
+
   def init_header_bar()
     header = Gtk::HeaderBar.new
     @header = header
-    header.show_close_button = true
-    # header.title = ""#TODO:gtk4
-    # header.has_subtitle = true#TODO:gtk4
-    header.subtitle = ""
 
-    # icon = Gio::ThemedIcon.new("mail-send-receive-symbolic")
-    # icon = Gio::ThemedIcon.new("document-open-symbolic")
-    # icon = Gio::ThemedIcon.new("dialog-password")
+    file_box = Gtk::Box.new(:horizontal, 0)
+    file_box.style_context.add_class("linked")
+    file_box.append(make_header_button("hdr-open", "document-open-symbolic", proc { open_file_dialog }))
+    file_box.append(make_header_button("hdr-save", "document-save-symbolic", proc { buf.save }))
+    file_box.append(make_header_button("hdr-new",  "document-new-symbolic",  proc { create_new_file }))
+    header.pack_start(file_box)
 
-    #edit-redo edit-paste edit-find-replace edit-undo edit-find edit-cut edit-copy
-    #document-open document-save document-save-as document-properties document-new
-    # document-revert-symbolic
-    #
+    nav_box = Gtk::Box.new(:horizontal, 0)
+    nav_box.style_context.add_class("linked")
+    nav_box.append(make_header_button("hdr-prev",  "pan-start-symbolic", proc { history_switch_backwards }))
+    nav_box.append(make_header_button("hdr-next",  "pan-end-symbolic",   proc { history_switch_forwards }))
+    header.pack_start(nav_box)
 
-    #TODO:
-    # button = Gtk::Button.new
-    # icon = Gio::ThemedIcon.new("open-menu-symbolic")
-    # image = Gtk::Image.new(:icon => icon, :size => :button)
-    # button.add(image)
-    # header.append(button)
+    header.pack_end(make_header_button("hdr-close", "window-close-symbolic", proc { bufs.close_current_buffer }))
 
-    button = Gtk::Button.new
-    icon = Gio::ThemedIcon.new("document-open-symbolic")
-    image = Gtk::Image.new(:icon => icon, :size => :button)
-    button.add(image)
-    header.append(button)
-
-    button.signal_connect "clicked" do |_widget|
-      open_file_dialog
-    end
-
-    button = Gtk::Button.new
-    icon = Gio::ThemedIcon.new("document-save-symbolic")
-    image = Gtk::Image.new(:icon => icon, :size => :button)
-    button.add(image)
-    header.append(button)
-    button.signal_connect "clicked" do |_widget|
-      buf.save
-    end
-
-    button = Gtk::Button.new
-    icon = Gio::ThemedIcon.new("document-new-symbolic")
-    image = Gtk::Image.new(:icon => icon, :size => :button)
-    button.add(image)
-    header.append(button)
-    button.signal_connect "clicked" do |_widget|
-      create_new_file
-    end
-
-    box = Gtk::Box.new(:horizontal, 0)
-    box.style_context.add_class("linked")
-
-    button = Gtk::Button.new
-    image = Gtk::Image.new(:icon_name => "pan-start-symbolic", :size => :button)
-    button.add(image)
-    box.add(button)
-    button.signal_connect "clicked" do |_widget|
-      history_switch_backwards
-    end
-
-    button = Gtk::Button.new
-    image = Gtk::Image.new(:icon_name => "pan-end-symbolic", :size => :button)
-    button.add(image)
-    box.add(button)
-    button.signal_connect "clicked" do |_widget|
-      history_switch_forwards
-    end
-
-    button = Gtk::Button.new
-    icon = Gio::ThemedIcon.new("window-close-symbolic")
-    image = Gtk::Image.new(:icon => icon, :size => :button)
-    button.add(image)
-    box.add(button)
-    button.signal_connect "clicked" do |_widget|
-      bufs.close_current_buffer
-    end
-
-    header.pack_start(box)
     @window.titlebar = header
   end
 
@@ -556,6 +503,8 @@ class VMAgui
     @last_debug_idle = Time.now
     app = Gtk::Application.new("net.samiddhi.vimamsa.r#{rand(1000)}", :flags_none)
     @app = app
+    
+    
 
     Gtk::Settings.default.gtk_application_prefer_dark_theme = true
     Gtk::Settings.default.gtk_theme_name = "Adwaita"
@@ -570,7 +519,7 @@ class VMAgui
       @vpaned = Gtk::Paned.new(:vertical)
 
       @vbox = Gtk::Grid.new()
-      @window.add(@vbox)
+      @window.set_child(@vbox)
 
       Thread.new {
         GLib::Idle.add(proc { debug_idle_func })
@@ -647,7 +596,8 @@ class VMAgui
 
       @active_window = @windows[1]
 
-      @window.signal_connect("close-request") { quit; true }
+      init_header_bar
+
       @window.show
 
       surface = @window.native.surface

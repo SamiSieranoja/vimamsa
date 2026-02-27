@@ -72,6 +72,13 @@ class BufferList
     end
   end
 
+  def print_by_access_time
+    slist.reverse.each_with_index do |b, i|
+      name = b.fname || "(untitled)"
+      puts "#{i + 1}. #{b.access_time.strftime('%H:%M:%S')} #{name}"
+    end
+  end
+
   def get_last_visited_id
     last_buf = nil
     for i in 0..(slist.size - 1)
@@ -143,6 +150,7 @@ class BufferList
 
     bu.set_active # TODO
     bu.update_access_time if update_history
+    reset_navigation if update_history
     vma.gui.set_current_buffer(idx)
 
     #TODO: delete?

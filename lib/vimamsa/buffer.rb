@@ -311,6 +311,8 @@ class Buffer < String
     message("Revert buffer #{@fname}")
     str = read_file("", @fname)
     self.set_content(str)
+    @last_save = Time.now
+    refresh_title
   end
 
   def init_encrypted(crypt:, filename:, encrypted:)
