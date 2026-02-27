@@ -150,6 +150,8 @@ class Editor
       end
     end
 
+    argv_has_files = ARGV.any? { |a| File.file?(File.expand_path(a)) }
+
     if fname
       open_new_file(fname)
     else
@@ -165,6 +167,8 @@ class Editor
     register_plugin(:FileFinder, FileFinder.new)
     # To access via vma.FileFinder
     # self.define_singleton_method(:FileFinder) { @_plugins[:FileFinder] }
+
+    check_session_restore unless argv_has_files
 
     @hook.call(:after_init)
   end
@@ -224,12 +228,51 @@ class Editor
   end
 
   def shutdown()
+    save_session
     @hook.call(:shutdown)
     save_state
     @gui.quit
   end
 
   def save_state
+  end
+
+  def save_session
+    fnames = vma.buffers.list
+      .map { |b| b.fname }
+      .compact
+      .select { |f| File.exist?(f) }
+    IO.write(get_dot_path("session.txt"), fnames.join("\n") + "\n")
+  rescue => ex
+    debug "save_session failed: #{ex}"
+  end
+
+  def check_session_restore
+    session_path = get_dot_path("session.txt")
+    return unless File.exist?(session_path)
+
+    fnames = File.read(session_path).lines.map(&:strip).reject(&:empty?)
+    fnames.select! { |f| File.exist?(f) }
+    return if fnames.empty?
+
+    n = fnames.size
+    label = n == 1 ? "1 file" : "#{n} files"
+    params = {
+      "title" => "Restore previous session? (#{label})",
+      "inputs" => {
+        "yes_btn" => { :label => "Restore", :type => :button, :default_focus => true },
+        "no_btn"  => { :label => "No", :type => :button },
+      },
+      :callback => proc { |x|
+        if x["yes_btn"] == "submit"
+          initial = vma.buffers.list.find { |b| b.fname.nil? }
+          fnames.each { |f| load_buffer(f) }
+          initial&.close
+          message("Session restored: #{label}")
+        end
+      },
+    }
+    PopupFormGenerator.new(params).run
   end
 
   def add_content_search_path(pathstr)
