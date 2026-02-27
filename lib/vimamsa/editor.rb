@@ -419,9 +419,17 @@ def if_cmd_exists(cmd)
  return true
 end
 
+def diff_buffer_init()
+  return if @diff_buffer_init_done
+  @diff_buffer_init_done = true
+  vma.kbd.add_minor_mode("diffview", :diffview, :command)
+  bindkey "diffview enter", :diff_buffer_jump_to_source
+end
+
 def diff_buffer()
   bufstr = ""
   return if !if_cmd_exists("diff")
+  diff_buffer_init
   orig_path = vma.buf.fname
   infile = Tempfile.new("in")
   infile.write(vma.buf.to_s)
@@ -433,8 +441,33 @@ def diff_buffer()
   infile.close; infile.unlink
   create_new_file(nil, bufstr)
   gui_set_file_lang(vma.buf.id, "diff")
+  vma.kbd.set_mode(:diffview)
 end
 
+
+def diff_buffer_jump_to_source()
+  mapper = DiffLineMapper.new(vma.buf.to_s)
+  cur_lpos = vma.buf.lpos + 1 # 0-based
+  to_line =  mapper.new_line_for_diff_lineno(cur_lpos)
+  
+  # Parse original file path from "--- " header line
+  orig_path = nil
+  lines = vma.buf.to_s.split("\n")
+  lines.each do |l|
+    if l =~ /^--- (.+)/
+      orig_path = $1.split("\t").first.strip
+      break
+    end
+  end
+  if orig_path.nil? || !File.exist?(orig_path)
+    message("Could not find original file in diff")
+    return
+  end
+  
+  jump_to_file(orig_path,to_line)
+  center_on_current_line
+end
+  
 def invoke_command()
   start_minibuffer_cmd("", "", :execute_command)
 end
@@ -743,4 +776,152 @@ def install_demo_files_callback(x)
   end
   open_new_file(File.join(dest_dir, "demo.txt"))
   message("Demo files installed to #{dest_dir}")
+end
+
+
+# frozen_string_literal: true
+
+# Map a "line number in a unified diff output" to the corresponding
+# line number in the *new/changed file* (the + side).
+#
+# Key idea:
+#   @@ -old_start,old_count +new_start,new_count @@
+# sets starting counters. Then walk each hunk line:
+#   ' ' => old++, new++
+#   '-' => old++
+#   '+' => new++
+#
+# If the target diff line is:
+#   ' ' or '+' => it corresponds to current new line (before increment)
+#   '-'        => it has no new-file line (deleted). We return nil.
+#
+# Usage example:
+#   diff = File.read("patch.diff")
+#   line = DiffLineMapper.new(diff).new_line_for_diff_lineno(42)
+#   p line  # => integer or nil
+#
+class DiffLineMapper
+  HUNK_RE = /^@@\s+-(\d+)(?:,(\d+))?\s+\+(\d+)(?:,(\d+))?\s+@@/
+
+  def initialize(diff_text)
+    @lines = diff_text.lines
+  end
+
+  # Given a 1-based line number in the diff output, return:
+  #   - Integer: 1-based line number in the new file
+  #   - nil:     if the diff line is a deletion ('-') or cannot be mapped
+  def new_line_for_diff_lineno(diff_lineno)
+    raise ArgumentError, "diff line number must be >= 1" if diff_lineno.to_i < 1
+    idx = diff_lineno.to_i - 1
+    return nil if idx >= @lines.length
+
+    old = nil
+    new_ = nil
+    in_hunk = false
+
+    @lines.each_with_index do |line, i|
+      if (m = line.match(HUNK_RE))
+        old = m[1].to_i
+        new_ = m[3].to_i
+        in_hunk = true
+        # Continue; hunk header itself isn't a file line.
+        next
+      end
+
+      # Outside hunks, nothing maps to file lines.
+      next unless in_hunk
+
+      # A new hunk or file header resets state; handled by HUNK_RE above.
+      # But if we see another file header, stop mapping until next hunk.
+      if line.start_with?('--- ', '+++ ')
+        in_hunk = false
+        old = new_ = nil
+        next
+      end
+
+      # If this is the target diff output line, decide mapping before increment.
+      if i == idx
+        return nil unless new_
+        case line.getbyte(0)
+        when '+'.ord
+          # Added line exists in new file at current new_
+          return new_
+        when ' '.ord
+          # Context line exists in both at current new_
+          return new_
+        when '-'.ord
+          # Deleted line doesn't exist in new file
+          return nil
+        else
+          # Unexpected line kind (e.g. "\ No newline at end of file")
+          return nil
+        end
+      end
+
+      # Advance counters for all lines that affect positions.
+      next unless old && new_
+
+      case line.getbyte(0)
+      when ' '.ord
+        old += 1
+        new_ += 1
+      when '-'.ord
+        old += 1
+      when '+'.ord
+        new_ += 1
+      else
+        # ignore metadata lines inside hunks
+      end
+    end
+
+    nil
+  end
+
+  # Optional: map ALL diff lines to new-file line numbers (or nil).
+  # Returns an array of same length as diff lines.
+  def map_all_to_new_lines
+    result = Array.new(@lines.length)
+    old = nil
+    new_ = nil
+    in_hunk = false
+
+    @lines.each_with_index do |line, i|
+      if (m = line.match(HUNK_RE))
+        old = m[1].to_i
+        new_ = m[3].to_i
+        in_hunk = true
+        result[i] = nil
+        next
+      end
+
+      if !in_hunk
+        result[i] = nil
+        next
+      end
+
+      if line.start_with?('--- ', '+++ ')
+        in_hunk = false
+        old = new_ = nil
+        result[i] = nil
+        next
+      end
+
+      case line.getbyte(0)
+      when '+'.ord
+        result[i] = new_
+        new_ += 1
+      when ' '.ord
+        result[i] = new_
+        old += 1
+        new_ += 1
+      when '-'.ord
+        result[i] = nil
+        old += 1
+      else
+        result[i] = nil
+      end
+    end
+
+    result
+  end
 end
