@@ -25,6 +25,8 @@ class PopupFormGenerator
 
     @callback = params[:callback]
     @window.title = ""
+    @window.set_transient_for($vmag.window) if $vmag&.window
+    @window.modal = true
 
     frame = Gtk::Frame.new()
     frame.margin_bottom = 8

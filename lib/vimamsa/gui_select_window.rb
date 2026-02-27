@@ -42,6 +42,7 @@ class SelectUpdateWindow
 
   def initialize(main_window, item_list, jump_keys, select_callback, update_callback, opt = {})
     @window = Gtk::Window.new()
+    @window.set_transient_for($vmag.window) if $vmag&.window
     # @window.screen = main_window.screen
     @window.title = ""
     if !opt[:title].nil?

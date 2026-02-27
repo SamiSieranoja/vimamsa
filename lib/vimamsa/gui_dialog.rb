@@ -39,6 +39,8 @@ end
 class OneInputAction
   def initialize(main_window, title, field_label, button_title, callback, opt = {})
     @window = Gtk::Window.new()
+    @window.set_transient_for($vmag.window) if $vmag&.window
+    @window.modal = true
     # @window.screen = main_window.screen
     @window.title = ""
     # @window.width_request = 800

@@ -615,7 +615,7 @@ class VSourceView < GtkSource::View
 
     mode = vma.kbd.get_mode
     ctype = vma.kbd.get_cursor_type
-    ctype = :visual if vma.buf.selection_active?
+    ctype = :visual if @bufo.selection_active?
 
     if [:command, :replace, :browse].include?(ctype)
       set_cursor_color(ctype)
