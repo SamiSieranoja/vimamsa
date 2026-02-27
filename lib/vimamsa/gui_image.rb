@@ -36,14 +36,14 @@ class ResizableImage < Gtk::DrawingArea
     @draw_image = pb
     @oldimg = pb
     #TODO: Should be better way to compensate for the gutter
-    self.set_size_request(pb.width+@view.gutter_width, pb.height)
+    self.set_size_request(pb.width, pb.height) # +@view.gutter_width?
   end
 
   def do_draw(da, cr)
     # puts @fpath
     # Ripl.start :binding => binding
 
-    cr.set_source_pixbuf(@draw_image, @view.gutter_width, 0)
+    cr.set_source_pixbuf(@draw_image, 0, 0) # @view.gutter_width
     cr.paint
   end
 end

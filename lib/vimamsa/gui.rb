@@ -183,7 +183,8 @@ def gui_set_current_buffer(id)
 end
 
 def gui_set_window_title(wtitle, subtitle = "")
-  $vmag.window.title = wtitle
+  wtitle = wtitle[0..150]
+  $vmag.window.title = "Vimamsa - #{wtitle}"
   # $vmag.subtitle.markup = "<span weight='ultrabold'>#{subtitle}</span>"
   $vmag.subtitle.markup = "<span weight='light' size='small'>#{subtitle}</span>"
   #  $vmag.window.titlebar.subtitle = subtitle #TODO:gtk4
