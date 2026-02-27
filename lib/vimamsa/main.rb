@@ -45,6 +45,7 @@ def buflist()
 end
 
 require "vimamsa/editor.rb"
+require "vimamsa/diff_buffer"
 
 $vma = Editor.new
 def vma()

@@ -94,6 +94,7 @@ reg_act :open_file_dialog, "open_file_dialog", "Open file"
 reg_act :minibuffer_end, proc { minibuffer_end }
 reg_act(:invoke_replace, "invoke_replace", "Invoke replace")
 reg_act(:diff_buffer, "diff_buffer", "")
+reg_act(:git_diff_buffer, proc { git_diff_buffer }, "Show git diff of current file")
 reg_act(:diff_buffer_jump_to_source, proc { diff_buffer_jump_to_source }, "Jump to corresponding line in source from diff buffer")
 # reg_act(:invoke_grep_search, proc{invoke_grep_search}, "")
 reg_act(:invoke_grep_search, proc { gui_grep }, "Grep current buffer")

@@ -51,6 +51,7 @@ module Vimamsa
       add_to_menu "Actions.FileHistoryFinder", { :label => "Search files in history", :action => :gui_file_history_finder }
 
       add_to_menu "Actions.experimental.Diff", { :label => "Show Diff of\nunsaved changes", :action => :diff_buffer }
+      add_to_menu "Actions.experimental.GitDiff", { :label => "Show git diff", :action => :git_diff_buffer }
 
       add_to_menu "Actions.experimental.PrintBufferAccessList", { :label => "Print buffers by access time", :action => :print_buffer_access_list }
       add_to_menu "Actions.experimental.EnableDebug", { :label => "Enable debug", :action => :enable_debug }
