@@ -2,7 +2,6 @@
 class VSourceView < GtkSource::View
   attr_accessor :bufo, :autocp_active, :cpl_list
 
-
   # def initialize(title = nil,bufo=nil)
   def initialize(title, bufo)
     # super(:toplevel)
@@ -19,6 +18,7 @@ class VSourceView < GtkSource::View
     @tt = nil
 
     # Mainly after page-up or page-down
+
     signal_connect("move-cursor") do |widget, event|
       # if event.name == "GTK_MOVEMENT_PAGES" and (vma.actions.last_action == "page_up" or vma.actions.last_action == "page_down")
       # handle_scrolling()
@@ -174,7 +174,22 @@ class VSourceView < GtkSource::View
       i = coord_to_iter(x, y, true)
       pp i
       @range_start = i
+      @drag_start_x = x
+      @drag_start_y = y
       buf.start_selection
+    end
+
+    @cnt_drag.signal_connect "drag-update" do |gesture, offset_x, offset_y|
+      next unless @range_start
+      cur_x = @drag_start_x + offset_x
+      cur_y = @drag_start_y + offset_y
+      debug "drag-update 2 #{cur_x} #{cur_y}"
+      i = coord_to_iter(cur_x, cur_y, true)
+      @bufo.set_pos(i) if !i.nil? and @last_iter != i
+      if !i.nil? and (@range_start - i).abs >= 2
+      vma.kbd.set_mode(:visual)
+      end
+      @last_iter = i
     end
 
     @cnt_drag.signal_connect "drag-end" do |gesture, offsetx, offsety|
@@ -186,8 +201,7 @@ class VSourceView < GtkSource::View
       elsif vma.kbd.get_scope != :editor
         # Can't transition from editor wide mode to buffer specific mode
         vma.kbd.set_mode(:visual)
-      else
-        buf.end_selection
+      else # The normal case
       end
       @range_start = nil
     end
@@ -211,11 +225,9 @@ class VSourceView < GtkSource::View
         next true
       end
     end
-    
 
     click.signal_connect "pressed" do |gesture, n_press, x, y, z|
       debug "SourceView, GestureClick released x=#{x} y=#{y}"
-
 
       if buf.visual_mode?
         buf.end_visual_mode
@@ -653,27 +665,37 @@ class VSourceView < GtkSource::View
     ["Previous buffer", :history_switch_backwards],
   ]
 
-  def build_context_menu
-    menu = Gio::Menu.new
-    CONTEXT_MENU_ITEMS.each do |label, action_id|
+  CONTEXT_MENU_ITEMS_SELECTION = [
+    ["Cut", :cut_selection],
+  ]
+
+  def init_context_menu
+    all_items = CONTEXT_MENU_ITEMS + CONTEXT_MENU_ITEMS_SELECTION
+    all_items.each do |label, action_id|
       actkey = "ctx_#{action_id}"
       unless vma.gui.app.lookup_action(actkey)
         act = Gio::SimpleAction.new(actkey)
         vma.gui.app.add_action(act)
-        act.signal_connect("activate") { call_action(action_id) }
+        act.signal_connect("activate") do
+          call_action(action_id)
+          after_action
+        end
       end
-      menu.append(label, "app.#{actkey}")
     end
     @context_menu = Gtk::PopoverMenu.new
-    @context_menu.set_menu_model(menu)
     @context_menu.set_parent(self)
     @context_menu.has_arrow = false
   end
 
   def show_context_menu(x, y)
-    build_context_menu if @context_menu.nil?
+    init_context_menu if @context_menu.nil?
+    menu = Gio::Menu.new
+    CONTEXT_MENU_ITEMS.each { |label, action_id| menu.append(label, "app.ctx_#{action_id}") }
+    if @bufo.selection_active?
+      CONTEXT_MENU_ITEMS_SELECTION.each { |label, action_id| menu.append(label, "app.ctx_#{action_id}") }
+    end
+    @context_menu.set_menu_model(menu)
     @context_menu.set_pointing_to(Gdk::Rectangle.new(x.to_i, y.to_i, 1, 1))
     @context_menu.popup
   end
 end
-

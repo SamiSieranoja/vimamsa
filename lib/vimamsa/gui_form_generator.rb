@@ -56,7 +56,7 @@ class PopupFormGenerator
     @vals = {}
     @default_button = nil
 
-    for id, elem in params["inputs"]
+    params["inputs"].each do |id, elem|
       if elem[:type] == :button
         button = Gtk::Button.new(:label => elem[:label])
         hbox.append(button)
@@ -92,7 +92,7 @@ class PopupFormGenerator
           end
         end
       end
-    end
+    end  # each
 
     vbox.append(hbox)
 

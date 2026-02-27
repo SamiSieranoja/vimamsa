@@ -71,8 +71,9 @@ class KeyBindingTree
     return if get_mode == :label
     @match_state = [@modes[label]] # used for matching input
     @mode_root_state = @modes[label]
-    # @default_mode = label
-    @default_mode_stack << label
+    
+    #TODO: should not happen? @default_mode_stack[-1] should be always the same as get_mode ?
+    @default_mode_stack << label if label != @default_mode_stack[-1]
 
     __set_mode(label)
     if !vma.buf.nil?

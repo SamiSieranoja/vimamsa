@@ -1257,10 +1257,12 @@ class Buffer < String
   end
 
   def end_selection()
-    @selection_start = nil
+    puts("END SELECTION")
+    # @selection_start = nil
     @selection_active = false
     @visual_mode = false
     #TODO: remove @visual_mode
+    # print(caller())
   end
 
   def start_selection()
@@ -1275,7 +1277,7 @@ class Buffer < String
   end
 
   def copy_active_selection(x = nil)
-    debug "!COPY SELECTION"
+    debug "!COPY SELECTION vm=#{@visual_mode}"
     @paste_lines = false
     return if !@visual_mode
 
@@ -1404,7 +1406,7 @@ class Buffer < String
     r = get_visual_mode_range
     if r.begin > r.end
       debug "r.begin > r.end"
-      Ripl.start :binding => binding
+      require "pry";binding.pry
     end
     return [r.begin, r.end]
   end
@@ -1422,10 +1424,7 @@ class Buffer < String
   def get_visual_mode_range()
     _start = @selection_start
     _end = @pos
-
     _start, _end = _end, _start if _start > _end
-    # _end = _end + 1 if _start < _end #TODO:verify if correct
-    # return _start..(_end - 1)
     return _start..(_end)
   end
 
@@ -1627,17 +1626,28 @@ class Buffer < String
       return
     end
     title = "An autosave file was found for <b>#{File.basename(@fname)}</b>. Load autosave?"
-    callback = proc { |x| load_autosave_callback(x) }
-    Gui.confirm(title, callback)
+    params = {
+      "title" => title,
+      "inputs" => {
+        "yes_btn"    => { :label => "Load",   :type => :button, :default_focus => true },
+        "delete_btn" => { :label => "Delete autosave", :type => :button },
+      },
+      :callback => proc { |x| load_autosave_callback(x) },
+    }
+    PopupFormGenerator.new(params).run
   end
 
   def load_autosave_callback(x)
-    return unless x["yes_btn"] == "submit"
-    str = read_file("", autosave_path)
-    set_content(str)
-    @t_modified = Time.now
-    refresh_title
-    message("Loaded autosave for #{@fname}")
+    if x["yes_btn"] == "submit"
+      str = read_file("", autosave_path)
+      set_content(str)
+      @t_modified = Time.now
+      refresh_title
+      message("Loaded autosave for #{@fname}")
+    elsif x["delete_btn"] == "submit"
+      delete_autosave_file
+      message("Deleted autosave for #{@fname}")
+    end
   end
 
   def save()
