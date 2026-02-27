@@ -219,6 +219,7 @@ class VSourceView < GtkSource::View
       end
 
       @bufo.set_pos(i) if !i.nil?
+      @bufo.cur_nonwhitespace_word_action() if n_press == 2
       true
     end
 
