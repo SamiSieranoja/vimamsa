@@ -8,7 +8,9 @@ class FileTreePanel
     @tree.headers_visible = false
 
     renderer = Gtk::CellRendererText.new
+    renderer.ellipsize = Pango::EllipsizeMode::START
     col = Gtk::TreeViewColumn.new("", renderer, text: COL_LABEL)
+    col.expand = true
     @tree.append_column(col)
 
     @tree.signal_connect("row-activated") do |tv, path, _col|
