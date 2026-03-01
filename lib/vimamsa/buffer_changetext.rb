@@ -135,6 +135,7 @@ class Buffer < String
       set_pos(pos + text.size)
     end
     set_pos(@pos)
+    vma.buf.view.after_action # redraw
     @clipboard_paste_running = false
   end
 
