@@ -29,6 +29,7 @@ module Vimamsa
       add_to_menu "File.New", { :label => "New file", :action => :buf_new }
       add_to_menu "File.Revert", { :label => "Reload file from disk", :action => :buf_revert }
       add_to_menu "File.List", { :label => "List open files", :action => :start_buf_manager }
+      add_to_menu "File.Close", { :label => "Close file", :action => :close_current_buffer }
 
       add_to_menu "File.Quit", { :label => "Quit", :action => :quit }
 

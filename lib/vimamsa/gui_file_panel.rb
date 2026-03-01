@@ -6,6 +6,7 @@ class FileTreePanel
     @store = Gtk::TreeStore.new(String, Integer)
     @tree = Gtk::TreeView.new(@store)
     @tree.headers_visible = false
+    @tree.activate_on_single_click = true
 
     renderer = Gtk::CellRendererText.new
     renderer.ellipsize = Pango::EllipsizeMode::START
