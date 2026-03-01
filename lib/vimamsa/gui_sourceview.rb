@@ -674,6 +674,7 @@ class VSourceView < GtkSource::View
   ]
 
   CONTEXT_MENU_ITEMS_SELECTION = [
+    ["Copy", :copy_selection],
     ["Cut", :cut_selection],
   ]
 

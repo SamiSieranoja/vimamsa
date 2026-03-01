@@ -41,8 +41,6 @@ class ResizableImage < Gtk::DrawingArea
 
   def do_draw(da, cr)
     # puts @fpath
-    # Ripl.start :binding => binding
-
     cr.set_source_pixbuf(@draw_image, 0, 0) # @view.gutter_width
     cr.paint
   end

@@ -60,7 +60,7 @@ class BufferManager
     @@cur = self
     @header = []
     @header << "Current buffers:"
-    @header << "keys: <enter> to select, <c> to close buffer, <x> exit"
+    @header << "keys: <enter> (or <double click>) to select, <c> to close buffer, <x> exit"
     @header << "=" * 40
 
     s = ""
