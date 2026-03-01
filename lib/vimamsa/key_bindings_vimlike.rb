@@ -225,7 +225,7 @@ add_keys "core", {
   "V ctrl-x" => "buf.comment_selection(:uncomment)",
 
   "CI ctrl-v" => "buf.paste(BEFORE)",
-  "CI backspace" => "buf.delete(BACKWARD_CHAR)",
+  "CI backspace" => :insert_backspace,
 
   # Marks
   "CV m <char>" => "buf.mark_current_position(<char>)",

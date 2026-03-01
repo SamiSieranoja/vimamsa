@@ -37,6 +37,7 @@ reg_act(:eval_buf, proc { vma.buf.eval_whole_buf }, "Eval whole current buffer a
 
 reg_act(:show_settings, proc { show_settings_dialog }, "Show settings")
 reg_act(:cut_selection, proc { buf.delete(SELECTION) }, "Cut selection to clipboard")
+reg_act(:insert_backspace, proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(BACKWARD_CHAR) }, "Backspace in insert mode")
 reg_act(:copy_selection, proc { buf.copy_active_selection }, "Copy selection to clipboard")
 reg_act(:enable_debug, proc { cnf.debug = true }, "Enable debug")
 reg_act(:disable_debug, proc { cnf.debug = false }, "Disable debug")
