@@ -78,6 +78,7 @@ reg_act(:set_unencrypted, proc { buf.set_unencrypted }, "Set current file to sav
 reg_act(:set_executable, proc { buf.set_executable }, "Set current file permissions to executable")
 # reg_act(:close_all_buffers, proc { bufs.close_all_buffers() }, "Close all buffers")
 reg_act(:close_current_buffer, proc { bufs.close_current_buffer(true) }, "Close current buffer")
+reg_act(:toggle_file_panel, proc { vma.gui.toggle_file_panel }, "Toggle file panel")
 reg_act(:comment_selection, proc { buf.comment_selection }, "Comment selection")
 reg_act(:delete_char_forward, proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward", { :group => [:edit, :basic] })
 reg_act(:gui_file_finder, proc { vma.FileFinder.start_gui }, "Fuzzy file finder")

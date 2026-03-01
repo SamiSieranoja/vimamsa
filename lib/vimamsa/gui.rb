@@ -198,7 +198,7 @@ end
 
 class VMAgui
   attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c
-  attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label
+  attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel
 
   def initialize()
     @two_column = false
@@ -603,6 +603,7 @@ class VMAgui
       @active_window = @windows[1]
 
       init_header_bar
+      file_panel_init
 
       @window.show
 
@@ -910,5 +911,41 @@ class VMAgui
   def ensure_cursor_drawn
     # view.place_cursor_onscreen #TODO: needed?
     view.draw_cursor
+  end
+
+  def file_panel_init
+    @file_panel = FileTreePanel.new
+    @file_panel_shown = false
+  end
+
+  def file_panel_refresh
+    return unless @file_panel_shown
+    @file_panel.refresh
+  end
+
+  def show_file_panel
+    return if @file_panel_shown
+    inner = @two_column ? @pane : @windows[1][:overlay]
+    @vbox.remove(inner)
+    @file_panel_pane = Gtk::Paned.new(:horizontal)
+    @file_panel_pane.set_start_child(@file_panel.widget)
+    @file_panel_pane.set_end_child(inner)
+    @vbox.attach(@file_panel_pane, 0, 2, 2, 1)
+    @file_panel_shown = true
+    @file_panel.refresh
+  end
+
+  def hide_file_panel
+    return unless @file_panel_shown
+    inner = @file_panel_pane.end_child
+    @file_panel_pane.set_start_child(nil)
+    @file_panel_pane.set_end_child(nil)
+    @vbox.remove(@file_panel_pane)
+    @vbox.attach(inner, 0, 2, 2, 1)
+    @file_panel_shown = false
+  end
+
+  def toggle_file_panel
+    @file_panel_shown ? hide_file_panel : show_file_panel
   end
 end

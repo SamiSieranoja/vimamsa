@@ -42,6 +42,7 @@ class BufferList
     vma.gui.set_current_buffer(vma.buf.id) #TODO: handle elswhere?
     # vma.buf.view.set_cursor_pos(vma.buf.pos)  #TODO: handle elswhere?
     update_last_dir(_buf)
+    vma.gui.file_panel_refresh
   end
 
   def add(_buf)
@@ -152,6 +153,7 @@ class BufferList
     bu.update_access_time if update_history
     reset_navigation if update_history
     vma.gui.set_current_buffer(idx)
+    vma.gui.file_panel_refresh
 
     #TODO: delete?
     # if !vma.buf.mode_stack.nil? and vma.kbd.get_scope != :editor #TODO
@@ -264,6 +266,7 @@ class BufferList
     @list.delete(@h[idx])
     @h.delete(idx)
     gui_close_buffer(idx)
+    vma.gui.file_panel_refresh
 
     if auto_open
       @current_buf = get_last_non_active_buffer

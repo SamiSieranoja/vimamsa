@@ -65,6 +65,7 @@ module Vimamsa
 
       add_to_menu "View.BufferManager", { :label => "Show open files", :action => :start_buf_manager }
       add_to_menu "View.TwoColumn", { :label => "Toggle two column mode", :action => :toggle_two_column }
+      add_to_menu "View.FilePanel", { :label => "Toggle file panel", :action => :toggle_file_panel }
 
       add_to_menu "Actions.EncryptFile", { :label => "Encrypt file", :action => :encrypt_file }
       add_to_menu "Help.KeyBindings", { :label => "Show key bindings", :action => :show_key_bindings }
