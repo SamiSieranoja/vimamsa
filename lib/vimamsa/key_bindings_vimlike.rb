@@ -42,6 +42,14 @@ def insert_move(op)
 end
 
 add_keys "intro", {
+  "VCX up" => "buf.move(BACKWARD_LINE)",
+  "VCX down" => "buf.move(FORWARD_LINE)",
+  "VCX right" => "buf.move(FORWARD_CHAR)",
+  "VCX left" => "buf.move(BACKWARD_CHAR)",
+ "C , b" => :start_buf_manager,
+  "VC l" => "buf.move(FORWARD_CHAR)",
+  "VC , , s" => :search_actions,
+  "C , n b" => :buf_new,
   "C y y" => :copy_cur_line,
   "C P" => :paste_before_cursor,
   "C p" => :paste_after_cursor,
@@ -103,15 +111,9 @@ add_keys "core", {
   #    'C , s'=> 'gui_select_buffer',
   "C , r v b" => :buf_revert,
   "C , c b" => "bufs.close_current_buffer",
-  "C , n b" => :buf_new,
   # "C , , ." => "backup_all_buffers()",
-  "VC , , s" => :search_actions,
 
   # MOVING
-  #    'VC h' => 'buf.move(BACKWARD_CHAR)',
-  "VC l" => "buf.move(FORWARD_CHAR)",
-  # "VC j" => "buf.move(FORWARD_LINE)",
-  # "VC k" => "buf.move(BACKWARD_LINE)",
 
   "VCI pagedown" => :page_down,
   "VCI pageup" => :page_up,
@@ -139,14 +141,6 @@ add_keys "core", {
   "I up" => "insert_move(BACKWARD_LINE)",
   "I pagedown" => "insert_move(:pagedown)",
   "I pageup" => "insert_move(:pageup)",
-
-  #TODO:
-  "I @shift-click" => "insert_mode_shift_click(charpos)",
-
-  "VCX left" => "buf.move(BACKWARD_CHAR)",
-  "VCX right" => "buf.move(FORWARD_CHAR)",
-  "VCX down" => "buf.move(FORWARD_LINE)",
-  "VCX up" => "buf.move(BACKWARD_LINE)",
 
   #    'C '=> 'buf.jump_word(BACKWARD,END)',#TODO
   "VC f <char>" => "buf.jump_to_next_instance_of_char(<char>)",
@@ -329,7 +323,6 @@ add_keys "core", {
  "C , t b" => :set_line_style_bold,
  "C , t t" => :set_line_style_title,
  "C , t c" => :clear_line_styles,
- "C , b" => :start_buf_manager,
  "C , w" => :toggle_active_window,
  "C , , w" => :toggle_two_column,
 
