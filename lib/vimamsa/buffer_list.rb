@@ -263,6 +263,7 @@ class BufferList
 
     @list.delete(@h[idx])
     @h.delete(idx)
+    gui_close_buffer(idx)
 
     if auto_open
       @current_buf = get_last_non_active_buffer

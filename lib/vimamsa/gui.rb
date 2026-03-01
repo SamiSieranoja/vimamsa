@@ -148,6 +148,12 @@ def gui_create_buffer(id, bufo)
   $vmag.buffers[id] = view
 end
 
+def gui_close_buffer(id)
+  view = vma.gui.buffers.delete(id)
+  return if view.nil?
+  view.unparent if view.parent
+end
+
 def gui_set_file_lang(id, lname)
   view = $vmag.buffers[id]
   lm = GtkSource::LanguageManager.new
