@@ -240,11 +240,40 @@ class Buffer < String
     return words
   end
 
+  # TODO: review
+  def cleanup_deleted_images(deleted_text)
+    return if @images.empty?
+    return unless deleted_text&.include?("⟦img:")
+    deleted_text.scan(/⟦img:(.+?)⟧/) do |match|
+      tag_path = match[0]
+      abs_path = translate_path(tag_path, self)
+      @images.delete_if do |img|
+        next false unless img[:path] == abs_path || img[:path] == tag_path
+        # img[:obj].destroy unless img[:obj].destroyed?
+        # Schedule anchor character deletion after the current delta is done.
+        # Using the anchor object lets us find the correct position even if
+        # prior edits shifted it.
+        anchor = img[:anchor]
+        buf_ref = self
+        run_as_idle proc {
+          next if anchor.nil? || anchor.deleted?
+          itr = buf_ref.view.buffer.get_iter_at_child_anchor(anchor)
+          next if itr.nil?
+          pos = itr.offset
+          buf_ref.add_delta([pos, DELETE, 1], true)
+          buf_ref.calculate_line_and_column_pos
+        }
+        true
+      end
+    end
+  end
+
   def add_image(imgpath, pos)
     return if !is_legal_pos(pos)
 
     vbuf = view.buffer
     itr = vbuf.get_iter_at(:offset => pos)
+    return if itr&.child_anchor  # anchor already exists here, image already rendered
     itr2 = vbuf.get_iter_at(:offset => pos + 1)
     vbuf.delete(itr, itr2)
     anchor = vbuf.create_child_anchor(itr)
@@ -259,7 +288,7 @@ class Buffer < String
     da.scale_image
 
     # vma.gui.handle_image_resize #TODO:gtk4
-    @images << { :path => imgpath, :obj => da }
+    @images << { :path => imgpath, :obj => da, :anchor => anchor }
 
     gui_set_current_buffer(@id) #TODO: needed?
   end
@@ -469,6 +498,7 @@ class Buffer < String
 
     if delta[1] == DELETE
       delta[3] = self.slice!(delta[0], delta[2])
+      cleanup_deleted_images(delta[3])
       @deltas << delta
       update_index(pos, -delta[2])
       update_line_ends(pos, -delta[2], delta[3])
@@ -490,6 +520,11 @@ class Buffer < String
       @update_hl_startpos = pos
       @update_hl_endpos = pos + delta[2]
       add_hl_update(@update_hl_startpos, @update_hl_endpos)
+
+      if delta[3]&.include?("⟦img:")
+        buf_ref = self
+        run_as_idle proc { hpt_scan_images(buf_ref) }
+      end
     end
     debug("DELTA=#{delta.inspect}", 2)
     # sanity_check_line_ends #TODO: enable with debug mode
