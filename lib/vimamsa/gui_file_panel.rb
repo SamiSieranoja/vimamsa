@@ -21,6 +21,21 @@ class FileTreePanel
       vma.buffers.set_current_buffer(buf_id)
     end
 
+    @context_menu = nil
+    rightclick = Gtk::GestureClick.new
+    rightclick.button = 3
+    @tree.add_controller(rightclick)
+    rightclick.signal_connect("pressed") do |gesture, n_press, x, y|
+      result = @tree.get_path_at_pos(x.to_i, y.to_i)
+      next unless result
+      iter = @store.get_iter(result[0])
+      next unless iter
+      buf_id = iter[COL_BUF_ID]
+      next unless buf_id && buf_id != 0
+      @context_buf_id = buf_id
+      show_context_menu(x, y)
+    end
+
     @sw = Gtk::ScrolledWindow.new
     @sw.set_policy(:never, :automatic)
     @sw.set_child(@tree)
@@ -30,6 +45,24 @@ class FileTreePanel
 
   def widget
     @sw
+  end
+
+  def init_context_menu
+    act = Gio::SimpleAction.new("fp_close_buffer")
+    vma.gui.app.add_action(act)
+    act.signal_connect("activate") { vma.buffers.close_buffer(@context_buf_id) if @context_buf_id }
+    @context_menu = Gtk::PopoverMenu.new
+    @context_menu.set_parent(@tree)
+    @context_menu.has_arrow = false
+  end
+
+  def show_context_menu(x, y)
+    init_context_menu if @context_menu.nil?
+    menu = Gio::Menu.new
+    menu.append("Close file", "app.fp_close_buffer")
+    @context_menu.set_menu_model(menu)
+    @context_menu.set_pointing_to(Gdk::Rectangle.new(x.to_i, y.to_i, 1, 1))
+    @context_menu.popup
   end
 
   def refresh
