@@ -928,8 +928,11 @@ class VMAgui
     inner = @two_column ? @pane : @windows[1][:overlay]
     @vbox.remove(inner)
     @file_panel_pane = Gtk::Paned.new(:horizontal)
+    @file_panel_pane.hexpand = true
+    @file_panel_pane.vexpand = true
     @file_panel_pane.set_start_child(@file_panel.widget)
     @file_panel_pane.set_end_child(inner)
+    @file_panel_pane.set_position(180)
     @vbox.attach(@file_panel_pane, 0, 2, 2, 1)
     @file_panel_shown = true
     @file_panel.refresh
