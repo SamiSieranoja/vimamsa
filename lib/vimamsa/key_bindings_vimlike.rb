@@ -105,6 +105,7 @@ add_keys "core", {
   # File handling
   "C ctrl-s" => :buf_save,
 
+  "V J" => :V_join_lines,
   # Buffer handling
   # "C B" => "bufs.switch",
   "C tab" => "bufs.switch_to_last_buf",
@@ -311,18 +312,6 @@ add_keys "core", {
  "C , , u" => :update_file_index,
  "C , s a" => :buf_save_as,
  "VC , r r" => :gui_search_replace,
- "V , t b" => :set_style_bold,
- "V , t l" => :set_style_link,
- "V J" => :V_join_lines,
- "V , t c" => :clear_formats,
- "C , t h" => :set_line_style_heading,
- "C , t 1" => :set_line_style_h1,
- "C , t 2" => :set_line_style_h2,
- "C , t 3" => :set_line_style_h3,
- "C , t 4" => :set_line_style_h4,
- "C , t b" => :set_line_style_bold,
- "C , t t" => :set_line_style_title,
- "C , t c" => :clear_line_styles,
  "C , w" => :toggle_active_window,
  "C , , w" => :toggle_two_column,
 
@@ -344,6 +333,20 @@ add_keys "core", {
  "C enter || C return" => [:line_action, proc { buf.handle_line_action() }, "Line action"],
  "V d" => [:delete_selection, proc { buf.delete(SELECTION) }, ""],
  "V a d" => [:delete_append_selection, proc { buf.delete(SELECTION, :append) }, "Delete and append selection"]
+}
+
+add_keys "hyperplaintext", {
+  "V , t b" => :set_style_bold,
+  "V , t l" => :set_style_link,
+  "V , t c" => :clear_formats,
+  "C , t h" => :set_line_style_heading,
+  "C , t 1" => :set_line_style_h1,
+  "C , t 2" => :set_line_style_h2,
+  "C , t 3" => :set_line_style_h3,
+  "C , t 4" => :set_line_style_h4,
+  "C , t b" => :set_line_style_bold,
+  "C , t t" => :set_line_style_title,
+  "C , t c" => :clear_line_styles,
 }
 
 bindkey ["VCB M", "B m"], :run_last_macro

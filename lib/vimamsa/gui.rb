@@ -696,9 +696,12 @@ class VMAgui
     @pane.set_start_child(nil)
     @pane.set_end_child(nil)
 
-    @vbox.remove(@pane)
-    @vbox.attach(w1[:overlay], 0, 2, 2, 1)
-    # @vbox.attach(@statbox, 1, 1, 1, 1)
+    if @file_panel_shown
+      @file_panel_pane.set_end_child(w1[:overlay])
+    else
+      @vbox.remove(@pane)
+      @vbox.attach(w1[:overlay], 0, 2, 2, 1)
+    end
     @two_column = false
   end
 
@@ -748,14 +751,20 @@ class VMAgui
     w1 = @windows[1]
     w2 = @windows[2]
 
-    # Remove overlay from @vbox and add the Gtk::Paned instead
+    # Remove overlay from its current parent and add the Gtk::Paned instead
     @pane = Gtk::Paned.new(:horizontal)
-    @vbox.remove(w1[:overlay])
-    @pane.set_start_child(w2[:overlay])
-    @pane.set_end_child(w1[:overlay])
-
-    # numbers: left, top, width, height
-    @vbox.attach(@pane, 0, 2, 2, 1)
+    if @file_panel_shown
+      @file_panel_pane.set_end_child(nil)
+      @pane.set_start_child(w2[:overlay])
+      @pane.set_end_child(w1[:overlay])
+      @file_panel_pane.set_end_child(@pane)
+    else
+      @vbox.remove(w1[:overlay])
+      @pane.set_start_child(w2[:overlay])
+      @pane.set_end_child(w1[:overlay])
+      # numbers: left, top, width, height
+      @vbox.attach(@pane, 0, 2, 2, 1)
+    end
 
     w2[:sw].show
     @two_column = true

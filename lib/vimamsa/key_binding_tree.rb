@@ -792,6 +792,12 @@ def show_key_bindings()
   done.concat(x.lines); kbd_s << x
   kbd_s << "\n"
 
+  kbd_s << "◼ Hyper Plaintext\n"
+  x = vma.kbd.get_by_keywords(modes: ["C"], keywords: ["hyperplaintext"])
+  x2 = vma.kbd.get_by_keywords(modes: ["V"], keywords: ["hyperplaintext"])
+  done.concat(x.lines); kbd_s << x << "\n" << x2
+  kbd_s << "\n"
+
   kbd_s << "◼ Core\n"
   x = vma.kbd.get_by_keywords(modes: [], keywords: ["core"])
   x << vma.kbd.get_by_keywords(modes: ["X"], keywords: ["intro"])
