@@ -37,7 +37,11 @@ reg_act(:eval_buf, proc { vma.buf.eval_whole_buf }, "Eval whole current buffer a
 
 reg_act(:show_settings, proc { show_settings_dialog }, "Show settings")
 reg_act(:cut_selection, proc { buf.delete(SELECTION) }, "Cut selection to clipboard")
-reg_act(:insert_backspace, proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(BACKWARD_CHAR) }, "Backspace in insert mode")
+
+reg_act(:insert_backspace, proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(BACKWARD_CHAR) }, "Delete backwards")
+reg_act(:insert_select_up, proc { insert_select_move(BACKWARD_LINE) }, "Select texte upwards")
+reg_act(:insert_select_down, proc { insert_select_move(BACKWARD_CHAR) }, "Select text downwards")
+
 reg_act(:copy_selection, proc { buf.copy_active_selection }, "Copy selection to clipboard")
 reg_act(:enable_debug, proc { cnf.debug = true }, "Enable debug")
 reg_act(:disable_debug, proc { cnf.debug = false }, "Disable debug")
@@ -79,6 +83,9 @@ reg_act(:delete_char_forward, proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete
 reg_act(:gui_file_finder, proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
 reg_act(:gui_file_history_finder, proc { vma.FileHistory.start_gui }, "Fuzzy file history finder")
 reg_act(:gui_search_replace, proc { gui_search_replace }, "Search and replace")
+reg_act(:find_next, proc { $search.jump_to_next() }, "Find next")
+
+
 reg_act(:set_style_bold, proc { buf.style_transform(:bold) }, "Set text weight to bold")
 reg_act(:set_style_link, proc { buf.style_transform(:link) }, "Set text as link")
 reg_act(:V_join_lines, proc { vma.buf.convert_selected_text(:joinlines) }, "Join lines")

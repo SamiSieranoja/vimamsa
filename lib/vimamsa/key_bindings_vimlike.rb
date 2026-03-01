@@ -70,6 +70,20 @@ add_keys "intro", {
   "IX ctrl-n" => :move_next_line,
   "IX ctrl-b" => :move_backward_char,
   "IX ctrl-a" => :jump_beginning_of_line,
+  
+  "CI ctrl-v" => :paste_before_cursor,
+  "I ctrl-c" => :copy_selection, #TODO: in control mode also?
+  "CI ctrl-x" => :cut_selection,
+  "CI ctrl-z" => :undo,
+  "CI ctrl-w" => :close_current_buffer,
+  "I ctrl-y" => :redo,
+  "CI backspace" => :insert_backspace,
+ "CI ctrl-o" => :open_file_dialog,
+ "I ctrl-l" => :find_in_buffer,
+ "I ctrl-g" => :find_next,
+  
+  "I shift-up" => :insert_select_up,
+  "I shift-down" => :insert_select_down, 
 }
 
 add_keys "intro delete", {
@@ -113,10 +127,9 @@ add_keys "core", {
 
   "I enter" => :insert_new_line,
 
-  "I shift-down" => "insert_select_move(BACKWARD_CHAR)",
+
   "I shift-right" => "insert_select_move(FORWARD_CHAR)",
   "I shift-down" => "insert_select_move(FORWARD_LINE)",
-  "I shift-up" => "insert_select_move(BACKWARD_LINE)",
   "I shift-pagedown" => "insert_select_move(:pagedown)",
   "I shift-pageup" => "insert_select_move(:pageup)",
 
@@ -159,7 +172,7 @@ add_keys "core", {
 
   "R <char>" => "readchar_new_char(<char>)",
 
-  "C n" => "$search.jump_to_next()",
+  "C n" => :find_next,
   "C N" => "$search.jump_to_previous()",
 
   "C C" => :content_search,
@@ -224,8 +237,6 @@ add_keys "core", {
   # "V ctrl-c" => "buf.comment_selection",
   "V ctrl-x" => "buf.comment_selection(:uncomment)",
 
-  "CI ctrl-v" => "buf.paste(BEFORE)",
-  "CI backspace" => :insert_backspace,
 
   # Marks
   "CV m <char>" => "buf.mark_current_position(<char>)",
@@ -279,7 +290,6 @@ add_keys "core", {
   "I space" => 'buf.insert_txt(" ")',
 #  "I return" => 'buf.insert_new_line()',
 
- "CI ctrl-o" => :open_file_dialog,
  "C , a" => :ack_search,
  "C d w" => :delete_to_next_word_start,
 
