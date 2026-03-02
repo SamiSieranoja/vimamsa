@@ -1305,7 +1305,7 @@ class Buffer < String
   def start_selection()
     @selection_start = @pos
     @selection_active = true
-    @visual_mode = true
+    @visual_mode = true #TODO: change use of @visual_mode into @selection_active
   end
 
   # Start selection if not already started

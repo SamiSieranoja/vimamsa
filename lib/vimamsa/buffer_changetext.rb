@@ -206,7 +206,11 @@ class Buffer < String
       (startpos, endpos) = get_visual_mode_range2
       delete_range(startpos, endpos, x)
       @pos = [@pos, @selection_start].min
-      end_visual_mode
+      if vma.kbd.get_mode == :visual
+        end_visual_mode
+      else
+        end_selection
+      end
       #return
 
       # Delete current char
