@@ -16,17 +16,6 @@
 # Open this file every time the program starts
 # setcnf :startup_file, "~/Documents/startup.txt"
 
-# To enable LSP:
-# cnf.lsp.enabled = true
-# cnf.lsp.server.solargraph = { name: "solargraph", command: "solargraph stdio", type: "stdio" }
-# cnf.lsp.server.solargraph.languages = ["ruby"]
-
-# cnf.lsp.server.clangd = { name: "clangd", command: "clangd-12 --offset-encoding=utf-8", type: "stdio" }
-# cnf.lsp.server.clangd.languages = ["c", "cpp"]
-
-# Uncomment this if you don't want to see the state trail of previous action
-# on top right corner:
-# cnf.kbd.show_prev_action = false
 
 
 
@@ -34,6 +23,9 @@ def insert_date()
   # $buffer.insert_txt("#{DateTime.now().strftime("==========\n%Y-%m-%d")}\n")
   vma.buf.insert_txt("#{DateTime.now().strftime("%Y-%m-%d")}\n")
 end
+
+bindkey "C , i d", proc { insert_date }
+
 
 def collect_c_header()
   # Matches e.g.:
@@ -69,4 +61,37 @@ end
 # Find with action search ([C] , , s) 
 reg_act(:insert_lorem_ipsum, proc { insert_lorem_ipsum }, "Insert lorem ipsum")
 
+def open_mtg(urlpref = nil)
+  require "uri"
+  l = vma.buf.get_current_line.strip
+  m = l.match(/[^;!]+/)
+  if m
+    cardname = m[0].strip
+    # cardname = "Omnath, locus of mana"
+    u = URI.encode_www_form_component(cardname)
+    url = "https://gatherer.wizards.com/Pages/Card/Details.aspx?name=#{u}"
+    if !urlpref.nil?
+      url = urlpref + u
+    end
+    open_url(url)
+  end
+end
+
+# reg_act(:open_mtg, proc { open_mtg }, "open mtg card info")
+# bindkey "C , , m", :open_mtg
+# Restless Cottage
+# https://duckduckgo.com/?ia=web&origin=funnel_home_website&t=h_&q=
+
+# Primitive support for LSP (not well tested)
+# To enable LSP:
+# cnf.lsp.enabled = true
+# cnf.lsp.server.solargraph = { name: "solargraph", command: "solargraph stdio", type: "stdio" }
+# cnf.lsp.server.solargraph.languages = ["ruby"]
+
+# cnf.lsp.server.clangd = { name: "clangd", command: "clangd-12 --offset-encoding=utf-8", type: "stdio" }
+# cnf.lsp.server.clangd.languages = ["c", "cpp"]
+
+# Uncomment this if you don't want to see the state trail of previous action
+# on top right corner:
+# cnf.kbd.show_prev_action = false
 
