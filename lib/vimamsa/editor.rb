@@ -171,6 +171,15 @@ class Editor
     check_session_restore unless argv_has_files
 
     @hook.call(:after_init)
+
+    if ARGV.include?("--test")
+      test_files = ARGV.select { |a| a.end_with?(".rb") && File.file?(a) }
+      run_as_idle proc {
+        test_files.each { |f| load f }
+        success = run_vma_tests
+        exit(success ? 0 : 1)
+      }
+    end
   end
 
   def register_plugin(name, obj)
