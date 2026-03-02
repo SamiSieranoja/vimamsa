@@ -691,14 +691,42 @@ class VSourceView < GtkSource::View
         end
       end
     end
+
+    unless vma.gui.app.lookup_action("ctx_open_link")
+      act = Gio::SimpleAction.new("ctx_open_link")
+      vma.gui.app.add_action(act)
+      act.signal_connect("activate") do
+        next unless @context_link
+        if is_url(@context_link)
+          open_url(@context_link)
+        else
+          fn = hpt_check_cur_word(@context_link)
+          open_existing_file(fn) if fn
+        end
+      end
+    end
+
     @context_menu = Gtk::PopoverMenu.new
     @context_menu.set_parent(self)
     @context_menu.has_arrow = false
   end
 
+  def link_at(x, y)
+    bx, by = window_to_buffer_coords(:widget, x.to_i, y.to_i)
+    iter = get_iter_at_location(bx, by)
+    return nil unless iter
+    word, _range = @bufo.get_word_in_pos(iter.offset, boundary: :space)
+    return nil unless word
+    return word if is_url(word)
+    return word if word.match?(/⟦.+⟧/)
+    nil
+  end
+
   def show_context_menu(x, y)
     init_context_menu if @context_menu.nil?
     menu = Gio::Menu.new
+    @context_link = link_at(x, y)
+    menu.append("Open link", "app.ctx_open_link") if @context_link
     CONTEXT_MENU_ITEMS.each { |label, action_id| menu.append(label, "app.ctx_#{action_id}") }
     if @bufo.selection_active?
       CONTEXT_MENU_ITEMS_SELECTION.each { |label, action_id| menu.append(label, "app.ctx_#{action_id}") }
