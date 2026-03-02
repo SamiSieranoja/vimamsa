@@ -14,7 +14,8 @@
 # setcnf :tab_width, 4
 
 # Open this file every time the program starts
-# setcnf :startup_file, "~/Documents/startup.txt"
+cnf.startup_file = "~/Documents/startup.txt"
+
 
 
 

@@ -577,6 +577,14 @@ class KeyBindingTree
     key.each { |k| _bindkey(k, a, keywords: keywords) }
   end
 
+  def unbindkey(key)
+    if key.class != Array
+      key = key.split("||")
+    end
+    #TODO: test
+    key.each { |k| _bindkey(k.strip, :delete_state) }
+  end
+
   def _bindkey(key, action, keywords: [])
     key.strip!
     key.gsub!(/\s+/, " ")
@@ -748,6 +756,10 @@ end
 
 def bindkey(key, action, keywords: "")
   vma.kbd.bindkey(key, action, keywords: keywords)
+end
+
+def unbindkey(key)
+  vma.kbd.unbindkey(key)
 end
 
 def add_keys(keywords, to_add)
