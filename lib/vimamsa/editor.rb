@@ -264,6 +264,7 @@ class Editor
 
     fnames = File.read(session_path).lines.map(&:strip).reject(&:empty?)
     fnames.select! { |f| File.exist?(f) }
+    fnames.reject! { |f| vma.buffers.get_buffer_by_filename(f) }
     return if fnames.empty?
 
     n = fnames.size
