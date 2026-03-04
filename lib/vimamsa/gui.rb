@@ -320,32 +320,89 @@ class VMAgui
   end
 
   def add_to_minibuf(msg)
+    @minibuf_messages ||= []
+    @minibuf_messages.unshift(msg)
+    @minibuf_messages = @minibuf_messages.first(50)
+
     @minibuf_label.label = msg
+    @minibuf_textview.buffer.text = @minibuf_messages.join("\n")
     @minibuf_revealer.reveal_child = true
 
-    # Reset auto-hide timer on every new message
+    # Don't restart the hide timer while history is expanded
+    return if @minibuf_expanded
+
     GLib::Source.remove(@minibuf_hide_source) if @minibuf_hide_source
-    @minibuf_hide_source = GLib::Timeout.add(3000) do
+    @minibuf_hide_source = GLib::Timeout.add(7000) do
       @minibuf_revealer.reveal_child = false
       @minibuf_hide_source = nil
       false
     end
   end
 
+  def minibuf_toggle_expanded
+    @minibuf_expanded = !@minibuf_expanded
+    if @minibuf_expanded
+      # Cancel auto-hide while browsing history
+      GLib::Source.remove(@minibuf_hide_source) if @minibuf_hide_source
+      @minibuf_hide_source = nil
+      @minibuf_revealer.reveal_child = true
+      @minibuf_stack.visible_child_name = "history"
+    else
+      @minibuf_stack.visible_child_name = "label"
+      # Restart auto-hide
+      @minibuf_hide_source = GLib::Timeout.add(7000) do
+        @minibuf_revealer.reveal_child = false
+        @minibuf_expanded = false
+        @minibuf_stack.visible_child_name = "label"
+        @minibuf_hide_source = nil
+        false
+      end
+    end
+  end
+
+  def show_message_history
+    minibuf_toggle_expanded
+  end
+
   def init_minibuffer
+    @minibuf_messages = []
+    @minibuf_expanded = false
+
+    css = "label.minibuf, textview.minibuf { color: #cdd6f4; font-family: Monospace; font-size: 10pt; padding: 3px 8px; background-color: #1e1e2e; }"
+    provider = Gtk::CssProvider.new
+    provider.load(data: css)
+
+    # Collapsed view: single line, latest message
     @minibuf_label = Gtk::Label.new("")
     @minibuf_label.xalign = 0.0
     @minibuf_label.hexpand = true
     @minibuf_label.ellipsize = Pango::EllipsizeMode::END
-
-    provider = Gtk::CssProvider.new
-    provider.load(data: "label.minibuf { color: #cdd6f4; font-family: Monospace; font-size: 10pt; padding: 3px 8px; background-color: #1e1e2e; }")
     @minibuf_label.add_css_class("minibuf")
     @minibuf_label.style_context.add_provider(provider)
 
+    # Expanded view: scrollable history
+    @minibuf_textview = Gtk::TextView.new
+    @minibuf_textview.editable = false
+    @minibuf_textview.cursor_visible = false
+    @minibuf_textview.wrap_mode = :word_char
+    @minibuf_textview.add_css_class("minibuf")
+    @minibuf_textview.style_context.add_provider(provider)
+
+    scroll = Gtk::ScrolledWindow.new
+    scroll.set_policy(:never, :automatic)
+    scroll.set_size_request(-1, 120)
+    scroll.set_child(@minibuf_textview)
+
+    @minibuf_stack = Gtk::Stack.new
+    @minibuf_stack.vhomogeneous = false  # size to current child, not tallest child
+    @minibuf_stack.transition_type = :crossfade
+    @minibuf_stack.transition_duration = 100
+    @minibuf_stack.add_named(@minibuf_label, "label")
+    @minibuf_stack.add_named(scroll, "history")
+
     bar = Gtk::Box.new(:vertical, 0)
     bar.append(Gtk::Separator.new(:horizontal))
-    bar.append(@minibuf_label)
+    bar.append(@minibuf_stack)
 
     @minibuf_revealer = Gtk::Revealer.new
     @minibuf_revealer.transition_type = :slide_up

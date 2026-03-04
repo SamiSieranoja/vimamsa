@@ -265,6 +265,7 @@ add_keys "core", {
   "C @ <char>" => "vma.macro.run_macro(<char>)",
   "C , m S" => 'vma.macro.save_macro("a")',
   "C , m s" => "vma.macro.save",
+  "C , m h" => :show_message_history,
 
   # "C ." => "repeat_last_action", # TODO
   "VC ;" => "repeat_last_find",
