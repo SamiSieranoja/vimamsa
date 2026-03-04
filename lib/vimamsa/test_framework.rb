@@ -106,7 +106,7 @@ class VmaTest
 
   # Let any GLib::Idle callbacks run before we check state
   def drain_idle
-    5.times { GLib::MainContext.default.iteration(false) }
+    20.times { GLib::MainContext.default.iteration(false) }
   end
 end
 

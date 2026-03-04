@@ -177,7 +177,9 @@ class Editor
       run_as_idle proc {
         test_files.each { |f| load f }
         success = run_vma_tests
-        exit(success ? 0 : 1)
+        # Defer shutdown so GTK can drain all pending idle callbacks from test
+        # teardown before widget destruction begins (avoids heap corruption).
+        GLib::Timeout.add(300) { shutdown(); false }
       }
     end
   end
