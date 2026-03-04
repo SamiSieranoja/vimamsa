@@ -320,39 +320,41 @@ class VMAgui
   end
 
   def add_to_minibuf(msg)
-    # return #TODO:gtk4
-    startiter = @minibuf.buffer.get_iter_at(:offset => 0)
-    @minibuf.buffer.insert(startiter, "#{msg}\n")
-    @minibuf.signal_emit("move-cursor", Gtk::MovementStep.new(:PAGES), -1, false)
+    @minibuf_label.label = msg
+    @minibuf_revealer.reveal_child = true
+
+    # Reset auto-hide timer on every new message
+    GLib::Source.remove(@minibuf_hide_source) if @minibuf_hide_source
+    @minibuf_hide_source = GLib::Timeout.add(3000) do
+      @minibuf_revealer.reveal_child = false
+      @minibuf_hide_source = nil
+      false
+    end
   end
 
-  def init_minibuffer()
-    # Init minibuffer
-    sw = Gtk::ScrolledWindow.new
-    sw.set_policy(:automatic, :automatic)
-    overlay = Gtk::Overlay.new
-    overlay.set_child(sw)
-    @vbox.attach(overlay, 0, 3, 2, 1)
-    sw.set_size_request(-1, 12)
+  def init_minibuffer
+    @minibuf_label = Gtk::Label.new("")
+    @minibuf_label.xalign = 0.0
+    @minibuf_label.hexpand = true
+    @minibuf_label.ellipsize = Pango::EllipsizeMode::END
 
-    view = VSourceView.new(nil, nil)
-    view.set_highlight_current_line(false)
-    view.set_show_line_numbers(false)
-    # view.set_buffer(buf1)
-    ssm = GtkSource::StyleSchemeManager.new
-    ssm.set_search_path(ssm.search_path << ppath("styles/"))
-    sty = ssm.get_scheme("molokai_edit")
-    view.buffer.highlight_matching_brackets = false #TODO
-    view.buffer.style_scheme = sty
     provider = Gtk::CssProvider.new
-    # provider.load(data: "textview { font-family: Monospace; font-size: 11pt; }")
-    provider.load(data: "textview { font-family: Arial; font-size: 10pt; color:#eeeeee}")
-    view.style_context.add_provider(provider)
-    view.wrap_mode = :char
-    @minibuf = view
-    # startiter = view.buffer.get_iter_at(:offset => 0)
-    message("STARTUP")
-    sw.set_child(view)
+    provider.load(data: "label.minibuf { color: #cdd6f4; font-family: Monospace; font-size: 10pt; padding: 3px 8px; background-color: #1e1e2e; }")
+    @minibuf_label.add_css_class("minibuf")
+    @minibuf_label.style_context.add_provider(provider)
+
+    bar = Gtk::Box.new(:vertical, 0)
+    bar.append(Gtk::Separator.new(:horizontal))
+    bar.append(@minibuf_label)
+
+    @minibuf_revealer = Gtk::Revealer.new
+    @minibuf_revealer.transition_type = :slide_up
+    @minibuf_revealer.transition_duration = 150
+    @minibuf_revealer.reveal_child = false
+    @minibuf_revealer.set_child(bar)
+
+    @vbox.attach(@minibuf_revealer, 0, 3, 2, 1)
+    @minibuf_hide_source = nil
   end
 
   def make_header_button(action_id, icon, cb)
