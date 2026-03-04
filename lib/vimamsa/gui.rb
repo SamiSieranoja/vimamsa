@@ -380,9 +380,10 @@ class VMAgui
     nav_box.style_context.add_class("linked")
     nav_box.append(make_header_button("hdr-prev",  "pan-start-symbolic", proc { history_switch_backwards }))
     nav_box.append(make_header_button("hdr-next",  "pan-end-symbolic",   proc { history_switch_forwards }))
+    nav_box.append(make_header_button("hdr-close", "window-close-symbolic", proc { bufs.close_current_buffer }))
     header.pack_start(nav_box)
 
-    header.pack_end(make_header_button("hdr-close", "window-close-symbolic", proc { bufs.close_current_buffer }))
+    # header.pack_end()
 
     @window.titlebar = header
   end
@@ -520,6 +521,11 @@ class VMAgui
     app.signal_connect "activate" do
       @window = Gtk::ApplicationWindow.new(app)
       @window.set_application(app)
+
+      @window.signal_connect("close-request") do
+        vma.shutdown
+        true  # prevent default destroy; shutdown->gui.quit handles it
+      end
 
       @window.title = "Multiple Views"
       @vpaned = Gtk::Paned.new(:vertical)
