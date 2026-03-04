@@ -326,14 +326,17 @@ class VMAgui
 
     @minibuf_label.label = msg
     @minibuf_textview.buffer.text = @minibuf_messages.join("\n")
-    @minibuf_revealer.reveal_child = true
 
-    # Don't restart the hide timer while history is expanded
     return if @minibuf_expanded
 
+    @minibuf_stack.visible_child_name = "label"
+    @minibuf_content.visible = true
+
+    @minibuf_vpane.position = @minibuf_vpane.height - 26
+    
     GLib::Source.remove(@minibuf_hide_source) if @minibuf_hide_source
     @minibuf_hide_source = GLib::Timeout.add(7000) do
-      @minibuf_revealer.reveal_child = false
+      @minibuf_content.visible = false
       @minibuf_hide_source = nil
       false
     end
@@ -342,16 +345,26 @@ class VMAgui
   def minibuf_toggle_expanded
     @minibuf_expanded = !@minibuf_expanded
     if @minibuf_expanded
-      # Cancel auto-hide while browsing history
       GLib::Source.remove(@minibuf_hide_source) if @minibuf_hide_source
       @minibuf_hide_source = nil
-      @minibuf_revealer.reveal_child = true
+      @minibuf_content.visible = true
       @minibuf_stack.visible_child_name = "history"
+      run_as_idle proc {
+        pos = @minibuf_vpane.max_position - (@minibuf_history_height || 120)
+        @minibuf_vpane.position = [pos, 0].max
+      }
     else
+      # Save height before collapsing so next open restores it
+      @minibuf_history_height = @minibuf_vpane.max_position - @minibuf_vpane.position
       @minibuf_stack.visible_child_name = "label"
-      # Restart auto-hide
+      run_as_idle proc {
+        #TODO: automatic way of resizing doesn't work:
+        # h = [@minibuf_label.height, 24].max + 2
+        # @minibuf_vpane.position = @minibuf_vpane.max_position - h
+        @minibuf_vpane.position = @minibuf_vpane.height - 26
+      }
       @minibuf_hide_source = GLib::Timeout.add(7000) do
-        @minibuf_revealer.reveal_child = false
+        @minibuf_content.visible = false
         @minibuf_expanded = false
         @minibuf_stack.visible_child_name = "label"
         @minibuf_hide_source = nil
@@ -364,9 +377,20 @@ class VMAgui
     minibuf_toggle_expanded
   end
 
+  # ── editor-area helpers (delegates to @minibuf_vpane start child) ─────────
+
+  def editor_area
+    @minibuf_vpane.start_child
+  end
+
+  def set_editor_area(w)
+    @minibuf_vpane.set_start_child(w)
+  end
+
   def init_minibuffer
     @minibuf_messages = []
     @minibuf_expanded = false
+    @minibuf_history_height = 120
 
     css = "label.minibuf, textview.minibuf { color: #cdd6f4; font-family: Monospace; font-size: 10pt; padding: 3px 8px; background-color: #1e1e2e; }"
     provider = Gtk::CssProvider.new
@@ -380,37 +404,46 @@ class VMAgui
     @minibuf_label.add_css_class("minibuf")
     @minibuf_label.style_context.add_provider(provider)
 
-    # Expanded view: scrollable history
+    # Expanded view: scrollable history (fills whatever height the pane gives)
     @minibuf_textview = Gtk::TextView.new
     @minibuf_textview.editable = false
     @minibuf_textview.cursor_visible = false
     @minibuf_textview.wrap_mode = :word_char
     @minibuf_textview.add_css_class("minibuf")
     @minibuf_textview.style_context.add_provider(provider)
+    @minibuf_textview.vexpand = true
 
     scroll = Gtk::ScrolledWindow.new
     scroll.set_policy(:never, :automatic)
-    scroll.set_size_request(-1, 120)
     scroll.set_child(@minibuf_textview)
+    scroll.vexpand = true
 
     @minibuf_stack = Gtk::Stack.new
-    @minibuf_stack.vhomogeneous = false  # size to current child, not tallest child
+    @minibuf_stack.vhomogeneous = false
     @minibuf_stack.transition_type = :crossfade
     @minibuf_stack.transition_duration = 100
     @minibuf_stack.add_named(@minibuf_label, "label")
     @minibuf_stack.add_named(scroll, "history")
 
-    bar = Gtk::Box.new(:vertical, 0)
-    bar.append(Gtk::Separator.new(:horizontal))
-    bar.append(@minibuf_stack)
+    @minibuf_content = Gtk::Box.new(:vertical, 0)
+    @minibuf_content.append(Gtk::Separator.new(:horizontal))
+    @minibuf_content.append(@minibuf_stack)
+    @minibuf_content.visible = false  # hidden until first message
 
-    @minibuf_revealer = Gtk::Revealer.new
-    @minibuf_revealer.transition_type = :slide_up
-    @minibuf_revealer.transition_duration = 150
-    @minibuf_revealer.reveal_child = false
-    @minibuf_revealer.set_child(bar)
+    # Vertical pane: editor fills top, minibuffer sits at bottom, draggable
+    editor_w = @windows[1][:overlay]
+    @vbox.remove(editor_w)
 
-    @vbox.attach(@minibuf_revealer, 0, 3, 2, 1)
+    @minibuf_vpane = Gtk::Paned.new(:vertical)
+    @minibuf_vpane.vexpand = true
+    @minibuf_vpane.hexpand = true
+    @minibuf_vpane.resize_start_child = true   # editor absorbs window resize
+    @minibuf_vpane.resize_end_child = false    # minibuffer keeps its height
+    @minibuf_vpane.shrink_end_child = true     # allow fully collapsing minibuffer
+    @minibuf_vpane.set_start_child(editor_w)
+    @minibuf_vpane.set_end_child(@minibuf_content)
+
+    @vbox.attach(@minibuf_vpane, 0, 2, 2, 1)
     @minibuf_hide_source = nil
   end
 
@@ -432,13 +465,13 @@ class VMAgui
     file_box.style_context.add_class("linked")
     file_box.append(make_header_button("hdr-open", "document-open-symbolic", proc { open_file_dialog }))
     file_box.append(make_header_button("hdr-save", "document-save-symbolic", proc { buf.save }))
-    file_box.append(make_header_button("hdr-new",  "document-new-symbolic",  proc { create_new_file }))
+    file_box.append(make_header_button("hdr-new", "document-new-symbolic", proc { create_new_file }))
     header.pack_start(file_box)
 
     nav_box = Gtk::Box.new(:horizontal, 0)
     nav_box.style_context.add_class("linked")
-    nav_box.append(make_header_button("hdr-prev",  "pan-start-symbolic", proc { history_switch_backwards }))
-    nav_box.append(make_header_button("hdr-next",  "pan-end-symbolic",   proc { history_switch_forwards }))
+    nav_box.append(make_header_button("hdr-prev", "pan-start-symbolic", proc { history_switch_backwards }))
+    nav_box.append(make_header_button("hdr-next", "pan-end-symbolic", proc { history_switch_forwards }))
     nav_box.append(make_header_button("hdr-close", "window-close-symbolic", proc { bufs.close_current_buffer }))
     header.pack_start(nav_box)
 
@@ -569,8 +602,6 @@ class VMAgui
     @last_debug_idle = Time.now
     app = Gtk::Application.new("net.samiddhi.vimamsa.r#{rand(1000)}", :flags_none)
     @app = app
-    
-    
 
     Gtk::Settings.default.gtk_application_prefer_dark_theme = true
     Gtk::Settings.default.gtk_theme_name = "Adwaita"
@@ -610,9 +641,9 @@ class VMAgui
       motion_controller.signal_connect("motion") do |controller, x, y|
         # label.set_text("Mouse at: (%.1f, %.1f)" % [x, y])
         # puts "MOVE #{x} #{y}"
-        
+
         # Cursor vanishes when hovering over menubar
-        draw_cursor_bug_workaround if y < 30 
+        draw_cursor_bug_workaround if y < 30
         @last_cursor = [x, y]
         @cursor_move_time = Time.now
       end
@@ -653,10 +684,10 @@ class VMAgui
 
       # TODO: Doesn't work, why?:
       # menubar_bar = Gtk::PopoverMenuBar.new(menu_model: menubar)
-      
+
       menubar_bar = Gtk::PopoverMenuBar.new()
       menubar_bar.set_menu_model(menubar)
-      
+
       menubar_bar.hexpand = true
       @action_trail_label = Gtk::Label.new("")
       @action_trail_label.add_css_class("action-trail")
@@ -764,8 +795,7 @@ class VMAgui
     if @file_panel_shown
       @file_panel_pane.set_end_child(w1[:overlay])
     else
-      @vbox.remove(@pane)
-      @vbox.attach(w1[:overlay], 0, 2, 2, 1)
+      set_editor_area(w1[:overlay])
     end
     @two_column = false
   end
@@ -824,11 +854,9 @@ class VMAgui
       @pane.set_end_child(w1[:overlay])
       @file_panel_pane.set_end_child(@pane)
     else
-      @vbox.remove(w1[:overlay])
       @pane.set_start_child(w2[:overlay])
       @pane.set_end_child(w1[:overlay])
-      # numbers: left, top, width, height
-      @vbox.attach(@pane, 0, 2, 2, 1)
+      set_editor_area(@pane)
     end
 
     w2[:sw].show
@@ -1000,14 +1028,13 @@ class VMAgui
   def show_file_panel
     return if @file_panel_shown
     inner = @two_column ? @pane : @windows[1][:overlay]
-    @vbox.remove(inner)
     @file_panel_pane = Gtk::Paned.new(:horizontal)
     @file_panel_pane.hexpand = true
     @file_panel_pane.vexpand = true
     @file_panel_pane.set_start_child(@file_panel.widget)
     @file_panel_pane.set_end_child(inner)
     @file_panel_pane.set_position(180)
-    @vbox.attach(@file_panel_pane, 0, 2, 2, 1)
+    set_editor_area(@file_panel_pane)
     @file_panel_shown = true
     @file_panel.refresh
   end
@@ -1017,8 +1044,7 @@ class VMAgui
     inner = @file_panel_pane.end_child
     @file_panel_pane.set_start_child(nil)
     @file_panel_pane.set_end_child(nil)
-    @vbox.remove(@file_panel_pane)
-    @vbox.attach(inner, 0, 2, 2, 1)
+    set_editor_area(inner)
     @file_panel_shown = false
   end
 
