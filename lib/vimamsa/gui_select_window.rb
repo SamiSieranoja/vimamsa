@@ -126,6 +126,17 @@ class SelectUpdateWindow
         @window.destroy
         # debug iter[1].inspect
         true
+      elsif keyval == Gdk::Keyval::KEY_Delete && @opt[:delete_callback]
+        path = Gtk::TreePath.new(@selected_row.to_s)
+        iter = @model.get_iter(path)
+        next false unless iter
+        name = iter[COLUMN_DESCRIPTION]
+        refresh = proc {
+          update_item_list(@update_callback.call(@entry.text))
+          @window.present
+        }
+        @opt[:delete_callback].call(name, refresh)
+        true
       elsif keyval == Gdk::Keyval::KEY_Escape
         @window.destroy
         true

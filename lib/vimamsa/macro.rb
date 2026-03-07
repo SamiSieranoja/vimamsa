@@ -85,9 +85,23 @@ class Macro
     $macro_search_list = l
     $select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
 
+    delete_cb = proc { |name, refresh|
+      Gui.confirm("Delete macro '#{name}'?", proc {
+        vma.macro.delete_named_macro(name)
+        refresh.call
+      })
+    }
+
     gui_select_update_window(l, $select_keys.collect { |x| x.upcase },
                              "gui_find_macro_select_callback",
-                             "gui_find_macro_update_callback")
+                             "gui_find_macro_update_callback",
+                             { delete_callback: delete_cb })
+  end
+
+  def delete_named_macro(name)
+    @named_macros.delete(name)
+    save_named_macros
+    message("Macro '#{name}' deleted")
   end
 
   def name_macro(name, id = nil)
