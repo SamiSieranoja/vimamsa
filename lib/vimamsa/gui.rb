@@ -854,6 +854,7 @@ class VMAgui
       @pane.set_end_child(w1[:overlay])
       @file_panel_pane.set_end_child(@pane)
     else
+      @minibuf_vpane.set_start_child(nil)  # unparent w1[:overlay] before re-parenting
       @pane.set_start_child(w2[:overlay])
       @pane.set_end_child(w1[:overlay])
       set_editor_area(@pane)
@@ -1028,6 +1029,7 @@ class VMAgui
   def show_file_panel
     return if @file_panel_shown
     inner = @two_column ? @pane : @windows[1][:overlay]
+    @minibuf_vpane.set_start_child(nil)  # unparent inner before re-parenting
     @file_panel_pane = Gtk::Paned.new(:horizontal)
     @file_panel_pane.hexpand = true
     @file_panel_pane.vexpand = true
