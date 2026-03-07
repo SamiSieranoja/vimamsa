@@ -217,6 +217,7 @@ class Editor
 
   def save_var_to_file(varname, vardata)
     fn = get_dot_path(varname)
+    #TODO: check that save path is safe
     f = File.open(fn, "w")
     File.binwrite(f, vardata)
     f.close

@@ -775,6 +775,9 @@ def exec_action(action)
     return call_action(action)
   elsif action.class == Proc
     return action.call
+  elsif action.class == String && vma.actions.include?(action.to_sym)
+    # Symbols serialised through JSON become plain strings; dispatch them as actions.
+    return call_action(action.to_sym)
   else
     return eval(action)
   end

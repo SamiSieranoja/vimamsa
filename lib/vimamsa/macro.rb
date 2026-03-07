@@ -26,22 +26,51 @@ class Macro
   attr_reader :running_macro
   attr_accessor :recorded_macros, :recording, :named_macros, :last_macro
 
+  NAMED_MACROS_FILE = "named_macros.json"
+
   def initialize()
     @recording = false
-    # @recorded_macros = {}
     @current_recording = []
     @current_name = nil
     @last_macro = "a"
     @running_macro = false
 
-    #TODO:
     @recorded_macros = vma.marshal_load("macros", {})
-    @named_macros = vma.marshal_load("named_macros", {})
+    @named_macros = load_named_macros
     vma.hook.register(:shutdown, self.method("save"))
+  end
+
+  def named_macros_path
+    get_dot_path(NAMED_MACROS_FILE)
+  end
+
+  # Save named macros as JSON immediately — called automatically after name_macro.
+  def save_named_macros
+    require "json"
+    File.write(named_macros_path, JSON.pretty_generate(@named_macros))
+  rescue => e
+    error("Failed to save named macros: #{e}")
+  end
+
+  # Load named macros from JSON. Falls back to Marshal data from older versions.
+  def load_named_macros
+    require "json"
+    path = named_macros_path
+    if File.exist?(path)
+      data = JSON.parse(File.read(path))
+      # JSON keys are always strings; action lists are arrays of strings — correct types
+      return data
+    end
+    # Fallback: migrate from old Marshal-based storage
+    vma.marshal_load("named_macros", {})
+  rescue => e
+    error("Failed to load named macros: #{e}")
+    {}
   end
 
   def save()
     vma.marshal_save("macros", @recorded_macros)
+    # named_macros are kept current via save_named_macros; save a Marshal copy as backup
     vma.marshal_save("named_macros", @named_macros)
   end
 
@@ -63,10 +92,10 @@ class Macro
 
   def name_macro(name, id = nil)
     debug "NAME MACRO #{name}"
-    if id.nil?
-      id = @last_macro
-    end
+    id = @last_macro if id.nil?
     @named_macros[name] = @recorded_macros[id].clone
+    save_named_macros
+    message("Macro '#{name}' saved")
   end
 
   def start_recording(name)
