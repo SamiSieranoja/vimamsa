@@ -45,8 +45,35 @@ class VSourceView < GtkSource::View
     @curpos_mark = nil
   end
 
+  # Replace each character of every «word with * so the GTK buffer never
+  # exposes the real content. Length is preserved → buffer offsets stay valid.
+  def mask_for_display(str)
+    str.gsub(/(?<=«)\S+/) { |w| "*" * w.length }
+  end
+
   def set_content(str)
-    self.buffer.set_text(str)
+    self.buffer.set_text(mask_for_display(str))
+  end
+
+  # After a delta is applied to the GTK buffer, find any «word regions that
+  # still contain real characters and replace them with asterisks in-place.
+  def remask_gtk_buffer
+    text = buffer.text
+    return unless text.include?("«")
+
+    text.scan(/«(\S+)/) do
+      word = $1
+      next if word.chars.all? { |c| c == "*" }  # already masked
+
+      word_start = $~.begin(0) + 1  # skip the « (1 codepoint)
+      word_end   = word_start + word.length
+      masked     = "*" * word.length
+
+      s_iter = buffer.get_iter_at(:offset => word_start)
+      e_iter = buffer.get_iter_at(:offset => word_end)
+      buffer.delete(s_iter, e_iter)
+      buffer.insert(buffer.get_iter_at(:offset => word_start), masked)
+    end
   end
 
   def gutter_width()
@@ -484,6 +511,7 @@ class VSourceView < GtkSource::View
       end
     end
     if any_change
+      remask_gtk_buffer
       #TODO: only when necessary
       self.set_cursor_pos(pos)
     end

@@ -7,8 +7,6 @@ require "ripl/multi_line"
 
 $buffer_history = []
 
-$update_highlight = false
-
 $ifuncon = false
 
 class Buffer < String
@@ -530,7 +528,6 @@ class Buffer < String
     # sanity_check_line_ends #TODO: enable with debug mode
     #highlight_c()
 
-    $update_highlight = true
     @update_highlight = true
 
     return delta
