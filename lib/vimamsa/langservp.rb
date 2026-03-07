@@ -90,7 +90,7 @@ class LangSrv
   end
 
   def handle_delta(delta, fpath, version)
-    fpuri = URI.join("file:///", fpath).to_s
+    fpuri = file_uri(fpath)
 
     # delta[0]: char position
     # delta[1]: INSERT or DELETE
@@ -147,7 +147,8 @@ class LangSrv
     # r = @resp.delete_at(0)
   end
 
-  def get_definition(fpuri, lpos, cpos)
+  def get_definition(fpath_or_uri, lpos, cpos)
+    fpuri = fpath_or_uri.start_with?("file://") ? fpath_or_uri : file_uri(fpath_or_uri)
     a = LSP::Interface::DefinitionParams.new(
       position: LSP::Interface::Position.new(line: lpos, character: cpos),
       text_document: LSP::Interface::TextDocumentIdentifier.new(uri: fpuri),
@@ -172,22 +173,87 @@ class LangSrv
     return nil
   end
 
-  def open_file(fp, fc = nil)
-    debug "open_file", 2
-    fc = IO.read(fp) if fc.nil?
+  # LSP SymbolKind values for callable things
+  FUNCTION_KINDS = [6, 9, 12].freeze  # Function, Constructor, Method
 
-    encoded_filepath = URI.encode_www_form_component(fp)
-    fpuri = URI.parse("file://#{encoded_filepath}")
+  # Recursively collect symbols of function kinds.
+  # Handles both flat SymbolInformation[] and nested DocumentSymbol[] (with :children).
+  def collect_functions(symbols)
+    result = []
+    symbols.each do |s|
+      result << s if FUNCTION_KINDS.include?(s[:kind])
+      result.concat(collect_functions(s[:children])) if s[:children].is_a?(Array)
+    end
+    result
+  end
+
+  # Send textDocument/documentSymbol, filter to functions/methods, and puts them.
+  def print_functions(fpath)
+    ensure_file_open(fpath)
+    fpuri = file_uri(fpath)
+    a = LSP::Interface::DocumentSymbolParams.new(
+      text_document: LSP::Interface::TextDocumentIdentifier.new(uri: fpuri),
+    )
+    id = new_id
+    @writer.write(id: id, params: a, method: "textDocument/documentSymbol")
+    r = wait_for_response(id)
+    return if r.nil?
+
+    symbols = r[:result]
+    return if !symbols.is_a?(Array)
+
+    functions = collect_functions(symbols)
+    if functions.empty?
+      puts "(no functions found in #{File.basename(fpath)})"
+      return
+    end
+
+    puts "=== Functions in #{File.basename(fpath)} ==="
+    functions.each do |s|
+      # DocumentSymbol uses :range; SymbolInformation uses :location => :range
+      line = s.dig(:range, :start, :line) || s.dig(:location, :range, :start, :line)
+      line_str = line ? ":#{line + 1}" : ""
+      puts "  #{s[:name]}#{line_str}"
+    end
+  end
+
+  def file_uri(fp)
+    URI.join("file:///", fp).to_s
+  end
+
+  def open_file(fp, fc = nil, lang: nil)
+    debug "open_file", 2
+    @opened_files ||= {}
+    fpuri = file_uri(fp)
+    fc = IO.read(fp) if fc.nil?
+    lang ||= @lang
 
     a = LSP::Interface::DidOpenTextDocumentParams.new(
       text_document: LSP::Interface::TextDocumentItem.new(
         uri: fpuri,
         text: fc,
-        language_id: "c++",
+        language_id: lang,
         version: 1,
       ),
     )
 
     @writer.write(method: "textDocument/didOpen", params: a)
+    @opened_files[fpuri] = true
   end
+
+  def ensure_file_open(fp, fc = nil)
+    @opened_files ||= {}
+    fpuri = file_uri(fp)
+    open_file(fp, fc) unless @opened_files[fpuri]
+  end
+end
+
+def lsp_print_functions
+  return unless vma.buf&.fname
+  lsp = LangSrv.get(vma.buf.lang)
+  if lsp.nil?
+    message("No LSP server available for #{vma.buf.lang}")
+    return
+  end
+  lsp.print_functions(vma.buf.fname)
 end
