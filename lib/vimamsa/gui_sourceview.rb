@@ -55,25 +55,27 @@ class VSourceView < GtkSource::View
     self.buffer.set_text(mask_for_display(str))
   end
 
-  # After a delta is applied to the GTK buffer, find any «word regions that
-  # still contain real characters and replace them with asterisks in-place.
+  # Sync the GTK buffer to mask_for_display(@bufo.to_s).
+  # Handles both directions:
+  #   - masks unmasked «word regions (e.g. after typing a new «)
+  #   - unmasks orphaned *** spans left behind when « is deleted
   def remask_gtk_buffer
-    text = buffer.text
-    return unless text.include?("«")
+    ruby_text = @bufo.to_s
+    expected  = mask_for_display(ruby_text)
+    gtk_text  = buffer.text
+    return if expected == gtk_text
+    return if expected.length != gtk_text.length  # sanity check
 
-    text.scan(/«(\S+)/) do
-      word = $1
-      next if word.chars.all? { |c| c == "*" }  # already masked
+    # Find the smallest enclosing differing range and fix it in one edit.
+    i = 0
+    i += 1 while i < expected.length && expected[i] == gtk_text[i]
+    j = expected.length - 1
+    j -= 1 while j >= i && expected[j] == gtk_text[j]
 
-      word_start = $~.begin(0) + 1  # skip the « (1 codepoint)
-      word_end   = word_start + word.length
-      masked     = "*" * word.length
-
-      s_iter = buffer.get_iter_at(:offset => word_start)
-      e_iter = buffer.get_iter_at(:offset => word_end)
-      buffer.delete(s_iter, e_iter)
-      buffer.insert(buffer.get_iter_at(:offset => word_start), masked)
-    end
+    s_iter = buffer.get_iter_at(:offset => i)
+    e_iter = buffer.get_iter_at(:offset => j + 1)
+    buffer.delete(s_iter, e_iter)
+    buffer.insert(buffer.get_iter_at(:offset => i), expected[i..j])
   end
 
   # Returns [word, word_start, word_end] if +pos+ (Ruby-buffer offset) is
