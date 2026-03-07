@@ -52,7 +52,11 @@ class VSourceView < GtkSource::View
   end
 
   def set_content(str)
-    self.buffer.set_text(mask_for_display(str))
+    if @bufo&.lang == "hyperplaintext"
+      self.buffer.set_text(mask_for_display(str))
+    else
+      self.buffer.set_text(str)
+    end
   end
 
   # Sync the GTK buffer to mask_for_display(@bufo.to_s).
@@ -60,6 +64,7 @@ class VSourceView < GtkSource::View
   #   - masks unmasked «word regions (e.g. after typing a new «)
   #   - unmasks orphaned *** spans left behind when « is deleted
   def remask_gtk_buffer
+    return unless @bufo&.lang == "hyperplaintext"
     ruby_text = @bufo.to_s
     expected  = mask_for_display(ruby_text)
     gtk_text  = buffer.text
@@ -103,6 +108,7 @@ class VSourceView < GtkSource::View
   # When in insert mode with cursor on a «word, expose the real text in the GTK
   # buffer so the user can see/edit it. Re-mask when cursor leaves or mode changes.
   def update_cursor_unmask
+    return unless @bufo&.lang == "hyperplaintext"
     ctype = vma.kbd.get_cursor_type
     pos   = @bufo.pos
 
