@@ -32,17 +32,29 @@ class FuncPanel
       vma.buf.jump_to_line(line)
     end
 
-    # @sw wraps @tree in a scrollable container that the panel layout can resize freely.
-    @sw = Gtk::ScrolledWindow.new
-    @sw.set_policy(:never, :automatic)
-    @sw.set_child(@tree)
-    @sw.set_size_request(160, -1)
-    @sw.vexpand = true
+    sw = Gtk::ScrolledWindow.new
+    sw.set_policy(:never, :automatic)
+    sw.set_child(@tree)
+    sw.vexpand = true
+
+    header = Gtk::Label.new("<span weight='ultrabold'>Functions</span> (click to jump)")
+    header.use_markup = true
+
+    header.xalign = 0.0
+    header.margin_start = 6
+    header.margin_top = 4
+    header.margin_bottom = 2
+
+    # @box is the outermost widget: header label on top, scrollable tree below.
+    @box = Gtk::Box.new(:vertical, 0)
+    @box.set_size_request(160, -1)
+    @box.append(header)
+    @box.append(sw)
   end
 
   # Returns the outermost widget to embed in the paned layout.
   def widget
-    @sw
+    @box
   end
 
   # Asynchronously fetch functions from the LSP server and repopulate @store.
