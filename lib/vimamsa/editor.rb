@@ -413,12 +413,6 @@ def set_next_command_count(num)
   debug("NEXT COMMAND COUNT: #{$next_command_count}")
 end
 
-def start_minibuffer_cmd(bufname, bufstr, cmd)
-  vma.kbd.set_mode(:minibuffer)
-  $minibuffer = Buffer.new(bufstr, "")
-  $minibuffer.call_func = method(cmd)
-end
-
 def if_cmd_exists(cmd)
   cmd = cmd.gsub(/[^a-zA-Z0-9_\-]/, '')
   if !system("which #{cmd} > /dev/null 2>&1")
@@ -426,53 +420,6 @@ def if_cmd_exists(cmd)
     return false
   end
  return true
-end
-
-def invoke_command()
-  start_minibuffer_cmd("", "", :execute_command)
-end
-
-def execute_command(input_str)
-  begin
-    out_str = eval(input_str, TOPLEVEL_BINDING) #TODO: Other binding?
-    $minibuffer.clear
-    $minibuffer << out_str.to_s #TODO: segfaults, why?
-  rescue SyntaxError
-    debug("SYNTAX ERROR with eval cmd #{action}: " + $!.to_s)
-  end
-end
-
-def minibuffer_end()
-  debug "minibuffer_end"
-  vma.kbd.set_mode(:command)
-  minibuffer_input = $minibuffer.to_s[0..-2]
-  return $minibuffer.call_func.call(minibuffer_input)
-end
-
-def minibuffer_cancel()
-  debug "minibuffer_cancel"
-  vma.kbd.set_mode(:command)
-  minibuffer_input = $minibuffer.to_s[0..-2]
-  # $minibuffer.call_func.call('')
-end
-
-def minibuffer_new_char(c)
-  if c == "\r"
-    raise "Should not come here"
-    debug "MINIBUFFER END"
-  else
-    $minibuffer.insert_txt(c)
-    debug "MINIBUFFER: #{c}"
-  end
-  #vma.buf = $minibuffer
-end
-
-# def readchar_new_char(c)
-# $input_char_call_func.call(c)
-# end
-
-def minibuffer_delete()
-  $minibuffer.delete(BACKWARD_CHAR)
 end
 
 def error(str)
@@ -638,11 +585,6 @@ def scan_word_start_marks(search_str)
   # \Z = end of string, just before last newline.
   wsmarks = scan_indexes(search_str, /(?<=[^\p{Word}])\p{Word}|\Z/)
   return wsmarks
-end
-
-def hook_draw()
-  # TODO: as hook.register
-  # easy_jump_draw()
 end
 
 def get_dot_path(sfx)

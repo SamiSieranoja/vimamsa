@@ -1130,6 +1130,9 @@ class Buffer < String
     elsif linep != nil
       wtype = :linepointer
       word = linep
+    elsif (bare_linep = resolve_bare_file_line_pointer(word))
+      wtype = :linepointer
+      word = bare_linep
     elsif m = word.match(/⟦help:(.*)⟧/)
       return [m[1], :help]
     else
@@ -1715,15 +1718,6 @@ class Buffer < String
     else
       message("PATH NOT WRITABLE: #{savepath}")
     end
-  end
-end
-
-#TODO: function not used
-def write_to_file(savepath, s)
-  if is_path_writable(savepath)
-    IO.write(savepath, self.to_s)
-  else
-    message("PATH NOT WRITABLE: #{savepath}")
   end
 end
 

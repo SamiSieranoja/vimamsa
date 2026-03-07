@@ -18,21 +18,11 @@ def jump_to_next_edit
   buf.jump_to_next_edit
 end
 
-def is_command_mode()
-  return true if vma.kbd.mode_root_state.to_s() == "C"
-  return false
-end
-
-def is_visual_mode()
-  return 1 if vma.kbd.mode_root_state.to_s() == "V"
-  return 0
-end
 
 reg_act(:command_to_buf, proc { command_to_buf }, "Execute command, output to buffer")
 
 reg_act(:lsp_debug, proc { vma.buf.lsp_get_def }, "LSP get definition")
 reg_act(:lsp_jump_to_definition, proc { vma.buf.lsp_jump_to_def }, "LSP jump to definition")
-reg_act(:lsp_print_functions, proc { lsp_print_functions }, "LSP print functions in current file")
 
 reg_act(:eval_buf, proc { vma.buf.eval_whole_buf }, "Eval whole current buffer as ruby code (DANGEROUS)")
 
@@ -60,8 +50,8 @@ reg_act(:backup_all_buffers, proc { backup_all_buffers }, "Backup all buffers", 
 reg_act(:e_move_forward_char, "e_move_forward_char", "Move forward", { :group => [:move, :basic] })
 reg_act(:e_move_backward_char, "e_move_backward_char", "Move forward", { :group => [:move, :basic] })
 # reg_act(:history_switch_backwards, proc{bufs.history_switch_backwards}, "", { :group => :file })
-reg_act(:history_switch_backwards, proc{bufs.history_switch(-1)}, "Prev buffer", { :group => :file })
-reg_act(:history_switch_forwards, proc{bufs.history_switch(+1)}, "Next buffer", { :group => :file })
+reg_act(:history_switch_backwards, proc { bufs.history_switch(-1) }, "Prev buffer", { :group => :file })
+reg_act(:history_switch_forwards, proc { bufs.history_switch(+1) }, "Next buffer", { :group => :file })
 reg_act(:print_buffer_access_list, proc { bufs.print_by_access_time }, "Print buffers by access time", { :group => :file })
 reg_act(:center_on_current_line, "center_on_current_line", "", { :group => :view })
 reg_act(:run_last_macro, proc { vma.macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
@@ -80,16 +70,12 @@ reg_act(:set_executable, proc { buf.set_executable }, "Set current file permissi
 # reg_act(:close_all_buffers, proc { bufs.close_all_buffers() }, "Close all buffers")
 reg_act(:close_current_buffer, proc { bufs.close_current_buffer(true) }, "Close current buffer")
 reg_act(:toggle_file_panel, proc { vma.gui.toggle_file_panel }, "Toggle file panel")
-reg_act(:toggle_func_panel, proc { vma.gui.toggle_func_panel }, "Toggle LSP function panel")
-reg_act(:refresh_func_panel, proc { vma.gui.func_panel_refresh }, "Refresh LSP function panel")
-reg_act(:show_message_history, proc { vma.gui.show_message_history }, "Show message history")
 reg_act(:comment_selection, proc { buf.comment_selection }, "Comment selection")
 reg_act(:delete_char_forward, proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward", { :group => [:edit, :basic] })
 reg_act(:gui_file_finder, proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
 reg_act(:gui_file_history_finder, proc { vma.FileHistory.start_gui }, "Fuzzy file history finder")
 reg_act(:gui_search_replace, proc { gui_search_replace }, "Search and replace")
 reg_act(:find_next, proc { $search.jump_to_next() }, "Find next")
-
 
 reg_act(:set_style_bold, proc { buf.style_transform(:bold) }, "Set text weight to bold")
 reg_act(:set_style_link, proc { buf.style_transform(:link) }, "Set text as link")
@@ -109,7 +95,6 @@ reg_act :minibuffer_end, proc { minibuffer_end }
 reg_act(:invoke_replace, "invoke_replace", "Invoke replace")
 reg_act(:diff_buffer, "diff_buffer", "")
 reg_act(:git_diff_buffer, proc { git_diff_buffer }, "Show git diff of current file")
-reg_act(:git_diff_w, proc { git_diff_w }, "Show git diff -w for whole repository")
 reg_act(:diff_buffer_jump_to_source, proc { diff_buffer_jump_to_source }, "Jump to corresponding line in source from diff buffer")
 # reg_act(:invoke_grep_search, proc{invoke_grep_search}, "")
 reg_act(:invoke_grep_search, proc { gui_grep }, "Grep current buffer")
@@ -119,31 +104,29 @@ reg_act :delete_to_word_end, proc { buf.delete2(:to_word_end) }, "Delete to file
 reg_act :delete_to_next_word_start, proc { buf.delete2(:to_next_word) }, "Delete to start of next word", { :group => [:edit, :basic] }
 reg_act :delete_to_line_start, proc { buf.delete2(:to_line_start) }, "Delete to line start", { :group => [:edit, :basic] }
 
+reg_act(:ack_search, proc { gui_ack }, "Ack")
 
-reg_act(:ack_search, proc { gui_ack }, "Ack") 
-
-reg_act(:copy_cur_line, proc {buf.copy_line}, "Copy the current line") 
-reg_act(:paste_before_cursor, proc {buf.paste(BEFORE)}, "Paste text before the cursor") 
-reg_act(:paste_after_cursor, proc {buf.paste(AFTER)}, "Paste text after the cursor") 
-reg_act(:redo, proc {buf.redo()}, "Redo the last undone action")
-reg_act(:undo, proc {buf.undo()}, "Undo the last action")
+reg_act(:copy_cur_line, proc { buf.copy_line }, "Copy the current line")
+reg_act(:paste_before_cursor, proc { buf.paste(BEFORE) }, "Paste text before the cursor")
+reg_act(:paste_after_cursor, proc { buf.paste(AFTER) }, "Paste text after the cursor")
+reg_act(:redo, proc { buf.redo() }, "Redo the last undone action")
+reg_act(:undo, proc { buf.undo() }, "Undo the last action")
 reg_act(:jump_end_of_line, proc { buf.jump(END_OF_LINE) }, "Move to the end of the current line")
-reg_act(:jump_end_of_buffer, proc {buf.jump(END_OF_BUFFER)}, "Move to the end of the buffer")
+reg_act(:jump_end_of_buffer, proc { buf.jump(END_OF_BUFFER) }, "Move to the end of the buffer")
 reg_act(:jump_start_of_buffer, proc { buf.jump(START_OF_BUFFER) }, "Move to the start of the buffer")
 reg_act(:jump_beginning_of_line, proc { buf.jump(BEGINNING_OF_LINE) }, "Move to the beginning of the current line")
-reg_act(:jump_next_word_end, proc { buf.jump_word(FORWARD,WORD_END) }, "Jump to the end of the next word")
-reg_act(:jump_prev_word_start, proc { buf.jump_word(BACKWARD,WORD_START) }, "Jump to the start of the previous word")
-reg_act(:jump_next_word_start, proc { buf.jump_word(FORWARD,WORD_START) }, "Jump to the start of the next word")
+reg_act(:jump_next_word_end, proc { buf.jump_word(FORWARD, WORD_END) }, "Jump to the end of the next word")
+reg_act(:jump_prev_word_start, proc { buf.jump_word(BACKWARD, WORD_START) }, "Jump to the start of the previous word")
+reg_act(:jump_next_word_start, proc { buf.jump_word(FORWARD, WORD_START) }, "Jump to the start of the next word")
 reg_act(:insert_mode, proc { vma.kbd.set_mode(:insert) }, "Switch to INSERT mode")
 reg_act(:prev_mode, proc { vma.kbd.to_previous_mode }, "Return to the previous mode")
 reg_act(:move_prev_line, proc { buf.move(BACKWARD_LINE) }, "Move the cursor to the previous line")
 reg_act(:move_next_line, proc { buf.move(FORWARD_LINE) }, "Move the cursor to the next line")
 reg_act(:move_backward_char, proc { buf.move(BACKWARD_CHAR) }, "Move one character backward")
-reg_act(:start_visual_mode, proc { buf.start_selection;vma.kbd.set_mode(:visual) }, "Enter VISUAL mode (for selections)") 
+reg_act(:start_visual_mode, proc { buf.start_selection; vma.kbd.set_mode(:visual) }, "Enter VISUAL mode (for selections)")
 reg_act(:jump_last_edit, proc { buf.jump_to_last_edit }, "Jump to the last edit location")
 reg_act(:install_demo_files, proc { install_demo_files }, "Install and show Demo")
 reg_act(:reload_customrb, proc { reload_customrb }, "Reload custom.rb")
-
 
 reg_act :start_browse_mode, proc {
   vma.kbd.set_mode(:browse)
@@ -212,9 +195,9 @@ act_list = {
 
   :backward_line => { :proc => proc { buf.move(BACKWARD_LINE) },
                       :desc => "Move one line backward", :group => [:move, :basic] },
-                                             
-  :increment_word => { :proc => proc { buf.increment_current_word},
-                      :desc => "Increment word", :group => [:edit, :extra] },                                            
+
+  :increment_word => { :proc => proc { buf.increment_current_word },
+                       :desc => "Increment word", :group => [:edit, :extra] },
 
   # { :proc => proc {  },
   # :desc => "", :group => : },
