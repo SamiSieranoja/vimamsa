@@ -154,6 +154,7 @@ class BufferList
     reset_navigation if update_history
     vma.gui.set_current_buffer(idx)
     vma.gui.file_panel_refresh
+    vma.gui.func_panel_refresh
 
     #TODO: delete?
     # if !vma.buf.mode_stack.nil? and vma.kbd.get_scope != :editor #TODO

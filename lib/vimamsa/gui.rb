@@ -198,7 +198,7 @@ end
 
 class VMAgui
   attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c
-  attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel
+  attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel, :func_panel
 
   def initialize()
     @two_column = false
@@ -700,6 +700,7 @@ class VMAgui
 
       init_header_bar
       file_panel_init
+      func_panel_init
 
       @window.show
 
@@ -792,7 +793,9 @@ class VMAgui
     @pane.set_start_child(nil)
     @pane.set_end_child(nil)
 
-    if @file_panel_shown
+    if @func_panel_shown
+      @func_panel_pane.set_end_child(w1[:overlay])
+    elsif @file_panel_shown
       @file_panel_pane.set_end_child(w1[:overlay])
     else
       set_editor_area(w1[:overlay])
@@ -848,7 +851,12 @@ class VMAgui
 
     # Remove overlay from its current parent and add the Gtk::Paned instead
     @pane = Gtk::Paned.new(:horizontal)
-    if @file_panel_shown
+    if @func_panel_shown
+      @func_panel_pane.set_end_child(nil)
+      @pane.set_start_child(w2[:overlay])
+      @pane.set_end_child(w1[:overlay])
+      @func_panel_pane.set_end_child(@pane)
+    elsif @file_panel_shown
       @file_panel_pane.set_end_child(nil)
       @pane.set_start_child(w2[:overlay])
       @pane.set_end_child(w1[:overlay])
@@ -1028,7 +1036,14 @@ class VMAgui
 
   def show_file_panel
     return if @file_panel_shown
-    inner = @two_column ? @pane : @windows[1][:overlay]
+    # If func panel is shown it sits in minibuf_vpane; wrap it too
+    inner = if @func_panel_shown
+      @func_panel_pane
+    elsif @two_column
+      @pane
+    else
+      @windows[1][:overlay]
+    end
     @minibuf_vpane.set_start_child(nil)  # unparent inner before re-parenting
     @file_panel_pane = Gtk::Paned.new(:horizontal)
     @file_panel_pane.hexpand = true
@@ -1052,5 +1067,59 @@ class VMAgui
 
   def toggle_file_panel
     @file_panel_shown ? hide_file_panel : show_file_panel
+  end
+
+  def func_panel_init
+    @func_panel = FuncPanel.new
+    @func_panel_shown = false
+  end
+
+  def func_panel_refresh
+    return unless @func_panel_shown
+    @func_panel.refresh
+  end
+
+  def show_func_panel
+    return if @func_panel_shown
+    if @file_panel_shown
+      inner = @file_panel_pane.end_child
+      @file_panel_pane.set_end_child(nil)
+    elsif @two_column
+      inner = @pane
+      @minibuf_vpane.set_start_child(nil)
+    else
+      inner = @windows[1][:overlay]
+      @minibuf_vpane.set_start_child(nil)
+    end
+    @func_panel_pane = Gtk::Paned.new(:horizontal)
+    @func_panel_pane.hexpand = true
+    @func_panel_pane.vexpand = true
+    @func_panel_pane.set_start_child(@func_panel.widget)
+    @func_panel_pane.set_end_child(inner)
+    @func_panel_pane.set_position(160)
+    if @file_panel_shown
+      @file_panel_pane.set_end_child(@func_panel_pane)
+    else
+      set_editor_area(@func_panel_pane)
+    end
+    @func_panel_shown = true
+    @func_panel.refresh
+  end
+
+  def hide_func_panel
+    return unless @func_panel_shown
+    inner = @func_panel_pane.end_child
+    @func_panel_pane.set_start_child(nil)
+    @func_panel_pane.set_end_child(nil)
+    if @file_panel_shown
+      @file_panel_pane.set_end_child(inner)
+    else
+      set_editor_area(inner)
+    end
+    @func_panel_shown = false
+  end
+
+  def toggle_func_panel
+    @func_panel_shown ? hide_func_panel : show_func_panel
   end
 end

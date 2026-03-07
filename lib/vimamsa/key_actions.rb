@@ -80,6 +80,8 @@ reg_act(:set_executable, proc { buf.set_executable }, "Set current file permissi
 # reg_act(:close_all_buffers, proc { bufs.close_all_buffers() }, "Close all buffers")
 reg_act(:close_current_buffer, proc { bufs.close_current_buffer(true) }, "Close current buffer")
 reg_act(:toggle_file_panel, proc { vma.gui.toggle_file_panel }, "Toggle file panel")
+reg_act(:toggle_func_panel, proc { vma.gui.toggle_func_panel }, "Toggle LSP function panel")
+reg_act(:refresh_func_panel, proc { vma.gui.func_panel_refresh }, "Refresh LSP function panel")
 reg_act(:show_message_history, proc { vma.gui.show_message_history }, "Show message history")
 reg_act(:comment_selection, proc { buf.comment_selection }, "Comment selection")
 reg_act(:delete_char_forward, proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward", { :group => [:edit, :basic] })

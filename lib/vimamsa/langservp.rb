@@ -187,8 +187,9 @@ class LangSrv
     result
   end
 
-  # Send textDocument/documentSymbol, filter to functions/methods, and puts them.
-  def print_functions(fpath)
+  # Send textDocument/documentSymbol and return [{name:, line:}, ...] for functions/methods.
+  # Returns nil on error, empty array if no functions found.
+  def document_functions(fpath)
     ensure_file_open(fpath)
     fpuri = file_uri(fpath)
     a = LSP::Interface::DocumentSymbolParams.new(
@@ -197,23 +198,30 @@ class LangSrv
     id = new_id
     @writer.write(id: id, params: a, method: "textDocument/documentSymbol")
     r = wait_for_response(id)
-    return if r.nil?
+    return nil if r.nil?
 
     symbols = r[:result]
-    return if !symbols.is_a?(Array)
+    return nil if !symbols.is_a?(Array)
 
     functions = collect_functions(symbols)
-    if functions.empty?
+    functions.map do |s|
+      line = s.dig(:range, :start, :line) || s.dig(:location, :range, :start, :line)
+      { name: s[:name], line: line ? line + 1 : 0 }
+    end
+  end
+
+  # Send textDocument/documentSymbol, filter to functions/methods, and puts them.
+  def print_functions(fpath)
+    funcs = document_functions(fpath)
+    if funcs.nil? || funcs.empty?
       puts "(no functions found in #{File.basename(fpath)})"
       return
     end
 
     puts "=== Functions in #{File.basename(fpath)} ==="
-    functions.each do |s|
-      # DocumentSymbol uses :range; SymbolInformation uses :location => :range
-      line = s.dig(:range, :start, :line) || s.dig(:location, :range, :start, :line)
-      line_str = line ? ":#{line + 1}" : ""
-      puts "  #{s[:name]}#{line_str}"
+    funcs.each do |f|
+      line_str = f[:line] > 0 ? ":#{f[:line]}" : ""
+      puts "  #{f[:name]}#{line_str}"
     end
   end
 
