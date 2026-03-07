@@ -76,6 +76,53 @@ class VSourceView < GtkSource::View
     end
   end
 
+  # Returns [word, word_start, word_end] if +pos+ (Ruby-buffer offset) is
+  # inside a «word region, nil otherwise.
+  def masked_word_at_cursor(pos)
+    text = @bufo.to_s
+    return nil unless text.include?("«")
+    text.scan(/«(\S+)/) do
+      word       = $1
+      word_start = $~.begin(0) + 1   # first char after «
+      word_end   = word_start + word.length
+      return [word, word_start, word_end] if pos >= word_start && pos <= word_end
+    end
+    nil
+  end
+
+  # Replace the masked (***) span with the real word from the Ruby buffer.
+  def unmask_gtk_region(word, word_start, word_end)
+    s_iter = buffer.get_iter_at(:offset => word_start)
+    e_iter = buffer.get_iter_at(:offset => word_end)
+    buffer.delete(s_iter, e_iter)
+    buffer.insert(buffer.get_iter_at(:offset => word_start), word)
+  end
+
+  # When in insert mode with cursor on a «word, expose the real text in the GTK
+  # buffer so the user can see/edit it. Re-mask when cursor leaves or mode changes.
+  def update_cursor_unmask
+    ctype = vma.kbd.get_cursor_type
+    pos   = @bufo.pos
+
+    if ctype == :insert
+      result = masked_word_at_cursor(pos)
+      if result
+        word, word_start, word_end = result
+        return if @unmasked_range == [word_start, word_end]  # already showing this word
+        remask_gtk_buffer if @unmasked_range                 # re-mask previous region
+        unmask_gtk_region(word, word_start, word_end)
+        @unmasked_range = [word_start, word_end]
+        return
+      end
+    end
+
+    # Not insert mode, or cursor is not over a masked word — ensure everything masked
+    if @unmasked_range
+      @unmasked_range = nil
+      remask_gtk_buffer
+    end
+  end
+
   def gutter_width()
     winwidth = width
     view_width = visible_rect.width
@@ -694,6 +741,8 @@ class VSourceView < GtkSource::View
       self.cursor_visible = false
       self.cursor_visible = true
     end
+
+    update_cursor_unmask
   end #end draw_cursor
 
   CONTEXT_MENU_ITEMS = [
