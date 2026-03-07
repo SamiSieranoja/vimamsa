@@ -30,14 +30,14 @@ class SelectUpdateWindow
   end
 
   def set_selected_row(rownum)
+    count = @model.count
+    return if count == 0
     rownum = 0 if rownum < 0
+    rownum = count - 1 if rownum >= count
     @selected_row = rownum
-
-    if @model.count > 0
-      path = Gtk::TreePath.new(@selected_row.to_s)
-      iter = @model.get_iter(path)
-      @tv.selection.select_iter(iter)
-    end
+    path = Gtk::TreePath.new(@selected_row.to_s)
+    iter = @model.get_iter(path)
+    @tv.selection.select_iter(iter)
   end
 
   def initialize(main_window, item_list, jump_keys, select_callback, update_callback, opt = {})
