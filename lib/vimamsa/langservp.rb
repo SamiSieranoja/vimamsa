@@ -175,6 +175,7 @@ class LangSrv
 
   # LSP SymbolKind values for callable things
   FUNCTION_KINDS = [6, 9, 12].freeze  # Function, Constructor, Method
+  CLASS_KINDS    = [5, 10, 11, 23].freeze  # Class, Module, Interface, Namespace
 
   # Recursively collect symbols of function kinds.
   # Handles both flat SymbolInformation[] and nested DocumentSymbol[] (with :children).
@@ -185,6 +186,60 @@ class LangSrv
       result.concat(collect_functions(s[:children])) if s[:children].is_a?(Array)
     end
     result
+  end
+
+  # Flatten all FUNCTION_KINDS from a symbol subtree into [{name:, line:}, ...].
+  def flatten_functions(symbols)
+    result = []
+    symbols.each do |s|
+      if FUNCTION_KINDS.include?(s[:kind])
+        line = s.dig(:range, :start, :line)
+        result << { name: s[:name], line: line ? line + 1 : 0 }
+      end
+      result.concat(flatten_functions(s[:children])) if s[:children].is_a?(Array)
+    end
+    result
+  end
+
+  # Build groups from a nested DocumentSymbol[].
+  # Returns [{name:, line:, functions: [{name:, line:}, ...]}, ...]
+  # name: nil = top-level (ungrouped) functions.
+  def collect_groups_nested(symbols)
+    groups = []
+    top_funcs = []
+    symbols.each do |s|
+      if CLASS_KINDS.include?(s[:kind])
+        line = s.dig(:range, :start, :line)
+        funcs = s[:children].is_a?(Array) ? flatten_functions(s[:children]) : []
+        groups << { name: s[:name], line: line ? line + 1 : 0, functions: funcs }
+      elsif FUNCTION_KINDS.include?(s[:kind])
+        line = s.dig(:range, :start, :line)
+        top_funcs << { name: s[:name], line: line ? line + 1 : 0 }
+      end
+    end
+    groups.unshift({ name: nil, line: nil, functions: top_funcs }) unless top_funcs.empty?
+    groups
+  end
+
+  # Build groups from a flat SymbolInformation[] using :containerName.
+  def collect_groups_flat(symbols)
+  
+    by_container = {}
+    symbols.each do |s|
+      next unless FUNCTION_KINDS.include?(s[:kind])
+      container = s[:containerName] || ""
+      line = s.dig(:location, :range, :start, :line)
+      by_container[container] ||= []
+      by_container[container] << { name: s[:name], line: line ? line + 1 : 0 }
+    end
+    groups = []
+    top_funcs = by_container.delete("") || []
+    by_container.keys.sort.each do |container|
+      groups << { name: container, line: 0, functions: by_container[container] }
+    end
+    groups << { name: nil, line: nil, functions: top_funcs } unless top_funcs.empty?
+    
+    groups
   end
 
   # Send textDocument/documentSymbol and return [{name:, line:}, ...] for functions/methods.
@@ -207,6 +262,31 @@ class LangSrv
     functions.map do |s|
       line = s.dig(:range, :start, :line) || s.dig(:location, :range, :start, :line)
       { name: s[:name], line: line ? line + 1 : 0 }
+    end
+  end
+
+  # Like document_functions but returns functions grouped by class/module.
+  # Returns [{name:, line:, functions: [{name:, line:}, ...]}, ...]
+  # name: nil means top-level (ungrouped) functions.
+  def document_functions_grouped(fpath)
+    ensure_file_open(fpath)
+    fpuri = file_uri(fpath)
+    a = LSP::Interface::DocumentSymbolParams.new(
+      text_document: LSP::Interface::TextDocumentIdentifier.new(uri: fpuri),
+    )
+    id = new_id
+    @writer.write(id: id, params: a, method: "textDocument/documentSymbol")
+    r = wait_for_response(id)
+    return nil if r.nil?
+
+    symbols = r[:result]
+    return nil unless symbols.is_a?(Array)
+
+    # Detect nested (DocumentSymbol) vs flat (SymbolInformation) format
+    if symbols.any? { |s| s.key?(:children) }
+      collect_groups_nested(symbols)
+    else
+      collect_groups_flat(symbols)
     end
   end
 
