@@ -118,6 +118,28 @@ def diff_buffer_jump_to_source()
   center_on_current_line
 end
 
+def git_diff_w()
+  return if !if_cmd_exists("git")
+  diff_buffer_init
+
+  dir = vma.buf.fname ? File.dirname(vma.buf.fname) : Dir.pwd
+  git_root = `git -C #{Shellwords.escape(dir)} rev-parse --show-toplevel 2>/dev/null`.strip
+  if git_root.empty?
+    message("Not a git repository")
+    return
+  end
+
+  bufstr = run_cmd("git -C #{Shellwords.escape(git_root)} diff -w")
+  if bufstr.strip.empty?
+    message("git diff -w: no changes")
+    return
+  end
+
+  create_new_file(nil, bufstr)
+  gui_set_file_lang(vma.buf.id, "diff")
+  vma.kbd.set_mode(:diffview)
+end
+
 def git_diff_buffer()
   return if !if_cmd_exists("git")
   diff_buffer_init

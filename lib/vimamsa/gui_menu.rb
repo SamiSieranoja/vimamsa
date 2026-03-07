@@ -53,6 +53,7 @@ module Vimamsa
 
       add_to_menu "Actions.experimental.Diff", { :label => "Show Diff of\nunsaved changes", :action => :diff_buffer }
       add_to_menu "Actions.experimental.GitDiff", { :label => "Show git diff", :action => :git_diff_buffer }
+      add_to_menu "Actions.experimental.GitDiffW", { :label => "Show git diff -w (repo)", :action => :git_diff_w }
 
       add_to_menu "Actions.experimental.PrintBufferAccessList", { :label => "Print buffers by access time", :action => :print_buffer_access_list }
       add_to_menu "Actions.experimental.EnableDebug", { :label => "Enable debug", :action => :enable_debug }
