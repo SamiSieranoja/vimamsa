@@ -606,6 +606,24 @@ def get_file_line_pointer(s)
   return nil
 end
 
+# Try to resolve a bare "filename.ext:line" reference (no directory component).
+# Searches the current buffer's directory and the last visited directory.
+def resolve_bare_file_line_pointer(s)
+  m = s.match(/\A([\w.\-]+\.[a-zA-Z0-9]+):(c?)(\d+)\z/)
+  return nil unless m
+  fname = m[1]
+  col   = m[2]
+  line  = m[3].to_i
+  dirs = []
+  dirs << File.dirname(vma.buf.fname) if vma.buf&.fname
+  dirs << bufs.last_dir              if bufs.last_dir
+  dirs.uniq.each do |dir|
+    candidate = File.join(dir, fname)
+    return [candidate, line, col] if File.exist?(candidate)
+  end
+  nil
+end
+
 def find_project_dir_of_fn(fn)
   pcomp = Pathname.new(fn).each_filename.to_a
   parent_dirs = (0..(pcomp.size - 2)).collect { |x| "/" + pcomp[0..x].join("/") }.reverse
