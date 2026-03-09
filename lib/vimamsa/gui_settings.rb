@@ -29,6 +29,12 @@ SETTINGS_DEFS = [
       { :key => [:macro, :animation_delay], :label => "Macro animation delay (sec)", :type => :float, :min => 0.0, :max => 2.0, :step => 0.0001 },
     ],
   },
+  {
+    :label => "Files",
+    :settings => [
+      { :key => ["search_dirs"], :label => "Search directories (one per line)", :type => :string_list },
+    ],
+  },
 ]
 
 class SettingsDialog
@@ -56,16 +62,27 @@ class SettingsDialog
       grid.margin_start = 12
       grid.margin_end = 12
 
-      section[:settings].each_with_index do |s, row|
+      grid_row = 0
+      section[:settings].each do |s|
         label = Gtk::Label.new(s[:label])
         label.halign = :start
         label.hexpand = true
 
-        widget = make_widget(s)
-        @widgets[s[:key]] = { :widget => widget, :type => s[:type] }
-
-        grid.attach(label, 0, row, 1, 1)
-        grid.attach(widget, 1, row, 1, 1)
+        if s[:type] == :string_list
+          # Label spans both columns; editor on the next row spanning both columns
+          grid.attach(label, 0, grid_row, 2, 1)
+          grid_row += 1
+          cur = get(s[:key])
+          container, get_value = build_string_list_editor(cur.is_a?(Array) ? cur : [])
+          @widgets[s[:key]] = { :widget => container, :type => s[:type], :get_value => get_value }
+          grid.attach(container, 0, grid_row, 2, 1)
+        else
+          widget = make_widget(s)
+          @widgets[s[:key]] = { :widget => widget, :type => s[:type] }
+          grid.attach(label, 0, grid_row, 1, 1)
+          grid.attach(widget, 1, grid_row, 1, 1)
+        end
+        grid_row += 1
       end
 
       notebook.append_page(grid, Gtk::Label.new(section[:label]))
@@ -119,13 +136,75 @@ class SettingsDialog
     end
   end
 
+  def build_string_list_editor(paths)
+    store = Gtk::ListStore.new(String)
+    paths.each { |p| store.append[0] = p }
+
+    tv = Gtk::TreeView.new(store)
+    tv.headers_visible = false
+    renderer = Gtk::CellRendererText.new
+    renderer.ellipsize = Pango::EllipsizeMode::START
+    col = Gtk::TreeViewColumn.new("", renderer, text: 0)
+    col.expand = true
+    tv.append_column(col)
+
+    sw = Gtk::ScrolledWindow.new
+    sw.set_policy(:automatic, :automatic)
+    sw.set_child(tv)
+    sw.set_size_request(-1, 120)
+    sw.vexpand = true
+
+    add_btn = Gtk::Button.new(label: "Add…")
+    add_btn.signal_connect("clicked") do
+      chooser = Gtk::FileChooserDialog.new(
+        :title => "Select directory",
+        :action => :select_folder,
+        :buttons => [["Select", :accept], ["Cancel", :cancel]],
+      )
+      chooser.set_transient_for(@window)
+      chooser.modal = true
+      chooser.signal_connect("response") do |dlg, resp|
+        if resp == Gtk::ResponseType::ACCEPT
+          iter = store.append
+          iter[0] = dlg.file.path
+        end
+        dlg.destroy
+      end
+      chooser.show
+    end
+
+    remove_btn = Gtk::Button.new(label: "Remove")
+    remove_btn.signal_connect("clicked") do
+      sel = tv.selection.selected
+      store.remove(sel) if sel
+    end
+
+    btn_box = Gtk::Box.new(:horizontal, 6)
+    btn_box.append(add_btn)
+    btn_box.append(remove_btn)
+
+    container = Gtk::Box.new(:vertical, 4)
+    container.vexpand = true
+    container.append(sw)
+    container.append(btn_box)
+
+    get_value = proc {
+      result = []
+      store.each { |_m, _path, iter| result << iter[0] }
+      result
+    }
+
+    [container, get_value]
+  end
+
   def save_and_close
     @widgets.each do |key, info|
       val = case info[:type]
-            when :bool   then info[:widget].active?
-            when :int    then info[:widget].value.to_i
-            when :float  then info[:widget].value.to_f
-            when :string then info[:widget].text
+            when :bool        then info[:widget].active?
+            when :int         then info[:widget].value.to_i
+            when :float       then info[:widget].value.to_f
+            when :string      then info[:widget].text
+            when :string_list then info[:get_value].call
             end
       set(key, val)
     end
