@@ -39,12 +39,16 @@ class FileFinder
 
   def initialize()
     vma.hook.register(:shutdown, self.method("save"))
-    @@dir_list = vma.marshal_load("file_index")
+    # Load saved file list on startup (disabled for now, TODO)
+    # @@dir_list = vma.marshal_load("file_index")
     @@dir_list ||= []
-    update_search_idx
+    # update_search_idx
+    FileFinder.recursively_find_files
+    message("FileFinder initialized, directories: #{cnf.search_dirs!}")
   end
 
   def self.update_search_idx
+  
     Thread.new {
       sleep 0.1
       @@idx = StringIndex.new

@@ -165,9 +165,6 @@ def gui_set_file_lang(id, lname)
   view.buffer.highlight_syntax = true
 end
 
-def gui_add_image(imgpath, pos)
-end
-
 # TODO:?
 def gui_select_window_close(arg = nil)
 end
