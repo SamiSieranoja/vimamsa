@@ -510,6 +510,10 @@ def load_buffer(fname)
     return
   end
   return if !File.exist?(fname)
+  if Encrypt.is_encrypted?(fname)
+    decrypt_dialog(filename: fname)
+    return nil
+  end
   debug("LOAD BUFFER: #{fname}")
   buffer = Buffer.new(read_file("", fname), fname)
   # gui_set_current_buffer(buffer.id)
