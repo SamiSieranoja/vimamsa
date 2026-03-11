@@ -128,7 +128,7 @@
   
   <style name="def:title"                scale="2.0" bold="true" />
   <style name="def:hyperlink"                foreground="lightblue" bold="true" />
-  <style name="def:heading0"                scale="5.0" bold="true" foreground="heading" />
+  <style name="def:heading0"                scale="2.0" bold="true" foreground="heading" />
   <style name="def:heading1"                scale="1.75" bold="true" foreground="heading" />
   <style name="def:heading2"                scale="1.5" bold="true" foreground="heading" />
   <style name="def:heading3"                scale="1.25" bold="true" foreground="heading" />
