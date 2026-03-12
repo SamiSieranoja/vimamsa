@@ -87,7 +87,7 @@ class Buffer < String
   end
 
   # Start asynchronous read of system clipboard
-  def paste_start(at, register)
+  def paste_start(at, register, overwrite: false)
     @clipboard_paste_running = true
 
     # if true or running_wayland? and !GLib::Version::or_later?(2, 79, 0)
@@ -101,13 +101,13 @@ class Buffer < String
       rescue Gio::IOError::NotSupported
         debug Gio::IOError::NotSupported
       else
-        paste_finish(text, at, register)
+        paste_finish(text, at, register, overwrite: overwrite)
       end
     end
     return nil
   end
 
-  def paste_finish(text, at, register)
+  def paste_finish(text, at, register, overwrite: false)
     debug "PASTE: #{text}"
 
     # If we did not put this text to clipboard
@@ -121,7 +121,14 @@ class Buffer < String
 
     return if text == ""
 
-    if @paste_lines
+    if overwrite && !@paste_lines
+      # Delete as many chars forward as we are about to insert, stopping before newline
+      line_end = current_line_range.last - 1  # position of last char before \n
+      n = [text.size, [line_end - @pos + 1, 0].max].min
+      add_delta([@pos, DELETE, n], true) if n > 0
+      insert_txt_at(text, @pos)
+      set_pos(@pos + text.size - 1)
+    elsif @paste_lines
       debug "PASTE LINES"
       if at == BEFORE
         l = current_line_range()
@@ -143,6 +150,16 @@ class Buffer < String
     set_pos(@pos)
     vma.buf.view.after_action # redraw
     @clipboard_paste_running = false
+  end
+
+  def paste_over(at = AFTER, register = nil)
+    if vma.macro.running_macro
+      text = vma.clipboard.get()
+      paste_finish(text, at, register, overwrite: true)
+    else
+      paste_start(at, register, overwrite: true)
+    end
+    return true
   end
 
   def paste(at = AFTER, register = nil)

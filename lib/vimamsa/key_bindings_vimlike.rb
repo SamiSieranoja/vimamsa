@@ -244,6 +244,8 @@ add_keys "core", {
 
   # Replace mode
   "X esc || X ctrl!" => "vma.kbd.to_previous_mode",
+  # "X p" => :paste_over_after, #TODO
+  "X ctrl-v" => :paste_over_before,
   "X <char>" => "buf.replace_with_char(<char>);buf.move(FORWARD_CHAR)",
 
   # Macros
