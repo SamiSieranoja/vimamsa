@@ -81,7 +81,7 @@ class Buffer < String
     @clipboard_paste_running = true
     Thread.new {
       text = `xclip -selection c -o`
-      paste_finish(text, at, register)
+      GLib::Idle.add { paste_finish(text, at, register); false }
     }
     return nil
   end
@@ -90,9 +90,9 @@ class Buffer < String
   def paste_start(at, register)
     @clipboard_paste_running = true
 
-    if true or running_wayland? and !GLib::Version::or_later?(2, 79, 0)
-      return paste_start_xclip(at, register)
-    end
+    # if true or running_wayland? and !GLib::Version::or_later?(2, 79, 0)
+      # return paste_start_xclip(at, register)
+    # end
 
     clipboard = vma.gui.window.display.clipboard
     clipboard.read_text_async do |_clipboard, result|
