@@ -5,8 +5,6 @@ require "pathname"
 require "openssl"
 require "ripl/multi_line"
 
-$buffer_history = []
-
 $ifuncon = false
 
 class Buffer < String

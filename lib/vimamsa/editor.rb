@@ -506,7 +506,6 @@ def load_buffer(fname)
   # If file already open in existing buffer
   existing_buffer = vma.buffers.get_buffer_by_filename(fname)
   if existing_buffer != nil
-    vma.buffers.add_buf_to_history(existing_buffer)
     return
   end
   return if !File.exist?(fname)
@@ -522,7 +521,6 @@ def load_buffer(fname)
   #buf = filter_buffer(buffer)
   #    debug("END FILTER: #{fname}")
   vma.buffers << buffer
-  #$buffer_history << vma.buffers.size - 1
   return buffer
 end
 

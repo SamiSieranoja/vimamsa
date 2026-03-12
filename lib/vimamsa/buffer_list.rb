@@ -20,12 +20,11 @@ def load_buffer_list()
 end
 
 class BufferList
-  attr_reader :current_buf, :last_dir, :last_file, :buffer_history
+  attr_reader :current_buf, :last_dir, :last_file
   attr_accessor :list
 
   def initialize()
     @last_dir = File.expand_path(".")
-    @buffer_history = []
     super
     @current_buf = 0
     @list = []
@@ -46,21 +45,9 @@ class BufferList
   end
 
   def add(_buf)
-    @buffer_history << _buf.id
-    # @navigation_idx = _buf.id #TODO:??
     @list << _buf
     @h[_buf.id] = _buf
   end
-
-  #NOTE: unused. enable?
-  # def switch()
-  # debug "SWITCH BUF. bufsize:#{self.size}, curbuf: #{@current_buf}"
-  # @current_buf += 1
-  # @current_buf = 0 if @current_buf >= self.size
-  # m = method("switch")
-  # set_last_command({ method: m, params: [] })
-  # set_current_buffer(@current_buf)
-  # end
 
   def slist
     # TODO: implement using heap/priorityque
@@ -91,9 +78,6 @@ class BufferList
 
   def switch_to_last_buf()
     debug "SWITCH TO LAST BUF:"
-    # debug @buffer_history
-    # last_buf = @buffer_history[-2]
-
     last_buf = slist[-2]
     if !last_buf.nil?
       set_current_buffer(last_buf.id)
@@ -113,17 +97,6 @@ class BufferList
 
   def get_buffer_by_id(id)
     return @h[id]
-  end
-
-  def add_buf_to_history(buf_idx)
-    if @list.include?(buf_idx)
-      @buffer_history << @buf_idx
-      @navigation_idx = 0
-      # compact_buf_history()
-    else
-      debug "buffer_list, no such id:#{buf_idx}"
-      return
-    end
   end
 
   def add_current_buf_to_history()
