@@ -7,7 +7,7 @@ class TestBasicEditing < VmaTest
 
   def test_delete_char_forward
     act 'buf.insert_txt("abcde")'
-    act "buf.jump(START_OF_BUFFER)"
+    act :jump_to_start_of_buffer
     act :delete_char_forward
     act :delete_char_forward
     assert_buf "cde\n"
@@ -38,18 +38,18 @@ class TestBasicEditing < VmaTest
 
   def test_jump_start_end
     act 'buf.insert_txt("hello")'
-    act "buf.jump(START_OF_BUFFER)"
+    act :jump_to_start_of_buffer
     assert_pos 0, 0
-    act "buf.jump(END_OF_BUFFER)"
+    act :jump_to_end_of_buffer
     assert_pos 0, 5
   end
 
   def test_copy_paste
     #Note: Buffer contains a single "\n" by default
     act 'buf.insert_txt("hello\n")'
-    act "buf.jump(START_OF_BUFFER)"
+    act :jump_to_start_of_buffer
     act :copy_cur_line
-    act "buf.jump(END_OF_BUFFER)"
+    act :jump_to_end_of_buffer
     act :paste_after_cursor
     assert_buf "hello\n\nhello\n"
   end
@@ -57,7 +57,7 @@ class TestBasicEditing < VmaTest
   def test_delete_line
     act 'buf.insert_txt("first\n")'
     act 'buf.insert_txt("second")'
-    act "buf.jump(START_OF_BUFFER)"
+    act :jump_to_start_of_buffer
     act :delete_line
     assert_buf "second\n"
   end
