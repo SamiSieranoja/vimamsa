@@ -131,6 +131,7 @@ add_keys "core", {
   "I enter" => :insert_new_line,
 
 
+  "I shift-left" => "insert_select_move(BACKWARD_CHAR)",
   "I shift-right" => "insert_select_move(FORWARD_CHAR)",
   "I shift-down" => "insert_select_move(FORWARD_LINE)",
   "I shift-pagedown" => "insert_select_move(:pagedown)",

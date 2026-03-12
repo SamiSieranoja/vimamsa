@@ -31,7 +31,7 @@ reg_act(:cut_selection, proc { buf.delete(SELECTION) }, "Cut selection to clipbo
 
 reg_act(:insert_backspace, proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(BACKWARD_CHAR) }, "Delete backwards")
 reg_act(:insert_select_up, proc { insert_select_move(BACKWARD_LINE) }, "Select texte upwards")
-reg_act(:insert_select_down, proc { insert_select_move(BACKWARD_CHAR) }, "Select text downwards")
+reg_act(:insert_select_down, proc { insert_select_move(FORWARD_LINE) }, "Select text downwards")
 
 reg_act(:copy_selection, proc { buf.copy_active_selection }, "Copy selection to clipboard")
 reg_act(:enable_debug, proc { cnf.debug = true }, "Enable debug")

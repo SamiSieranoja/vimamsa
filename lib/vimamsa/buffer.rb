@@ -346,6 +346,7 @@ class Buffer < String
     @crypt = crypt
     @encrypted_str = encrypted
     set_filename(filename)
+    gui_set_buffer_contents(@id, self.to_s)
   end
 
   def sanitycheck_btree()
