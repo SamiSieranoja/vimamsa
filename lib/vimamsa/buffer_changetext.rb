@@ -123,7 +123,13 @@ class Buffer < String
 
     if @paste_lines
       debug "PASTE LINES"
-      put_to_new_next_line(text)
+      if at == BEFORE
+        l = current_line_range()
+        insert_txt_at(text, l.begin)
+        set_pos(l.begin)
+      else
+        put_to_new_next_line(text)
+      end
     else
       debug "PASTE !LINES"
       if at_end_of_buffer? or at_end_of_line? or at == BEFORE
