@@ -138,7 +138,9 @@ class SettingsDialog
       w
     when :select
       options = s[:options].is_a?(Proc) ? s[:options].call : s[:options]
-      cur = get(s[:key]).to_s
+      obj = cnf
+      s[:key][0..-2].each { |k| obj = obj.public_send(k) }
+      cur = obj.public_send(:"#{s[:key].last}!").to_s
       string_list = Gtk::StringList.new(options)
       w = Gtk::DropDown.new(string_list, nil)
       w.selected = [options.index(cur) || 0, 0].max
@@ -217,7 +219,9 @@ class SettingsDialog
             when :string_list then info[:get_value].call
             when :select      then info[:widget].selected_item&.string
             end
-      set(key, val)
+      obj = cnf
+      key[0..-2].each { |k| obj = obj.public_send(k) }
+      obj.public_send(:"#{key.last}=", val)
     end
     save_settings_to_file
     gui_refresh_font
@@ -238,7 +242,7 @@ def gui_refresh_style_scheme
   return unless $vmag
   ssm = GtkSource::StyleSchemeManager.new
   ssm.set_search_path(ssm.search_path << ppath("styles/"))
-  sty = ssm.get_scheme(get(cnf.style_scheme) || "molokai_edit")
+  sty = ssm.get_scheme(cnf.style_scheme! || "molokai_edit")
   return if sty.nil?
   for _k, window in $vmag.windows
     view = window[:sw].child
