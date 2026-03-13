@@ -126,9 +126,7 @@ def gui_create_buffer(id, bufo)
 
   view.register_signals()
 
-  ssm = GtkSource::StyleSchemeManager.new
-  ssm.set_search_path(ssm.search_path << ppath("styles/"))
-  sty = ssm.get_scheme(cnf.style_scheme! || "molokai_edit")
+  sty = load_vimamsa_scheme
 
   buf1.highlight_matching_brackets = true
   buf1.style_scheme = sty

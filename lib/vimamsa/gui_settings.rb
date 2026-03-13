@@ -32,7 +32,7 @@ SETTINGS_DEFS = [
         :options => proc {
           ssm = GtkSource::StyleSchemeManager.new
           ssm.set_search_path(ssm.search_path << ppath("styles/"))
-          ssm.scheme_ids.sort
+          ssm.scheme_ids.reject { |id| id == VIMAMSA_OVERLAY_SCHEME_ID }.sort
         } },
     ],
   },
@@ -238,6 +238,41 @@ def show_settings_dialog
   SettingsDialog.new.run
 end
 
+VIMAMSA_OVERLAY_SCHEME_ID = "vimamsa_overlay"
+
+# Generate a GtkSourceView style scheme that inherits from base_scheme_id and
+# overlays Vimamsa-specific styles (headings, hyperlinks, bold) on top.
+# Written to styles/_vimamsa_overlay.xml and reloaded on each call.
+def generate_vimamsa_overlay(base_scheme_id)
+  xml = <<~XML
+    <?xml version="1.0"?>
+    <style-scheme id="#{VIMAMSA_OVERLAY_SCHEME_ID}" name="#{VIMAMSA_OVERLAY_SCHEME_ID}" version="1.0" parent-scheme="#{base_scheme_id}">
+      <style name="def:title"     scale="2.0"   bold="true"/>
+      <style name="def:hyperlink" foreground="#4FC3F7" bold="true"/>
+      <style name="def:heading0"  scale="2.0"   bold="true"/>
+      <style name="def:heading1"  scale="1.75"  bold="true"/>
+      <style name="def:heading2"  scale="1.5"   bold="true"/>
+      <style name="def:heading3"  scale="1.25"  bold="true"/>
+      <style name="def:heading4"  scale="1.175" bold="true"/>
+      <style name="def:heading5"  scale="1.1"   bold="true"/>
+      <style name="def:heading6"  scale="1.0"   bold="true"/>
+      <style name="def:bold"      bold="true"/>
+    </style-scheme>
+  XML
+  IO.write(ppath("styles/_vimamsa_overlay.xml"), xml)
+end
+
+# Build a StyleSchemeManager with the project styles dir appended,
+# apply the overlay on top of the user's chosen base scheme,
+# and return the overlay scheme object.
+def load_vimamsa_scheme
+  base_id = cnf.style_scheme! || "molokai_edit"
+  generate_vimamsa_overlay(base_id)
+  ssm = GtkSource::StyleSchemeManager.new
+  ssm.set_search_path(ssm.search_path << ppath("styles/"))
+  ssm.get_scheme(VIMAMSA_OVERLAY_SCHEME_ID)
+end
+
 # Returns true if the given GtkSource::StyleScheme has a light background.
 # Reads the background color of the "text" style and computes relative luminance.
 def scheme_is_light?(sty)
@@ -262,9 +297,7 @@ end
 
 def gui_refresh_style_scheme
   return unless $vmag
-  ssm = GtkSource::StyleSchemeManager.new
-  ssm.set_search_path(ssm.search_path << ppath("styles/"))
-  sty = ssm.get_scheme(cnf.style_scheme! || "molokai_edit")
+  sty = load_vimamsa_scheme
   return if sty.nil?
   gui_apply_color_mode(sty)
   for _k, view in $vmag.buffers
