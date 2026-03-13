@@ -238,12 +238,35 @@ def show_settings_dialog
   SettingsDialog.new.run
 end
 
+# Returns true if the given GtkSource::StyleScheme has a light background.
+# Reads the background color of the "text" style and computes relative luminance.
+def scheme_is_light?(sty)
+  text_style = sty.get_style("text")
+  return false if text_style.nil?
+  bg = text_style.background
+  return false if bg.nil? || !bg.start_with?("#")
+  hex = bg.delete("#")
+  hex = hex.chars.map { |c| c * 2 }.join if hex.length == 3
+  return false unless hex.length == 6
+  r = hex[0, 2].to_i(16) / 255.0
+  g = hex[2, 2].to_i(16) / 255.0
+  b = hex[4, 2].to_i(16) / 255.0
+  luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+  luminance > 0.5
+end
+
+# Apply dark/light GTK preference to match the given style scheme.
+def gui_apply_color_mode(sty)
+  Gtk::Settings.default.gtk_application_prefer_dark_theme = !scheme_is_light?(sty)
+end
+
 def gui_refresh_style_scheme
   return unless $vmag
   ssm = GtkSource::StyleSchemeManager.new
   ssm.set_search_path(ssm.search_path << ppath("styles/"))
   sty = ssm.get_scheme(cnf.style_scheme! || "molokai_edit")
   return if sty.nil?
+  gui_apply_color_mode(sty)
   for _k, window in $vmag.windows
     view = window[:sw].child
     next if view.nil?

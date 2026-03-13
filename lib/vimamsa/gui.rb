@@ -132,6 +132,7 @@ def gui_create_buffer(id, bufo)
 
   buf1.highlight_matching_brackets = true
   buf1.style_scheme = sty
+  gui_apply_color_mode(sty) if sty
 
   view.set_highlight_current_line(true)
   view.set_show_line_numbers(true)
