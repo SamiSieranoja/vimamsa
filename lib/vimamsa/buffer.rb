@@ -1440,10 +1440,6 @@ class Buffer < String
 
   def get_visual_mode_range2()
     r = get_visual_mode_range
-    if r.begin > r.end
-      debug "r.begin > r.end"
-      require "pry";binding.pry
-    end
     return [r.begin, r.end]
   end
 
@@ -1458,7 +1454,7 @@ class Buffer < String
   end
 
   def get_visual_mode_range()
-    _start = @selection_start
+    _start = @selection_start || @pos
     _end = @pos
     _start, _end = _end, _start if _start > _end
     return _start..(_end)
