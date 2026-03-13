@@ -765,7 +765,11 @@ class VMAgui
   end
 
   def init_menu
-    Vimamsa::Menu.new(@menubar, @app)
+    @menu = Vimamsa::Menu.new(@menubar, @app)
+  end
+
+  def menu
+    @menu
   end
 
   def toggle_two_column

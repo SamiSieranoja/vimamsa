@@ -10,6 +10,10 @@ class Action
   end
 end
 
+def unreg_act(id)
+  vma.actions.unregister(id)
+end
+
 def reg_act(id, callfunc, name = "", opt = {})
   if callfunc.class == Proc
     a = Action.new(id, name, callfunc, opt)
@@ -41,6 +45,10 @@ class ActionList
 
   def register(id, obj)
     @actions[id] = obj
+  end
+
+  def unregister(id)
+    @actions.delete(id)
   end
 
   def include?(act)

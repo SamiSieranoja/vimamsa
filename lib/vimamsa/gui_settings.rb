@@ -49,6 +49,11 @@ SETTINGS_DEFS = [
 # Build the full settings definition list, appending a Modules section
 # dynamically from whatever subdirectories exist in modules/.
 def all_settings_defs
+  # Build one settings entry per module found in modules/*/.
+  # Each module may provide a <name>_info.rb file that defines <name>_info,
+  # returning a hash with :name (display label) and :no_restart (bool).
+  # Modules without an info file fall back to a capitalized directory name
+  # and require a restart to activate.
   module_settings = Dir.glob(ppath("modules/*/")).sort.map do |mod_dir|
     mod_name = File.basename(mod_dir)
     info_file = File.join(mod_dir, "#{mod_name}_info.rb")
@@ -56,8 +61,9 @@ def all_settings_defs
     info_fn = "#{mod_name}_info"
     info = respond_to?(info_fn, true) ? send(info_fn) : {}
     label = info[:name] || mod_name.split(/[_\-]/).map(&:capitalize).join(" ")
-    restart_note = info[:no_restart] ? "" : " (requires restart)"
-    { :key => [:modules, mod_name.to_sym, :enabled], :label => "#{label}#{restart_note}", :type => :bool }
+    no_restart = info[:no_restart] || false
+    restart_note = no_restart ? "" : " (requires restart)"
+    { :key => [:modules, mod_name.to_sym, :enabled], :label => "#{label}#{restart_note}", :type => :bool, :no_restart => no_restart }
   end
   return SETTINGS_DEFS unless module_settings.any?
   SETTINGS_DEFS + [{ :label => "Modules", :settings => module_settings }]
@@ -104,7 +110,8 @@ class SettingsDialog
           grid.attach(container, 0, grid_row, 2, 1)
         else
           widget = make_widget(s)
-          @widgets[s[:key]] = { :widget => widget, :type => s[:type] }
+          # Store prev_value so save_and_close can detect newly-enabled modules.
+          @widgets[s[:key]] = { :widget => widget, :type => s[:type], :no_restart => s[:no_restart], :prev_value => cnf_get(s[:key]) }
           grid.attach(label, 0, grid_row, 1, 1)
           grid.attach(widget, 1, grid_row, 1, 1)
         end
@@ -245,7 +252,34 @@ class SettingsDialog
     save_settings_to_file
     gui_refresh_font
     gui_refresh_style_scheme
+    activate_no_restart_modules
     @window.destroy
+  end
+
+  # For modules that support live activation (no_restart: true), apply enable
+  # and disable transitions immediately without requiring a restart.
+  # Modules that were already in the target state when the dialog opened are
+  # skipped (prev_value matches new value), so we never double-init or double-disable.
+  def activate_no_restart_modules
+    @widgets.each do |key, info|
+      next unless key.is_a?(Array) && key[0] == :modules && key[2] == :enabled
+      next unless info[:no_restart]  # module requires restart — skip
+      mod_name = key[1].to_s
+      was_enabled = info[:prev_value]
+      now_enabled = cnf_get(key)
+      if !was_enabled && now_enabled
+        # Toggled on: load the module file and call <name>_init.
+        main_file = ppath("modules/#{mod_name}/#{mod_name}.rb")
+        next unless File.exist?(main_file)
+        load main_file
+        init_fn = "#{mod_name}_init"
+        send(init_fn) if respond_to?(init_fn, true)
+      elsif was_enabled && !now_enabled
+        # Toggled off: call <name>_disable to unregister actions and bindings.
+        disable_fn = "#{mod_name}_disable"
+        send(disable_fn) if respond_to?(disable_fn, true)
+      end
+    end
   end
 
   def run

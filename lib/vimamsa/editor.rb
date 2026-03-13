@@ -127,12 +127,16 @@ class Editor
       #TODO: if language enabled in config?
     end
 
+    # Load each module that is enabled in settings.
+    # Each module lives in modules/<name>/<name>.rb and may optionally define
+    # <name>_init to register actions, key bindings, etc.
     Dir.glob(ppath("modules/*/")).sort.each do |mod_dir|
       mod_name = File.basename(mod_dir)
       if cnf.modules.public_send(mod_name).enabled?
         main_file = File.join(mod_dir, "#{mod_name}.rb")
         if File.exist?(main_file)
           load main_file
+          # Call <name>_init if the module defines it.
           init_fn = "#{mod_name}_init"
           send(init_fn) if respond_to?(init_fn, true)
         end

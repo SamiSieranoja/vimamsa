@@ -208,4 +208,10 @@ end
 
 def calculator_init
   reg_act(:insert_calculator, proc { insert_calculator_in_buffer }, "Insert scientific calculator widget at cursor")
+  vma.gui.menu.add_module_action(:insert_calculator, "Insert Calculator")
+end
+
+def calculator_disable
+  unreg_act(:insert_calculator)
+  vma.gui.menu.remove_module_action(:insert_calculator)
 end

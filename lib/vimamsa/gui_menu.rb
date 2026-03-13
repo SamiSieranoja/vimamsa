@@ -84,12 +84,45 @@ module Vimamsa
     def initialize(menubar, _app)
       @app = _app
       @nfo = {}
+      @menubar = menubar
+      # Gio::Menu for the "Modules" top-level menu, created on first use.
+      @module_menu = nil
+      # Ordered list of action symbols in @module_menu, used to find removal positions.
+      @module_actions = []
 
       add_menu_items
 
       for k, v in @nfo
         build_menu(v, menubar)
       end
+    end
+
+    # Add a menu item under the top-level "Modules" menu.
+    # Creates the Modules menu the first time it is called.
+    def add_module_action(action, label)
+      if @module_menu.nil?
+        @module_menu = Gio::Menu.new
+        modules_item = Gio::MenuItem.new("Modules", nil)
+        modules_item.submenu = @module_menu
+        @menubar.append_item(modules_item)
+      end
+
+      act = Gio::SimpleAction.new(action.to_s)
+      @app.add_action(act)
+      act.signal_connect("activate") { call_action(action) }
+
+      item = Gio::MenuItem.new(label, "app.#{action}")
+      @module_menu.append_item(item)
+      @module_actions << action
+    end
+
+    # Remove a previously added module menu item.
+    def remove_module_action(action)
+      idx = @module_actions.index(action)
+      return if idx.nil?
+      @module_menu.remove(idx)
+      @module_actions.delete_at(idx)
+      @app.remove_action(action.to_s)
     end
 
     def build_menu(nfo, parent)
