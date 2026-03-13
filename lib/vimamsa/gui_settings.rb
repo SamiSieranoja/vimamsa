@@ -267,9 +267,7 @@ def gui_refresh_style_scheme
   sty = ssm.get_scheme(cnf.style_scheme! || "molokai_edit")
   return if sty.nil?
   gui_apply_color_mode(sty)
-  for _k, window in $vmag.windows
-    view = window[:sw].child
-    next if view.nil?
+  for _k, view in $vmag.buffers
     view.buffer.style_scheme = sty
   end
 end
