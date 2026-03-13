@@ -53,6 +53,10 @@ class VmaCalculator < Gtk::Box
     @bufo = bufo
     @expression = ""
     @last_result = nil
+    @variables = {}  # name => value, updated on every assignment
+    # Persistent binding for eval so that assigned variables (e.g. x = 5)
+    # survive between calculations. Scoped to self so deg2rad and Math are accessible.
+    @eval_binding = instance_eval { binding }
 
     self.margin_top    = 4
     self.margin_bottom = 4
@@ -71,12 +75,43 @@ class VmaCalculator < Gtk::Box
     append(@expr_label)
 
     @display = Gtk::Entry.new
-    @display.editable = false
+    @display.editable = true
     @display.xalign = 1.0
     @display.text = "0"
     @display.add_css_class("monospace")
     @display.width_chars = 20
     append(@display)
+
+    # Variable assignment row: [→ var  [__name__]  [Assign]]
+    var_row = Gtk::Box.new(:horizontal, 4)
+    var_row.margin_top = 4
+
+    var_arrow = Gtk::Label.new("→ var")
+    var_arrow.add_css_class("dim-label")
+
+    @var_name_entry = Gtk::Entry.new
+    @var_name_entry.placeholder_text = "name"
+    @var_name_entry.width_chars = 8
+    @var_name_entry.hexpand = true
+    track_entry_focus(@var_name_entry)
+    track_entry_focus(@display)
+
+    assign_btn = Gtk::Button.new(label: "Assign")
+    assign_btn.signal_connect("clicked") { assign_variable }
+
+    var_row.append(var_arrow)
+    var_row.append(@var_name_entry)
+    var_row.append(assign_btn)
+    append(var_row)
+
+    # Flow of variable buttons; clicking one appends the name to the expression.
+    @var_buttons_box = Gtk::FlowBox.new
+    @var_buttons_box.selection_mode = :none
+    @var_buttons_box.column_spacing = 2
+    @var_buttons_box.row_spacing = 2
+    @var_buttons_box.margin_top = 2
+    @var_buttons_box.homogeneous = false
+    append(@var_buttons_box)
 
     grid = Gtk::Grid.new
     grid.row_spacing    = 2
@@ -147,17 +182,83 @@ class VmaCalculator < Gtk::Box
   end
 
   def evaluate
-    result = eval(@expression).to_f
-    @last_result = result
-    formatted = (result == result.floor && result.abs < 1e15) ?
-      result.to_i.to_s : result.round(10).to_s
-    @expr_label.text = @expression
+    # Pick up any text the user typed directly into the display field.
+    @expression = @display.text
+    expr = @expression
+    # Coerce bare integer literals to floats so that expressions like (1/6)**3
+    # use floating-point division instead of integer division.
+    # Lookbehind (?<![.\d]) and lookahead (?![.\d]) ensure digits that are
+    # already part of a float literal (e.g. the 53 in 1.53) are left alone.
+    eval_expr = expr.gsub(/(?<![.\d])(\d+)(?![.\d])/, '\1.0')
+    result = eval(eval_expr, @eval_binding)
+    @last_result = result.is_a?(Numeric) ? result.to_f : nil
+    formatted = result.is_a?(Float) && result == result.floor && result.abs < 1e15 ?
+      result.to_i.to_s : result.round(5).to_s
+    @expr_label.text = expr
     @expression = formatted
     show_display(formatted)
+    append_trail("#{expr} = #{formatted}")
+    # If the expression was a typed assignment (e.g. "x = 5"), record the variable.
+    if (m = expr.match(/\A\s*([a-zA-Z_]\w*)\s*=(?!=)/)) && @last_result
+      record_variable(m[1], @last_result)
+    end
   rescue => e
     @expr_label.text = @expression
     show_display("Error")
     @expression = ""
+  end
+
+  # Assign the current display value to the variable name typed in @var_name_entry.
+  # Attach a focus controller to an entry so the vimamsa key handler steps
+  # aside while the entry is active and resumes when it loses focus.
+  def track_entry_focus(entry)
+    fc = Gtk::EventControllerFocus.new
+    entry.add_controller(fc)
+    fc.signal_connect("enter") { vma.gui.notify_entry_focus(true) }
+    fc.signal_connect("leave") { vma.gui.notify_entry_focus(false) }
+  end
+
+  def assign_variable
+    name = @var_name_entry.text.strip
+    return if name.empty? || @last_result.nil?
+    return unless name.match?(/\A[a-zA-Z_]\w*\z/)  # must be a valid Ruby identifier
+    eval("#{name} = #{@last_result}", @eval_binding)
+    record_variable(name, @last_result)
+    append_trail("#{name} = #{@last_result}")
+    @expr_label.text = "#{name} assigned"
+  rescue => e
+    @expr_label.text = "Error"
+  end
+
+  # Store a variable name/value and refresh the variable list widget.
+  def record_variable(name, value)
+    @variables[name] = value
+    rebuild_var_list
+  end
+
+  # Rebuild variable buttons from @variables — one compact button per name.
+  def rebuild_var_list
+    while (child = @var_buttons_box.first_child)
+      @var_buttons_box.remove(child)
+    end
+    @variables.each_key do |name|
+      btn = Gtk::Button.new(label: name)
+      btn.signal_connect("clicked") do
+        @expression += name
+        show_display(@expression)
+      end
+      @var_buttons_box.append(btn)
+    end
+  end
+
+  # Insert one calculation line into the buffer just above the widget.
+  # Each insertion shifts the widget down, so @anchor_pos is updated to follow it.
+  def append_trail(text)
+    line = "#{text}\n"
+    @bufo.insert_txt_at(line, @anchor_pos)
+    @anchor_pos += line.length
+    # Flush Ruby buffer deltas to the GTK view so the text appears immediately.
+    @bufo.view.handle_deltas
   end
 
   def show_display(text)

@@ -208,6 +208,13 @@ class VMAgui
     @img_resizer_active = false
     @windows = {}
     @app = nil
+    @entry_has_focus = false
+  end
+
+  # Called by embedded widgets (e.g. calculator entries) when a text entry
+  # gains or loses focus, so the vimamsa key handler knows to step aside.
+  def notify_entry_focus(active)
+    @entry_has_focus = active
   end
 
   def run
@@ -518,6 +525,9 @@ class VMAgui
     @window.add_controller(press)
 
     press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
+      # Step aside when a text entry widget (e.g. calculator var field) has focus.
+      # @entry_has_focus is set explicitly via notify_entry_focus by those widgets.
+      next false if @entry_has_focus
       name = Gdk::Keyval.to_name(keyval)
       uki = Gdk::Keyval.to_unicode(keyval)
       keystr = uki.chr("UTF-8")
@@ -546,6 +556,7 @@ class VMAgui
     end
 
     press.signal_connect "key-released" do |gesture, keyval, keycode, y|
+      next false if @entry_has_focus
       name = Gdk::Keyval.to_name(keyval)
       uki = Gdk::Keyval.to_unicode(keyval)
       keystr = uki.chr("UTF-8")
