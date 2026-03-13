@@ -28,6 +28,8 @@ SETTINGS_DEFS = [
       { :key => [:experimental], :label => "Enable experimental features", :type => :bool },
       { :key => [:macro, :animation_delay], :label => "Macro animation delay (sec)", :type => :float, :min => 0.0, :max => 2.0, :step => 0.0001 },
       { :key => [:paste, :cursor_at_start], :label => "Leave cursor at start of pasted text", :type => :bool },
+      { :key => [:style_scheme], :label => "Color scheme", :type => :select,
+        :options => proc { Dir[ppath("styles/*.xml")].sort.map { |f| File.read(f)[/\bid="([^"]+)"/, 1] }.compact } },
     ],
   },
   {
@@ -134,6 +136,13 @@ class SettingsDialog
       w = Gtk::Entry.new
       w.text = cur.to_s
       w
+    when :select
+      options = s[:options].is_a?(Proc) ? s[:options].call : s[:options]
+      cur = get(s[:key]).to_s
+      string_list = Gtk::StringList.new(options)
+      w = Gtk::DropDown.new(string_list, nil)
+      w.selected = [options.index(cur) || 0, 0].max
+      w
     end
   end
 
@@ -206,11 +215,13 @@ class SettingsDialog
             when :float       then info[:widget].value.to_f
             when :string      then info[:widget].text
             when :string_list then info[:get_value].call
+            when :select      then info[:widget].selected_item&.string
             end
       set(key, val)
     end
     save_settings_to_file
     gui_refresh_font
+    gui_refresh_style_scheme
     @window.destroy
   end
 
@@ -221,6 +232,19 @@ end
 
 def show_settings_dialog
   SettingsDialog.new.run
+end
+
+def gui_refresh_style_scheme
+  return unless $vmag
+  ssm = GtkSource::StyleSchemeManager.new
+  ssm.set_search_path(ssm.search_path << ppath("styles/"))
+  sty = ssm.get_scheme(get(cnf.style_scheme) || "molokai_edit")
+  return if sty.nil?
+  for _k, window in $vmag.windows
+    view = window[:sw].child
+    next if view.nil?
+    view.buffer.style_scheme = sty
+  end
 end
 
 def gui_refresh_font
