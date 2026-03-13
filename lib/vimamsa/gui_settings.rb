@@ -19,6 +19,14 @@ SETTINGS_DEFS = [
     :settings => [
       { :key => [:match, :highlight, :color], :label => "Search highlight color", :type => :string },
       { :key => [:kbd, :show_prev_action], :label => "Show previous action in toolbar", :type => :bool },
+      { :key => [:style_scheme], :label => "Color scheme", :type => :select,
+        :options => proc {
+          ssm = GtkSource::StyleSchemeManager.new
+          ssm.set_search_path(ssm.search_path << ppath("styles/"))
+          ssm.scheme_ids.reject { |id| [VIMAMSA_OVERLAY_SCHEME_ID, VIMAMSA_CONTRAST_SCHEME_ID].include?(id) }.sort
+        } },
+      { :key => [:color_contrast],   :label => "Color scheme contrast (1.0 = original)",  :type => :float, :min => 0.5, :max => 2.0, :step => 0.05 },
+      { :key => [:color_brightness], :label => "Color scheme brightness (0.0 = original)", :type => :float, :min => -0.5, :max => 0.5, :step => 0.01 },
     ],
   },
   {
@@ -28,14 +36,6 @@ SETTINGS_DEFS = [
       { :key => [:experimental], :label => "Enable experimental features", :type => :bool },
       { :key => [:macro, :animation_delay], :label => "Macro animation delay (sec)", :type => :float, :min => 0.0, :max => 2.0, :step => 0.0001 },
       { :key => [:paste, :cursor_at_start], :label => "Leave cursor at start of pasted text", :type => :bool },
-      { :key => [:color_contrast],   :label => "Color scheme contrast (1.0 = original)",  :type => :float, :min => 0.5, :max => 2.0, :step => 0.05 },
-      { :key => [:color_brightness], :label => "Color scheme brightness (0.0 = original)", :type => :float, :min => -0.5, :max => 0.5, :step => 0.01 },
-      { :key => [:style_scheme], :label => "Color scheme", :type => :select,
-        :options => proc {
-          ssm = GtkSource::StyleSchemeManager.new
-          ssm.set_search_path(ssm.search_path << ppath("styles/"))
-          ssm.scheme_ids.reject { |id| [VIMAMSA_OVERLAY_SCHEME_ID, VIMAMSA_CONTRAST_SCHEME_ID].include?(id) }.sort
-        } },
     ],
   },
   {
@@ -340,25 +340,40 @@ end
 
 # ── Overlay scheme ─────────────────────────────────────────────────────────────
 
+# Return foreground attribute XML fragment for a style name from a scheme object.
+# Falls back to default_fg if the scheme doesn't define it.
+def style_fg_attr(sty, style_name, default_fg = nil)
+  fg = sty&.get_style(style_name)&.foreground
+  fg = default_fg if fg.nil? || fg.empty?
+  fg ? " foreground=\"#{fg}\"" : ""
+end
+
 # Generate a GtkSourceView style scheme that inherits from base_scheme_id
 # (optionally contrast-adjusted) and overlays Vimamsa-specific heading/
 # hyperlink styles on top. Written to styles/_vimamsa_overlay.xml.
+# Foreground colors are read from the parent scheme so they are preserved.
 def generate_vimamsa_overlay(base_scheme_id)
-  contrast   = (cnf_get([:color_contrast])    || 1.0).to_f
-  brightness = (cnf_get([:color_brightness])  || 0.0).to_f
-  parent_id = apply_contrast_transformation(base_scheme_id, contrast, brightness)
+  contrast   = (cnf_get([:color_contrast])   || 1.0).to_f
+  brightness = (cnf_get([:color_brightness]) || 0.0).to_f
+  parent_id  = apply_contrast_transformation(base_scheme_id, contrast, brightness)
+
+  # Load the parent scheme to read existing foreground colors for headings/links
+  ssm = GtkSource::StyleSchemeManager.new
+  ssm.set_search_path(ssm.search_path << ppath("styles/"))
+  parent_sty = ssm.get_scheme(parent_id)
+
   xml = <<~XML
     <?xml version="1.0"?>
     <style-scheme id="#{VIMAMSA_OVERLAY_SCHEME_ID}" name="#{VIMAMSA_OVERLAY_SCHEME_ID}" version="1.0" parent-scheme="#{parent_id}">
-      <style name="def:title"     scale="2.0"   bold="true"/>
-      <style name="def:hyperlink" foreground="#4FC3F7" bold="true"/>
-      <style name="def:heading0"  scale="2.0"   bold="true"/>
-      <style name="def:heading1"  scale="1.75"  bold="true"/>
-      <style name="def:heading2"  scale="1.5"   bold="true"/>
-      <style name="def:heading3"  scale="1.25"  bold="true"/>
-      <style name="def:heading4"  scale="1.175" bold="true"/>
-      <style name="def:heading5"  scale="1.1"   bold="true"/>
-      <style name="def:heading6"  scale="1.0"   bold="true"/>
+      <style name="def:title"     scale="2.0"   bold="true"#{style_fg_attr(parent_sty, "def:title")}/>
+      <style name="def:hyperlink" bold="true"#{style_fg_attr(parent_sty, "def:hyperlink", "#4FC3F7")}/>
+      <style name="def:heading0"  scale="2.0"   bold="true"#{style_fg_attr(parent_sty, "def:heading0")}/>
+      <style name="def:heading1"  scale="1.75"  bold="true"#{style_fg_attr(parent_sty, "def:heading1")}/>
+      <style name="def:heading2"  scale="1.5"   bold="true"#{style_fg_attr(parent_sty, "def:heading2")}/>
+      <style name="def:heading3"  scale="1.25"  bold="true"#{style_fg_attr(parent_sty, "def:heading3")}/>
+      <style name="def:heading4"  scale="1.175" bold="true"#{style_fg_attr(parent_sty, "def:heading4")}/>
+      <style name="def:heading5"  scale="1.1"   bold="true"#{style_fg_attr(parent_sty, "def:heading5")}/>
+      <style name="def:heading6"  scale="1.0"   bold="true"#{style_fg_attr(parent_sty, "def:heading6")}/>
       <style name="def:bold"      bold="true"/>
     </style-scheme>
   XML
