@@ -666,9 +666,7 @@ def save_settings_to_file
   settings_path = get_dot_path("settings.rb")
   lines = SETTINGS_DEFS.flat_map { |section| section[:settings] }.map do |s|
     key_str = "cnf." + s[:key].join(".")
-    obj = cnf
-    s[:key][0..-2].each { |k| obj = obj.public_send(k) }
-    val = obj.public_send(:"#{s[:key].last}!")
+    val = cnf_get(s[:key])
     "#{key_str} = #{val.inspect}"
   end
   IO.write(settings_path, lines.join("\n") + "\n")

@@ -29,7 +29,11 @@ SETTINGS_DEFS = [
       { :key => [:macro, :animation_delay], :label => "Macro animation delay (sec)", :type => :float, :min => 0.0, :max => 2.0, :step => 0.0001 },
       { :key => [:paste, :cursor_at_start], :label => "Leave cursor at start of pasted text", :type => :bool },
       { :key => [:style_scheme], :label => "Color scheme", :type => :select,
-        :options => proc { Dir[ppath("styles/*.xml")].sort.map { |f| File.read(f)[/\bid="([^"]+)"/, 1] }.compact } },
+        :options => proc {
+          ssm = GtkSource::StyleSchemeManager.new
+          ssm.set_search_path(ssm.search_path << ppath("styles/"))
+          ssm.scheme_ids.sort
+        } },
     ],
   },
   {
@@ -138,9 +142,7 @@ class SettingsDialog
       w
     when :select
       options = s[:options].is_a?(Proc) ? s[:options].call : s[:options]
-      obj = cnf
-      s[:key][0..-2].each { |k| obj = obj.public_send(k) }
-      cur = obj.public_send(:"#{s[:key].last}!").to_s
+      cur = cnf_get(s[:key]).to_s
       string_list = Gtk::StringList.new(options)
       w = Gtk::DropDown.new(string_list, nil)
       w.selected = [options.index(cur) || 0, 0].max
@@ -219,9 +221,7 @@ class SettingsDialog
             when :string_list then info[:get_value].call
             when :select      then info[:widget].selected_item&.string
             end
-      obj = cnf
-      key[0..-2].each { |k| obj = obj.public_send(k) }
-      obj.public_send(:"#{key.last}=", val)
+      cnf_set(key, val)
     end
     save_settings_to_file
     gui_refresh_font
