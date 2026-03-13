@@ -156,5 +156,6 @@ cnf.macro.animation_delay = 0.02
 cnf.paste.cursor_at_start = false
 
 cnf.style_scheme = "molokai_edit"
+cnf.color_contrast = 1.0
 
 

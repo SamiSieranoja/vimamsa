@@ -28,11 +28,12 @@ SETTINGS_DEFS = [
       { :key => [:experimental], :label => "Enable experimental features", :type => :bool },
       { :key => [:macro, :animation_delay], :label => "Macro animation delay (sec)", :type => :float, :min => 0.0, :max => 2.0, :step => 0.0001 },
       { :key => [:paste, :cursor_at_start], :label => "Leave cursor at start of pasted text", :type => :bool },
+      { :key => [:color_contrast], :label => "Color scheme contrast (1.0 = original)", :type => :float, :min => 0.5, :max => 2.0, :step => 0.05 },
       { :key => [:style_scheme], :label => "Color scheme", :type => :select,
         :options => proc {
           ssm = GtkSource::StyleSchemeManager.new
           ssm.set_search_path(ssm.search_path << ppath("styles/"))
-          ssm.scheme_ids.reject { |id| id == VIMAMSA_OVERLAY_SCHEME_ID }.sort
+          ssm.scheme_ids.reject { |id| [VIMAMSA_OVERLAY_SCHEME_ID, VIMAMSA_CONTRAST_SCHEME_ID].include?(id) }.sort
         } },
     ],
   },
@@ -121,7 +122,7 @@ class SettingsDialog
   end
 
   def make_widget(s)
-    cur = get(s[:key])
+    cur = cnf_get(s[:key])
     case s[:type]
     when :bool
       w = Gtk::Switch.new
@@ -238,15 +239,116 @@ def show_settings_dialog
   SettingsDialog.new.run
 end
 
-VIMAMSA_OVERLAY_SCHEME_ID = "vimamsa_overlay"
+VIMAMSA_OVERLAY_SCHEME_ID  = "vimamsa_overlay"
+VIMAMSA_CONTRAST_SCHEME_ID = "vimamsa_contrast"
 
-# Generate a GtkSourceView style scheme that inherits from base_scheme_id and
-# overlays Vimamsa-specific styles (headings, hyperlinks, bold) on top.
-# Written to styles/_vimamsa_overlay.xml and reloaded on each call.
+# ── Color utilities ────────────────────────────────────────────────────────────
+
+def hex_to_rgb(hex)
+  hex = hex.delete("#")
+  hex = hex.chars.map { |c| c * 2 }.join if hex.length == 3
+  [hex[0, 2].to_i(16), hex[2, 2].to_i(16), hex[4, 2].to_i(16)]
+end
+
+def rgb_to_hsl(r, g, b)
+  r, g, b = r / 255.0, g / 255.0, b / 255.0
+  max, min = [r, g, b].max, [r, g, b].min
+  l = (max + min) / 2.0
+  if max == min
+    [0.0, 0.0, l]
+  else
+    d = max - min
+    s = l > 0.5 ? d / (2.0 - max - min) : d / (max + min)
+    h = case max
+        when r then ((g - b) / d + (g < b ? 6 : 0)) / 6.0
+        when g then ((b - r) / d + 2) / 6.0
+        else        ((r - g) / d + 4) / 6.0
+        end
+    [h, s, l]
+  end
+end
+
+def hsl_to_rgb(h, s, l)
+  return Array.new(3, (l * 255).round) if s == 0
+  q = l < 0.5 ? l * (1 + s) : l + s - l * s
+  p = 2 * l - q
+  [h + 1 / 3.0, h, h - 1 / 3.0].map do |t|
+    t += 1 if t < 0; t -= 1 if t > 1
+    v = if    t < 1 / 6.0 then p + (q - p) * 6 * t
+         elsif t < 1 / 2.0 then q
+         elsif t < 2 / 3.0 then p + (q - p) * (2 / 3.0 - t) * 6
+         else p
+         end
+    (v * 255).round.clamp(0, 255)
+  end
+end
+
+# Adjust contrast of a hex color by scaling lightness around the 0.5 midpoint.
+# contrast > 1.0 pushes dark colors darker and light colors lighter (affects background too).
+# contrast < 1.0 pulls everything toward mid-grey.
+# Chroma is preserved by rescaling saturation to compensate for the narrower HSL gamut
+# at extreme lightness values, preventing warm colors from washing out.
+def adjust_hex_contrast(hex, contrast)
+  r, g, b = hex_to_rgb(hex)
+  h, s, l = rgb_to_hsl(r, g, b)
+  new_l = (0.5 + (l - 0.5) * contrast).clamp(0.0, 1.0)
+  # Preserve chroma: C = S * min(L, 1-L) * 2
+  old_chroma = s * [l, 1.0 - l].min * 2.0
+  max_new_chroma = [new_l, 1.0 - new_l].min * 2.0
+  new_s = max_new_chroma > 0 ? [old_chroma / max_new_chroma, 1.0].min : 0.0
+  nr, ng, nb = hsl_to_rgb(h, new_s, new_l)
+  "#%02X%02X%02X" % [nr, ng, nb]
+end
+
+# ── Scheme XML processing ──────────────────────────────────────────────────────
+
+# Find the XML file on disk for a given scheme id.
+def find_scheme_xml_path(scheme_id)
+  ssm = GtkSource::StyleSchemeManager.new
+  ssm.set_search_path(ssm.search_path << ppath("styles/"))
+  ssm.search_path.each do |dir|
+    next unless Dir.exist?(dir)
+    Dir[File.join(dir, "*.xml")].each do |f|
+      return f if File.read(f).include?("id=\"#{scheme_id}\"")
+    rescue nil
+    end
+  end
+  nil
+end
+
+# Apply contrast transformation to every hex color value in an XML string.
+def apply_contrast_to_xml(xml, contrast)
+  xml.gsub(/#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}\b/) do |hex|
+    adjust_hex_contrast(hex, contrast)
+  end
+end
+
+# If contrast != 1.0, generate a contrast-adjusted copy of base_scheme_id and
+# return its scheme id. Otherwise return base_scheme_id unchanged.
+def apply_contrast_transformation(base_scheme_id, contrast)
+  return base_scheme_id if contrast == 1.0
+  xml_path = find_scheme_xml_path(base_scheme_id)
+  return base_scheme_id if xml_path.nil?
+
+  adjusted = apply_contrast_to_xml(IO.read(xml_path), contrast)
+  adjusted = adjusted.sub(/(<style-scheme\b[^>]*)id="[^"]*"/, "\\1id=\"#{VIMAMSA_CONTRAST_SCHEME_ID}\"")
+  adjusted = adjusted.sub(/(<style-scheme\b[^>]*)name="[^"]*"/, "\\1name=\"#{VIMAMSA_CONTRAST_SCHEME_ID}\"")
+  adjusted = adjusted.sub(/\s*parent-scheme="[^"]*"/, "")  # avoid inheritance chains
+  IO.write(ppath("styles/_vimamsa_contrast.xml"), adjusted)
+  VIMAMSA_CONTRAST_SCHEME_ID
+end
+
+# ── Overlay scheme ─────────────────────────────────────────────────────────────
+
+# Generate a GtkSourceView style scheme that inherits from base_scheme_id
+# (optionally contrast-adjusted) and overlays Vimamsa-specific heading/
+# hyperlink styles on top. Written to styles/_vimamsa_overlay.xml.
 def generate_vimamsa_overlay(base_scheme_id)
+  contrast = (cnf_get([:color_contrast]) || 1.0).to_f
+  parent_id = apply_contrast_transformation(base_scheme_id, contrast)
   xml = <<~XML
     <?xml version="1.0"?>
-    <style-scheme id="#{VIMAMSA_OVERLAY_SCHEME_ID}" name="#{VIMAMSA_OVERLAY_SCHEME_ID}" version="1.0" parent-scheme="#{base_scheme_id}">
+    <style-scheme id="#{VIMAMSA_OVERLAY_SCHEME_ID}" name="#{VIMAMSA_OVERLAY_SCHEME_ID}" version="1.0" parent-scheme="#{parent_id}">
       <style name="def:title"     scale="2.0"   bold="true"/>
       <style name="def:hyperlink" foreground="#4FC3F7" bold="true"/>
       <style name="def:heading0"  scale="2.0"   bold="true"/>
