@@ -71,7 +71,7 @@ class KeyBindingTree
     return if get_mode == :label
     @match_state = [@modes[label]] # used for matching input
     @mode_root_state = @modes[label]
-    
+
     #TODO: should not happen? @default_mode_stack[-1] should be always the same as get_mode ?
     @default_mode_stack << label if label != @default_mode_stack[-1]
 
@@ -277,6 +277,61 @@ class KeyBindingTree
     end
 
     @state_trail = [@mode_root_state]
+  end
+
+  # Returns a list of key positions that are free (no action bound) under each
+  # existing node in the tree. For each intermediate node (chord prefix),
+  # shows which common keys are not yet bound as its children.
+  # Does NOT recurse into free positions — only checks children of existing nodes.
+  def get_free_bindings(modes: [])
+    common_keys = ("a".."z").to_a + %w[
+      space return esc tab backspace
+      , . / ; ' [ ] \\ `
+    ]
+    # delete ! @  # $ % ^ & * ( )  :  " < > ?
+    # left right up down home end pageup pagedown
+    # 0 1 2 3 4 5 6 7 8 9
+    # ctrl-a ctrl-b ctrl-d ctrl-e ctrl-f ctrl-g ctrl-h
+    # ctrl-j ctrl-k ctrl-l ctrl-n ctrl-o ctrl-p ctrl-q ctrl-r
+    # ctrl-s ctrl-t ctrl-u ctrl-v ctrl-w ctrl-x ctrl-y ctrl-z
+    # shift-left shift-right shift-up shift-down
+    # F1 F2 F3 F4 F5 F6 F7 F8 F9 F10 F11 F12
+
+    lines = []
+    stack = [[@root, ""]]
+
+    while stack.any?
+      t, p = *stack.pop
+      next unless t.children.any?
+
+      t.children.each { |c|
+        if c.level == 1 && !modes.empty?
+          next unless modes.include?(c.key_name)
+        end
+
+        if c.level == 1
+          new_p = "[#{c.key_name}]"
+        elsif c.eval_rule.size > 0
+          new_p = "#{p} #{c.key_name}(#{c.eval_rule})"
+        else
+          new_p = p.empty? ? c.key_name.to_s : "#{p} #{c.key_name}"
+        end
+
+        next unless c.children.any?
+        next if c.children.any? { |gc| gc.key_name == "<char>" }
+
+        bound = c.children.map(&:key_name).to_set
+        free = common_keys.reject { |k| bound.include?(k) }
+        lines << "#{new_p} : #{free.join("  ")}" if free.any?
+
+        stack << [c, new_p]
+      }
+    end
+
+    lines.sort_by { |l|
+      prefix = l.split(" : ").first.split
+      [prefix.first, prefix.size, l]
+    }.join("\n")
   end
 
   def get_by_keywords(modes: [], keywords: [])
@@ -737,7 +792,7 @@ class KeyBindingTree
       @next_command_count = nil
     end
 
-    if cnf.kbd.show_prev_action? and trail_str.class==String
+    if cnf.kbd.show_prev_action? and trail_str.class == String
       len_limit = 35
       action_desc = "UNK"
       if action.class == String && (m = action.match(/\Abuf\.insert_txt\((.+)\)\z/))
@@ -781,6 +836,18 @@ def exec_action(action)
   else
     return eval(action)
   end
+end
+
+def show_free_key_bindings()
+  kbd_s = "❙Free key binding slots❙\n"
+  kbd_s << "\n⦁[Mode] <prefix> : <free keys>⦁\n"
+  kbd_s << "[B]=Browse, [C]=Command, [I]=Insert, [V]=Visual\n"
+  kbd_s << "Free = not yet bound under that prefix\n"
+  kbd_s << "===============================================\n"
+  kbd_s << vma.kbd.get_free_bindings
+  kbd_s << "\n"
+  b = create_new_buffer(kbd_s, "free-key-bindings")
+  gui_set_file_lang(b.id, "hyperplaintext")
 end
 
 def show_key_bindings()

@@ -223,7 +223,7 @@ class SettingsDialog
             when :string_list then info[:get_value].call
             when :select      then info[:widget].selected_item&.string
             end
-      cnf_set(key, val)
+      cnf_set(key, val) unless val.nil?
     end
     save_settings_to_file
     gui_refresh_font
@@ -310,7 +310,7 @@ def find_scheme_xml_path(scheme_id)
     next unless Dir.exist?(dir)
     Dir[File.join(dir, "*.xml")].each do |f|
       return f if File.read(f).include?("id=\"#{scheme_id}\"")
-    rescue nil
+    rescue StandardError
     end
   end
   nil
