@@ -131,7 +131,11 @@ class Editor
       mod_name = File.basename(mod_dir)
       if cnf.modules.public_send(mod_name).enabled?
         main_file = File.join(mod_dir, "#{mod_name}.rb")
-        load main_file if File.exist?(main_file)
+        if File.exist?(main_file)
+          load main_file
+          init_fn = "#{mod_name}_init"
+          send(init_fn) if respond_to?(init_fn, true)
+        end
       end
     end
 

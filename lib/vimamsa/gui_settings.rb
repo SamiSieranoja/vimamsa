@@ -51,8 +51,13 @@ SETTINGS_DEFS = [
 def all_settings_defs
   module_settings = Dir.glob(ppath("modules/*/")).sort.map do |mod_dir|
     mod_name = File.basename(mod_dir)
-    label = mod_name.split(/[_\-]/).map(&:capitalize).join(" ")
-    { :key => [:modules, mod_name.to_sym, :enabled], :label => "#{label} (requires restart)", :type => :bool }
+    info_file = File.join(mod_dir, "#{mod_name}_info.rb")
+    load info_file if File.exist?(info_file)
+    info_fn = "#{mod_name}_info"
+    info = respond_to?(info_fn, true) ? send(info_fn) : {}
+    label = info[:name] || mod_name.split(/[_\-]/).map(&:capitalize).join(" ")
+    restart_note = info[:no_restart] ? "" : " (requires restart)"
+    { :key => [:modules, mod_name.to_sym, :enabled], :label => "#{label}#{restart_note}", :type => :bool }
   end
   return SETTINGS_DEFS unless module_settings.any?
   SETTINGS_DEFS + [{ :label => "Modules", :settings => module_settings }]

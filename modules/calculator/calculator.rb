@@ -206,4 +206,6 @@ def insert_calculator_in_buffer
   end
 end
 
-reg_act(:insert_calculator, proc { insert_calculator_in_buffer }, "Insert scientific calculator widget at cursor")
+def calculator_init
+  reg_act(:insert_calculator, proc { insert_calculator_in_buffer }, "Insert scientific calculator widget at cursor")
+end
