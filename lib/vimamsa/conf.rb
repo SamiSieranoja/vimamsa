@@ -157,5 +157,6 @@ cnf.paste.cursor_at_start = false
 
 cnf.style_scheme = "molokai_edit"
 cnf.color_contrast = 1.0
+cnf.color_brightness = 0.0
 
 

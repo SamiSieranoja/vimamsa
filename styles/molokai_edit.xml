@@ -31,7 +31,7 @@
     <style foreground="#66D9EF" name="def:type"/>
     <!--style background="#272822" foreground="#F8F8F2" name="text"/-->
     <style background="#000000" foreground="#F8F8F2" name="text"/>
-    <style foreground="#75715E" name="def:comment"/>
+    <style foreground="#b0b0b0" name="def:comment"/>
     <style background="#3E3D32" name="current-line"/>
     <style background="#222222" foreground="#F8F8F2" name="text"/>
     <!--style foreground="#465457" name="def:comment"/-->

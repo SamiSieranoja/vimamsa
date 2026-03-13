@@ -28,7 +28,8 @@ SETTINGS_DEFS = [
       { :key => [:experimental], :label => "Enable experimental features", :type => :bool },
       { :key => [:macro, :animation_delay], :label => "Macro animation delay (sec)", :type => :float, :min => 0.0, :max => 2.0, :step => 0.0001 },
       { :key => [:paste, :cursor_at_start], :label => "Leave cursor at start of pasted text", :type => :bool },
-      { :key => [:color_contrast], :label => "Color scheme contrast (1.0 = original)", :type => :float, :min => 0.5, :max => 2.0, :step => 0.05 },
+      { :key => [:color_contrast],   :label => "Color scheme contrast (1.0 = original)",  :type => :float, :min => 0.5, :max => 2.0, :step => 0.05 },
+      { :key => [:color_brightness], :label => "Color scheme brightness (0.0 = original)", :type => :float, :min => -0.5, :max => 0.5, :step => 0.01 },
       { :key => [:style_scheme], :label => "Color scheme", :type => :select,
         :options => proc {
           ssm = GtkSource::StyleSchemeManager.new
@@ -283,16 +284,15 @@ def hsl_to_rgb(h, s, l)
   end
 end
 
-# Adjust contrast of a hex color by scaling lightness around the 0.5 midpoint.
-# contrast > 1.0 pushes dark colors darker and light colors lighter (affects background too).
-# contrast < 1.0 pulls everything toward mid-grey.
-# Chroma is preserved by rescaling saturation to compensate for the narrower HSL gamut
-# at extreme lightness values, preventing warm colors from washing out.
-def adjust_hex_contrast(hex, contrast)
+# Adjust contrast and brightness of a hex color.
+# contrast: scales lightness around 0.5 (>1 increases separation, <1 reduces it).
+# brightness: fixed lightness offset applied after contrast (-1.0..1.0, 0 = no change).
+# Chroma is preserved by rescaling saturation to compensate for gamut narrowing at
+# extreme lightness values, preventing warm colors from washing out.
+def adjust_hex_color(hex, contrast, brightness)
   r, g, b = hex_to_rgb(hex)
   h, s, l = rgb_to_hsl(r, g, b)
-  new_l = (0.5 + (l - 0.5) * contrast).clamp(0.0, 1.0)
-  # Preserve chroma: C = S * min(L, 1-L) * 2
+  new_l = (0.5 + (l - 0.5) * contrast + brightness).clamp(0.0, 1.0)
   old_chroma = s * [l, 1.0 - l].min * 2.0
   max_new_chroma = [new_l, 1.0 - new_l].min * 2.0
   new_s = max_new_chroma > 0 ? [old_chroma / max_new_chroma, 1.0].min : 0.0
@@ -316,21 +316,21 @@ def find_scheme_xml_path(scheme_id)
   nil
 end
 
-# Apply contrast transformation to every hex color value in an XML string.
-def apply_contrast_to_xml(xml, contrast)
+# Apply contrast and brightness to every hex color value in an XML string.
+def apply_contrast_to_xml(xml, contrast, brightness)
   xml.gsub(/#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}\b/) do |hex|
-    adjust_hex_contrast(hex, contrast)
+    adjust_hex_color(hex, contrast, brightness)
   end
 end
 
 # If contrast != 1.0, generate a contrast-adjusted copy of base_scheme_id and
 # return its scheme id. Otherwise return base_scheme_id unchanged.
-def apply_contrast_transformation(base_scheme_id, contrast)
-  return base_scheme_id if contrast == 1.0
+def apply_contrast_transformation(base_scheme_id, contrast, brightness)
+  return base_scheme_id if contrast == 1.0 && brightness == 0.0
   xml_path = find_scheme_xml_path(base_scheme_id)
   return base_scheme_id if xml_path.nil?
 
-  adjusted = apply_contrast_to_xml(IO.read(xml_path), contrast)
+  adjusted = apply_contrast_to_xml(IO.read(xml_path), contrast, brightness)
   adjusted = adjusted.sub(/(<style-scheme\b[^>]*)id="[^"]*"/, "\\1id=\"#{VIMAMSA_CONTRAST_SCHEME_ID}\"")
   adjusted = adjusted.sub(/(<style-scheme\b[^>]*)name="[^"]*"/, "\\1name=\"#{VIMAMSA_CONTRAST_SCHEME_ID}\"")
   adjusted = adjusted.sub(/\s*parent-scheme="[^"]*"/, "")  # avoid inheritance chains
@@ -344,8 +344,9 @@ end
 # (optionally contrast-adjusted) and overlays Vimamsa-specific heading/
 # hyperlink styles on top. Written to styles/_vimamsa_overlay.xml.
 def generate_vimamsa_overlay(base_scheme_id)
-  contrast = (cnf_get([:color_contrast]) || 1.0).to_f
-  parent_id = apply_contrast_transformation(base_scheme_id, contrast)
+  contrast   = (cnf_get([:color_contrast])    || 1.0).to_f
+  brightness = (cnf_get([:color_brightness])  || 0.0).to_f
+  parent_id = apply_contrast_transformation(base_scheme_id, contrast, brightness)
   xml = <<~XML
     <?xml version="1.0"?>
     <style-scheme id="#{VIMAMSA_OVERLAY_SCHEME_ID}" name="#{VIMAMSA_OVERLAY_SCHEME_ID}" version="1.0" parent-scheme="#{parent_id}">
