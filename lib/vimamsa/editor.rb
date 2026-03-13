@@ -127,6 +127,14 @@ class Editor
       #TODO: if language enabled in config?
     end
 
+    Dir.glob(ppath("modules/*/")).sort.each do |mod_dir|
+      mod_name = File.basename(mod_dir)
+      if cnf.modules.public_send(mod_name).enabled?
+        main_file = File.join(mod_dir, "#{mod_name}.rb")
+        load main_file if File.exist?(main_file)
+      end
+    end
+
     fname = nil
     if cnf.startup_file?
       fname_ = File.expand_path(cnf.startup_file!)
@@ -664,7 +672,7 @@ end
 
 def save_settings_to_file
   settings_path = get_dot_path("settings.rb")
-  lines = SETTINGS_DEFS.flat_map { |section| section[:settings] }.map do |s|
+  lines = all_settings_defs.flat_map { |section| section[:settings] }.map do |s|
     key_str = "cnf." + s[:key].join(".")
     val = cnf_get(s[:key])
     "#{key_str} = #{val.inspect}"

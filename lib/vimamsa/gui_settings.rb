@@ -46,6 +46,18 @@ SETTINGS_DEFS = [
   },
 ]
 
+# Build the full settings definition list, appending a Modules section
+# dynamically from whatever subdirectories exist in modules/.
+def all_settings_defs
+  module_settings = Dir.glob(ppath("modules/*/")).sort.map do |mod_dir|
+    mod_name = File.basename(mod_dir)
+    label = mod_name.split(/[_\-]/).map(&:capitalize).join(" ")
+    { :key => [:modules, mod_name.to_sym, :enabled], :label => "#{label} (requires restart)", :type => :bool }
+  end
+  return SETTINGS_DEFS unless module_settings.any?
+  SETTINGS_DEFS + [{ :label => "Modules", :settings => module_settings }]
+end
+
 class SettingsDialog
   def initialize
     @widgets = {}
@@ -62,7 +74,7 @@ class SettingsDialog
     notebook = Gtk::Notebook.new
     outer.append(notebook)
 
-    SETTINGS_DEFS.each do |section|
+    all_settings_defs.each do |section|
       grid = Gtk::Grid.new
       grid.row_spacing = 10
       grid.column_spacing = 16
