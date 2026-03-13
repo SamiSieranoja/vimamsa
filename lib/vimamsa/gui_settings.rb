@@ -27,6 +27,7 @@ SETTINGS_DEFS = [
       { :key => [:lsp, :enabled], :label => "Enable LSP (Language Server)", :type => :bool },
       { :key => [:experimental], :label => "Enable experimental features", :type => :bool },
       { :key => [:macro, :animation_delay], :label => "Macro animation delay (sec)", :type => :float, :min => 0.0, :max => 2.0, :step => 0.0001 },
+      { :key => [:paste, :cursor_at_start], :label => "Leave cursor at start of pasted text", :type => :bool },
     ],
   },
   {

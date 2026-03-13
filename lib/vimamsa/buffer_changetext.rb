@@ -121,13 +121,15 @@ class Buffer < String
 
     return if text == ""
 
+    cursor_at_start = cnf.paste.cursor_at_start!
+
     if overwrite && !@paste_lines
       # Delete as many chars forward as we are about to insert, stopping before newline
       line_end = current_line_range.last - 1  # position of last char before \n
       n = [text.size, [line_end - @pos + 1, 0].max].min
       add_delta([@pos, DELETE, n], true) if n > 0
       insert_txt_at(text, @pos)
-      set_pos(@pos + text.size - 1)
+      set_pos(cursor_at_start ? @pos : @pos + text.size - 1)
     elsif @paste_lines
       debug "PASTE LINES"
       if at == BEFORE
@@ -136,6 +138,7 @@ class Buffer < String
         set_pos(l.begin)
       else
         put_to_new_next_line(text)
+        set_pos(@pos) if cursor_at_start
       end
     else
       debug "PASTE !LINES"
@@ -145,7 +148,7 @@ class Buffer < String
         pos = @pos + 1
       end
       insert_txt_at(text, pos)
-      set_pos(pos + text.size)
+      set_pos(cursor_at_start ? pos : pos + text.size)
     end
     set_pos(@pos)
     vma.buf.view.after_action # redraw
