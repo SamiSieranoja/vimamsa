@@ -22,14 +22,46 @@ class VmaTerminal < Gtk::Box
   private
 
   def spawn_shell
-    @term.spawn_async(
-      Vte::PtyFlags::DEFAULT,
-      nil,
-      [Vte::Terminal.user_shell || "/bin/bash"],
-      nil,
-      GLib::SpawnFlags::SEARCH_PATH,
-      nil, -1, nil
-    )
+    # @term.spawn_async(
+      # Vte::PtyFlags::DEFAULT,
+      # nil,
+      # [ENV["SHELL"] || "/bin/bash"],
+      # GLib::Spawn::DEFAULT,
+      # # -1
+    # )
+    
+        # @term.spawn_async(
+      # Vte::PtyFlags::DEFAULT,
+      # # [ENV["SHELL"] || "/bin/bash"],
+      # "/bin/bash",
+      # [],
+      # [],
+      @term.spawn
+         # @term.spawn_async(
+      # "/home/sjs/",
+      # [],
+      # [],
+      # GLib::Spawn::DEFAULT,
+      # )
+      # [ENV["SHELL"] || "/bin/bash"],
+      # "/bin/bash",
+     
+      
+      # g_spawn_async (
+  # const gchar* working_directory,
+  # gchar** argv,
+  # gchar** envp,
+  # GSpawnFlags flags,
+  # GSpawnChildSetupFunc child_setup,
+  # gpointer user_data,
+  # GPid* child_pid,
+  # GError** error
+# )
+
+      # GLib::Spawn::DEFAULT,
+      # -1
+    # )
+
   end
 
   def copy_to_buffer
@@ -66,7 +98,9 @@ def insert_terminal_in_buffer
 
     char_w = view.pango_context.get_metrics(nil, nil).approximate_char_width / Pango::SCALE
     columns = char_w > 0 ? (view.allocated_width / char_w) - 4 : 80
-    widget.instance_variable_get(:@term).set_columns(columns)
+    # require "pry";binding.pry
+    # widget.instance_variable_get(:@term).set_columns(columns)
+    widget.instance_variable_get(:@term).set_size(columns,20)
 
     view.add_child_at_anchor(widget, anchor)
     widget.show
