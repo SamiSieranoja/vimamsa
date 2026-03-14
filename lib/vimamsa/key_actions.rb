@@ -141,6 +141,11 @@ reg_act :start_browse_mode, proc {
   bufs.reset_navigation
 }, "Start browse mode"
 reg_act :kbd_dump_state, proc { vma.kbd.dump_state }, "Dump keyboard tree state"
+reg_act :toggle_kbd_passthrough, proc {
+  vma.gui.instance_variable_set(:@kbd_passthrough, !vma.gui.instance_variable_get(:@kbd_passthrough))
+  state = vma.gui.instance_variable_get(:@kbd_passthrough) ? "ON" : "OFF"
+  message("Keyboard passthrough: #{state}")
+}, "Toggle keyboard event passthrough (allow other widgets to receive key events)"
 
 reg_act :exit_browse_mode, proc {
   bufs.add_current_buf_to_history

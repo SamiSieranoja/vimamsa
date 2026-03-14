@@ -7,6 +7,19 @@ class VmaTerminal < Gtk::Box
     @term = Vte::Terminal.new
     @term.hexpand = true
     @term.vexpand = true
+    @term.set_size_request(800, 400)
+    @term.focusable = true
+
+    @term.signal_connect("realize") do
+      view_width = @bufo.view.allocated_width
+      w = view_width > 50 ? view_width - 50 : view_width
+      @term.set_size_request(w, 400)
+    end
+
+    click = Gtk::GestureClick.new
+    click.signal_connect("pressed") { @term.grab_focus }
+    @term.add_controller(click)
+
     append(@term)
 
     bar = Gtk::Box.new(:horizontal, 4)
@@ -67,6 +80,7 @@ class VmaTerminal < Gtk::Box
   def copy_to_buffer
     rows = @term.row_count
     cols = @term.column_count
+    require "pry";binding.pry            
     text = @term.get_text_range(0, 0, rows - 1, cols - 1)
                 .gsub(/\s+$/, "")
                 .rstrip
