@@ -310,6 +310,7 @@ class VSourceView < GtkSource::View
 
     click.signal_connect "pressed" do |gesture, n_press, x, y, z|
       debug "SourceView, GestureClick released x=#{x} y=#{y}"
+      vma.gui.instance_variable_set(:@kbd_passthrough, false)
 
       if buf.visual_mode?
         buf.end_visual_mode

@@ -17,7 +17,10 @@ class VmaTerminal < Gtk::Box
     end
 
     click = Gtk::GestureClick.new
-    click.signal_connect("pressed") { @term.grab_focus }
+    click.signal_connect("pressed") do
+      vma.gui.instance_variable_set(:@kbd_passthrough, true)
+      @term.grab_focus
+    end
     @term.add_controller(click)
 
     append(@term)
@@ -78,10 +81,13 @@ class VmaTerminal < Gtk::Box
   end
 
   def copy_to_buffer
-    rows = @term.row_count
     cols = @term.column_count
-    require "pry";binding.pry            
-    text = @term.get_text_range(0, 0, rows - 1, cols - 1)
+    adj = @term.vadjustment
+    visible_rows = adj.page_size.to_i
+    first_row = adj.upper.to_i - visible_rows
+    last_row = adj.upper.to_i
+    text = @term.get_text_range_format(:text, first_row, 0, last_row, cols - 1)
+                .first
                 .gsub(/\s+$/, "")
                 .rstrip
     return if text.empty?
