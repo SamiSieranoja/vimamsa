@@ -125,6 +125,11 @@ module Vimamsa
       @app.remove_action(action.to_s)
     end
 
+    # Return true if action was added via add_module_action and not yet removed.
+    def module_action?(action)
+      @module_actions.include?(action)
+    end
+
     def build_menu(nfo, parent)
       menu = Gio::Menu.new
       if nfo[:action]
