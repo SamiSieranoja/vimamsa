@@ -39,5 +39,7 @@ ARG CACHE_BUST=1
 RUN git  clone https://github.com/SamiSieranoja/vimamsa.git && cd vimamsa && gem build vimamsa.gemspec  && gem install vimamsa-0.1.*.gem
 RUN cp /usr/local/bundle/gems/vimamsa-0.1.23/ext/vmaext/vmaext.so vimamsa/lib/ 
 
-# Copy remaining source (tests, lib, modules, etc.)
-CMD ["bash", "-c", "cd vimamsa; ruby run_tests.rb"]
+WORKDIR /app/vimamsa
+CMD ["bash", "-c", "xvfb-run -a ruby run_tests.rb 2>&1"]
+
+

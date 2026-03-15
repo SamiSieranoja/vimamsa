@@ -1,0 +1,32 @@
+# Let the container generate its own lockfile during bundle install
+Gemfile.lock
+
+# Compiled artifacts — rebuilt by bundle install
+*.gem
+*.o
+*.so
+ext/vmaext/Makefile
+ext/vmaext/mkmf.log
+
+# Autosave files
+*_vma_autosave
+
+# Reports and logs
+test_report.txt
+llm_report.txt
+lsp-log.txt
+
+# Bug/scratch notes
+bug*.txt
+*.txtf
+
+# Media
+*.mp3
+*.wav
+*.png
+
+# Performance traces
+perf*.svg
+perf.data*
+
+
