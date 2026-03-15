@@ -42,12 +42,16 @@ puts ""
 
 # ── Run tests ─────────────────────────────────────────────────────────────────
 # All files loaded in a single vimamsa session (one GTK startup).
-# stdout  → captured for the report
+# stdout  → streamed live and captured for the report
 # stderr  → suppressed (GTK/GLib noise)
 cmd = [RbConfig.ruby, "exe/run_tests.rb", "--test", *test_files]
-raw, _status = Open3.capture2(*cmd, chdir: SCRIPT_DIR, err: File::NULL)
-
-puts raw
+raw = ""
+IO.popen([*cmd, err: File::NULL], chdir: SCRIPT_DIR) do |io|
+  io.each_line do |line|
+    print line
+    raw << line
+  end
+end
 puts ""
 
 # ── Parse summary ─────────────────────────────────────────────────────────────
