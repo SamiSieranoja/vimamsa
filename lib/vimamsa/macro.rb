@@ -165,6 +165,8 @@ class Macro
     isok = true
     # if acts.kind_of?(Array) and acts.any?
     if acts.any?
+      vma.buf&.new_undo_group
+      vma.buf&.instance_variable_set(:@macro_group_active, true)
       @running_macro = true
       # TODO:needed?
       # set_last_command({ method: vma.macro.method("run_macro"), params: [name] })
@@ -181,6 +183,8 @@ class Macro
       end
     end
     @running_macro = false
+    vma.buf&.instance_variable_set(:@macro_group_active, false)
+    vma.buf&.new_undo_group
     buf.set_pos(buf.pos)
     # TODO: Should be a better way to trigger this. Sometimes need to wait for GTK to process things before updating the cursor.
     run_as_idle proc { vma.buf.refresh_cursor; vma.buf.refresh_cursor }, delay: 0.15

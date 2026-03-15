@@ -153,6 +153,8 @@ cnf.startup_file=false
 
 cnf.macro.animation_delay = 0.02
 
+cnf.undo.group_threshold = 1.8 # seconds of inactivity before starting a new undo group
+
 cnf.paste.cursor_at_start = false
 
 cnf.style_scheme = "molokai_edit"

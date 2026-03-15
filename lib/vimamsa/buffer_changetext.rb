@@ -22,7 +22,14 @@ class Buffer < String
     else
       @deltas << delta
     end
-    @edit_history << delta
+
+    unless @macro_group_active
+      if @last_delta_time && (Time.now - @last_delta_time) > cnf.undo.group_threshold!
+        new_undo_group
+      end
+    end
+    @current_group << delta
+    @last_delta_time = Time.now
     if self[-1] != "\n"
       add_delta([self.size, INSERT, 1, "\n"], true)
     end

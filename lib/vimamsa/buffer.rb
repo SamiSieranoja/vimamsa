@@ -407,7 +407,10 @@ class Buffer < String
     @need_redraw = 1
     @call_func = nil
     @deltas = []
-    @edit_history = []
+    @edit_history = []   # Array of groups: [[delta, ...], ...]
+    @current_group = []  # In-progress undo group
+    @last_delta_time = nil
+    @macro_group_active = false
     @redo_stack = []
     @edit_pos_history = []
     @edit_pos_history_i = 0
@@ -559,36 +562,39 @@ class Buffer < String
     end
   end
 
-  def undo()
-    debug @edit_history.inspect
-    return if !@edit_history.any?
-    last_delta = @edit_history.pop
-    @redo_stack << last_delta
-    debug last_delta.inspect
-    if last_delta[1] == DELETE
-      d = [last_delta[0], INSERT, 0, last_delta[3]]
-      run_delta(d)
-    elsif last_delta[1] == INSERT
-      d = [last_delta[0], DELETE, last_delta[3].size]
-      run_delta(d)
-    else
-      return #TODO: assert?
+  # Flush @current_group into @edit_history and start a new group.
+  # Called on mode changes, macro boundaries, and time threshold.
+  def new_undo_group
+    if @current_group.any?
+      @edit_history << @current_group
+      @current_group = []
     end
-    set_pos(last_delta[0])
-    #recalc_line_ends #TODO: optimize?
+  end
+
+  def apply_inverse_delta(d)
+    if d[1] == DELETE
+      run_delta([d[0], INSERT, 0, d[3]])
+    elsif d[1] == INSERT
+      run_delta([d[0], DELETE, d[3].size])
+    end
+  end
+
+  def undo()
+    new_undo_group  # flush any in-progress group first
+    return if @edit_history.empty?
+    group = @edit_history.pop
+    @redo_stack << group
+    group.reverse_each { |d| apply_inverse_delta(d) }
+    set_pos(group.first[0])
     calculate_line_and_column_pos
   end
 
   def redo()
-    return if !@redo_stack.any?
-    #last_delta = @edit_history[-1].pop
-    redo_delta = @redo_stack.pop
-    #printf("==== UNDO ====\n")
-    debug redo_delta.inspect
-    run_delta(redo_delta)
-    @edit_history << redo_delta
-    set_pos(redo_delta[0])
-    #recalc_line_ends #TODO: optimize?
+    return if @redo_stack.empty?
+    group = @redo_stack.pop
+    group.each { |d| run_delta(d) }
+    @edit_history << group
+    set_pos(group.last[0])
     calculate_line_and_column_pos
   end
 
