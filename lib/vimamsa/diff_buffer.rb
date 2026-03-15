@@ -126,7 +126,7 @@ end
 # Prefers new_path (the post-change file); falls back to old_path
 # when new_path is /dev/null or a temp file that no longer exists.
 def resolve_diff_path(new_path, old_path)
-  git_root = `git rev-parse --show-toplevel 2>/dev/null`.strip
+  git_root = vma.buf.git_root || `git rev-parse --show-toplevel 2>/dev/null`.strip
 
   expand = lambda do |path|
     return nil if path.nil? || path == "/dev/null"
@@ -162,6 +162,7 @@ def git_diff_w()
   end
 
   create_new_file(nil, bufstr)
+  vma.buf.git_root = git_root
   gui_set_file_lang(vma.buf.id, "diff")
   vma.kbd.set_mode(:diffview)
 end
@@ -174,12 +175,22 @@ def git_diff_buffer()
     message("Buffer has no file")
     return
   end
-  bufstr = run_cmd("git diff -w -- #{Shellwords.escape(fname)}")
+  
+  
+  dir = vma.buf.fname ? File.dirname(vma.buf.fname) : Dir.pwd
+  git_root = `git -C #{Shellwords.escape(dir)} rev-parse --show-toplevel 2>/dev/null`.strip
+  if git_root.empty?
+    message("Not a git repository")
+    return
+  end
+  bufstr = run_cmd("git -C #{Shellwords.escape(git_root)} diff -w -- #{Shellwords.escape(fname)}")
   if bufstr.strip.empty?
     message("git diff: no changes")
     return
   end
   create_new_file(nil, bufstr)
+  vma.buf.git_root = git_root
   gui_set_file_lang(vma.buf.id, "diff")
   vma.kbd.set_mode(:diffview)
 end
+
