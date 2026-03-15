@@ -1,3 +1,3 @@
 module Vimamsa
-  VERSION = "0.1.23"
+  VERSION = "0.1.25"
 end

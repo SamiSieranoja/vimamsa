@@ -355,8 +355,9 @@ end
 
 # Find the XML file on disk for a given scheme id.
 def find_scheme_xml_path(scheme_id)
+  user_styles_dir = File.expand_path("~/.config/vimamsa/styles")
   ssm = GtkSource::StyleSchemeManager.new
-  ssm.set_search_path(ssm.search_path << ppath("styles/"))
+  ssm.set_search_path(ssm.search_path << ppath("styles/") << user_styles_dir)
   ssm.search_path.each do |dir|
     next unless Dir.exist?(dir)
     Dir[File.join(dir, "*.xml")].each do |f|
@@ -385,7 +386,9 @@ def apply_contrast_transformation(base_scheme_id, contrast, brightness)
   adjusted = adjusted.sub(/(<style-scheme\b[^>]*)id="[^"]*"/, "\\1id=\"#{VIMAMSA_CONTRAST_SCHEME_ID}\"")
   adjusted = adjusted.sub(/(<style-scheme\b[^>]*)name="[^"]*"/, "\\1name=\"#{VIMAMSA_CONTRAST_SCHEME_ID}\"")
   adjusted = adjusted.sub(/\s*parent-scheme="[^"]*"/, "")  # avoid inheritance chains
-  IO.write(ppath("styles/_vimamsa_contrast.xml"), adjusted)
+  user_styles_dir = File.expand_path("~/.config/vimamsa/styles")
+  FileUtils.mkdir_p(user_styles_dir)
+  IO.write(File.join(user_styles_dir, "_vimamsa_contrast.xml"), adjusted)
   VIMAMSA_CONTRAST_SCHEME_ID
 end
 
@@ -428,7 +431,9 @@ def generate_vimamsa_overlay(base_scheme_id)
       <style name="def:bold"      bold="true"/>
     </style-scheme>
   XML
-  IO.write(ppath("styles/_vimamsa_overlay.xml"), xml)
+  user_styles_dir = File.expand_path("~/.config/vimamsa/styles")
+  FileUtils.mkdir_p(user_styles_dir)
+  IO.write(File.join(user_styles_dir, "_vimamsa_overlay.xml"), xml)
 end
 
 # Build a StyleSchemeManager with the project styles dir appended,
@@ -437,8 +442,9 @@ end
 def load_vimamsa_scheme
   base_id = cnf.style_scheme! || "molokai_edit"
   generate_vimamsa_overlay(base_id)
+  user_styles_dir = File.expand_path("~/.config/vimamsa/styles")
   ssm = GtkSource::StyleSchemeManager.new
-  ssm.set_search_path(ssm.search_path << ppath("styles/"))
+  ssm.set_search_path(ssm.search_path << ppath("styles/") << user_styles_dir)
   ssm.get_scheme(VIMAMSA_OVERLAY_SCHEME_ID)
 end
 
