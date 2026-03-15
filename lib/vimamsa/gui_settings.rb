@@ -412,8 +412,9 @@ def generate_vimamsa_overlay(base_scheme_id)
   parent_id  = apply_contrast_transformation(base_scheme_id, contrast, brightness)
 
   # Load the parent scheme to read existing foreground colors for headings/links
+  user_styles_dir = File.expand_path("~/.config/vimamsa/styles")
   ssm = GtkSource::StyleSchemeManager.new
-  ssm.set_search_path(ssm.search_path << ppath("styles/"))
+  ssm.set_search_path(ssm.search_path << ppath("styles/") << user_styles_dir)
   parent_sty = ssm.get_scheme(parent_id)
 
   xml = <<~XML
