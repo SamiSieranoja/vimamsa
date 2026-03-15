@@ -692,7 +692,7 @@ class VSourceView < GtkSource::View
         self.style_context.add_provider(prov)
         @cursor_prov = prov
       end
-      @ctype == ctype
+      @ctype = ctype
     end
   end
 

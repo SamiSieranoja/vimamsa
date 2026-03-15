@@ -798,7 +798,6 @@ class KeyBindingTree
       if action.class == String && (m = action.match(/\Abuf\.insert_txt\((.+)\)\z/))
         char_part = m[1].gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
         action_desc = "insert #{char_part}"
-        puts action_desc.inspect
       else
         action_desc = vma.actions[action]&.method_name || action.to_s
         action_desc = action_desc[0..len_limit] if action_desc.size > len_limit

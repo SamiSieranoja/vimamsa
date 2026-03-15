@@ -1293,7 +1293,6 @@ class Buffer < String
   end
 
   def end_selection()
-    puts("END SELECTION")
     # @selection_start = nil
     @selection_active = false
     @visual_mode = false
