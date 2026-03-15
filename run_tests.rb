@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+$stdout.sync = true
+$stderr.sync = true
 # run_tests.rb — Discover and run all vimamsa tests, write a report.
 #
 # Usage:

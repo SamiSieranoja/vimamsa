@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib","ext"]
 
-  spec.add_development_dependency "bundler", "~> 2.4.21"
+  spec.add_development_dependency "bundler", ">= 2.4"
   spec.add_development_dependency "rake", "~> 13.1.0"
   
   spec.add_runtime_dependency 'rufo', '~> 0.16.2'

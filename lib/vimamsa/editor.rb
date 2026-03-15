@@ -607,7 +607,7 @@ end
 
 def get_dot_path(sfx)
   dot_dir = File.expand_path("~/.config/vimamsa")
-  Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
+  FileUtils.mkdir_p(dot_dir) unless File.exist?(dot_dir)
   dpath = "#{dot_dir}/#{sfx}"
   return dpath
 end
