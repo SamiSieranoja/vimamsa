@@ -54,15 +54,15 @@ class Buffer < String
     if ["chdr", "c", "cpp", "cpphdr"].include?(ftype)
 
       #C/C++/Java/JavaScript/Objective-C/Protobuf code
-      system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{file.path} > #{infile.path}")
+      system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{Shellwords.escape(file.path)} > #{Shellwords.escape(infile.path)}")
       bufc = IO.read(infile.path)
     elsif ftype == "Javascript"
-      cmd = "clang-format #{file.path} > #{infile.path}'"
+      cmd = "clang-format #{Shellwords.escape(file.path)} > #{Shellwords.escape(infile.path)}"
       debug cmd
       system(cmd)
       bufc = IO.read(infile.path)
     elsif ftype == "ruby"
-      cmd = "rufo #{file.path}"
+      cmd = "rufo #{Shellwords.escape(file.path)}"
       debug cmd
       system(cmd)
       bufc = IO.read(file.path)

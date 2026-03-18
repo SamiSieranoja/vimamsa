@@ -93,7 +93,7 @@ def diff_buffer()
   infile = Tempfile.new("in")
   infile.write(vma.buf.to_s)
   infile.flush
-  bufstr = run_cmd("diff -uw '#{orig_path}' #{infile.path}")
+  bufstr = run_cmd("diff -uw #{Shellwords.escape(orig_path)} #{Shellwords.escape(infile.path)}")
   infile.close; infile.unlink
   create_new_file(nil, bufstr)
   gui_set_file_lang(vma.buf.id, "diff")

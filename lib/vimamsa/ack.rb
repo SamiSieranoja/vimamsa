@@ -145,7 +145,7 @@ class Ack
     instr = Shellwords.escape(_instr)
     bufstr = ""
     for path in vma.get_content_search_paths
-      bufstr += run_cmd("ack -Q --type-add=gd=.gd -ki --nohtml --nojs --nojson #{instr} #{path}")
+      bufstr += run_cmd("ack -Q --type-add=gd=.gd -ki --nohtml --nojs --nojson #{instr} #{Shellwords.escape(path)}")
     end
 
     b = ""

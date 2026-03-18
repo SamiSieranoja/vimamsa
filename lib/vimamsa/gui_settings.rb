@@ -432,7 +432,6 @@ def generate_vimamsa_overlay(base_scheme_id)
       <style name="def:bold"      bold="true"/>
     </style-scheme>
   XML
-  user_styles_dir = File.expand_path("~/.config/vimamsa/styles")
   FileUtils.mkdir_p(user_styles_dir)
   IO.write(File.join(user_styles_dir, "_vimamsa_overlay.xml"), xml)
 end
