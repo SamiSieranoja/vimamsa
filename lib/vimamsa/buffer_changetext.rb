@@ -40,48 +40,48 @@ class Buffer < String
   # TODO: rename ot auto-format. separate module?
   # Indents whole buffer using external program
   def auto_format()
-    file = Tempfile.new("out")
-    infile = Tempfile.new("in")
-    file.write(self.to_s)
-    file.flush
-    bufc = "FOO"
-
-    tmppos = @pos
-
-    message("Auto format #{@fname}")
-
     ftype = get_file_type()
-    if ["chdr", "c", "cpp", "cpphdr"].include?(ftype)
-
-      #C/C++/Java/JavaScript/Objective-C/Protobuf code
-      ok = system("clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100,  SortIncludes: false}' #{Shellwords.escape(file.path)} > #{Shellwords.escape(infile.path)}")
-      unless ok
-        message("clang-format failed")
-        return
-      end
-      bufc = IO.read(infile.path)
-    elsif ftype == "Javascript"
-      cmd = "clang-format #{Shellwords.escape(file.path)} > #{Shellwords.escape(infile.path)}"
-      debug cmd
-      unless system(cmd)
-        message("clang-format failed")
-        return
-      end
-      bufc = IO.read(infile.path)
-    elsif ftype == "ruby"
-      cmd = "rufo #{Shellwords.escape(file.path)}"
-      debug cmd
-      system(cmd)
-      bufc = IO.read(file.path)
-    else
+    formatters = cnf.auto_format.formatters!
+    fmt = formatters&.fetch(ftype, nil)
+    if fmt.nil?
       message("No auto-format handler for file of type: #{ftype}")
       return
     end
+
+    tmppos = @pos
+    message("Auto format #{@fname}")
+
+    file = Tempfile.new("vmaformat")
+    file.write(self.to_s)
+    file.flush
+
+    cmd = fmt[:cmd] % { file: Shellwords.escape(file.path) }
+    debug cmd
+
+    bufc = nil
+    case fmt[:mode]
+    when :inplace
+      ok = system("bash", "-c", cmd)
+      bufc = IO.read(file.path) if ok
+    when :stdout
+      outfile = Tempfile.new("vmaformat_out")
+      ok = system("bash", "-c", "#{cmd} > #{Shellwords.escape(outfile.path)}")
+      bufc = IO.read(outfile.path) if ok
+      outfile.close; outfile.unlink
+    else
+      message("Unknown auto-format mode: #{fmt[:mode]}")
+    end
+
+    file.close; file.unlink
+
+    unless bufc
+      message("Auto-format command failed for #{ftype}")
+      return
+    end
+
     self.update_content(bufc)
     @pos = tmppos.clamp(0, [self.size - 1, 0].max)
-    center_on_current_line #TODO: needed?
-    file.close; file.unlink
-    infile.close; infile.unlink
+    center_on_current_line
   end
 
   # Create a new line after current line and insert text on that line

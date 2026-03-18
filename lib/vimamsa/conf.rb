@@ -157,6 +157,20 @@ cnf.undo.group_threshold = 1.8 # seconds of inactivity before starting a new und
 
 cnf.paste.cursor_at_start = false
 
+# Auto-format commands. %{file} is replaced with the (escaped) temp file path.
+# mode :stdout  — command writes formatted output to stdout
+# mode :inplace — command modifies %{file} in place
+# Override or extend in custom.rb, e.g.:
+#   cnf.auto_format.formatters!["ruby"] = { cmd: "rubocop -a %{file}", mode: :inplace }
+cnf.auto_format.formatters = {
+  "c"          => { cmd: "clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100, SortIncludes: false}' %{file}", mode: :stdout },
+  "chdr"       => { cmd: "clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100, SortIncludes: false}' %{file}", mode: :stdout },
+  "cpp"        => { cmd: "clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100, SortIncludes: false}' %{file}", mode: :stdout },
+  "cpphdr"     => { cmd: "clang-format -style='{BasedOnStyle: LLVM, ColumnLimit: 100, SortIncludes: false}' %{file}", mode: :stdout },
+  "Javascript" => { cmd: "clang-format %{file}",                                                                       mode: :stdout },
+  "ruby"       => { cmd: "rufo %{file}",                                                                               mode: :inplace },
+}
+
 cnf.style_scheme = "molokai_edit"
 cnf.color_contrast = 1.0
 cnf.color_brightness = 0.0
