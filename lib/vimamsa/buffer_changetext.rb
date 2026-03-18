@@ -51,22 +51,24 @@ class Buffer < String
     tmppos = @pos
     message("Auto format #{@fname}")
 
-    file = Tempfile.new("vmaformat")
+    ext  = fmt[:ext] || ""
+    file = Tempfile.new(["vmaformat", ext])
     file.write(self.to_s)
     file.flush
 
     cmd = fmt[:cmd] % { file: Shellwords.escape(file.path) }
     debug cmd
 
+    ignore_exit = fmt[:ignore_exit_code]
     bufc = nil
     case fmt[:mode]
     when :inplace
       ok = system("bash", "-c", cmd)
-      bufc = IO.read(file.path) if ok
+      bufc = IO.read(file.path) if ok || ignore_exit
     when :stdout
       outfile = Tempfile.new("vmaformat_out")
       ok = system("bash", "-c", "#{cmd} > #{Shellwords.escape(outfile.path)}")
-      bufc = IO.read(outfile.path) if ok
+      bufc = IO.read(outfile.path) if ok || ignore_exit
       outfile.close; outfile.unlink
     else
       message("Unknown auto-format mode: #{fmt[:mode]}")

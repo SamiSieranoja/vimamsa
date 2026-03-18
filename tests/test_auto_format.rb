@@ -81,6 +81,8 @@ class TestAutoFormat < VmaTest
     assert vma.buf.size > 0, "buffer was wiped after format"
   end
 
+
+
   # ── C/C++ (clang-format) ─────────────────────────────────────────────────────
 
   def test_c_formats_spacing
@@ -98,5 +100,23 @@ class TestAutoFormat < VmaTest
     act "buf.auto_format"
     assert_buf "int x = 1 + 2;\n"
   end
+  
+  # ── Ruby (syntax_tree) ───────────────────────────────────────────────────────
+  def test_config_override_syntax_tree
+    return puts "  SKIP  stree not found" unless if_cmd_exists("stree")
+    set_lang("ruby")
+
+    original = cnf.auto_format.formatters!["ruby"]
+    cnf.auto_format.formatters!["ruby"] = { cmd: "stree write %{file}", mode: :inplace, ext: ".rb" }
+
+    # stree breaks long arrays across lines; rufo keeps them on one line.
+    input = "user.\nname.\nupcase\n"
+    act "buf.set_content(#{input.inspect})"
+    act "buf.auto_format"
+    
+    assert_buf "user.name.upcase\n"
+
+    cnf.auto_format.formatters!["ruby"] = original
+  end 
 
 end

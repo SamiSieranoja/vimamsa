@@ -152,7 +152,7 @@ class Editor
     else
       # fname = ppath("demo.txt")
     end
-    fname = ARGV[0] if ARGV.size >= 1 and File.file?(File.expand_path(ARGV[0]))
+    fname = ARGV[0] if ARGV.size >= 1 and File.file?(File.expand_path(ARGV[0])) and !ARGV.include?("--test")
     # vma.add_content_search_path(Dir.pwd)
     for fn in ARGV
       fn = File.expand_path(fn)
@@ -162,7 +162,7 @@ class Editor
       end
     end
 
-    argv_has_files = ARGV.any? { |a| File.file?(File.expand_path(a)) }
+    argv_has_files = !ARGV.include?("--test") && ARGV.any? { |a| File.file?(File.expand_path(a)) }
 
     if fname
       open_new_file(fname)
@@ -188,7 +188,19 @@ class Editor
       test_files = ARGV.select { |a| a.end_with?(".rb") && File.file?(a) }
       run_as_idle proc {
         test_files.each { |f| load f }
-        success = run_vma_tests
+        classes = if $vma_test_class_filter
+          $vma_test_class_filter.filter_map { |name|
+            begin
+              Object.const_get(name)
+            rescue NameError
+              puts "Unknown test class: #{name}"
+              nil
+            end
+          }
+        else
+          []
+        end
+        success = run_vma_tests(*classes)
         # Defer shutdown so GTK can drain all pending idle callbacks from test
         # teardown before widget destruction begins (avoids heap corruption).
         GLib::Timeout.add(300) { shutdown(); false }
