@@ -171,6 +171,17 @@ cnf.auto_format.formatters = {
   "ruby"       => { cmd: "rufo %{file}",  mode: :inplace, ext: ".rb", ignore_exit_code: true },
 }
 
+# Comment character rules: checked in order, first match wins.
+# Each entry is { pattern: /regexp/, char: "string" } matched against the filename.
+# Add entries in custom.rb, e.g.:
+#   cnf.comment_chars! << { pattern: /\.py$/, char: "#" }
+cnf.comment_chars = [
+  { pattern: /Dockerfile(\.|$)/i, char: "#" },
+  { pattern: /\.(sh|bash|zsh|yml|yaml|rb|py|pl|r|conf|toml|ini)$/i, char: "#" },
+  { pattern: /Makefile$/i,        char: "#" },
+  { pattern: /\.(c|cpp|h|hpp|java|js|ts|cs|go|swift)$/i, char: "//" },
+]
+
 cnf.style_scheme = "molokai_edit"
 cnf.color_contrast = 1.0
 cnf.color_brightness = 0.0

@@ -36,10 +36,13 @@ RUN gem install bundler -v '~> 2.4'
 
 RUN echo "alias ll='ls -ltrh'" >> ~/.bashrc
 ARG CACHE_BUST=1
-RUN git  clone https://github.com/SamiSieranoja/vimamsa.git && cd vimamsa && gem build vimamsa.gemspec  && gem install vimamsa-0.1.*.gem
-RUN cp /usr/local/bundle/gems/vimamsa-0.1.23/ext/vmaext/vmaext.so vimamsa/lib/ 
+RUN git  clone https://github.com/SamiSieranoja/vimamsa.git && cd vimamsa && gem build vimamsa.gemspec  && gem install vimamsa-*.gem
 
-WORKDIR /app/vimamsa
-CMD ["bash", "-c", "xvfb-run -a ruby run_tests.rb 2>&1"]
+# Tests should not depend on writing to these directories
+RUN chmod a-w -R /usr/local/bundle/gems/vimamsa*
+RUN chmod a-w -R vimamsa
+
+CMD ["bash", "-c", "xvfb-run -a ruby /usr/local/bundle/gems/vimamsa-*/run_tests.rb /tmp/report00.txt"]
+# CMD ["bash", "-c", "cd vimamsa && xvfb-run -a ruby run_tests.rb"]
 
 

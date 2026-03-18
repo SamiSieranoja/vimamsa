@@ -608,23 +608,21 @@ class Buffer < String
   end
 
   def get_com_str()
-    # return nil if @syntax_detect_failed
-
     com_str = nil
-    # if get_file_type() == "c" or get_file_type() == "java"
-    # com_str = "//"
-    # elsif get_file_type() == "ruby"
-    # com_str = "#"
-    # else
-    # com_str = "//"
-    # end
 
-    if !@lang_nfo.nil?
-      com_str = @lang_nfo.get_metadata("line-comment-start")
+    # User config: rules matched against filename in order, first match wins.
+    if @fname
+      fname_base = File.basename(@fname)
+      rules = cnf.comment_chars!
+      if rules.is_a?(Array)
+        match = rules.find { |r| fname_base.match?(r[:pattern]) }
+        com_str = match[:char] if match
+      end
     end
 
-    # lang.get_metadata("block-comment-start")
-    # lang.get_metadata("block-comment-end")
+    if com_str.nil? && !@lang_nfo.nil?
+      com_str = @lang_nfo.get_metadata("line-comment-start")
+    end
 
     com_str = "//" if com_str.nil?
 

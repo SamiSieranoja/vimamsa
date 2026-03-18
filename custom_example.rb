@@ -96,3 +96,6 @@ end
 # on top right corner:
 # cnf.kbd.show_prev_action = false
 
+# Add comment character rule for a file type not detected automatically:
+# cnf.comment_chars! << { pattern: /\.lua$/, char: "--" }
+
