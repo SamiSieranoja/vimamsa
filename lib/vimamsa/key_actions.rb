@@ -159,7 +159,7 @@ reg_act :page_down, proc { vma.gui.page_down }, "Page down", :group => [:move, :
 reg_act :page_up, proc { vma.gui.page_up }, "Page up", :group => [:move, :basic]
 reg_act :jump_to_start_of_buffer, proc { buf.jump(START_OF_BUFFER) }, "Jump to start of buffer"
 reg_act :jump_to_end_of_buffer, proc { buf.jump(END_OF_BUFFER) }, "Jump to end of buffer"
-reg_act(:auto_indent_buffer, proc { buf.indent }, "Auto format buffer")
+reg_act(:auto_indent_buffer, proc { buf.auto_format }, "Auto format buffer")
 reg_act(:execute_current_line_in_terminal, proc { buf.execute_current_line_in_terminal }, "Execute current line in terminal")
 reg_act(:execute_current_line_in_terminal_autoclose, proc { buf.execute_current_line_in_terminal(true) }, "Execute current line in terminal. Close after execution.")
 reg_act(:show_images, proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")

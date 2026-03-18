@@ -39,7 +39,7 @@ class Buffer < String
 
   # TODO: rename ot auto-format. separate module?
   # Indents whole buffer using external program
-  def indent()
+  def auto_format()
     file = Tempfile.new("out")
     infile = Tempfile.new("in")
     file.write(self.to_s)
@@ -71,6 +71,7 @@ class Buffer < String
       return
     end
     self.update_content(bufc)
+    @pos = tmppos.clamp(0, [self.size - 1, 0].max)
     center_on_current_line #TODO: needed?
     file.close; file.unlink
     infile.close; infile.unlink
