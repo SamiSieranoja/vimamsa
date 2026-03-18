@@ -64,24 +64,23 @@ reg_act(:insert_lorem_ipsum, proc { insert_lorem_ipsum }, "Insert lorem ipsum")
 
 def open_mtg(urlpref = nil)
   require "uri"
-  l = vma.buf.get_current_line.strip
-  m = l.match(/[^;!]+/)
-  if m
-    cardname = m[0].strip
-    # cardname = "Omnath, locus of mana"
-    u = URI.encode_www_form_component(cardname)
-    url = "https://gatherer.wizards.com/Pages/Card/Details.aspx?name=#{u}"
-    if !urlpref.nil?
-      url = urlpref + u
-    end
-    open_url(url)
+  cardname = if vma.buf.visual_mode?
+    vma.buf.get_current_selection.strip
+  else
+    l = vma.buf.get_current_line.strip
+    m = l.match(/(\w[\w\'\-\s]+)/)
+    m ? m[0].strip : nil
   end
+  return if cardname.nil? || cardname.empty?
+  u = URI.encode_www_form_component(cardname)
+  url = urlpref ? urlpref + u : "https://gatherer.wizards.com/Pages/Card/Details.aspx?name=#{u}"
+  open_url(url)
 end
 
 # reg_act(:open_mtg, proc { open_mtg }, "open mtg card info")
-# bindkey "C , , m", :open_mtg
+# bindkey "VC , , m", :open_mtg
+# Try on this line:
 # Restless Cottage
-# https://duckduckgo.com/?ia=web&origin=funnel_home_website&t=h_&q=
 
 # Primitive support for LSP (not well tested)
 # To enable LSP:
