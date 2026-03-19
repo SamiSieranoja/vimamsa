@@ -114,7 +114,7 @@ class Buffer < String
     clipboard = vma.gui.window.display.clipboard
     clipboard.read_text_async do |_clipboard, result|
       begin
-        text = clipboard.read_text_finish(result)
+        text = _clipboard.read_text_finish(result)
       rescue Gio::IOError::NotSupported
         debug Gio::IOError::NotSupported
       else

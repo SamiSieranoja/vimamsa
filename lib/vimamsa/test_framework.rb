@@ -53,6 +53,13 @@ class VmaTest
     drain_idle
   end
 
+  # Execute one action without draining the GLib main loop.
+  # Use in tight loops; call drain_idle manually at a suitable interval.
+  def act_fast(action)
+    exec_action(action)
+    drain_idle
+  end
+
   # Simulate a space-separated key sequence in the current mode.
   # E.g.:  keys("i h e l l o esc")
   # Special tokens: ctrl-x, alt-x, shift-X, esc, enter, backspace, tab, space
