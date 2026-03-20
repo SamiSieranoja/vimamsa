@@ -89,7 +89,6 @@ class Editor
 
     mkdir_if_not_exists(get_dot_path(""))
     mkdir_if_not_exists(get_dot_path("backup"))
-    mkdir_if_not_exists(get_dot_path("testfoobar")) #TODO
     listen_dir = get_dot_path("listen")
     mkdir_if_not_exists(listen_dir)
     listener = Listen.to(listen_dir) do |modified, added, removed|

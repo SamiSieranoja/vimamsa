@@ -569,7 +569,7 @@ class VSourceView < GtkSource::View
     if any_change
       remask_gtk_buffer
       #TODO: only when necessary
-      self.set_cursor_pos(pos)
+      self.set_cursor_pos(@bufo.pos)
     end
 
     # sanity_check #TODO
