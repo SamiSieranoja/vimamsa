@@ -820,6 +820,17 @@ class VSourceView < GtkSource::View
 
   def show_context_menu(x, y)
     init_context_menu if @context_menu.nil?
+
+    # Move the text cursor to the right-click position so that cursor-dependent
+    # actions (e.g. Jump to Definition) operate on the clicked symbol.
+    # Skip if there is an active selection — the user may be right-clicking
+    # inside it to copy/paste, and moving the cursor would clear it.
+    unless @bufo.selection_active?
+      bx, by = window_to_buffer_coords(:widget, x.to_i, y.to_i)
+      iter   = get_iter_at_location(bx, by)
+      @bufo.set_pos(iter.offset) if iter
+    end
+
     menu = Gio::Menu.new
     @context_link = link_at(x, y)
     menu.append("Open link", "app.ctx_open_link") if @context_link
