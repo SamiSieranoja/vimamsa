@@ -65,7 +65,12 @@ class LangSrv
       process_id: pid,
       root_uri: root_uri,
       workspace_folders: wf.empty? ? nil : wf,
-      capabilities: { 'workspace': { 'workspaceFolders': true } },
+      capabilities: {
+        'workspace' => { 'workspaceFolders' => true },
+        'textDocument' => {
+          'definition' => { 'linkSupport' => true },
+        },
+      },
     )
     @resp = {}
     init_id = new_id
@@ -81,9 +86,15 @@ class LangSrv
 
     # LSP spec: wait for initialize result, then send initialized notification.
     # Servers such as ruby-lsp will not respond to any request until this is done.
-    if wait_for_response(init_id).nil?
+    init_result = wait_for_response(init_id)
+    if init_result.nil?
       @error = true
       return
+    end
+    caps = init_result.dig(:result, :capabilities) || {}
+    unless caps[:definitionProvider] || caps["definitionProvider"]
+      message("Warning: LSP server #{lspconf[:name]} did not advertise definitionProvider — " \
+              "jump to definition will not work. Try running with 'bundle exec'.")
     end
     @writer.write(method: "initialized", params: {})
     @error = false
