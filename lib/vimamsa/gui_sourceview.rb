@@ -779,6 +779,15 @@ class VSourceView < GtkSource::View
       end
     end
 
+    unless vma.gui.app.lookup_action("ctx_lsp_jump_to_definition")
+      act = Gio::SimpleAction.new("ctx_lsp_jump_to_definition")
+      vma.gui.app.add_action(act)
+      act.signal_connect("activate") do
+        call_action(:lsp_jump_to_definition)
+        after_action
+      end
+    end
+
     unless vma.gui.app.lookup_action("ctx_open_link")
       act = Gio::SimpleAction.new("ctx_open_link")
       vma.gui.app.add_action(act)
@@ -814,6 +823,7 @@ class VSourceView < GtkSource::View
     menu = Gio::Menu.new
     @context_link = link_at(x, y)
     menu.append("Open link", "app.ctx_open_link") if @context_link
+    menu.append("Jump to Definition", "app.ctx_lsp_jump_to_definition") if @bufo.lsp
     CONTEXT_MENU_ITEMS.each { |label, action_id| menu.append(label, "app.ctx_#{action_id}") }
     if @bufo.selection_active?
       CONTEXT_MENU_ITEMS_SELECTION.each { |label, action_id| menu.append(label, "app.ctx_#{action_id}") }

@@ -35,6 +35,8 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'gstreamer', '~> 4.3.5'
   spec.add_runtime_dependency 'vte4', '~> 4.3.5'
   spec.add_runtime_dependency 'rambling-trie', '~> 2.3.1'
+  spec.add_runtime_dependency 'ruby-lsp', '~> 0.26.8'
+  
   
   spec.add_runtime_dependency 'differ', '~>  0.1.2'
   spec.add_runtime_dependency 'parallel', '~> 1.14' #TODO: update?

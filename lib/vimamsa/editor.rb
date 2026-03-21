@@ -3,6 +3,8 @@ require "pty"
 
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook, :macro, :actions
+  # @!attribute [rw] kbd
+  #   @return [KeyBindingTree]
   attr_accessor :converters, :fh, :paint_stack, :kbd, :langsrv, :register, :cur_register, :clipboard
   #attr_writer :call_func, :update_highlight
 
@@ -587,16 +589,14 @@ def open_new_file(filename, file_contents = "")
     message "Switching to: #{filename}"
     bu = vma.buffers.set_current_buffer(b)
   else
-    if !is_path_writable(filename)
-      message("Path #{filename} cannot be written to")
-      return false
-    elsif !File.exist?(filename)
+    if !File.exist?(filename)
       message("File #{filename} does not exist")
       return false
     elsif !file_is_text_file(filename)
       message("File #{filename} does not contain text")
       return false
     end
+    message("Note: #{filename} is read-only") unless is_path_writable(filename)
     if Encrypt.is_encrypted?(filename)
       decrypt_dialog(filename: filename)
       return nil

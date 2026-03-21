@@ -60,32 +60,32 @@ class LangSrv
 
     pid = Process.pid
 
-    if lspconf[:name] == "phpactor"
-      initp = LSP::Interface::InitializeParams.new(
-        process_id: pid,
-        root_uri: lspconf[:rooturi],
-        workspace_folders: wf,
-        capabilities: { 'workspace': { 'workspaceFolders': true } },
-      )
-    else
-      initp = LSP::Interface::InitializeParams.new(
-        process_id: pid,
-        root_uri: "null",
-        workspace_folders: wf,
-        capabilities: { 'workspace': { 'workspaceFolders': true } },
-      )
-    end
+    root_uri = lspconf[:rooturi] || (wf.empty? ? nil : wf.first.uri)
+    initp = LSP::Interface::InitializeParams.new(
+      process_id: pid,
+      root_uri: root_uri,
+      workspace_folders: wf.empty? ? nil : wf,
+      capabilities: { 'workspace': { 'workspaceFolders': true } },
+    )
     @resp = {}
+    init_id = new_id
 
-    @writer.write(id: new_id, params: initp, method: "initialize")
+    @writer.write(id: init_id, params: initp, method: "initialize")
 
     @lst = Thread.new {
       @reader.read do |r|
         @resp[r[:id]] = r
         pp r
-        # exit
       end
     }
+
+    # LSP spec: wait for initialize result, then send initialized notification.
+    # Servers such as ruby-lsp will not respond to any request until this is done.
+    if wait_for_response(init_id).nil?
+      @error = true
+      return
+    end
+    @writer.write(method: "initialized", params: {})
     @error = false
   end
 
@@ -159,18 +159,24 @@ class LangSrv
     r = wait_for_response(id)
     return nil if r.nil?
     pp r
-    line = HSafe.new(r)[:result][0][:range][:start][:line].val
-    uri = HSafe.new(r)[:result][0][:uri].val
 
-    if !uri.nil? and !line.nil?
-      puts "LINE:" + line.to_s
-      puts "URI:" + uri
-      fpath = URI.parse(uri).path
-      line = line + 1
-      return [fpath, line]
-    end
+    result = r[:result]
+    return nil unless result
 
-    return nil
+    # result may be: Location, Location[], or LocationLink[]
+    items = result.is_a?(Array) ? result : [result]
+    return nil if items.empty?
+
+    item  = items[0]
+    # Location uses :uri + :range; LocationLink uses :targetUri + :targetSelectionRange
+    uri   = item[:uri] || item[:targetUri]
+    range = item[:range] || item[:targetSelectionRange] || item[:targetRange]
+    line  = range&.dig(:start, :line)
+
+    return nil unless uri && line
+
+    fpath = URI.parse(uri).path
+    return [fpath, line + 1]
   end
 
   # LSP SymbolKind values for callable things

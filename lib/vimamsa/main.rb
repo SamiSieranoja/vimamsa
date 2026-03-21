@@ -48,6 +48,7 @@ require "vimamsa/editor.rb"
 require "vimamsa/diff_buffer"
 
 $vma = Editor.new
+# @return [Editor]
 def vma()
   return $vma
 end
