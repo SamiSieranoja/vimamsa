@@ -1,5 +1,4 @@
 class TestBasicEditing < VmaTest
-
   def test_insert_text
     act 'buf.insert_txt("hello")'
     assert_buf "hello\n"
@@ -61,11 +60,9 @@ class TestBasicEditing < VmaTest
     act :delete_line
     assert_buf "second\n"
   end
-
 end
 
 class TestKeySequences < VmaTest
-
   def test_insert_mode_via_keys
     # 'i' enters insert mode in command mode
     keys "i"
@@ -82,5 +79,4 @@ class TestKeySequences < VmaTest
     assert_buf "hello\n"
     assert_mode :command
   end
-
 end

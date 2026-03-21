@@ -1,3 +1,5 @@
+
+module Vimamsa
 def hpt_check_cur_word(w)
   debug "check_cur_word(w)"
   m = w.match(/⟦((audio|img):)?(.*)⟧/)
@@ -134,3 +136,4 @@ def hpt_scan_images(bf = nil)
   # vma.gui.delex.run #TODO:gtk4
 end
 
+end # module Vimamsa

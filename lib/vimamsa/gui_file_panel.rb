@@ -1,3 +1,5 @@
+
+module Vimamsa
 class FileTreePanel
   COL_LABEL = 0
   COL_BUF_ID = 1  # 0 = folder row (not selectable)
@@ -92,3 +94,4 @@ class FileTreePanel
     @tree.expand_all
   end
 end
+end # module Vimamsa

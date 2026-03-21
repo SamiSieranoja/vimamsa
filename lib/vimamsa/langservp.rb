@@ -1,4 +1,6 @@
 require "language_server-protocol"
+
+module Vimamsa
 LSP = LanguageServer::Protocol
 
 class LangSrv
@@ -24,7 +26,7 @@ class LangSrv
     @lang = lang
 
     lspconf = nil
-    ret = cnf.lsp.server?.find { |k, v| v[:languages].include?(@lang) }
+    ret = (cnf.lsp.server? || {}).find { |k, v| v[:languages].include?(@lang) }
     lspconf = ret[1] unless ret.nil?
 
     if !lspconf.nil?
@@ -362,3 +364,4 @@ def lsp_print_functions
   end
   lsp.print_functions(vma.buf.fname)
 end
+end # module Vimamsa

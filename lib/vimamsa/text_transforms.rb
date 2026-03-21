@@ -1,3 +1,5 @@
+
+module Vimamsa
 class Converter
   def initialize(obj, type, id = nil)
     @obj = obj
@@ -37,3 +39,4 @@ Converter.new(lambda { |x| x.scan(/[\w\.]+@[\w\.]+/).join("\n") }, :lambda, :get
 # Eval selection as ruby code
 Converter.new(lambda { |x| b = "eval failed"; begin; b = eval(x, TOPLEVEL_BINDING); rescue; end; "#{x}\n#{b}\n" }, :lambda, :eval)
 
+end # module Vimamsa

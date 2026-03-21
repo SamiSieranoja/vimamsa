@@ -1,5 +1,7 @@
 require "digest"
 
+module Vimamsa
+
 def run_tests()
   # DelayExecutioner.exec(id: :run_tests, wait: 0.7, callable: proc { run_tests_0 })
 
@@ -196,3 +198,4 @@ O frabjous day! Callooh! Callay!”
 All mimsy were the borogoves,
       And the mome raths outgrabe.
 "
+end # module Vimamsa

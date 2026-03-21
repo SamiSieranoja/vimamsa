@@ -1,4 +1,6 @@
 
+module Vimamsa
+
 class FileSelector
   def initialize()
     @buf = nil
@@ -233,3 +235,4 @@ def buf_replace_string(instr)
   end
   buf_replace(a[0], a[1])
 end
+end # module Vimamsa

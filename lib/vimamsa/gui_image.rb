@@ -1,3 +1,5 @@
+
+module Vimamsa
 # Following this example:
 # https://gabmus.org/posts/create_an_auto-resizing_image_widget_with_gtk3_and_python/
 class ResizableImage < Gtk::DrawingArea
@@ -45,3 +47,4 @@ class ResizableImage < Gtk::DrawingArea
     cr.paint
   end
 end
+end # module Vimamsa

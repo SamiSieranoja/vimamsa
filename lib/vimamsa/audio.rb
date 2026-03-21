@@ -1,10 +1,6 @@
 require "gstreamer"
 
-class File
-  def self.exists?(fn)
-    File.exist?(fn)
-  end
-end
+module Vimamsa
 
 # following the example gstreamer-4.2.0/sample/helloworld_e.rb
 class Audio
@@ -80,3 +76,4 @@ class Audio
   end
 end
 
+end # module Vimamsa

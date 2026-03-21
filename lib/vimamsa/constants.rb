@@ -1,4 +1,6 @@
 
+module Vimamsa
+
 NEXT_MARK = 1001
 PREVIOUS_MARK = 1002
 BACKWARD = 1003
@@ -32,3 +34,4 @@ KEY_RELEASE = 7 # QEvent::KeyRelease
 
 
 
+end # module Vimamsa

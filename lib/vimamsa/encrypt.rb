@@ -1,5 +1,7 @@
 require "openssl"
 
+module Vimamsa
+
 def decrypt_dialog(filename:, wrong_pass: false)
   callback = proc { |x| Encrypt.open(filename, x) }
   msg = ""
@@ -77,3 +79,4 @@ end
 def encrypt_cur_buffer_callback(password, b = nil)
   vma.buf.set_encrypted(password)
 end
+end # module Vimamsa

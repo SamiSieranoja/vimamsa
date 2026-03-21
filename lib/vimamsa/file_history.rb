@@ -1,3 +1,5 @@
+
+module Vimamsa
 # History of previously opened files
 
 class FileHistory
@@ -96,3 +98,4 @@ def gui_file_history_select_callback(search_str, idx)
   gui_select_window_close(0)
   open_new_file(selected_file)
 end
+end # module Vimamsa

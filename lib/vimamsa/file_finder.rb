@@ -1,6 +1,8 @@
 require "parallel"
 require "stridx"
 
+module Vimamsa
+
 # Limit file search to these extensions:
 cnf.find_extensions = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".java", ".js", ".py"]
 cnf.search_dirs = []
@@ -177,3 +179,4 @@ class FileFinder
     return dir_hash
   end
 end
+end # module Vimamsa

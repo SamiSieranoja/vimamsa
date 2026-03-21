@@ -1,4 +1,6 @@
 
+module Vimamsa
+
 def exec_in_terminal(cmd, autoclose = false)
   # debug "CMD:#{cmd}"
 
@@ -32,3 +34,4 @@ def command_to_buf
   callback = method("command_to_buf_callback")
   gui_one_input_action("Execute command in shell, output to buffer", "Command:", "Execute", callback)
 end
+end # module Vimamsa

@@ -1,3 +1,5 @@
+
+module Vimamsa
 class Clipboard
   def initialize
     @clipboard = []
@@ -34,3 +36,4 @@ def set_system_clipboard(arg)
   debug arg,2
   vma.gui.window.display.clipboard.set(arg)
 end
+end # module Vimamsa

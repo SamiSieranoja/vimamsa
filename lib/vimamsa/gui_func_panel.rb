@@ -1,3 +1,5 @@
+
+module Vimamsa
 # Left-side panel that displays LSP-provided functions/methods for the current buffer,
 # grouped by the class or module they belong to.
 class FuncPanel
@@ -125,3 +127,4 @@ class FuncPanel
     iter[COL_LINE] = 0
   end
 end
+end # module Vimamsa

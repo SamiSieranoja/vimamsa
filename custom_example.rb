@@ -85,8 +85,15 @@ end
 # Primitive support for LSP (not well tested)
 # To enable LSP:
 # cnf.lsp.enabled = true
+
+# solargraph (Ruby):
 # cnf.lsp.server.solargraph = { name: "solargraph", command: "solargraph stdio", type: "stdio" }
 # cnf.lsp.server.solargraph.languages = ["ruby"]
+
+# ruby-lsp (Ruby):
+# cnf.lsp.server.ruby_lsp = { name: "ruby-lsp", command: "bundle exec ruby-lsp", type: "stdio" } 
+# cnf.lsp.server.ruby_lsp.languages = ["ruby"]
+
 
 # cnf.lsp.server.clangd = { name: "clangd", command: "clangd-12 --offset-encoding=utf-8", type: "stdio" }
 # cnf.lsp.server.clangd.languages = ["c", "cpp"]

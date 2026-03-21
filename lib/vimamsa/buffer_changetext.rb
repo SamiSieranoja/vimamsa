@@ -1,3 +1,5 @@
+
+module Vimamsa
 # Operations that change the content of the buffer
 # e.g. insert, delete
 
@@ -351,3 +353,4 @@ class Buffer < String
     add_image(fname, imgpos)
   end
 end
+end # module Vimamsa

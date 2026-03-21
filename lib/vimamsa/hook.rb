@@ -1,4 +1,6 @@
 
+module Vimamsa
+
 class HookItem
   attr_writer :method_name, :weight
 
@@ -44,3 +46,4 @@ class Hook < Hash
     end
   end
 end
+end # module Vimamsa

@@ -1,5 +1,7 @@
 require "open3"
 
+module Vimamsa
+
 VOWELS = %w(a e i o u)
 CONSONANTS = %w(b c d f g h j k l m n p q r s t v w x y z)
 
@@ -361,3 +363,4 @@ end
 # #TODO: check contents of file
 # return true
 # end
+end # module Vimamsa

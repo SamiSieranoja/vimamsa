@@ -1,3 +1,5 @@
+
+module Vimamsa
 module Gui
   def self.hilight_range(bf, r, color: "#aa0000ff", weight: nil, tag: nil)
     vbuf = bf.view.buffer
@@ -25,3 +27,4 @@ module Gui
     }
   end
 end
+end # module Vimamsa

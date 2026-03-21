@@ -1,5 +1,7 @@
 require "fileutils"
 
+module Vimamsa
+
 class FileManager
   @@cur
 
@@ -284,3 +286,4 @@ class FileManager
     @buf.close
   end
 end
+end # module Vimamsa

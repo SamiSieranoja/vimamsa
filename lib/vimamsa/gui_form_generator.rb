@@ -1,3 +1,5 @@
+
+module Vimamsa
 # PopupFormGenerator.new().run
 class PopupFormGenerator
   def submit()
@@ -120,3 +122,4 @@ class PopupFormGenerator
     @window
   end
 end
+end # module Vimamsa

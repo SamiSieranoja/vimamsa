@@ -1,4 +1,14 @@
 
+module Vimamsa
+extend self
+
+# Make all Vimamsa methods callable as bare method calls from any class.
+# Must run before any Vimamsa sub-files are required so that ConfId/Conf
+# can resolve set/get as instance methods at load time.
+class Object
+  include Vimamsa
+end
+
 # require "bundler/setup"
 require "date"
 require "fileutils"
@@ -71,3 +81,4 @@ cnf.debug = false
 $update_cursor = false
 
 
+end # module Vimamsa

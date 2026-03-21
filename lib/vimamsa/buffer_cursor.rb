@@ -1,3 +1,5 @@
+
+module Vimamsa
 # Buffer operations related to cursor position, e.g. moving the cursor (backward, forward, next line etc.)
 class Buffer < String
   def line(lpos)
@@ -307,3 +309,4 @@ class Buffer < String
     set_pos(new_pos)
   end
 end
+end # module Vimamsa

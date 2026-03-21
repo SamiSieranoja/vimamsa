@@ -1,3 +1,5 @@
+
+module Vimamsa
 # Similar feature as Vim EasyMotion https://github.com/easymotion/vim-easymotion
 class EasyJump
   # def self.initialize()
@@ -162,3 +164,4 @@ class EasyJump
     return sequence
   end
 end
+end # module Vimamsa

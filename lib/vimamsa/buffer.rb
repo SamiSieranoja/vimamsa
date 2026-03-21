@@ -5,6 +5,8 @@ require "pathname"
 require "openssl"
 require "ripl/multi_line"
 
+module Vimamsa
+
 $ifuncon = false
 
 class Buffer < String
@@ -1733,3 +1735,4 @@ def backup_all_buffers()
   end
   message("Backup all buffers")
 end
+end # module Vimamsa

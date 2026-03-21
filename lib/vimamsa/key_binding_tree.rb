@@ -1,3 +1,5 @@
+
+module Vimamsa
 # This file has everyting related to binding key (and other) events
 # into actions.
 
@@ -923,3 +925,4 @@ end
 # def handle_key_event(event)
 # vma.kbd.handle_key_event(event)
 # end
+end # module Vimamsa

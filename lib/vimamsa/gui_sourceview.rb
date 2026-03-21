@@ -1,3 +1,5 @@
+
+module Vimamsa
 # class VSourceView < Gtk::TextView
 class VSourceView < GtkSource::View
   attr_accessor :bufo, :autocp_active, :cpl_list
@@ -844,3 +846,4 @@ class VSourceView < GtkSource::View
     @context_menu.popup
   end
 end
+end # module Vimamsa

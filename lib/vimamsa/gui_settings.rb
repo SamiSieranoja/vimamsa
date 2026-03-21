@@ -1,3 +1,5 @@
+
+module Vimamsa
 SETTINGS_DEFS = [
   {
     :label => "Tab / Indent",
@@ -492,3 +494,4 @@ def gui_refresh_font
     view.style_context.add_provider(provider)
   end
 end
+end # module Vimamsa

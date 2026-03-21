@@ -33,7 +33,8 @@ $LOAD_PATH.unshift(File.expand_path("lib"))
 $LOAD_PATH.unshift(File.expand_path("ext"))
 
 require "vimamsa"
+include Vimamsa
 # Ilib:ext
 # r rbvma -e "puts VMA.new.run"
-$vmag = VMAgui.new()
+$vmag = Vimamsa::VMAgui.new()
 $vmag.run

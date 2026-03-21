@@ -1,3 +1,5 @@
+
+module Vimamsa
 vma.kbd.add_mode("C", :command)
 vma.kbd.add_mode("I", :insert, :insert)
 vma.kbd.add_mode("V", :visual, :visual)
@@ -392,3 +394,4 @@ bindkey "C , i p", "generate_password_to_buf(15)"
 # default_keys.each { |key, value|
   # bindkey(key, value)
 # }
+end # module Vimamsa

@@ -1,3 +1,5 @@
+
+module Vimamsa
 def e_move_forward_char
   buf.move(FORWARD_CHAR)
 end
@@ -254,3 +256,4 @@ act_list = {
 for k, v in act_list
   reg_act(k, v[:proc], v[:desc])
 end
+end # module Vimamsa

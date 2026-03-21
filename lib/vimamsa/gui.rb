@@ -1,3 +1,5 @@
+
+module Vimamsa
 $idle_scroll_to_mark = false
 
 $removed_controllers = []
@@ -763,6 +765,7 @@ class VMAgui
   end
 
   def monitor
+    return true if @windows[1].nil?
     swa = @windows[1][:sw]
     @monitor_time ||= Time.now
     @sw_width ||= swa.width
@@ -1136,3 +1139,4 @@ class VMAgui
     @func_panel_shown ? hide_func_panel : show_func_panel
   end
 end
+end # module Vimamsa

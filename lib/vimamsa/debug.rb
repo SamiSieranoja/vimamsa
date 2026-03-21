@@ -1,5 +1,7 @@
 require "fileutils"
 
+module Vimamsa
+
 def debug(message, severity = 1)
   if cnf.debug?
     if severity > 1
@@ -146,3 +148,4 @@ end
 def start_ripl
   Ripl.start :binding => binding
 end
+end # module Vimamsa

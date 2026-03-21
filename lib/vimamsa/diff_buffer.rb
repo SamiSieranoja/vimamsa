@@ -1,3 +1,5 @@
+
+module Vimamsa
 # Map a "line number in a unified diff output" to the corresponding
 # line in the new/changed file (the + side), together with the file it belongs to.
 #
@@ -194,3 +196,4 @@ def git_diff_buffer()
   vma.kbd.set_mode(:diffview)
 end
 
+end # module Vimamsa

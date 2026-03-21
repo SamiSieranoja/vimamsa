@@ -1,3 +1,5 @@
+
+module Vimamsa
 class Action
   attr_accessor :id, :method_name, :method, :opt
 
@@ -159,3 +161,4 @@ class ActionList
     return scores
   end
 end
+end # module Vimamsa

@@ -45,12 +45,16 @@ raw_args.each do |a|
   end
 end
 
-test_files = Dir[File.join(scriptdir, "tests", "test_*.rb")].sort if test_files.empty?
+if test_files.empty?
+  test_files = Dir[File.join(scriptdir, "tests", "test_*.rb")].sort
+  test_files.reject! { |f| File.basename(f) == "test_random_edit.rb" }
+end
 
 $vma_test_class_filter = class_filter.empty? ? nil : class_filter
 
 ARGV.replace(["--test"] + test_files)
 
 require "vimamsa"
-$vmag = VMAgui.new()
+include Vimamsa
+$vmag = Vimamsa::VMAgui.new()
 $vmag.run

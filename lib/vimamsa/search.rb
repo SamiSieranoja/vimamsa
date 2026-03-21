@@ -1,4 +1,6 @@
 
+module Vimamsa
+
 def execute_search(input_str)
   $search = Search.new
   eval_str="execute_search(#{input_str.dump})"
@@ -95,3 +97,4 @@ class Search
 end
 
 
+end # module Vimamsa

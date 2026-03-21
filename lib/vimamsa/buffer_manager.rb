@@ -1,3 +1,5 @@
+
+module Vimamsa
 class BufferManager
   attr_reader :buf
   @@cur = nil # Current object of class
@@ -111,3 +113,4 @@ class BufferManager
     # Thread.new{sleep 0.1; center_on_current_line()} # TODO
   end
 end
+end # module Vimamsa

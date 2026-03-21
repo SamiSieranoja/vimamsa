@@ -1,3 +1,5 @@
+
+module Vimamsa
 def save_buffer_list()
   message("Save buffer list")
   buffn = get_dot_path("buffers.txt")
@@ -295,3 +297,4 @@ class BufferList
     end
   end
 end
+end # module Vimamsa

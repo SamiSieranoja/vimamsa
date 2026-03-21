@@ -1,3 +1,5 @@
+
+module Vimamsa
 module Gui
   def self.confirm(title, callback, param: nil)
     params = {}
@@ -9,7 +11,7 @@ module Gui
   end
 end
 
-module Gtk
+module ::Gtk
   class Frame
     def margin=(a)
       self.margin_bottom = a
@@ -116,3 +118,4 @@ class OneInputAction
     @window
   end
 end
+end # module Vimamsa

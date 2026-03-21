@@ -1,3 +1,5 @@
+
+module Vimamsa
 # Interface for ack! https://beyondgrep.com/
 
 class FileContentSearch
@@ -192,3 +194,4 @@ class Ack
     jump_to_file(nfo[:fpath], nfo[:lineno].to_i)
   end
 end
+end # module Vimamsa

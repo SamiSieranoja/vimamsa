@@ -1,3 +1,5 @@
+
+module Vimamsa
 def flip_true_false(str)
   str.gsub(/\b(true|false)\b/i) do |match|
     if match.match?(/\Atrue\z/i)
@@ -54,3 +56,4 @@ def is_url(s)
 end
 
 
+end # module Vimamsa

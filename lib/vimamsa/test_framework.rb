@@ -1,3 +1,5 @@
+
+module Vimamsa
 # VmaTest — integration test base class
 #
 # Tests run inside the live GTK app (headless or normal) after vma.start.
@@ -142,3 +144,4 @@ def run_vma_tests(*classes)
 
   total_fail.empty?
 end
+end # module Vimamsa

@@ -1,3 +1,5 @@
+
+module Vimamsa
 # require "trie"
 require "rambling-trie"
 
@@ -141,3 +143,4 @@ class VSourceView < GtkSource::View
     self.show_completion
   end
 end
+end # module Vimamsa

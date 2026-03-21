@@ -1,3 +1,5 @@
+
+module Vimamsa
 def gui_find_macro_update_callback(search_str = "")
   debug "gui_find_macro_update_callback: #{search_str}"
   heystack = vma.macro.named_macros
@@ -238,3 +240,4 @@ class Macro
     }
   end
 end
+end # module Vimamsa

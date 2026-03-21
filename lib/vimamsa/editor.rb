@@ -1,5 +1,7 @@
 require "pty"
 
+module Vimamsa
+
 
 class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook, :macro, :actions
@@ -727,3 +729,4 @@ def install_demo_files_callback(x)
   message("Demo files installed to #{dest_dir}")
 end
 
+end # module Vimamsa
