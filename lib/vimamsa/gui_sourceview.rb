@@ -682,6 +682,7 @@ class VSourceView < GtkSource::View
   def set_cursor_color(ctype)
     if @ctype != ctype
       bg = $confh[:mode][ctype][:cursor][:background]
+      bg = "#000000" if ctype == :insert && vma.gui.scheme_is_light
       if bg.class == String
         if !@cursor_prov.nil?
           self.style_context.remove_provider(@cursor_prov)

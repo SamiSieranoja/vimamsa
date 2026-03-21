@@ -467,7 +467,9 @@ end
 
 # Apply dark/light GTK preference to match the given style scheme.
 def gui_apply_color_mode(sty)
-  Gtk::Settings.default.gtk_application_prefer_dark_theme = !scheme_is_light?(sty)
+  light = scheme_is_light?(sty)
+  Gtk::Settings.default.gtk_application_prefer_dark_theme = !light
+  $vmag.scheme_is_light = light if $vmag
 end
 
 def gui_refresh_style_scheme
