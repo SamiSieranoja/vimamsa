@@ -18,6 +18,8 @@ class VSourceView < GtkSource::View
     self.highlight_current_line = true
 
     @tt = nil
+    @applying_delta = false
+    @im_inserted_count = 0
 
     # Mainly after page-up or page-down
 
@@ -54,11 +56,13 @@ class VSourceView < GtkSource::View
   end
 
   def set_content(str)
+    @applying_delta = true
     if @bufo&.lang == "hyperplaintext"
       self.buffer.set_text(mask_for_display(str))
     else
       self.buffer.set_text(str)
     end
+    @applying_delta = false
   end
 
   # Sync the GTK buffer to mask_for_display(@bufo.to_s).
@@ -79,10 +83,12 @@ class VSourceView < GtkSource::View
     j = expected.length - 1
     j -= 1 while j >= i && expected[j] == gtk_text[j]
 
+    @applying_delta = true
     s_iter = buffer.get_iter_at(:offset => i)
     e_iter = buffer.get_iter_at(:offset => j + 1)
     buffer.delete(s_iter, e_iter)
     buffer.insert(buffer.get_iter_at(:offset => i), expected[i..j])
+    @applying_delta = false
   end
 
   # Returns [word, word_start, word_end] if +pos+ (Ruby-buffer offset) is
@@ -101,10 +107,12 @@ class VSourceView < GtkSource::View
 
   # Replace the masked (***) span with the real word from the Ruby buffer.
   def unmask_gtk_region(word, word_start, word_end)
+    @applying_delta = true
     s_iter = buffer.get_iter_at(:offset => word_start)
     e_iter = buffer.get_iter_at(:offset => word_end)
     buffer.delete(s_iter, e_iter)
     buffer.insert(buffer.get_iter_at(:offset => word_start), word)
+    @applying_delta = false
   end
 
   # When in insert mode with cursor on a «word, expose the real text in the GTK
@@ -364,6 +372,33 @@ class VSourceView < GtkSource::View
       # @range_start = nil
       true
     end
+
+  end
+
+  # Must be called after set_buffer(buf) so the signal connects to the live buffer,
+  # not the temporary internal one created by super().
+  def register_buffer_signals
+    # Catch Wayland IM text commits (e.g. AltGr+q → ä).
+    # On Wayland the compositor feeds composed characters directly into the
+    # GtkTextBuffer via the text-input protocol, bypassing key events entirely.
+    # Our key handler never sees a key_press for these characters, so the Ruby
+    # buffer never gets updated.  We catch them here and sync to the Ruby buffer.
+    buffer.signal_connect_after("insert-text") do |_buf, iter, text, _len|
+      unless @applying_delta || @bufo.nil?
+        if vma.kbd.get_mode == :insert
+          # IM inserted text while in insert mode: mirror into Ruby buffer.
+          # Increment counter so handle_deltas skips the GTK re-insert.
+          @im_inserted_count += 1
+          @bufo.insert_txt(text)
+        else
+          # IM inserted text while NOT in insert mode: schedule deletion to revert.
+          pos_before = iter.offset - text.length
+          @bufo.deltas << [pos_before, DELETE, text.length, nil]
+        end
+        handle_deltas
+      end
+      false
+    end
   end
 
   def coord_to_iter(xloc, yloc, transform_coord = false)
@@ -503,6 +538,13 @@ class VSourceView < GtkSource::View
     if key_str == "\u0000"
       key_str = ""
     end
+    
+    # if keyname == "\u0000"
+      # puts "FOOOO 0000"
+      # return false
+      # keyname= ""
+    # end
+   
 
     keynfo = { :key_str => key_str, :key_name => keyname, :keyval => keyval }
     debug keynfo.inspect
@@ -564,8 +606,15 @@ class VSourceView < GtkSource::View
         enditer = buffer.get_iter_at(:offset => pos + num)
         buffer.delete(startiter, enditer)
       elsif op == INSERT
-        startiter = buffer.get_iter_at(:offset => pos)
-        buffer.insert(startiter, txt)
+        if @im_inserted_count > 0
+          # GTK buffer already has this text from the Wayland IM commit — skip.
+          @im_inserted_count -= 1
+        else
+          @applying_delta = true
+          startiter = buffer.get_iter_at(:offset => pos)
+          buffer.insert(startiter, txt)
+          @applying_delta = false
+        end
       end
     end
     if any_change

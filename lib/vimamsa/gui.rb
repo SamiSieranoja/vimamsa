@@ -137,6 +137,7 @@ def gui_create_buffer(id, bufo)
   view.set_highlight_current_line(true)
   view.set_show_line_numbers(true)
   view.set_buffer(buf1)
+  view.register_buffer_signals()
 
   provider = Gtk::CssProvider.new
 

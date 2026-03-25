@@ -1,5 +1,27 @@
 class TestCopyPaste < VmaTest
 
+  # On Wayland, read_text_async reads from whatever process currently owns the
+  # system clipboard.  GTK processes Wayland events during drain_idle and may
+  # transfer clipboard ownership to another app between our set_system_clipboard
+  # call and the async read callback, returning stale external content.
+  #
+  # Tests only need to verify in-editor copy/paste logic, not cross-app
+  # clipboard round-trips, so we force the synchronous internal-clipboard path
+  # (the same one used during macro playback) for all paste actions.
+  PASTE_ACTIONS = %i[paste_after_cursor paste_before_cursor
+                     paste_over_after paste_over_before].freeze
+
+  def act(action)
+    if PASTE_ACTIONS.include?(action)
+      vma.macro.instance_variable_set(:@running_macro, true)
+      exec_action(action)
+      vma.macro.instance_variable_set(:@running_macro, false)
+      drain_idle
+    else
+      super
+    end
+  end
+
   def test_copy_line_paste_after
     act 'buf.insert_txt("hello\n")'
     act :jump_to_start_of_buffer
