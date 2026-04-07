@@ -488,8 +488,7 @@ def gui_refresh_font
   return unless $vmag
   provider = Gtk::CssProvider.new
   provider.load(data: "textview { font-family: #{get(cnf.font.family)}; font-size: #{get(cnf.font.size)}pt; }")
-  for _k, window in $vmag.windows
-    view = window[:sw].child
+  vma.gui.buffers.each_value do |view|
     next if view.nil?
     view.style_context.add_provider(provider)
   end

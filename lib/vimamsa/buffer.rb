@@ -1367,6 +1367,7 @@ class Buffer < String
     #TODO: Detect if changed?
     replace_range(r, txt)
     end_visual_mode
+    view.after_action
   end
 
   def style_transform(op)
