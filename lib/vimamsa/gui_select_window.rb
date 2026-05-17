@@ -56,12 +56,12 @@ class SelectUpdateWindow
 
     debug item_list.inspect
 
-    if select_callback.class == Method
+    if select_callback.class == Method || select_callback.class == Proc
       @select_callback = select_callback
     else
       @select_callback = method(select_callback)
     end
-    if update_callback.class == Method
+    if update_callback.class == Method || update_callback.class == Proc
       @update_callback = update_callback
     else
       @update_callback = method(update_callback)

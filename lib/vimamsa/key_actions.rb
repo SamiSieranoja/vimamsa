@@ -83,6 +83,7 @@ reg_act(:delete_char_forward, proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete
 reg_act(:gui_file_finder, proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
 reg_act(:gui_file_history_finder, proc { vma.FileHistory.start_gui }, "Fuzzy file history finder")
 reg_act(:gui_search_replace, proc { gui_search_replace }, "Search and replace")
+reg_act(:select_buffer_language, proc { gui_select_buffer_language }, "Select syntax highlighting language for current buffer")
 reg_act(:find_next, proc { $search.jump_to_next() }, "Find next")
 
 reg_act(:set_style_bold, proc { buf.style_transform(:bold) }, "Set text weight to bold")
@@ -256,4 +257,30 @@ act_list = {
 for k, v in act_list
   reg_act(k, v[:proc], v[:desc])
 end
+
+def gui_select_buffer_language
+  lm = GtkSource::LanguageManager.new
+  lm.set_search_path(lm.search_path << ppath("lang/"))
+  all_lang_ids = lm.language_ids.sort
+  @_lang_select_list = all_lang_ids
+
+  update_callback = proc do |search_str|
+    filtered = search_str.empty? ? all_lang_ids : all_lang_ids.select { |id| id.include?(search_str.downcase) }
+    @_lang_select_list = filtered
+    filtered.map { |id| [id] }
+  end
+
+  select_callback = proc do |_str, idx|
+    gui_select_window_close(0)
+    vma.buf.set_language(@_lang_select_list[idx])
+  end
+
+  opt = {
+    :title => "Select language",
+    :columns => [{ :title => "Language", :id => 0 }],
+  }
+
+  gui_select_update_window(all_lang_ids.map { |id| [id] }, [], select_callback, update_callback, opt)
+end
+
 end # module Vimamsa

@@ -174,6 +174,11 @@ class Buffer < String
     return @lang
   end
 
+  def set_language(lang_id)
+    @lang = lang_id
+    gui_set_file_lang(@id, @lang)
+  end
+
   def view()
     # Get the VSourceView < GtkSource::View object corresponding to this buffer
     return vma.gui.buffers[@id]
