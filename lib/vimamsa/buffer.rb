@@ -1540,7 +1540,7 @@ class Buffer < String
   def write_contents_to_file(fpath)
     if @crypt != nil
       mode = "wb+"
-      contents = "VMACRYPT001" + @crypt.encrypt(self.to_s)
+      contents = Encrypt::HEADER_V2 + @crypt.encrypt(self.to_s)
     else
       mode = "w+"
       contents = self.to_s

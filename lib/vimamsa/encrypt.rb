@@ -1,4 +1,5 @@
 require "openssl"
+require "securerandom"
 
 module Vimamsa
 
@@ -10,64 +11,109 @@ def decrypt_dialog(filename:, wrong_pass: false)
 end
 
 class Encrypt
+  HEADER_V1 = "VMACRYPT001"
+  HEADER_V2 = "VMACRYPT002"
+
+  PBKDF2_ITERATIONS = 600_000
+  PBKDF2_KEY_LEN    = 32   # 256-bit key for AES-256
+  SALT_LEN          = 16
+  NONCE_LEN         = 12
+  TAG_LEN           = 16
+
   def self.is_encrypted?(fn)
     debug "self.is_encrypted?(fn)", 2
     begin
       file = File.open(fn, "r")
-      first_11_characters = file.read(11)
-      return true if first_11_characters == "VMACRYPT001"
+      header = file.read(11)
+      return true if header == HEADER_V1 || header == HEADER_V2
     rescue Errno::ENOENT
-      puts "File not found: #{file_path}"
+      puts "File not found: #{fn}"
     rescue => e
       puts "An error occurred: #{e.message}"
     ensure
       file&.close
     end
-    return false
+    false
   end
 
   def self.open(fn, password)
     debug "open_encrypted(filename,password)", 2
-    encrypted = read_file("", fn)[11..-1]
+    content = read_file("", fn)
+    header  = content[0..10]
+    payload = content[11..-1]
     begin
       crypt = Encrypt.new(password)
-      str = crypt.decrypt(encrypted)
-      # debug "PASS OK!", 2
+      str = (header == HEADER_V1) ? crypt.decrypt_v1(payload) : crypt.decrypt_v2(payload)
       bu = create_new_buffer(str)
-      bu.init_encrypted(crypt: crypt, filename: fn, encrypted: encrypted)
+      bu.init_encrypted(crypt: crypt, filename: fn, encrypted: payload)
     rescue OpenSSL::Cipher::CipherError => e
-      # Wrong password
       decrypt_dialog(filename: fn, wrong_pass: true)
     end
   end
 
   def initialize(pass_phrase)
-    salt = "uvgixEtU"
-    @enc = OpenSSL::Cipher.new "AES-128-CBC"
-    @enc.encrypt
-    @enc.pkcs5_keyivgen pass_phrase, salt
-    @dec = OpenSSL::Cipher.new "AES-128-CBC"
-    @dec.decrypt
-    @dec.pkcs5_keyivgen pass_phrase, salt
+    @pass_phrase = pass_phrase
+    # Lazy-init legacy cipher only when needed for V1 decryption
+    @dec_v1 = nil
   end
 
+  # Always produces V2 (AES-256-GCM) output. Returns uppercase hex payload.
   def encrypt(text)
-    cipher = @enc
-    encrypted = cipher.update text
-    encrypted << cipher.final
-    encrypted = encrypted.unpack("H*")[0].upcase
-    @enc.reset
-    return encrypted
+    salt  = SecureRandom.random_bytes(SALT_LEN)
+    nonce = SecureRandom.random_bytes(NONCE_LEN)
+    key   = derive_key(salt)
+
+    cipher = OpenSSL::Cipher.new("AES-256-GCM")
+    cipher.encrypt
+    cipher.key = key
+    cipher.iv  = nonce
+
+    ciphertext = cipher.update(text.b) + cipher.final
+    tag = cipher.auth_tag(TAG_LEN)
+
+    (salt + nonce + tag + ciphertext).unpack1("H*").upcase
   end
 
-  def decrypt(encrypted)
-    cipher = @dec
-    encrypted = [encrypted].pack("H*").unpack("C*").pack("c*")
-    plain = cipher.update encrypted
-    plain << cipher.final
+  # Decrypt a V1 (AES-128-CBC, pkcs5_keyivgen) hex payload.
+  def decrypt_v1(hex_payload)
+    @dec_v1 ||= begin
+      c = OpenSSL::Cipher.new("AES-128-CBC")
+      c.decrypt
+      c.pkcs5_keyivgen(@pass_phrase, "uvgixEtU")
+      c
+    end
+    raw   = [hex_payload.strip].pack("H*")
+    plain = @dec_v1.update(raw) + @dec_v1.final
+    @dec_v1.reset
     plain.force_encoding("utf-8")
-    @dec.reset
-    return plain
+  end
+
+  # Decrypt a V2 (AES-256-GCM, PBKDF2) hex payload.
+  # Raises OpenSSL::Cipher::CipherError on wrong password or tampered data.
+  def decrypt_v2(hex_payload)
+    raw = [hex_payload.strip].pack("H*")
+
+    offset     = 0
+    salt       = raw[offset, SALT_LEN];  offset += SALT_LEN
+    nonce      = raw[offset, NONCE_LEN]; offset += NONCE_LEN
+    tag        = raw[offset, TAG_LEN];   offset += TAG_LEN
+    ciphertext = raw[offset..-1]
+
+    key    = derive_key(salt)
+    cipher = OpenSSL::Cipher.new("AES-256-GCM")
+    cipher.decrypt
+    cipher.key      = key
+    cipher.iv       = nonce
+    cipher.auth_tag = tag
+
+    plain = cipher.update(ciphertext) + cipher.final
+    plain.force_encoding("utf-8")
+  end
+
+  private
+
+  def derive_key(salt)
+    OpenSSL::PKCS5.pbkdf2_hmac(@pass_phrase, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LEN, "SHA256")
   end
 end
 
