@@ -111,7 +111,7 @@ class PopupFormGenerator
 
   def run
     if !@window.visible?
-      @window.show
+      @window.present
     else
       @window.destroy
     end
