@@ -47,10 +47,15 @@ class Editor
         File.delete(fp)
         for f in x.lines
           f.gsub!("\n", "")
-          if File.exist?(f)
-            if file_is_text_file(f)
-              jump_to_file(f)
-            end
+          if !File.exist?(f)
+            Gui.confirm("File does not exist. Create new file?\r #{f}",
+                        proc {
+                          FileUtils.mkdir_p(File.dirname(f))
+                          IO.write(f, "")
+                          jump_to_file(f)
+                        })
+          elsif file_is_text_file(f)
+            jump_to_file(f)
           end
         end
       end
