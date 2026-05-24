@@ -242,7 +242,7 @@ class DelayExecutioner
       while true
         sleep 0.1
         if Time.now - @lastt > @wait_time
-          @proc.call
+          GLib::Idle.add { @proc.call; false }
           @last_run = Time.now
           @thread_running = false
           break

@@ -69,7 +69,7 @@ class FileFinder
         @@idx.add(x, i)
       end
       @@idx_updating = false
-      message("Finish updating file index")
+      GLib::Idle.add { message("Finish updating file index"); false }
     }
   end
 

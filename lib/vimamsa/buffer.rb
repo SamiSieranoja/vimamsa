@@ -1563,11 +1563,11 @@ class Buffer < String
         io.set_encoding(Encoding::UTF_8)
         io.write(contents)
       rescue Errno::EACCES => ex
-        message("File #{fpath} not writeable")
+        GLib::Idle.add { message("File #{fpath} not writeable"); false }
         #TODO: show message box
       end
       @last_save = Time.now
-      refresh_title
+      GLib::Idle.add { refresh_title; false }
       debug "file saved on #{@last_save}"
       sleep 3
     }
