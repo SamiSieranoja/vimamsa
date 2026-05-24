@@ -1,5 +1,23 @@
 
 module Vimamsa
+def flip_begin_end(str)
+  str.gsub(/\b(begin|end)\b/i) do |match|
+    if match.match?(/\Abegin\z/i)
+      replacement = "end"
+    else
+      replacement = "begin"
+    end
+
+    if match == match.upcase
+      replacement.upcase
+    elsif match[0] == match[0].upcase
+      replacement.capitalize
+    else
+      replacement.downcase
+    end
+  end
+end
+
 def flip_true_false(str)
   str.gsub(/\b(true|false)\b/i) do |match|
     if match.match?(/\Atrue\z/i)

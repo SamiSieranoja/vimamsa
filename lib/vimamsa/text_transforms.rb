@@ -41,4 +41,9 @@ Converter.new(lambda { |x| x.scan(/https?:\/\/[^\s\])"'>]+/).join("\n") }, :lamb
 # Eval selection as ruby code
 Converter.new(lambda { |x| b = "eval failed"; begin; b = eval(x, TOPLEVEL_BINDING); rescue; end; "#{x}\n#{b}\n" }, :lambda, :eval)
 
+Converter.new(lambda { |x|
+  items = x.split("\n").map(&:strip).reject(&:empty?)
+  "\\begin{itemize}\n" + items.map { |line| "  \\item #{line}" }.join("\n") + "\n\\end{itemize}\n"
+}, :lambda, :latex_itemize)
+
 end # module Vimamsa

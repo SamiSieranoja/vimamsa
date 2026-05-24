@@ -1049,6 +1049,7 @@ class Buffer < String
       # m << ["Sort", self.method("convert_selected_text"), :sortlines]
       m << ["Sort", method("call"), :sortlines]
       m << ["Filter: get numbers", method("call"), :getnums_on_lines]
+      m << ["To LaTeX itemize", method("call"), :latex_itemize]
       m << ["Delete selection", method("call"), :delete_selection]
 
       # m << ["Search in dictionary", self.method("handle_word"), nil]

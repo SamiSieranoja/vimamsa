@@ -205,6 +205,8 @@ class Buffer < String
     (word, range) = get_word_in_pos(p, boundary: :word2)
     if word.match(/(true|false)/i)
       rep = flip_true_false(word)
+    elsif word.match(/(begin|end)/i)
+      rep = flip_begin_end(word)
     else
       num = word.to_i
       num += 1
