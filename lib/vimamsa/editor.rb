@@ -591,6 +591,13 @@ def open_existing_file(filename)
   open_new_file(filename)
 end
 
+def do_open_file(filename)
+  message "New file opened: #{filename}"
+  bu = load_buffer(filename)
+  vma.buffers.set_current_buffer_by_id(bu.id)
+  bu.check_autosave_load
+end
+
 def open_new_file(filename, file_contents = "")
   #TODO: expand path
   filename = File.expand_path(filename)
@@ -612,11 +619,14 @@ def open_new_file(filename, file_contents = "")
       decrypt_dialog(filename: filename)
       return nil
     end
-    message "New file opened: #{filename}"
-    fname = filename
-    bu = load_buffer(fname)
-    vma.buffers.set_current_buffer_by_id(bu.id)
-    bu.check_autosave_load
+    if File.size(filename) > 1_000_000
+      size_mb = File.size(filename) / 1_000_000.0
+      Gui.confirm("Warning: #{filename}\nis large (#{format("%.1f", size_mb)} MB).\nOpen anyway?",
+                  proc { do_open_file(filename) })
+      return nil
+    end
+    do_open_file(filename)
+    bu = vma.buffers.get_buffer_by_filename(filename)
   end
   return bu
 end
