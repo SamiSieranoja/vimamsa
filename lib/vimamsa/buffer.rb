@@ -1673,7 +1673,8 @@ class Buffer < String
     params = {
       "title" => title,
       "inputs" => {
-        "yes_btn"    => { :label => "Load",   :type => :button, :default_focus => true },
+        "yes_btn"    => { :label => "Load",           :type => :button, :default_focus => true },
+        "diff_btn"   => { :label => "Review diff",    :type => :button },
         "delete_btn" => { :label => "Delete autosave", :type => :button },
       },
       :callback => proc { |x| load_autosave_callback(x) },
@@ -1688,6 +1689,12 @@ class Buffer < String
       @t_modified = Time.now
       refresh_title
       message("Loaded autosave for #{@fname}")
+    elsif x["diff_btn"] == "submit"
+      apath = autosave_path
+      diff_str = run_cmd("diff -u #{Shellwords.escape(@fname)} #{Shellwords.escape(apath)}")
+      create_new_file(nil, diff_str.empty? ? "(no differences)\n" : diff_str)
+      gui_set_file_lang(vma.buf.id, "diff") unless diff_str.empty?
+      check_autosave_load
     elsif x["delete_btn"] == "submit"
       delete_autosave_file
       message("Deleted autosave for #{@fname}")
