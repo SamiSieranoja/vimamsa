@@ -136,9 +136,9 @@ cnf.experimental = false
 
 cnf.kbd.show_prev_action = true
 
-cnf.tab.width = 2
+cnf.tab.width = 4
 cnf.tab.to_spaces_default = false
-cnf.tab.to_spaces_languages = ["c", "java", "ruby", "hyperplaintext", "php"]
+cnf.tab.to_spaces_languages = ["c", "java", "ruby", "hyperplaintext", "php", "python"]
 cnf.tab.to_spaces_not_languages = ["makefile"]
 cnf.workspace_folders = []
 
@@ -156,6 +156,8 @@ cnf.macro.animation_delay = 0.02
 cnf.undo.group_threshold = 1.8 # seconds of inactivity before starting a new undo group
 
 cnf.paste.cursor_at_start = false
+
+cnf.auto_chmod_exec = true
 
 # Auto-format commands. %{file} is replaced with the (escaped) temp file path.
 # mode :stdout  — command writes formatted output to stdout

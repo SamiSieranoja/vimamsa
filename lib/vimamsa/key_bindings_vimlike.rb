@@ -68,7 +68,9 @@ add_keys "intro", {
   "VC b" => :jump_prev_word_start,
   "VC w" => :jump_next_word_start,
   "V esc" => "buf.end_visual_mode",
-  "V ctrl!" => "buf.end_visual_mode", 
+  "V ctrl!" => "buf.end_visual_mode",
+  "V tab" => "buf.indent_selection",
+  "V shift-tab" => "buf.unindent_selection",
   
   "C ctrl!" => :insert_mode,
   "C i" => :insert_mode,

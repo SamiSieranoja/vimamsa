@@ -307,6 +307,10 @@ class Buffer < String
 
   def unindent
     debug("unindent", 2)
+    if visual_mode?
+      unindent_selection
+      return
+    end
     cnf.tab.width!.times {
       p = @pos - 1
       if p >= 0
@@ -317,6 +321,40 @@ class Buffer < String
         break
       end
     }
+  end
+
+  def indent_selection
+    tw = cnf.tab.width!
+    convert = cnf.tab.to_spaces_default?
+    convert = true if cnf.tab.to_spaces_languages?.include?(@lang)
+    convert = false if cnf.tab.to_spaces_not_languages?.include?(@lang)
+    pad = convert ? " " * tw : "\t"
+    (startpos, endpos) = get_visual_mode_range2
+    first = get_line_start(startpos)
+    last = get_line_end(endpos - 1)
+    start_lpos = get_line_pos(first)
+    end_lpos   = get_line_pos(last)
+    r = first..last
+    lines = self[r].lines
+    mod = lines.map { |line| line == "\n" ? line : pad + line }.join
+    replace_range(r, mod)
+    @selection_start = line_range(start_lpos, 1).begin
+    set_pos(line_range(end_lpos, 1).begin)
+  end
+
+  def unindent_selection
+    tw = cnf.tab.width!
+    (startpos, endpos) = get_visual_mode_range2
+    first = get_line_start(startpos)
+    last = get_line_end(endpos - 1)
+    start_lpos = get_line_pos(first)
+    end_lpos   = get_line_pos(last)
+    r = first..last
+    lines = self[r].lines
+    mod = lines.map { |line| line.sub(/^\t| {1,#{tw}}/, "") }.join
+    replace_range(r, mod)
+    @selection_start = line_range(start_lpos, 1).begin
+    set_pos(line_range(end_lpos, 1).begin)
   end
 
   def handle_drag_and_drop(fname)
@@ -1568,6 +1606,14 @@ class Buffer < String
       end
       @last_save = Time.now
       GLib::Idle.add { refresh_title; false }
+      if cnf.auto_chmod_exec? && !@crypt && contents.start_with?("#!/usr/bin/")
+        begin
+          FileUtils.chmod("+x", fpath)
+          GLib::Idle.add { message("Set executable: #{fpath}"); false }
+        rescue => e
+          GLib::Idle.add { message("chmod failed: #{e}"); false }
+        end
+      end
       debug "file saved on #{@last_save}"
       sleep 3
     }

@@ -331,6 +331,10 @@ class Buffer < String
   end
 
   def insert_tab
+    if visual_mode?
+      indent_selection
+      return
+    end
     convert = cnf.tab.to_spaces_default?
     convert = true if cnf.tab.to_spaces_languages?.include?(@lang)
     convert = false if cnf.tab.to_spaces_not_languages?.include?(@lang)
