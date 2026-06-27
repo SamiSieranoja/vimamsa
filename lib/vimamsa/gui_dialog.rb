@@ -82,6 +82,7 @@ class OneInputAction
       @window.destroy
     end
 
+    @cancel_button = cancel_button
     cancel_button.signal_connect "clicked" do
       @window.destroy
     end
@@ -91,8 +92,12 @@ class OneInputAction
     @window.add_controller(press)
     press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
       if keyval == Gdk::Keyval::KEY_Return
-        callback.call(@entry1.text)
-        @window.destroy
+        if @cancel_button.has_focus?
+          @window.destroy
+        else
+          callback.call(@entry1.text)
+          @window.destroy
+        end
         true
       elsif keyval == Gdk::Keyval::KEY_Escape
         @window.destroy
