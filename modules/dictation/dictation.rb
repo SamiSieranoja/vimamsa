@@ -30,6 +30,9 @@ require "json"
 #   cnf.dictation.initial_prompt default prompt           (default none; usually set per-dictation
 #                                                          in the start dialog)
 #   cnf.dictation.chunk_secs     preliminary cadence (s)  (default 4)
+#   cnf.dictation.idle_timeout   worker self-exits after   (default 300; <=0 disables)
+#                                this many idle seconds to
+#                                release VRAM
 #   cnf.dictation.source         GStreamer mic source     (default "autoaudiosrc")
 #
 # Requires faster-whisper (pip install faster-whisper) and ffmpeg on PATH.
@@ -212,14 +215,21 @@ class VmaWhisperWorker
   def _spawn
     @ready = false
     @start_error = nil
+    # Close stale handles from a previous (now-dead) worker before respawning.
+    begin; @stdin&.close; rescue; end
+    begin; @stdout&.close; rescue; end
+
     python = cnf.dictation.python! || "python3"
     worker = cnf.dictation.worker! || ppath("modules/dictation/whisper_worker.py")
+    idle = cnf.dictation.idle_timeout!
+    idle = 300 if idle.nil?
 
     cmd = [python, worker,
            "--model", (cnf.dictation.model! || "large-v3"),
            "--language", (cnf.dictation.language! || "en"),
            "--device", (cnf.dictation.device! || "auto"),
-           "--compute-type", (cnf.dictation.compute_type! || "float16")]
+           "--compute-type", (cnf.dictation.compute_type! || "float16"),
+           "--idle-timeout", idle.to_s]
     cmd << "--no-normalize" if cnf.dictation.normalize! == false
     ip = cnf.dictation.initial_prompt!
     cmd += ["--initial-prompt", ip.to_s] if ip && !ip.to_s.empty?
@@ -395,15 +405,23 @@ class VmaDictationSession
     end
     final = res[:text].to_s
     @buf.delete_range(@dict_start, @dict_start + @dict_len - 1) if @dict_len > 0
-    @buf.insert_txt_at(final, @dict_start) unless final.empty?
-    @buf.view.handle_deltas
-    @buf.new_undo_group
     @dict_len = 0
+
     if final.empty?
+      @buf.view.handle_deltas
+      @buf.new_undo_group
       message("Dictation: no speech recognized")
-    else
-      message("Dictation: done (#{final.length} chars)")
+      return
     end
+
+    # Append a newline so the dictation ends a line, and leave the cursor at the
+    # start of the next line.
+    text = final + "\n"
+    @buf.insert_txt_at(text, @dict_start)
+    @buf.view.handle_deltas
+    @buf.set_pos(@dict_start + text.size)
+    @buf.new_undo_group
+    message("Dictation: done (#{final.length} chars)")
   end
 end
 
@@ -529,18 +547,38 @@ def dictation_toggle
   end
 end
 
+# Stop the worker now to free its VRAM. It respawns automatically on the next
+# dictation. Refuses while a dictation is in progress.
+def dictation_release_vram
+  if $vma_dict_session&.active?
+    message("Dictation: stop the current dictation first")
+    return
+  end
+  if $vma_dictation_worker
+    $vma_dictation_worker.stop
+    message("Dictation: model unloaded (VRAM released)")
+  else
+    message("Dictation: worker not running")
+  end
+end
+
 def dictation_init
   $vma_dict_prompts = vma_dict_load_prompts
   reg_act(:dictation_toggle, proc { dictation_toggle },
           "Voice dictation: start/stop real-time dictation")
+  reg_act(:dictation_release_vram, proc { dictation_release_vram },
+          "Voice dictation: unload model to free VRAM")
   add_keys "dictation", { "C , k" => :dictation_toggle }
   vma.gui.menu.add_module_action(:dictation_toggle, "Start/Stop Dictation")
+  vma.gui.menu.add_module_action(:dictation_release_vram, "Release Dictation VRAM")
 end
 
 def dictation_disable
   dictation_session.stop if $vma_dict_session&.active?
   $vma_dictation_worker&.stop
   unreg_act(:dictation_toggle)
+  unreg_act(:dictation_release_vram)
   unbindkey "C , k"
   vma.gui.menu.remove_module_action(:dictation_toggle)
+  vma.gui.menu.remove_module_action(:dictation_release_vram)
 end

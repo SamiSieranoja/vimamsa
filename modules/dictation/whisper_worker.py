@@ -24,9 +24,12 @@ Requires: faster-whisper (pip install faster-whisper) and ffmpeg on PATH.
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 from contextlib import contextmanager
 
 # ffmpeg filter chain that evens out uneven speaker levels before ASR, so quiet
@@ -65,6 +68,9 @@ def main():
     ap.add_argument("--initial-prompt", default="",
                     help="text prompt that biases decoding toward a vocabulary/style")
     ap.add_argument("--beam-size", type=int, default=5, help="decoding beam size")
+    ap.add_argument("--idle-timeout", type=float, default=300.0,
+                    help="exit after this many seconds of inactivity to release "
+                         "VRAM (<= 0 disables)")
     args = ap.parse_args()
     normalize = not args.no_normalize
     initial_prompt = args.initial_prompt or None
@@ -78,6 +84,22 @@ def main():
         _emit({"ready": False, "error": f"{type(e).__name__}: {e}"})
         return 1
 
+    # Exit the whole process after a period of inactivity so the model weights and
+    # the CUDA context are fully released. `busy` keeps us alive mid-transcription
+    # even if a long final pass exceeds the timeout. The Ruby side respawns us on
+    # the next dictation.
+    state = {"last": time.monotonic(), "busy": False}
+
+    def _idle_watch(timeout):
+        while True:
+            time.sleep(min(max(timeout, 1.0), 15.0))
+            if not state["busy"] and (time.monotonic() - state["last"]) > timeout:
+                os._exit(0)
+
+    if args.idle_timeout > 0:
+        threading.Thread(target=_idle_watch, args=(args.idle_timeout,),
+                         daemon=True).start()
+
     _emit({"ready": True})
 
     # One request per stdin line; one JSON response per line.
@@ -89,6 +111,8 @@ def main():
         line = line.strip()
         if not line:
             continue
+        state["busy"] = True
+        state["last"] = time.monotonic()
         try:
             if line.startswith("{"):
                 req = json.loads(line)
@@ -114,6 +138,9 @@ def main():
             _emit({"ok": True, "text": " ".join(parts)})
         except Exception as e:  # noqa: BLE001 - keep the worker alive across errors
             _emit({"ok": False, "error": f"{type(e).__name__}: {e}"})
+        finally:
+            state["last"] = time.monotonic()
+            state["busy"] = False
 
     return 0
 
