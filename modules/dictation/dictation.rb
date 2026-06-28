@@ -8,12 +8,14 @@ require "json"
 # Records from the microphone with GStreamer and transcribes with a persistent
 # faster-whisper worker, inserting text at the cursor.
 #
-# Real-time (hybrid) flow, driven by one toggle action:
-#   1st press  -> prompt dialog -> start recording. While you speak, a *preliminary*
-#                 transcript is inserted incrementally (every few seconds, only the
-#                 new audio is transcribed, so it scales to long dictations).
-#   2nd press  -> stop. The whole recording is re-transcribed once at best quality
-#                 and replaces the preliminary text in place (a single undo step).
+# Real-time (hybrid) flow:
+#   C , k    -> start fast (no dialog), reusing the last-used initial prompt.
+#   C , ; k  -> start with the prompt-selection dialog.
+#   (either, while recording) -> stop.
+# While you speak, a *preliminary* transcript is inserted incrementally (every few
+# seconds, only the new audio is transcribed, so it scales to long dictations). On
+# stop, the whole recording is re-transcribed once at best quality and replaces the
+# preliminary text in place (a single undo step), ending with a newline.
 #
 # Note: don't edit elsewhere in the buffer while a dictation is in progress — the
 # inserted span is tracked by position, so concurrent edits would misplace the
@@ -538,7 +540,20 @@ end
 
 # ── Toggle / lifecycle ──────────────────────────────────────────────────────────
 
+# Fast toggle: start immediately (no dialog) reusing the last-used prompt, or stop.
 def dictation_toggle
+  s = dictation_session
+  if s.active?
+    s.stop
+  else
+    last = $vma_dict_prompts && $vma_dict_prompts["last"]
+    last = nil if last.nil? || last.to_s.strip.empty?
+    s.start(last)
+  end
+end
+
+# Toggle with the prompt-selection dialog, or stop.
+def dictation_toggle_dialog
   s = dictation_session
   if s.active?
     s.stop
@@ -565,11 +580,15 @@ end
 def dictation_init
   $vma_dict_prompts = vma_dict_load_prompts
   reg_act(:dictation_toggle, proc { dictation_toggle },
-          "Voice dictation: start/stop real-time dictation")
+          "Voice dictation: start/stop (fast, last prompt)")
+  reg_act(:dictation_toggle_dialog, proc { dictation_toggle_dialog },
+          "Voice dictation: start/stop (choose prompt)")
   reg_act(:dictation_release_vram, proc { dictation_release_vram },
           "Voice dictation: unload model to free VRAM")
-  add_keys "dictation", { "C , k" => :dictation_toggle }
+  add_keys "dictation", { "C , k" => :dictation_toggle,
+                          "C , ; k" => :dictation_toggle_dialog }
   vma.gui.menu.add_module_action(:dictation_toggle, "Start/Stop Dictation")
+  vma.gui.menu.add_module_action(:dictation_toggle_dialog, "Start Dictation (choose prompt)")
   vma.gui.menu.add_module_action(:dictation_release_vram, "Release Dictation VRAM")
 end
 
@@ -577,8 +596,11 @@ def dictation_disable
   dictation_session.stop if $vma_dict_session&.active?
   $vma_dictation_worker&.stop
   unreg_act(:dictation_toggle)
+  unreg_act(:dictation_toggle_dialog)
   unreg_act(:dictation_release_vram)
   unbindkey "C , k"
+  unbindkey "C , ; k"
   vma.gui.menu.remove_module_action(:dictation_toggle)
+  vma.gui.menu.remove_module_action(:dictation_toggle_dialog)
   vma.gui.menu.remove_module_action(:dictation_release_vram)
 end
