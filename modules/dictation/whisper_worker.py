@@ -9,7 +9,9 @@ one WAV path per line and reads one JSON response per line.
 Protocol (line-based, JSON so transcripts with newlines stay one line):
   startup ->  {"ready": true}                      (model loaded)
           or  {"ready": false, "error": "..."}     (load/deps failed; then exits)
-  stdin   <-  /path/to/audio.wav\\n                 (one request)
+  stdin   <-  /path/to/audio.wav\\n                 (bare path), or
+          <-  {"path": "...", "initial_prompt": "...", "beam_size": 1,
+               "normalize": false, "vad": false}\\n  (per-request overrides)
   stdout  ->  {"ok": true,  "text": "..."}         (per request)
           or  {"ok": false, "error": "..."}
 
@@ -60,9 +62,12 @@ def main():
                     help="compute type, e.g. float16 or int8")
     ap.add_argument("--no-normalize", action="store_true",
                     help="skip ffmpeg level normalization (on by default)")
+    ap.add_argument("--initial-prompt", default="",
+                    help="text prompt that biases decoding toward a vocabulary/style")
     ap.add_argument("--beam-size", type=int, default=5, help="decoding beam size")
     args = ap.parse_args()
     normalize = not args.no_normalize
+    initial_prompt = args.initial_prompt or None
 
     # Load the model once. Report failure (missing deps, bad device, OOM) and exit.
     try:
@@ -75,18 +80,35 @@ def main():
 
     _emit({"ready": True})
 
-    # One WAV path per stdin line; one JSON response per line.
+    # One request per stdin line; one JSON response per line.
+    # A request is either a bare WAV path, or a JSON object with per-request
+    # overrides: {"path", "initial_prompt", "beam_size", "normalize", "vad"}.
+    # The CLI args above supply the defaults (used for the preliminary passes,
+    # which send fast overrides; the final pass sends high-quality overrides).
     for line in sys.stdin:
-        path = line.strip()
-        if not path:
+        line = line.strip()
+        if not line:
             continue
         try:
-            with _normalized_audio(path, normalize) as source:
+            if line.startswith("{"):
+                req = json.loads(line)
+                path = req["path"]
+                req_prompt = req.get("initial_prompt", args.initial_prompt) or None
+                req_beam = int(req.get("beam_size", args.beam_size))
+                req_norm = bool(req.get("normalize", normalize))
+                req_vad = bool(req.get("vad", True))
+            else:
+                path = line
+                req_prompt, req_beam, req_norm, req_vad = (
+                    initial_prompt, args.beam_size, normalize, True)
+
+            with _normalized_audio(path, req_norm) as source:
                 segments_iter, _info = model.transcribe(
                     source,
                     language=args.language,
-                    vad_filter=True,
-                    beam_size=args.beam_size,
+                    vad_filter=req_vad,
+                    beam_size=req_beam,
+                    initial_prompt=req_prompt,
                 )
                 parts = [seg.text.strip() for seg in segments_iter if seg.text.strip()]
             _emit({"ok": True, "text": " ".join(parts)})

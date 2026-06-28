@@ -53,7 +53,6 @@ class TestDictation < VmaTest
 
   def test_wav_header_fix
     load_dictation
-    rec = VmaDictationRecorder.new
 
     # Build a WAV with placeholder size fields (as wavenc leaves them without EOS).
     samples = "\x00\x00" * 8000   # 8000 frames of S16LE mono silence
@@ -64,7 +63,7 @@ class TestDictation < VmaTest
     path = File.join(Dir.tmpdir, "vma_dictation_test_#{Process.pid}.wav")
     File.binwrite(path, riff)
 
-    rec.send(:fix_wav_header!, path)
+    vma_wav_fix_header!(path)
 
     fixed = File.binread(path)
     riff_sz = fixed[4, 4].unpack1("V")
@@ -73,5 +72,47 @@ class TestDictation < VmaTest
     assert_eq fixed.bytesize - 44, data_sz, "data size not finalized"
   ensure
     File.delete(path) if path && File.exist?(path)
+  end
+
+  # PCM tail-slicing: a WAV written by vma_write_wav can be located and split into
+  # PCM halves that recombine to the original — the basis of the incremental pass.
+  def test_pcm_tail_slice
+    load_dictation
+    pcm = (0...4000).map { |i| (i % 256) - 128 }.pack("s<*")  # 2000 frames S16LE
+    path = File.join(Dir.tmpdir, "vma_dict_slice_#{Process.pid}.wav")
+    vma_write_wav(path, pcm)
+
+    bytes = File.binread(path)
+    doff = vma_wav_data_offset(bytes)
+    assert !doff.nil?, "data offset not found"
+    assert_eq pcm.bytesize, bytes.bytesize - doff, "data size mismatch"
+
+    half = doff + (pcm.bytesize / 2 / DICT_FRAME) * DICT_FRAME
+    a = bytes[doff...half]
+    b = bytes[half...bytes.bytesize]
+    assert_eq pcm, a + b, "sliced PCM does not recombine to original"
+  ensure
+    File.delete(path) if path && File.exist?(path)
+  end
+
+  # The span-replace approach: insert preliminary chunks into a buffer, then
+  # delete the whole tracked span and insert the final text in its place.
+  def test_span_replace
+    load_dictation
+    start = 0  # fresh test buffer is "\n"; dictate at the beginning
+
+    # Simulate preliminary inserts, tracking the span length.
+    len = 0
+    ["hello", "there", "world"].each do |chunk|
+      t = (len > 0 ? " " : "") + chunk
+      act("buf.insert_txt_at(#{t.inspect}, #{start + len})")
+      len += t.size
+    end
+    assert_buf "hello there world\n", "preliminary text not assembled"
+
+    # Replace the whole span with the final transcript.
+    act("buf.delete_range(#{start}, #{start + len - 1})")
+    act("buf.insert_txt_at('Hello, there, world.', #{start})")
+    assert_buf "Hello, there, world.\n", "final replacement incorrect"
   end
 end
