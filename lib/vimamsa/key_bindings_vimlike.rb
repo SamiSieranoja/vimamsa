@@ -197,6 +197,7 @@ add_keys "core", {
   "C y O" => "buf.copy(:to_line_end)",
   "C y 0" => "buf.copy(:to_line_start)",
   "C y e" => "buf.copy(:to_word_end)", # TODO
+  "C y ' <char>" => "buf.copy(:to_mark,<char>)",
   #### Deleting
   # "C x" => "buf.delete(CURRENT_CHAR_FORWARD)",
   # 'C d k'=> 'delete_line(BACKWARD)', #TODO

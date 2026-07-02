@@ -792,11 +792,12 @@ class Buffer < String
     return start.._End
   end
 
-  def copy(range_id)
+  def copy(range_id, mark = nil)
     @paste_lines = false
     debug "range_id: #{range_id}"
     debug range_id.inspect
-    range = get_range(range_id)
+    range = get_range(range_id, mark: mark)
+    return if range.nil?
     debug range.inspect
     vma.clipboard.set(self[range])
   end

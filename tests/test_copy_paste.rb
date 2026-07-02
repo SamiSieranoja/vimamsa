@@ -144,4 +144,25 @@ class TestCopyPaste < VmaTest
     assert_buf "lXine one\nline two\n\n"
   end
 
+  # --- Copy to mark (y'a) ----------------------------------------------------
+  # copy(:to_mark) yanks the same range delete2(:to_mark) removes: from the end
+  # of the current line to the mark position.
+  def test_copy_to_mark
+    act 'buf.insert_txt("AAA\nBBB\nCCC\n")'
+    act "buf.set_pos(8)"                     # start of "CCC"
+    act "buf.mark_current_position('a')"
+    act :jump_to_start_of_buffer             # cursor back on line 0
+    act "buf.copy(:to_mark, 'a')"
+    assert_eq "\nBBB\nC", vma.clipboard.get
+    assert_buf "AAA\nBBB\nCCC\n\n"           # buffer unchanged by a copy
+  end
+
+  def test_copy_to_undefined_mark_is_noop
+    act 'buf.insert_txt("hello")'
+    vma.clipboard.set("PREVIOUS")
+    act "buf.copy(:to_mark, 'z')"            # mark 'z' was never set
+    assert_eq "PREVIOUS", vma.clipboard.get  # clipboard untouched
+    assert_buf "hello\n"
+  end
+
 end
