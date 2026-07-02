@@ -612,8 +612,13 @@ class VMAgui
 
   def init_window
     @last_debug_idle = Time.now
-    app = Gtk::Application.new("net.samiddhi.vimamsa.r#{rand(1000)}", :flags_none)
+    # Stable application id so desktop environments can match the running window
+    # to its launcher entry / icon (see desktop_install.rb). :non_unique avoids
+    # GTK's D-Bus single-instance enforcement (single-instance forwarding is
+    # handled separately via the listen file in exe/vimamsa).
+    app = Gtk::Application.new(VMA_APP_ID, :non_unique)
     @app = app
+    Gtk::Window.set_default_icon_name("vimamsa")
 
     Gtk::Settings.default.gtk_application_prefer_dark_theme = true
     Gtk::Settings.default.gtk_theme_name = "Adwaita"

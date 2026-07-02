@@ -116,6 +116,9 @@ class Editor
       IO.write(custom_fn, example_custom)
     end
 
+    # Install desktop launcher + icon into ~/.local/share on first run.
+    install_desktop_integration
+
     settings_path = get_dot_path("settings.rb")
     if File.exist?(settings_path)
       eval(IO.read(settings_path))

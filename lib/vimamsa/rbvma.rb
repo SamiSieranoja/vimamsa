@@ -34,6 +34,7 @@ require "vimamsa/terminal"
 require "vimamsa/key_binding_tree"
 
 require "vimamsa/clipboard"
+require "vimamsa/desktop_install"
 
 # Graphical stuff:
 require "vimamsa/gui"
