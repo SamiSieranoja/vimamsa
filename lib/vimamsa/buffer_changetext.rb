@@ -98,9 +98,11 @@ class Buffer < String
   # Workaround for https://github.com/ruby-gnome/ruby-gnome/issues/1609
   def paste_start_xclip(at, register)
     @clipboard_paste_running = true
+    ipos = @pos                # capture insertion point before the async read
+    paste_lines = @paste_lines
     Thread.new {
       text = `xclip -selection c -o`
-      GLib::Idle.add { paste_finish(text, at, register); false }
+      GLib::Idle.add { paste_finish(text, at, register, ipos: ipos, paste_lines: paste_lines); false }
     }
     return nil
   end
@@ -113,6 +115,14 @@ class Buffer < String
       # return paste_start_xclip(at, register)
     # end
 
+    # Capture the insertion point now: read_text_async returns immediately and
+    # the callback fires on a later main-loop turn, by which time the cursor
+    # may have moved (queued keystroke, mouse click, etc). Without this the
+    # paste would land at wherever the cursor happens to be when the clipboard
+    # data finally arrives.
+    ipos = @pos
+    paste_lines = @paste_lines
+
     clipboard = vma.gui.window.display.clipboard
     clipboard.read_text_async do |_clipboard, result|
       begin
@@ -120,14 +130,23 @@ class Buffer < String
       rescue Gio::IOError::NotSupported
         debug Gio::IOError::NotSupported
       else
-        paste_finish(text, at, register, overwrite: overwrite)
+        paste_finish(text, at, register, overwrite: overwrite, ipos: ipos, paste_lines: paste_lines)
       end
     end
     return nil
   end
 
-  def paste_finish(text, at, register, overwrite: false)
+  # ipos/paste_lines: when given, restore the cursor position and line-paste
+  # state captured when the paste was initiated (see paste_start). nil means
+  # use the live state (synchronous/macro path), preserving prior behavior.
+  def paste_finish(text, at, register, overwrite: false, ipos: nil, paste_lines: nil)
     debug "PASTE: #{text}"
+
+    @paste_lines = paste_lines unless paste_lines.nil?
+    if !ipos.nil?
+      # Clamp in case the buffer shrank during the async window.
+      set_pos(ipos.clamp(0, [size - 1, 0].max))
+    end
 
     # If we did not put this text to clipboard
     if text != vma.clipboard[-1]

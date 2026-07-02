@@ -107,4 +107,41 @@ class TestCopyPaste < VmaTest
     assert_buf "line1\nline2\nline3\nline1\n"
   end
 
+  # --- Async paste position capture ------------------------------------------
+  # paste_start reads the clipboard asynchronously; its callback (paste_finish)
+  # may run after the cursor has moved.  These tests drive paste_finish directly
+  # with the position/state captured at request time (ipos/paste_lines) while
+  # the live cursor sits elsewhere, simulating that race.  The paste must land
+  # where it was initiated, not at the moved cursor.
+
+  def test_async_paste_inserts_at_captured_position
+    act 'buf.insert_txt("line one\nline two\n")'
+    act :jump_to_start_of_buffer
+    ipos = buf.pos                 # where the user pressed paste
+    vma.clipboard << "X"
+    act :jump_to_end_of_buffer     # cursor moves away during the async read
+    buf.paste_finish("X", AFTER, nil, ipos: ipos)
+    assert_buf "lXine one\nline two\n\n"
+  end
+
+  def test_async_paste_line_mode_uses_captured_state
+    act 'buf.insert_txt("AAA\nBBB\nCCC\n")'
+    act :jump_to_start_of_buffer
+    act :copy_cur_line             # clipboard = "AAA\n", @paste_lines = true
+    ipos = buf.pos
+    act :jump_to_end_of_buffer     # cursor moves to the last line
+    buf.paste_finish("AAA\n", AFTER, nil, ipos: ipos, paste_lines: true)
+    assert_buf "AAA\nAAA\nBBB\nCCC\n\n"
+  end
+
+  # Without a captured position (synchronous/macro path) the live cursor is
+  # used, preserving prior behavior.
+  def test_paste_finish_without_capture_uses_live_cursor
+    act 'buf.insert_txt("line one\nline two\n")'
+    act :jump_to_start_of_buffer
+    vma.clipboard << "X"
+    buf.paste_finish("X", AFTER, nil)
+    assert_buf "lXine one\nline two\n\n"
+  end
+
 end
