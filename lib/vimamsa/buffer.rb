@@ -1634,16 +1634,15 @@ class Buffer < String
   end
 
   def unsaved_changes?
-    pp [@t_modified, @last_save]
     return true if @t_modified > @last_save
     return false
   end
 
   def refresh_title
     if vma.buf == self
-      pfx = ""
-      pfx = "+ " if vma.buf.unsaved_changes?
-      gui_set_window_title(pfx + vma.buf.title, vma.buf.subtitle)
+      mod = unsaved_changes?
+      pfx = mod ? "+ " : ""
+      gui_set_window_title(pfx + title, subtitle, modified: mod)
     end
   end
 

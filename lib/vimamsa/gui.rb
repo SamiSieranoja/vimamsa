@@ -187,17 +187,25 @@ def gui_set_current_buffer(id)
   return
 end
 
-def gui_set_window_title(wtitle, subtitle = "")
+def gui_set_window_title(wtitle, subtitle = "", modified: false)
   wtitle = wtitle[0..150]
   $vmag.window.title = "Vimamsa - #{wtitle}"
-  # $vmag.subtitle.markup = "<span weight='ultrabold'>#{subtitle}</span>"
-  $vmag.subtitle.markup = "<span weight='light' size='small'>#{subtitle}</span>"
+  # Subtitle shows the file path: dim directory, bright basename,
+  # amber dot when there are unsaved changes.
+  subtitle = subtitle.to_s
+  dir = File.dirname(subtitle)
+  dir = (dir == ".") ? "" : (dir == "/" ? "/" : "#{dir}/")
+  base = File.basename(subtitle)
+  dot = modified ? "<span foreground='#fd971f' weight='bold'>● </span>" : ""
+  $vmag.subtitle.markup = "<span size='small'>#{dot}" \
+    "<span alpha='55%'>#{CGI.escapeHTML(dir)}</span>" \
+    "<span weight='bold' alpha='92%'>#{CGI.escapeHTML(base)}</span></span>"
   #  $vmag.window.titlebar.subtitle = subtitle #TODO:gtk4
 end
 
 class VMAgui
   attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c, :scheme_is_light
-  attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel, :func_panel
+  attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel, :func_panel, :keytrail
 
   def initialize()
     @two_column = false
@@ -670,23 +678,22 @@ class VMAgui
 
       @last_adj_time = Time.now
 
-      # To show keyboard key binding state
+      # To show keyboard key binding state (mode badge, e.g. COMMAND)
       @statnfo = Gtk::Label.new
+      @statnfo.add_css_class("mode-badge")
+
+      # Pending key chord / repeat count next to the mode badge
+      @keytrail = Gtk::Label.new("")
+      @keytrail.add_css_class("keytrail")
 
       # To show e.g. current folder
       @subtitle = Gtk::Label.new("")
 
-      @statbox = Gtk::Box.new(:horizontal, 2)
-      @statnfo.set_size_request(150, 10)
+      @statbox = Gtk::Box.new(:horizontal, 6)
       @statbox.append(@subtitle)
       @subtitle.hexpand = true
+      @statbox.append(@keytrail)
       @statbox.append(@statnfo)
-      provider = Gtk::CssProvider.new
-      @statnfo.add_css_class("statnfo")
-      provider.load(data: "label.statnfo {   background-color:#353535; font-size: 10pt; margin-top:2px; margin-bottom:2px; align:right;}")
-
-      provider = Gtk::CssProvider.new
-      @statnfo.style_context.add_provider(provider)
 
       # numbers: left, top, width, height
       @vbox.attach(@windows[1][:overlay], 0, 2, 2, 1)
@@ -757,6 +764,22 @@ class VMAgui
  popover background > contents { padding: 8px; border-radius: 20px; }
 
  label.action-trail { font-family: monospace; font-size: 10pt; margin-right: 8px; color: #aaaaaa; }
+
+ label.mode-badge {
+   font-family: monospace; font-size: 9pt; font-weight: 800;
+   padding: 1px 10px; margin: 2px 4px 2px 0;
+   border-radius: 9px; min-width: 70px;
+   color: #1b1d1e; background-color: #75715e;
+   transition: background-color 120ms ease-out;
+ }
+ label.mode-badge.mode-command { background-color: #7c68f2; }
+ label.mode-badge.mode-insert  { background-color: #78bf78; }
+ label.mode-badge.mode-visual  { background-color: #d49e63; }
+ label.mode-badge.mode-browse  { background-color: #a96bb0; }
+ label.mode-badge.mode-replace { background-color: #d66d63; }
+ label.mode-badge.mode-other   { background-color: #9670d6; }
+
+ label.keytrail { font-family: monospace; font-size: 10pt; font-weight: bold; color: #e6db74; }
          ")
       @window.style_context.add_provider(prov)
 

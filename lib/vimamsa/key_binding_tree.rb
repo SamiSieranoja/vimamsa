@@ -47,8 +47,13 @@ class KeyBindingTree
   attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action, :modifiers, :next_command_count, :method_handles_repeat, :default_mode
   attr_reader :mode_root_state, :state_trail, :act_bindings, :default_mode_stack
 
+  # CSS class of mode badge label per mode key_name; others get "mode-other"
+  MODE_BADGE_CSS = { "C" => "mode-command", "I" => "mode-insert", "V" => "mode-visual",
+                     "B" => "mode-browse", "X" => "mode-replace" }.freeze
+
   def initialize()
     @next_command_count = nil
+    @badge_css_class = nil
     @modes = {}
     @root = State.new("ROOT")
     @cur_state = @root # used for building the tree
@@ -208,8 +213,17 @@ class KeyBindingTree
   end
 
   def show_state_trail
-    (st, children) = get_state_trail_str()
-    vma.gui.statnfo.markup = "<span weight='ultrabold'>#{st}</span>"
+    (badge, badge_key, trail) = get_state_trail_parts()
+    cls = MODE_BADGE_CSS.fetch(badge_key, "mode-other")
+    if cls != @badge_css_class
+      vma.gui.statnfo.remove_css_class(@badge_css_class) if @badge_css_class
+      vma.gui.statnfo.add_css_class(cls)
+      @badge_css_class = cls
+    end
+    vma.gui.statnfo.text = badge if badge != @last_badge_text
+    vma.gui.keytrail.text = trail if trail != @last_trail_text
+    @last_badge_text = badge
+    @last_trail_text = trail
   end
 
   def __set_mode(label)
@@ -438,10 +452,14 @@ class KeyBindingTree
     return s
   end
 
-  def get_state_trail_str
-    s_trail = ""
-    last_state = @state_trail.last
-    last_state = last_state[0] if last_state.class == Array
+  # Returns [badge_str, badge_key, trail_str]:
+  #   badge_str = human readable mode ("COMMAND", "C>fexp", ...), no brackets
+  #   badge_key = key_name of the mode state ("C", "I", "fexp", ...)
+  #   trail_str = pending key chord states + repeat count
+  def get_state_trail_parts
+    badge_str = ""
+    badge_key = nil
+    trail_str = ""
     first = true
     for st in @state_trail
       st = st[0] if st.class == Array
@@ -457,20 +475,31 @@ class KeyBindingTree
         mode_str = "VISUAL" if mode_str == "V"
         mode_str = "BROWSE" if mode_str == "B"
 
-        s_trail << "[#{trailpfx}#{mode_str}]"
+        badge_key = st.key_name
+        badge_str = "#{trailpfx}#{mode_str}"
       else
-        s_trail << " #{st.to_s}"
+        trail_str << " #{st.to_s}"
       end
       first = false
     end
+    if !@next_command_count.nil?
+      trail_str << " #{@next_command_count}"
+    end
+    trail_str.strip!
+    return [badge_str, badge_key, trail_str]
+  end
+
+  def get_state_trail_str
+    (badge, _key, trail) = get_state_trail_parts()
+    s_trail = "[#{badge}]"
+    s_trail << " #{trail}" if !trail.empty?
+    last_state = @state_trail.last
+    last_state = last_state[0] if last_state.class == Array
     children = ""
     for cstate in last_state.children
       act_s = "..."
       act_s = cstate.action.to_s if cstate.action != nil
       children << "  #{cstate.to_s} #{act_s}\n"
-    end
-    if !@next_command_count.nil?
-      s_trail << " #{@next_command_count}"
     end
     return [s_trail, children]
   end
@@ -804,14 +833,20 @@ class KeyBindingTree
       len_limit = 35
       action_desc = "UNK"
       if action.class == String && (m = action.match(/\Abuf\.insert_txt\((.+)\)\z/))
-        char_part = m[1].gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
-        action_desc = "insert #{char_part}"
+        action_desc = "insert #{m[1]}"
       else
         action_desc = vma.actions[action]&.method_name || action.to_s
         action_desc = action_desc[0..len_limit] if action_desc.size > len_limit
       end
-      trail_str = trail_str.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
-      vma.gui.action_trail_label.markup = "<span weight='bold'>#{action_desc}|#{trail_str}</span>"
+      trail_esc = CGI.escapeHTML(trail_str)
+      action_esc = CGI.escapeHTML(action_desc)
+      # Completed key chord bright, executed action name dim
+      # vma.gui.action_trail_label.markup =
+        # "<span foreground='#e6db74' weight='bold'>#{trail_esc}</span>" \
+        # "<span alpha='55%'>  #{action_esc}</span>"
+       vma.gui.action_trail_label.markup = "<span alpha='70%'>#{trail_esc}  #{action_esc}</span>"
+       
+        
     end
   end
 end

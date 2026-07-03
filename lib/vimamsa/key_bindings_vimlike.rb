@@ -126,11 +126,11 @@ add_keys "core", {
   "VCI pagedown" => :page_down,
   "VCI pageup" => :page_up,
 
-  "I down(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
+  # "I down(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
   "I tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
-  "I up(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
+  # "I up(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
   "I shift-tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
-  "I enter(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select",
+  "I shift!(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select",
 
   "I tab" => "buf.insert_tab",
   "I shift-tab" => "buf.unindent",

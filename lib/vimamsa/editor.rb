@@ -629,7 +629,9 @@ def open_new_file(filename, file_contents = "")
       return nil
     end
     do_open_file(filename)
-    bu = vma.buffers.get_buffer_by_filename(filename)
+    # get_buffer_by_filename returns a buffer id, not the Buffer; resolve it so
+    # callers (e.g. jump_to_file) get a Buffer to act on.
+    bu = vma.buffers.get_buffer_by_id(vma.buffers.get_buffer_by_filename(filename))
   end
   return bu
 end
