@@ -716,6 +716,7 @@ class VMAgui
       @action_trail_label = Gtk::Label.new("")
       @action_trail_label.add_css_class("action-trail")
       menubar_row = Gtk::Box.new(:horizontal, 0)
+      menubar_row.add_css_class("menubar-row")
       menubar_row.append(menubar_bar)
       menubar_row.append(@action_trail_label)
       @vbox.attach(menubar_row, 0, 0, 2, 1)
@@ -740,7 +741,17 @@ class VMAgui
       # See gtk-4.9.4/gtk/theme/Default/_common.scss  on how to theme
       # gtksourceview/gtksourcestyleschemepreview.c
       # gtksourceview/gtksourcestylescheme.c
-      prov.load(data: " headerbar { padding: 0 0px; min-height: 16px; border-width: 0 0 0px; border-style: solid; }
+      prov.load(data: "
+      /* Edge-lit panel: near-black chrome, neon-cyan bottom edge */
+      headerbar { padding: 0 0px; min-height: 16px; border-width: 0 0 0px; border-style: solid; /*background: #0a0a12;*/ color: #d8e6ee; }
+
+      menubar { background: transparent; }
+      menubar > item { color: #b8ccd8; }
+
+      box.menubar-row {
+        /*background-color: #0a0a12;*/
+        /*border-bottom: 1px solid #05d9e8;*/
+      }
       
       textview border.left gutter { color: #8aa; font-size:8pt; }     
       

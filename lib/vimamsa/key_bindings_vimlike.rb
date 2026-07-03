@@ -23,6 +23,7 @@ cnf.mode.browse.cursor.background = "#f803fc"
 cnf.mode.insert.cursor.background = "#ffffff"
 cnf.mode.inactive.cursor.background = "#777777"
 
+
 def _insert_move(op)
   if op == :pagedown
     vma.gui.page_down
@@ -76,7 +77,7 @@ add_keys "intro", {
   "C i" => :insert_mode,
   # Guarded esc must be defined before the unguarded one: on multiple
   # matches the first-registered state with an action wins
-  "I esc(vma.buf.view.autocp_active)" => "vma.buf.view.hide_completions",
+  # "I esc(vma.buf.view.autocp_active)" => "vma.buf.view.hide_completions",
   "I esc || I ctrl!" => :prev_mode,
   "IX alt-b" => :jump_prev_word_start,
   "IX alt-f" => :jump_next_word_start,
