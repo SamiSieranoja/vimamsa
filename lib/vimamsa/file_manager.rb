@@ -181,7 +181,7 @@ class FileManager
     @header << "=" * 40
     @ld = dirpath # Path to current directory
     @dlist = Dir.children(@ld).sort
-    @cdirs = [] # Dirs in current directory
+    @cdirs = [] # Dirs in current directory [name, stat]
     @cfiles = [] # Files in current directory
     for x in @dlist
       fpath = fullp(x)
@@ -194,13 +194,14 @@ class FileManager
       end
       next if x[0] == "."
       if File.directory?(fpath)
-        # if f.directory?(fpath)
-        @cdirs << x
+        @cdirs << [x, fstat]
       else
         @cfiles << [x, fstat]
       end
     end
 
+    @cdirs.sort_by! { |x| x[1].mtime }.reverse! if @sort_by == :mtime
+    @cdirs.sort_by! { |x| x[0] } if @sort_by == :name
     @cfiles.sort_by! { |x| x[1].mtime }.reverse! if @sort_by == :mtime
     @cfiles.sort_by! { |x| x[1].size }.reverse! if @sort_by == :size
     @cfiles.sort_by! { |x| x[0] } if @sort_by == :name
@@ -209,8 +210,9 @@ class FileManager
     s << @header.join("\n")
     s << "\n"
     s << "..\n"
-    s << @cdirs.join("\n")
-    s << "\n"
+    @cdirs.each do |d|
+      s << "#{d[0]}\n"
+    end
     s << "\n"
     jumppos = nil
     for f in @cfiles
