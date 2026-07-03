@@ -41,6 +41,16 @@ SETTINGS_DEFS = [
     ],
   },
   {
+    :label => "Autocomplete",
+    :settings => [
+      { :key => [:autocomplete, :enabled], :label => "Enable autocomplete", :type => :bool },
+      { :key => [:autocomplete, :auto_trigger], :label => "Show popup while typing (off: manual key only)", :type => :bool },
+      { :key => [:autocomplete, :min_chars], :label => "Min characters before auto popup", :type => :int, :min => 1, :max => 10, :step => 1 },
+      { :key => [:autocomplete, :max_items], :label => "Max candidates in list", :type => :int, :min => 1, :max => 200, :step => 1 },
+      { :key => [:autocomplete, :visible_items], :label => "Visible rows in popup", :type => :int, :min => 1, :max => 40, :step => 1 },
+    ],
+  },
+  {
     :label => "Files",
     :settings => [
       { :key => ["search_dirs"], :label => "Search directories (one per line)", :type => :string_list },

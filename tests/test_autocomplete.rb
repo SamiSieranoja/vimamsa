@@ -182,4 +182,27 @@ class TestAutocomplete < VmaTest
   ensure
     teardown_seed
   end
+
+  # ── GUI settings exposure ────────────────────────────────────────────────
+
+  # The enable/disable toggle must be reachable from the Preferences dialog,
+  # i.e. present in the data-driven settings definitions.
+  def test_enable_toggle_exposed_in_settings
+    all = all_settings_defs.flat_map { |sec| sec[:settings] }
+    setting = all.find { |s| s[:key] == [:autocomplete, :enabled] }
+    assert !setting.nil?, "autocomplete.enabled must appear in settings defs"
+    assert_eq :bool, setting[:type]
+  end
+
+  # Whatever the dialog writes to cnf must round-trip through the persisted
+  # settings.rb generator (save_settings_to_file iterates the same defs).
+  def test_enabled_setting_persists_via_cnf
+    prev = cnf.autocomplete.enabled?
+    cnf_set([:autocomplete, :enabled], true)
+    assert_eq true, cnf_get([:autocomplete, :enabled])
+    cnf_set([:autocomplete, :enabled], false)
+    assert_eq false, cnf_get([:autocomplete, :enabled])
+  ensure
+    cnf.autocomplete.enabled = prev
+  end
 end
