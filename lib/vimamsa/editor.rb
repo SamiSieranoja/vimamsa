@@ -199,6 +199,13 @@ class Editor
 
     @hook.call(:after_init)
 
+    # Paint the initial mode badge (e.g. COMMAND). show_state_trail is otherwise
+    # only called from key handling, so without this the badge stays blank until
+    # the first keypress. set_state_to_root populates @state_trail the same way
+    # the key handler does before rendering.
+    @kbd.set_state_to_root
+    @kbd.show_state_trail
+
     if ARGV.include?("--test")
       test_files = ARGV.select { |a| a.end_with?(".rb") && File.file?(a) }
       run_as_idle proc {

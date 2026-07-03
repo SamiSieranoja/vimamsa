@@ -767,8 +767,8 @@ class VMAgui
 
  label.mode-badge {
    font-family: monospace; font-size: 9pt; font-weight: 800;
-   padding: 1px 10px; margin: 2px 4px 2px 0;
-   border-radius: 9px; min-width: 70px;
+   padding: 1px 7px; margin: 2px 4px 2px 0;
+   border-radius: 5px; min-width: 65px;
    color: #1b1d1e; background-color: #75715e;
    transition: background-color 120ms ease-out;
  }
