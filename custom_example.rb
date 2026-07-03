@@ -98,6 +98,18 @@ end
 # cnf.lsp.server.clangd = { name: "clangd", command: "clangd-12 --offset-encoding=utf-8", type: "stdio" }
 # cnf.lsp.server.clangd.languages = ["c", "cpp"]
 
+# Autocomplete (word completion popup in insert mode).
+# Candidates come from words in open buffers, plus the LSP server when
+# cnf.lsp.enabled and a server is configured for the file's language.
+# Defaults shown; uncomment to change:
+# cnf.autocomplete.enabled = true
+# cnf.autocomplete.auto_trigger = true  # popup while typing (false: ctrl-space/ctrl-h only)
+# cnf.autocomplete.min_chars = 2        # typed chars before the popup opens
+# cnf.autocomplete.max_items = 50       # candidates kept in the list
+# cnf.autocomplete.visible_items = 10   # popup rows before scrolling
+# cnf.autocomplete.lsp.enabled = true
+# cnf.autocomplete.lsp.debounce = 0.15  # seconds before asking the server
+
 # Uncomment this if you don't want to see the state trail of previous action
 # on top right corner:
 # cnf.kbd.show_prev_action = false

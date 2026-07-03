@@ -300,6 +300,11 @@ class Buffer < String
     #recalc_line_ends
     calculate_line_and_column_pos
     #need_redraw!
+
+    if vma.kbd&.get_mode == :insert
+      v = (self.view rescue nil)
+      v.autocp_on_delete if v.respond_to?(:autocp_on_delete)
+    end
   end
 
   def delete_range(startpos, endpos, x = nil)

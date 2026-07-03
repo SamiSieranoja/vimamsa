@@ -214,6 +214,11 @@ class KeyBindingTree
 
   def __set_mode(label)
     debug "__set_mode(#{label})"
+    if label != :insert
+      # Dismiss the autocomplete popup when leaving insert mode
+      v = (vma.buf&.view rescue nil)
+      v.hide_completions if v.respond_to?(:hide_completions)
+    end
     @mode_history << @mode_root_state
 
     # Check if label in form :label

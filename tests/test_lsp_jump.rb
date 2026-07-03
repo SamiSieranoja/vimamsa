@@ -15,6 +15,9 @@ class TestLspJumpToDefinition < VmaTest
   TARGET_FILE = File.join(REPO_ROOT, "lib/vimamsa/test_framework.rb")
 
   def test_jump_to_definition
+    # langservp.rb is only loaded at startup when cnf.lsp.enabled — this
+    # test enables LSP after startup, so load it here.
+    require "vimamsa/langservp"
     # Configure ruby-lsp for this test, pointing at the repo root so
     # 'bundle exec ruby-lsp' can find the Gemfile and load its addons.
     cnf.lsp.enabled = true

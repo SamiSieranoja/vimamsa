@@ -46,6 +46,7 @@ class Buffer < String
     end
 
     self.view.set_cursor_pos(pos)
+    self.view.autocp_check_pos(@pos) if self.view.respond_to?(:autocp_check_pos)
     # gui_set_cursor_pos(@id, @pos)
     calculate_line_and_column_pos
 

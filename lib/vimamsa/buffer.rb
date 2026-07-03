@@ -10,7 +10,7 @@ module Vimamsa
 $ifuncon = false
 
 class Buffer < String
-  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images, :last_save, :access_time, :selection_active, :lsp
+  attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images, :last_save, :access_time, :selection_active, :lsp, :edit_version
   attr_writer :call_func, :update_highlight
   attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle, :paste_lines, :mode_stack, :default_mode, :git_root
 
@@ -429,7 +429,7 @@ class Buffer < String
     self.replace(str)
     @line_ends = scan_indexes(self, /\n/)
     words = scan_all_words
-    Autocomplete.add_words(words)
+    Autocomplete.add_words(words, @id)
 
     if cnf.btree.experimental?
       @bt = BufferTree.new(self)
@@ -1294,6 +1294,12 @@ class Buffer < String
     #need_redraw!
     #@pos += c.size
     # end_profiler
+
+    # Covers both the key binding path and the Wayland IM insert-text path
+    if vma.kbd&.get_mode == :insert
+      v = (self.view rescue nil)
+      v.autocp_on_insert(c) if v.respond_to?(:autocp_on_insert)
+    end
   end
 
   # Update buffer contents to newstr

@@ -74,6 +74,9 @@ add_keys "intro", {
   
   "C ctrl!" => :insert_mode,
   "C i" => :insert_mode,
+  # Guarded esc must be defined before the unguarded one: on multiple
+  # matches the first-registered state with an action wins
+  "I esc(vma.buf.view.autocp_active)" => "vma.buf.view.hide_completions",
   "I esc || I ctrl!" => :prev_mode,
   "IX alt-b" => :jump_prev_word_start,
   "IX alt-f" => :jump_next_word_start,
@@ -367,7 +370,8 @@ add_keys "experimental", {
 
   "C , t r" => "run_tests()",
   # "CV , R" => "restart_application", #TODO: does not work
-  "I ctrl-h" => :show_autocomplete, #TODO: does not work
+  "I ctrl-h" => :autocp_manual_trigger,
+  "I ctrl-space" => :autocp_manual_trigger,
   "C , d m" => :kbd_dump_state,
   "C , ; ." => :increment_word,
   "C , d d" => "debug_dump_deltas",

@@ -2,7 +2,7 @@
 module Vimamsa
 # class VSourceView < Gtk::TextView
 class VSourceView < GtkSource::View
-  attr_accessor :bufo, :autocp_active, :cpl_list
+  attr_accessor :bufo, :autocp_active
 
   # def initialize(title = nil,bufo=nil)
   def initialize(title, bufo)
@@ -20,6 +20,7 @@ class VSourceView < GtkSource::View
     @tt = nil
     @applying_delta = false
     @im_inserted_count = 0
+    autocp_init
 
     # Mainly after page-up or page-down
 
