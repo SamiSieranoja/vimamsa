@@ -1,12 +1,14 @@
 class TestAutocomplete < VmaTest
 
-  # Seed candidate words and enter insert mode
+  # Enable autocomplete (off by default) and seed candidate words
   def seed(words)
+    cnf.autocomplete.enabled = true
     Vimamsa::Autocomplete.add_words(words, :test_seed)
   end
 
   def teardown_seed
     Vimamsa::Autocomplete.remove_buffer(:test_seed)
+    cnf.autocomplete.enabled = false
   end
 
   def view

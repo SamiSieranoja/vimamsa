@@ -134,7 +134,7 @@ cnf.lsp.enabled = false
 cnf.fexp.experimental = false
 cnf.experimental = false
 
-cnf.autocomplete.enabled = true
+cnf.autocomplete.enabled = false      # opt-in: enable in custom.rb
 cnf.autocomplete.auto_trigger = true  # popup while typing (false: manual key only)
 cnf.autocomplete.min_chars = 2        # min typed word chars before auto popup
 cnf.autocomplete.max_items = 50       # candidates kept in the list

@@ -160,7 +160,7 @@ class VSourceView < GtkSource::View
   end
 
   def autocp_manual_trigger
-    return if cnf.autocomplete.enabled? == false
+    return unless cnf.autocomplete.enabled?
     @autocp_manual = true
     autocp_refresh(request_lsp: true)
   end
@@ -168,7 +168,7 @@ class VSourceView < GtkSource::View
   # Called from Buffer#insert_txt while in insert mode (covers both the key
   # binding path and the Wayland IM insert-text path).
   def autocp_on_insert(c)
-    return if cnf.autocomplete.enabled? == false
+    return unless cnf.autocomplete.enabled?
     if c.nil? or c.empty? or c[-1] !~ /\w/
       hide_completions if @autocp_active
       return
