@@ -205,7 +205,7 @@ end
 
 class VMAgui
   attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c, :scheme_is_light
-  attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel, :func_panel, :keytrail
+  attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel, :func_panel, :keylog_panel, :keytrail
 
   def initialize()
     @two_column = false
@@ -726,6 +726,7 @@ class VMAgui
       init_header_bar
       file_panel_init
       func_panel_init
+      keylog_panel_init
 
       @window.show
 
@@ -1177,6 +1178,44 @@ class VMAgui
 
   def toggle_func_panel
     @func_panel_shown ? hide_func_panel : show_func_panel
+  end
+
+  def keylog_panel_init
+    @keylog_panel = KeyLogPanel.new
+    @keylog_shown = false
+  end
+
+  # The key log wraps @minibuf_vpane at the grid level (right side), so it is
+  # independent of the file/func panel and two-column nesting, which only
+  # touch @minibuf_vpane's start child.
+  def show_keylog_panel
+    return if @keylog_shown
+    @vbox.remove(@minibuf_vpane)
+    @keylog_pane = Gtk::Paned.new(:horizontal)
+    @keylog_pane.hexpand = true
+    @keylog_pane.vexpand = true
+    @keylog_pane.set_start_child(@minibuf_vpane)
+    @keylog_pane.set_end_child(@keylog_panel.widget)
+    @keylog_pane.resize_start_child = true   # editor absorbs window resize
+    @keylog_pane.resize_end_child = false    # log keeps its width
+    @keylog_pane.shrink_end_child = false
+    @vbox.attach(@keylog_pane, 0, 2, 2, 1)
+    @keylog_shown = true
+    @keylog_panel.set_active(true)
+  end
+
+  def hide_keylog_panel
+    return unless @keylog_shown
+    @keylog_panel.set_active(false)
+    @keylog_pane.set_start_child(nil)
+    @keylog_pane.set_end_child(nil)
+    @vbox.remove(@keylog_pane)
+    @vbox.attach(@minibuf_vpane, 0, 2, 2, 1)
+    @keylog_shown = false
+  end
+
+  def toggle_keylog_panel
+    @keylog_shown ? hide_keylog_panel : show_keylog_panel
   end
 end
 end # module Vimamsa

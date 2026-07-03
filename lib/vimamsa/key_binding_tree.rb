@@ -577,6 +577,9 @@ class KeyBindingTree
 
     if new_state == nil
       debug("NO MATCH")
+      if event_type == :key_press and !%w[ctrl alt shift meta super caps].include?(c)
+        vma.gui.keylog_panel&.log_nomatch(c, get_state_trail_str[0])
+      end
       if event_type == :key_press and c != "shift"
         # TODO:include other modifiers in addition to shift?
         set_state_to_root
@@ -638,6 +641,9 @@ class KeyBindingTree
         debug c
         handle_key_bindigs_action(eval_s, c)
         set_state_to_root
+      else
+        # Multi-key sequence still in progress
+        vma.gui.keylog_panel&.log_pending(get_state_trail_str[0])
       end
     end
 
@@ -782,6 +788,8 @@ class KeyBindingTree
 
   def handle_key_bindigs_action(action, c)
     trail_str = get_state_trail_str[0]
+    # Log before execution so the entry shows even if the action raises
+    vma.gui.keylog_panel&.log_action(trail_str, action)
     # $acth << action #TODO:needed here?
     @method_handles_repeat = false #TODO:??
     n = 1

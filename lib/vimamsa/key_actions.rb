@@ -76,6 +76,7 @@ reg_act(:toggle_file_panel, proc { vma.gui.toggle_file_panel }, "Toggle file pan
 reg_act(:show_message_history, proc { vma.gui.show_message_history }, "Show message history")
 reg_act(:toggle_func_panel, proc { vma.gui.toggle_func_panel }, "Toggle LSP function panel")
 reg_act(:refresh_func_panel, proc { vma.gui.func_panel_refresh }, "Refresh LSP function panel")
+reg_act(:toggle_keylog_panel, proc { vma.gui.toggle_keylog_panel }, "Toggle key log panel")
 reg_act(:git_diff_w, proc { git_diff_w }, "Show git diff -w for whole repository")
 reg_act(:lsp_print_functions, proc { lsp_print_functions }, "LSP print functions in current file")
 reg_act(:comment_selection, proc { buf.comment_selection }, "Comment selection")
