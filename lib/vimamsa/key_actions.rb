@@ -143,6 +143,20 @@ reg_act(:jump_last_edit, proc { buf.jump_to_last_edit }, "Jump to the last edit 
 reg_act(:install_demo_files, proc { install_demo_files }, "Install and show Demo")
 reg_act(:reload_customrb, proc { reload_customrb }, "Reload custom.rb")
 
+reg_act(:toggle_autocomplete, proc {
+  cnf.autocomplete.enabled = !(cnf.autocomplete.enabled? != false)
+  vma.buf&.view&.hide_completions unless cnf.autocomplete.enabled?
+  message("Autocomplete: #{cnf.autocomplete.enabled? ? "ON" : "OFF"}")
+}, "Toggle autocomplete on/off")
+
+reg_act(:toggle_highlight_colors, proc {
+  cnf.highlight_colors.enabled = !(cnf.highlight_colors.enabled? != false)
+  vma.gui.buffers.each_value { |v| v.highlight_colors }
+  message("Color code highlighting: #{cnf.highlight_colors.enabled? ? "ON" : "OFF"}")
+}, "Toggle hex color code highlighting on/off")
+
+reg_act(:restart_editor, proc { restart_editor }, "Restart: quit, reload config and reopen files")
+
 reg_act :start_browse_mode, proc {
   vma.kbd.set_mode(:browse)
   bufs.reset_navigation

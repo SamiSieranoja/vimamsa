@@ -31,12 +31,14 @@ module Vimamsa
       add_to_menu "File.List", { :label => "List open files", :action => :start_buf_manager }
       add_to_menu "File.Close", { :label => "Close file", :action => :close_current_buffer }
 
+      add_to_menu "File.Restart", { :label => "Restart (reload config and files)", :action => :restart_editor }
       add_to_menu "File.Quit", { :label => "Quit", :action => :quit }
 
       add_to_menu "Edit.Undo", { :label => "Undo edit", :action => :edit_undo }
       add_to_menu "Edit.Redo", { :label => "Redo edit", :action => :edit_redo }
       add_to_menu "Edit.SearchReplace", { :label => "Search and replace", :action => :gui_search_replace }
       add_to_menu "Edit.Find", { :label => "Find", :action => :find_in_buffer }
+      add_to_menu "Edit.ToggleAutocomplete", { :label => "Toggle autocomplete", :action => :toggle_autocomplete }
 
       # add_to_menu "Edit.StartCompletion", { :label => "StartCompletion", :action => :start_autocomplete }
       # add_to_menu "Edit.ShowCompletion", { :label => "ShowCompletion", :action => :show_autocomplete }

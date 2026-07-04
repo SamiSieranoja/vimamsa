@@ -154,6 +154,8 @@ cnf.workspace_folders = []
 
 cnf.match.highlight.color = "#10bd8e"
 
+cnf.highlight_colors.enabled = true   # paint #rrggbb hex codes with their color
+
 cnf.lsp.enabled = false
 
 cnf.font.size = 11

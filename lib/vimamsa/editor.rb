@@ -382,6 +382,15 @@ class Editor
     fnames.reject! { |f| vma.buffers.get_buffer_by_filename(f) }
     return if fnames.empty?
 
+    # After a restart (restart_editor) reopen the previous files silently.
+    if ENV["VIMAMSA_RESTORE_SESSION"]
+      initial = vma.buffers.list.find { |b| b.fname.nil? }
+      fnames.each { |f| load_buffer(f) }
+      initial&.close
+      message("Session restored: #{fnames.size} file(s)")
+      return
+    end
+
     n = fnames.size
     label = n == 1 ? "1 file" : "#{n} files"
     params = {
@@ -781,6 +790,21 @@ def find_project_dir_of_cur_buffer()
   end
   # debug "Proj dir of current file: #{pdir}"
   return pdir
+end
+
+# Quit and relaunch the editor: reloads settings.rb/custom.rb and reopens the
+# files that were open (via the saved session), all automatically. Replaces the
+# current process with exec, so the same window is torn down as the new one comes up.
+def restart_editor
+  vma.save_session
+  vma.hook.call(:shutdown)
+  ruby = RbConfig.ruby
+  script = $PROGRAM_NAME
+  message("Restarting...")
+  # Signal the new instance to restore the session without prompting.
+  exec({ "VIMAMSA_RESTORE_SESSION" => "1" }, ruby, script)
+rescue => ex
+  message("Restart failed: #{ex}")
 end
 
 def reload_customrb

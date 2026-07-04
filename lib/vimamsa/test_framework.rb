@@ -17,15 +17,17 @@ module Vimamsa
 #   Run one class:  run_vma_tests(MyTests)
 
 class VmaTestFailure < StandardError; end
+class VmaTestSkip < StandardError; end
 
 class VmaTest
-  attr_reader :failures, :passes
+  attr_reader :failures, :passes, :skips
 
   # Subclasses define test_* methods.
   # Each receives a fresh buffer and the kbd in :command mode.
   def run_all
     @passes = 0
     @failures = []
+    @skips = []
     test_methods = self.class.instance_methods(false)
                        .select { |m| m.to_s.start_with?("test_") }
                        .sort
@@ -36,6 +38,9 @@ class VmaTest
         send(m)
         @passes += 1
         puts "  PASS  #{self.class}##{m}"
+      rescue VmaTestSkip => e
+        @skips << "#{self.class}##{m}: #{e.message}"
+        puts "  SKIP  #{self.class}##{m}: #{e.message}"
       rescue VmaTestFailure => e
         @failures << "#{self.class}##{m}: #{e.message}"
         puts "  FAIL  #{self.class}##{m}: #{e.message}"
@@ -104,6 +109,13 @@ class VmaTest
     raise VmaTestFailure, msg unless cond
   end
 
+  # Skip the current test (reported as SKIP, not a failure). Use for tests
+  # that are unreliable in the current environment (e.g. clipboard/idle timing
+  # under headless GTK).
+  def skip(msg = "")
+    raise VmaTestSkip, msg
+  end
+
   private
 
   def _setup_test
@@ -128,6 +140,7 @@ def run_vma_tests(*classes)
 
   total_pass = 0
   total_fail = []
+  total_skip = []
 
   classes.each do |klass|
     puts "\n#{klass}"
@@ -135,11 +148,14 @@ def run_vma_tests(*classes)
     t.run_all
     total_pass += t.passes
     total_fail.concat(t.failures)
+    total_skip.concat(t.skips || [])
   end
 
   puts "\n#{"=" * 50}"
-  puts "Results: #{total_pass} passed, #{total_fail.size} failed"
+  skip_note = total_skip.empty? ? "" : ", #{total_skip.size} skipped"
+  puts "Results: #{total_pass} passed, #{total_fail.size} failed#{skip_note}"
   total_fail.each { |f| puts "  FAIL: #{f}" }
+  total_skip.each { |s| puts "  SKIP: #{s}" }
   puts "=" * 50
 
   total_fail.empty?

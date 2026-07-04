@@ -20,6 +20,7 @@ SETTINGS_DEFS = [
     :label => "Appearance",
     :settings => [
       { :key => [:match, :highlight, :color], :label => "Search highlight color", :type => :string },
+      { :key => [:highlight_colors, :enabled], :label => "Highlight hex color codes (#rrggbb)", :type => :bool },
       { :key => [:kbd, :show_prev_action], :label => "Show previous action in toolbar", :type => :bool },
       { :key => [:style_scheme], :label => "Color scheme", :type => :select,
         :options => proc {
@@ -266,6 +267,7 @@ class SettingsDialog
     save_settings_to_file
     gui_refresh_font
     gui_refresh_style_scheme
+    vma.gui.buffers.each_value { |v| v.highlight_colors }
     activate_no_restart_modules
     @window.destroy
   end

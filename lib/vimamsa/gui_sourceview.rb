@@ -64,6 +64,7 @@ class VSourceView < GtkSource::View
       self.buffer.set_text(str)
     end
     @applying_delta = false
+    run_as_idle proc { highlight_colors }
   end
 
   # Sync the GTK buffer to mask_for_display(@bufo.to_s).
@@ -629,6 +630,7 @@ class VSourceView < GtkSource::View
       remask_gtk_buffer
       #TODO: only when necessary
       self.set_cursor_pos(@bufo.pos)
+      schedule_color_highlight
     end
 
     # sanity_check #TODO

@@ -327,6 +327,9 @@ add_keys "core", {
  "VC , r r" => :gui_search_replace,
  "C , w" => :toggle_active_window,
  "C , , w" => :toggle_two_column,
+ "C , ; a c" => :toggle_autocomplete,
+ "C , ; h c" => :toggle_highlight_colors,
+ "C , R" => :restart_editor,
 
  "VC s" => :easy_jump,
  "I alt-s" => :easy_jump,
