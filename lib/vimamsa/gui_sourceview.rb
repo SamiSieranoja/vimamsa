@@ -499,6 +499,13 @@ class VSourceView < GtkSource::View
     keyval_trans[Gdk::Keyval::KEY_Tab] = "tab"
     keyval_trans[Gdk::Keyval::KEY_ISO_Left_Tab] = "tab"
 
+    keyval_trans[Gdk::Keyval::KEY_Home] = "home"
+    keyval_trans[Gdk::Keyval::KEY_KP_Home] = "home"
+    keyval_trans[Gdk::Keyval::KEY_End] = "end"
+    keyval_trans[Gdk::Keyval::KEY_KP_End] = "end"
+    keyval_trans[Gdk::Keyval::KEY_Delete] = "delete"
+    keyval_trans[Gdk::Keyval::KEY_KP_Delete] = "delete"
+
     key_trans = {}
     key_trans["\e"] = "esc"
     tk = keyval_trans[keyval]

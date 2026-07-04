@@ -32,6 +32,8 @@ reg_act(:show_settings, proc { show_settings_dialog }, "Show settings")
 reg_act(:cut_selection, proc { buf.delete(SELECTION) }, "Cut selection to clipboard")
 
 reg_act(:insert_backspace, proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(BACKWARD_CHAR) }, "Delete backwards")
+reg_act(:insert_delete, proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(CURRENT_CHAR_FORWARD) }, "Delete forward (selection-aware)")
+reg_act(:select_all, proc { buf.select_all }, "Select all text")
 reg_act(:insert_select_up, proc { insert_select_move(BACKWARD_LINE) }, "Select texte upwards")
 reg_act(:insert_select_down, proc { insert_select_move(FORWARD_LINE) }, "Select text downwards")
 
@@ -145,7 +147,7 @@ reg_act :start_browse_mode, proc {
   vma.kbd.set_mode(:browse)
   bufs.reset_navigation
 }, "Start browse mode"
-reg_act :kbd_dump_state, proc { vma.kbd.dump_state }, "Dump keyboard tree state"
+reg_act :kbd_dump_state, proc { vma.kbd.dump_state; pp ["vma.buf.mode_stack", vma.buf.mode_stack] }, "Dump keyboard tree state"
 reg_act :toggle_kbd_passthrough, proc {
   vma.gui.instance_variable_set(:@kbd_passthrough, !vma.gui.instance_variable_get(:@kbd_passthrough))
   state = vma.gui.instance_variable_get(:@kbd_passthrough) ? "ON" : "OFF"

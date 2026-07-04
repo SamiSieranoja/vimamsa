@@ -66,6 +66,56 @@ class Editor
     end
   end
 
+  # Connect the host-agnostic KeyBindingTree to this editor: action dispatch,
+  # logging, and the side effects of mode/state changes (undo grouping,
+  # autocomplete dismissal, mode stack sync, cursor redraw, GUI badge/keylog).
+  def setup_kbd_handlers
+    @kbd.action_handler = method(:exec_action)
+    @kbd.logger = method(:debug)
+    @kbd.fatal_handler = method(:fatal_error)
+    @kbd.on_action_error = proc { |action, e|
+      if e.is_a?(SyntaxError)
+        message("SYNTAX ERROR with eval cmd #{action}: " + e.to_s)
+      else
+        puts "BACKTRACE"
+        puts e.backtrace
+        puts e.inspect
+        puts "BACKTRACE END"
+        if e.is_a?(SystemExit)
+          exit
+        else
+          crash("Error with action: #{action}: ", e)
+        end
+      end
+    }
+
+    @kbd.on(:mode_set) { |label| vma.buf&.new_undo_group }
+    @kbd.on(:mode_changed) { |label|
+      if label != :insert
+        # Dismiss the autocomplete popup when leaving insert mode
+        v = (vma.buf&.view rescue nil)
+        v.hide_completions if v.respond_to?(:hide_completions)
+      end
+      if @kbd.get_scope != :editor and !vma.buf.nil?
+        vma.buf.mode_stack = @kbd.default_mode_stack.clone
+      end
+      vma.gui.view.draw_cursor() if !vma.gui.view.nil?
+    }
+    @kbd.on(:state_trail_changed) { |badge, badge_key, trail|
+      vma.gui.update_mode_badge(badge, badge_key, trail)
+    }
+    @kbd.on(:key_no_match) { |c, trail| vma.gui.keylog_panel&.log_nomatch(c, trail) }
+    @kbd.on(:key_pending) { |trail| vma.gui.keylog_panel&.log_pending(trail) }
+    @kbd.on(:key_action) { |trail, action| vma.gui.keylog_panel&.log_action(trail, action) }
+    @kbd.on(:action_executed) { |action, ret|
+      if vma.macro.is_recording and ret != false
+        debug "RECORD ACTION:#{action}", 2
+        vma.macro.record_action(action)
+      end
+    }
+    @kbd.on(:action_handled) { |trail, action| vma.gui.show_action_trail(trail, action) }
+  end
+
   def start
     @gui = $vmag #TODO
 
@@ -82,9 +132,30 @@ class Editor
     register_plugin(:Search, $search)
 
     # build_key_bindings_tree
-    @kbd = KeyBindingTree.new()
-    $kbd = @kbd #TODO: remove global
-    require "vimamsa/key_bindings_vimlike"
+    @kbd = KeyBindingTree.new(actions: @actions)
+    setup_kbd_handlers
+
+    # Load user settings early so the keybinding scheme choice is available
+    # before the binding tree is populated. custom.rb still loads later.
+    settings_path = get_dot_path("settings.rb")
+    if File.exist?(settings_path)
+      begin
+        eval(IO.read(settings_path))
+      rescue Exception => e
+        message("Error in settings.rb: #{e}")
+      end
+    end
+
+    scheme = cnf.keybindings.scheme! || "vimlike"
+    # Tests assume the default scheme regardless of user settings;
+    # test files load scheme overrides themselves when needed.
+    scheme = "vimlike" if ARGV.include?("--test")
+    case scheme
+    when "notepad"
+      require "vimamsa/key_bindings_notepad"
+    else
+      require "vimamsa/key_bindings_vimlike"
+    end
 
     $buffers = BufferList.new
     $minibuffer = Buffer.new(">", "")
@@ -118,11 +189,6 @@ class Editor
 
     # Install desktop launcher + icon into ~/.local/share on first run.
     install_desktop_integration
-
-    settings_path = get_dot_path("settings.rb")
-    if File.exist?(settings_path)
-      eval(IO.read(settings_path))
-    end
 
     custom_script = read_file("", custom_fn)
     eval(custom_script) if custom_script

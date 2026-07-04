@@ -8,7 +8,6 @@ class Action
     @id = id
     @method = method
     @opt = opt
-    vma.actions.register(id, self) # TODO: handle this in Editor class
   end
 end
 
@@ -27,6 +26,7 @@ def reg_act(id, callfunc, name = "", opt = {})
     end
     a = Action.new(id, name, m, opt)
   end
+  vma.actions.register(id, a)
   return a
 end
 

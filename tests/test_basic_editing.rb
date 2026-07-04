@@ -19,6 +19,16 @@ class TestBasicEditing < VmaTest
     assert_buf "abc\n"
   end
 
+  def test_select_all_action
+    act 'buf.insert_txt("hello\nworld")'
+    act :select_all
+    assert vma.buf.selection_active?, "select_all should activate selection"
+    assert_eq 0, vma.buf.get_visual_mode_range.begin
+    assert_eq vma.buf.size - 1, vma.buf.get_visual_mode_range.end
+    act :copy_selection
+    assert_eq "hello\nworld\n", vma.clipboard.get
+  end
+
   def test_undo_redo
     act 'buf.insert_txt("hello")'
     assert_buf "hello\n"

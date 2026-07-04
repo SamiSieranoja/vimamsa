@@ -34,6 +34,8 @@ SETTINGS_DEFS = [
   {
     :label => "Behavior",
     :settings => [
+      { :key => [:keybindings, :scheme], :label => "Keybinding scheme (requires restart)",
+        :type => :select, :options => ["vimlike", "notepad"] },
       { :key => [:lsp, :enabled], :label => "Enable LSP (Language Server)", :type => :bool },
       { :key => [:experimental], :label => "Enable experimental features", :type => :bool },
       { :key => [:macro, :animation_delay], :label => "Macro animation delay (sec)", :type => :float, :min => 0.0, :max => 2.0, :step => 0.0001 },

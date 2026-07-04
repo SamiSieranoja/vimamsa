@@ -144,6 +144,8 @@ cnf.autocomplete.lsp.debounce = 0.15  # seconds to wait before asking the server
 
 cnf.kbd.show_prev_action = true
 
+cnf.keybindings.scheme = "vimlike"  # "vimlike" | "notepad" (applied on restart)
+
 cnf.tab.width = 4
 cnf.tab.to_spaces_default = false
 cnf.tab.to_spaces_languages = ["c", "java", "ruby", "hyperplaintext", "php", "python"]

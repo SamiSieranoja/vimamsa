@@ -10,10 +10,10 @@ class TestModeBadge < VmaTest
     vma.gui.statnfo.text
   end
 
-  # Force a re-render regardless of the last painted value (show_state_trail
+  # Force a re-render regardless of the last painted value (update_mode_badge
   # skips the update when the text is unchanged).
   def render_badge
-    vma.kbd.instance_variable_set(:@last_badge_text, nil)
+    vma.gui.instance_variable_set(:@last_badge_text, nil)
     vma.kbd.set_state_to_root
     vma.kbd.show_state_trail
   end

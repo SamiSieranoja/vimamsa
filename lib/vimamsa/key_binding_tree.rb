@@ -45,15 +45,28 @@ end
 
 class KeyBindingTree
   attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action, :modifiers, :next_command_count, :method_handles_repeat, :default_mode
+  attr_accessor :action_handler, :on_action_error, :logger, :fatal_handler
   attr_reader :mode_root_state, :state_trail, :act_bindings, :default_mode_stack
 
-  # CSS class of mode badge label per mode key_name; others get "mode-other"
-  MODE_BADGE_CSS = { "C" => "mode-command", "I" => "mode-insert", "V" => "mode-visual",
-                     "B" => "mode-browse", "X" => "mode-replace" }.freeze
-
-  def initialize()
+  # This class is host-agnostic: it never touches the editor or GUI directly.
+  # The host injects collaborators (actions registry, action_handler, logger,
+  # fatal_handler, on_action_error) and subscribes to events via #on:
+  #   :mode_set(label)                  - set_mode was called explicitly
+  #   :mode_changed(label)              - mode changed (any path)
+  #   :state_trail_changed(badge, badge_key, trail) - badge/pending-chord display
+  #   :key_no_match(key, trail)         - key did not match any binding
+  #   :key_pending(trail)               - multi-key sequence in progress
+  #   :key_action(trail, action)        - action about to be executed
+  #   :action_executed(action, ret)     - one execution of an action finished
+  #   :action_handled(trail, action)    - key handling for an action completed
+  def initialize(actions: nil)
+    @actions = actions
+    @listeners = {}
+    @action_handler = nil
+    @logger = nil
+    @fatal_handler = proc { |msg| raise msg }
+    @on_action_error = nil
     @next_command_count = nil
-    @badge_css_class = nil
     @modes = {}
     @root = State.new("ROOT")
     @cur_state = @root # used for building the tree
@@ -74,9 +87,24 @@ class KeyBindingTree
     @act_bindings = Hash.new { |h, k| h[k] = Hash.new(&h.default_proc) }
   end
 
+  # Subscribe to one of the events listed above initialize
+  def on(event, &blk)
+    (@listeners[event] ||= []) << blk
+  end
+
+  def emit(event, *args)
+    @listeners.fetch(event, []).each { |l| l.call(*args) }
+  end
+  private :emit
+
+  def log(msg, level = 1)
+    @logger.call(msg, level) if @logger
+  end
+  private :log
+
   def set_mode(label)
     return if get_mode == :label
-    vma.buf&.new_undo_group
+    emit(:mode_set, label)
     @match_state = [@modes[label]] # used for matching input
     @mode_root_state = @modes[label]
 
@@ -84,9 +112,6 @@ class KeyBindingTree
     @default_mode_stack << label if label != @default_mode_stack[-1]
 
     __set_mode(label)
-    if !vma.buf.nil?
-      # vma.buf.mode_stack = @default_mode_stack.clone
-    end
   end
 
   def set_default_mode(label)
@@ -97,8 +122,7 @@ class KeyBindingTree
   end
 
   def set_mode_stack(ms)
-    debug "set_mode_stack(#{ms})", 2
-    show_caller if cnf.debug? # TODO: remove
+    log "set_mode_stack(#{ms})", 2
     @default_mode_stack = ms
     label = @default_mode_stack[-1]
     @match_state = [@modes[label]]
@@ -106,10 +130,9 @@ class KeyBindingTree
   end
 
   def dump_state
-    debug "dump_state", 2
+    log "dump_state", 2
     pp ["@default_mode_stack", @default_mode_stack]
     pp ["@default_mode", @default_mode]
-    pp ["vma.buf.mode_stack", vma.buf.mode_stack]
     pp ["scope", self.get_scope]
     # pp ["@mode_root_state", @mode_root_state]
     # pp ["@match_state", @match_state]
@@ -122,12 +145,12 @@ class KeyBindingTree
   end
 
   def to_previous_mode()
-    debug "to_previous_mode", 2
-    debug @default_mode_stack
+    log "to_previous_mode", 2
+    log @default_mode_stack
     if @default_mode_stack.size > 1
       @default_mode_stack.pop
     end
-    debug @default_mode_stack
+    log @default_mode_stack
     __set_mode(@default_mode_stack[-1])
   end
 
@@ -145,9 +168,6 @@ class KeyBindingTree
   def add_minor_mode(id, label, major_mode_label)
     mode = State.new(id)
     @modes[label] = mode
-    if @root.nil?
-      show_caller
-    end
     @root.children << mode
     mode.major_modes << major_mode_label
   end
@@ -184,15 +204,15 @@ class KeyBindingTree
         if c.key_name == key_name and c.eval_rule == ""
           new_state << c
         elsif c.key_name == key_name and c.eval_rule != ""
-          debug "CHECK EVAL: #{c.eval_rule}"
+          log "CHECK EVAL: #{c.eval_rule}"
           if eval(c.eval_rule)
             # if eval_rule.match(/macro/)
             debug = true
             # end
             new_state << c
-            debug "EVAL TRUE"
+            log "EVAL TRUE"
           else
-            debug "EVAL FALSE"
+            log "EVAL FALSE"
           end
         end
       }
@@ -213,26 +233,11 @@ class KeyBindingTree
   end
 
   def show_state_trail
-    (badge, badge_key, trail) = get_state_trail_parts()
-    cls = MODE_BADGE_CSS.fetch(badge_key, "mode-other")
-    if cls != @badge_css_class
-      vma.gui.statnfo.remove_css_class(@badge_css_class) if @badge_css_class
-      vma.gui.statnfo.add_css_class(cls)
-      @badge_css_class = cls
-    end
-    vma.gui.statnfo.text = badge if badge != @last_badge_text
-    vma.gui.keytrail.text = trail if trail != @last_trail_text
-    @last_badge_text = badge
-    @last_trail_text = trail
+    emit(:state_trail_changed, *get_state_trail_parts())
   end
 
   def __set_mode(label)
-    debug "__set_mode(#{label})"
-    if label != :insert
-      # Dismiss the autocomplete popup when leaving insert mode
-      v = (vma.buf&.view rescue nil)
-      v.hide_completions if v.respond_to?(:hide_completions)
-    end
+    log "__set_mode(#{label})"
     @mode_history << @mode_root_state
 
     # Check if label in form :label
@@ -249,13 +254,7 @@ class KeyBindingTree
     end
     @cur_mode = label
 
-    if self.get_scope != :editor and !vma.buf.nil?
-      vma.buf.mode_stack = @default_mode_stack.clone
-    end
-
-    if !vma.gui.view.nil?
-      vma.gui.view.draw_cursor()  #TODO: handle outside this class
-    end
+    emit(:mode_changed, label)
   end
 
   def get_scope
@@ -388,8 +387,8 @@ class KeyBindingTree
       else
         method_desc = t.action
         if t.action.class == Symbol
-          if vma.actions.include?(t.action)
-            a = vma.actions[t.action].method_name
+          if @actions&.include?(t.action)
+            a = @actions[t.action].method_name
             if !a.nil? and !a.empty?
               method_desc = a
             end
@@ -435,8 +434,8 @@ class KeyBindingTree
       else
         method_desc = t.action
         if t.action.class == Symbol
-          if vma.actions.include?(t.action)
-            a = vma.actions[t.action].method_name
+          if @actions&.include?(t.action)
+            a = @actions[t.action].method_name
             if !a.nil? and !a.empty?
               method_desc = a
             end
@@ -510,7 +509,7 @@ class KeyBindingTree
     else
       @next_command_count = num.to_i
     end
-    debug("NEXT COMMAND COUNT: #{@next_command_count}")
+    log("NEXT COMMAND COUNT: #{@next_command_count}")
   end
 
   # Modifies state of key binding tree (move to new state) based on received event
@@ -518,7 +517,7 @@ class KeyBindingTree
   # if yes, change state to child
   # if no, go back to root
   def match_key_conf(c, translated_c, event_type)
-    debug "MATCH KEY CONF: #{[c, translated_c]}"
+    log "MATCH KEY CONF: #{[c, translated_c]}"
 
     if !@override_keyhandling_callback.nil?
       ret = @override_keyhandling_callback.call(c, event_type)
@@ -576,14 +575,14 @@ class KeyBindingTree
     end
 
     if new_state == nil
-      debug("NO MATCH")
+      log("NO MATCH")
       if event_type == :key_press and !%w[ctrl alt shift meta super caps].include?(c)
-        vma.gui.keylog_panel&.log_nomatch(c, get_state_trail_str[0])
+        emit(:key_no_match, c, get_state_trail_str[0])
       end
       if event_type == :key_press and c != "shift"
         # TODO:include other modifiers in addition to shift?
         set_state_to_root
-        printf(", BACK TO ROOT") if cnf.debug?
+        log("BACK TO ROOT", 2)
       end
 
       if event_type == :key_release and c == "shift!"
@@ -591,10 +590,8 @@ class KeyBindingTree
         # only on key release when no other key has been pressed
         # after said modifier key (shift).
         set_state_to_root
-        printf(", BACK TO ROOT") if cnf.debug?
+        log("BACK TO ROOT", 2)
       end
-
-      printf("\n") if cnf.debug?
     else
 
       # Don't execute action if one of the states has children
@@ -631,19 +628,19 @@ class KeyBindingTree
         # if eval_s.to_s.match(/end_recording/)
         # require "pry"; binding.pry
         # end
-        debug "FOUND MATCH:#{eval_s}"
-        debug "CHAR: #{c}"
+        log "FOUND MATCH:#{eval_s}"
+        log "CHAR: #{c}"
         c.gsub!("\\", %q{\\\\} * 4) # Escape \ -chars
         c.gsub!("'", "#{'\\' * 4}'") # Escape ' -chars
 
         eval_s.gsub!("<char>", "'#{c}'") if eval_s.class == String
-        debug eval_s
-        debug c
+        log eval_s
+        log c
         handle_key_bindigs_action(eval_s, c)
         set_state_to_root
       else
         # Multi-key sequence still in progress
-        vma.gui.keylog_panel&.log_pending(get_state_trail_str[0])
+        emit(:key_pending, get_state_trail_str[0])
       end
     end
 
@@ -670,7 +667,7 @@ class KeyBindingTree
       a = label
       proc = action[1]
       msg = action[2]
-      reg_act(label, proc, msg)
+      @actions.register(label, Action.new(label, msg, proc))
     end
     key.each { |k| _bindkey(k, a, keywords: keywords) }
   end
@@ -692,9 +689,9 @@ class KeyBindingTree
     # return
     # end
     # $action_list << { :action => action, :key => key }
-    if !vma.actions.include?(action)
+    if !@actions.include?(action)
       if action.class == String
-        reg_act(action, proc { eval(action) }, action)
+        @actions.register(action, Action.new(action, action, proc { eval(action) }))
       end
     end
 
@@ -702,7 +699,7 @@ class KeyBindingTree
     # Match/split e.g. "VC , , s" to "VC" and ", , s"
     if m
       modetmp = m[1]
-      debug [key, modetmp, m].inspect
+      log [key, modetmp, m].inspect
 
       # If all of first word are uppercase, e.g. in
       # "VCIX left" => "buf.move(BACKWARD_CHAR)",
@@ -715,7 +712,7 @@ class KeyBindingTree
       modes = [modetmp] if modetmp.match(/^\p{Ll}+$/) # Lowercase
       keydef = m[2]
     else
-      fatal_error("Error in keydef #{key.inspect}")
+      @fatal_handler.call("Error in keydef #{key.inspect}")
     end
 
     # puts "keywords #{keywords}"
@@ -788,24 +785,21 @@ class KeyBindingTree
 
   def handle_key_bindigs_action(action, c)
     trail_str = get_state_trail_str[0]
-    # Log before execution so the entry shows even if the action raises
-    vma.gui.keylog_panel&.log_action(trail_str, action)
+    # Emitted before execution so key logs show the entry even if the action raises
+    emit(:key_action, trail_str, action)
     # $acth << action #TODO:needed here?
     @method_handles_repeat = false #TODO:??
     n = 1
     if @next_command_count and !(action.class == String and action.include?("set_next_command_count"))
       n = @next_command_count
-      debug("COUNT command #{n} times")
+      log("COUNT command #{n} times")
     end
 
     begin
       n.times do
-        ret = exec_action(action)
+        ret = @action_handler.call(action)
 
-        if vma.macro.is_recording and ret != false
-          debug "RECORD ACTION:#{action}", 2
-          vma.macro.record_action(action)
-        end
+        emit(:action_executed, action, ret)
         break if @method_handles_repeat
         # Some methods have specific implementation for repeat,
         #   like '5yy' => copy next five lines. (copy_line())
@@ -813,49 +807,16 @@ class KeyBindingTree
         #   like '20j' => go to next line 20 times.
         # But methods can also handle the number input themselves if vma.kbd.method_handles_repeat=true is set,
       end
-      # run_as_idle proc { vma.buf.refresh_cursor; vma.buf.refresh_cursor }, delay: 0.05
-    rescue SyntaxError
-      message("SYNTAX ERROR with eval cmd #{action}: " + $!.to_s)
-      # rescue NoMethodError
-      # debug("NoMethodError with eval cmd #{action}: " + $!.to_s)
-      # rescue NameError
-      # debug("NameError with eval cmd #{action}: " + $!.to_s)
-      # raise
     rescue Exception => e
-      puts "BACKTRACE"
-      puts e.backtrace
-      puts e.inspect
-      puts "BACKTRACE END"
-      if $!.class == SystemExit
-        exit
-      else
-        crash("Error with action: #{action}: ", e)
-      end
+      raise if @on_action_error.nil?
+      @on_action_error.call(action, e)
     end
 
     if !(action.class == String and action.include?("set_next_command_count"))
       @next_command_count = nil
     end
 
-    if cnf.kbd.show_prev_action? and trail_str.class == String
-      len_limit = 35
-      action_desc = "UNK"
-      if action.class == String && (m = action.match(/\Abuf\.insert_txt\((.+)\)\z/))
-        action_desc = "insert #{m[1]}"
-      else
-        action_desc = vma.actions[action]&.method_name || action.to_s
-        action_desc = action_desc[0..len_limit] if action_desc.size > len_limit
-      end
-      trail_esc = CGI.escapeHTML(trail_str)
-      action_esc = CGI.escapeHTML(action_desc)
-      # Completed key chord bright, executed action name dim
-      # vma.gui.action_trail_label.markup =
-        # "<span foreground='#e6db74' weight='bold'>#{trail_esc}</span>" \
-        # "<span alpha='55%'>  #{action_esc}</span>"
-       vma.gui.action_trail_label.markup = "<span alpha='70%'>#{trail_esc}  #{action_esc}</span>"
-       
-        
-    end
+    emit(:action_handled, trail_str, action)
   end
 end
 
@@ -886,80 +847,6 @@ def exec_action(action)
   else
     return eval(action)
   end
-end
-
-def show_free_key_bindings()
-  kbd_s = "❙Free key binding slots❙\n"
-  kbd_s << "\n⦁[Mode] <prefix> : <free keys>⦁\n"
-  kbd_s << "[B]=Browse, [C]=Command, [I]=Insert, [V]=Visual\n"
-  kbd_s << "Free = not yet bound under that prefix\n"
-  kbd_s << "===============================================\n"
-  kbd_s << vma.kbd.get_free_bindings
-  kbd_s << "\n"
-  b = create_new_buffer(kbd_s, "free-key-bindings")
-  gui_set_file_lang(b.id, "hyperplaintext")
-end
-
-def show_key_bindings()
-  kbd_s = "❙Key bindings❙\n"
-  kbd_s << "\n⦁[Mode] <keys> : <action>⦁\n"
-  done = []
-
-  kbd_s << "[B]=Browse, [C]=Command, [I]=Insert, [V]=Visual\n"
-  kbd_s << "<key>!: Press <key> once, release before pressing any other keys\n"
-  kbd_s << "===============================================\n"
-  kbd_s << "◼ Basic\n"
-  kbd_s << "◼◼ Command mode\n"
-
-  x = vma.kbd.get_by_keywords(modes: ["C"], keywords: ["intro"])
-  done.concat(x.lines); kbd_s << x
-
-  kbd_s << "\n"
-  kbd_s << "◼◼ Insert mode\n"
-  x = vma.kbd.get_by_keywords(modes: ["I"], keywords: ["intro"])
-  done.concat(x.lines); kbd_s << x
-  kbd_s << "\n"
-  kbd_s << "◼◼ Visual mode\n"
-  x = vma.kbd.get_by_keywords(modes: ["V"], keywords: ["intro"])
-  done.concat(x.lines); kbd_s << x
-  kbd_s << "\n"
-
-  kbd_s << "◼ Hyper Plaintext\n"
-  x = vma.kbd.get_by_keywords(modes: ["C"], keywords: ["hyperplaintext"])
-  x2 = vma.kbd.get_by_keywords(modes: ["V"], keywords: ["hyperplaintext"])
-  done.concat(x.lines); kbd_s << x << "\n" << x2
-  kbd_s << "\n"
-
-  kbd_s << "◼ Core\n"
-  x = vma.kbd.get_by_keywords(modes: [], keywords: ["core"])
-  x << vma.kbd.get_by_keywords(modes: ["X"], keywords: ["intro"])
-
-  done.concat(x.lines); kbd_s << x
-  kbd_s << "\n"
-
-  kbd_s << "◼ Debug / Experimental\n"
-  x = vma.kbd.get_by_keywords(modes: [], keywords: ["experimental"])
-  done.concat(x.lines); kbd_s << x
-  kbd_s << "\n"
-
-  kbd_s << "◼ Others\n"
-  # x = vma.kbd.get_by_keywords(modes: [], keywords:["experimental"])
-  # x = vma.kbd.to_s
-  x = vma.kbd.get_by_keywords(modes: [], keywords: [])
-  done << x.lines - done
-  kbd_s << (x.lines - done).join
-  kbd_s << "\n"
-
-  kbd_s << "===============================================\n"
-  # x = vma.kbd.to_s
-  # # require "pry"; binding.pry
-  # done << x.lines - done
-  # kbd_s << (x.lines - done).join
-  # kbd_s << "\n"
-  # kbd_s << "===============================================\n"
-  b = create_new_buffer(kbd_s, "key-bindings")
-  gui_set_file_lang(b.id, "hyperplaintext")
-  #
 end
 
 # Try to clear modifiers when program loses focus

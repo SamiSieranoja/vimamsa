@@ -1363,6 +1363,16 @@ class Buffer < String
     @visual_mode = true #TODO: change use of @visual_mode into @selection_active
   end
 
+  # Select the whole buffer (cursor lands on the final char)
+  def select_all()
+    return false if self.size == 0
+    @selection_start = 0
+    @selection_active = true
+    @visual_mode = true # copy/delete of SELECTION are guarded by @visual_mode
+    set_pos(self.size - 1)
+    return true
+  end
+
   # Start selection if not already started
   def continue_selection()
     start_selection if !@selection_active

@@ -47,7 +47,11 @@ end
 
 if test_files.empty?
   test_files = Dir[File.join(scriptdir, "tests", "test_*.rb")].sort
-  test_files.reject! { |f| File.basename(f) == "test_random_edit.rb" }
+  # test_random_edit: stress test, run explicitly.
+  # test_notepad_bindings: loads the notepad keybinding scheme, which would
+  # corrupt bindings for later test files in the shared process.
+  excluded = ["test_random_edit.rb", "test_notepad_bindings.rb"]
+  test_files.reject! { |f| excluded.include?(File.basename(f)) }
 end
 
 $vma_test_class_filter = class_filter.empty? ? nil : class_filter

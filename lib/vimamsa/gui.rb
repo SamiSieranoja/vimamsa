@@ -805,6 +805,42 @@ class VMAgui
     app.run
   end
 
+  # CSS class of mode badge label per mode key_name; others get "mode-other"
+  MODE_BADGE_CSS = { "C" => "mode-command", "I" => "mode-insert", "V" => "mode-visual",
+                     "B" => "mode-browse", "X" => "mode-replace" }.freeze
+
+  # Render the mode badge and pending key chord in the status area.
+  # Subscribed to KeyBindingTree's :state_trail_changed event.
+  def update_mode_badge(badge, badge_key, trail)
+    cls = MODE_BADGE_CSS.fetch(badge_key, "mode-other")
+    if cls != @badge_css_class
+      @statnfo.remove_css_class(@badge_css_class) if @badge_css_class
+      @statnfo.add_css_class(cls)
+      @badge_css_class = cls
+    end
+    @statnfo.text = badge if badge != @last_badge_text
+    @keytrail.text = trail if trail != @last_trail_text
+    @last_badge_text = badge
+    @last_trail_text = trail
+  end
+
+  # Show the last executed key chord and action next to the menubar.
+  # Subscribed to KeyBindingTree's :action_handled event.
+  def show_action_trail(trail_str, action)
+    return if !cnf.kbd.show_prev_action? or trail_str.class != String
+    len_limit = 35
+    if action.class == String && (m = action.match(/\Abuf\.insert_txt\((.+)\)\z/))
+      action_desc = "insert #{m[1]}"
+    else
+      action_desc = vma.actions[action]&.method_name || action.to_s
+      action_desc = action_desc[0..len_limit] if action_desc.size > len_limit
+    end
+    trail_esc = CGI.escapeHTML(trail_str)
+    action_esc = CGI.escapeHTML(action_desc)
+    # Completed key chord bright, executed action name dim
+    @action_trail_label.markup = "<span alpha='70%'>#{trail_esc}  #{action_esc}</span>"
+  end
+
   def monitor
     return true if @windows[1].nil?
     swa = @windows[1][:sw]
