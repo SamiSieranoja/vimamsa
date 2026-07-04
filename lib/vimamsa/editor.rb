@@ -153,6 +153,8 @@ class Editor
     case scheme
     when "notepad"
       require "vimamsa/key_bindings_notepad"
+    when "vim"
+      require "vimamsa/key_bindings_vim"
     else
       require "vimamsa/key_bindings_vimlike"
     end

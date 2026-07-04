@@ -155,6 +155,11 @@ class KeyBindingTree
   end
 
   def add_mode(id, label, cursortype = :command, name: nil, scope: :buffer)
+    # Replace any existing mode with the same key id: when a keybinding scheme
+    # file is loaded over another one, both binding (which walks @root.children
+    # by key name) and matching (which starts from @modes) must resolve to the
+    # same, new node.
+    @root.children.delete_if { |s| s.key_name == id }
     mode = State.new(id, "", cursortype, scope: scope)
     mode.level = 1
     @modes[label] = mode
@@ -166,6 +171,7 @@ class KeyBindingTree
 
   # Add keyboard key binding mode based on another mode
   def add_minor_mode(id, label, major_mode_label)
+    @root.children.delete_if { |s| s.key_name == id }
     mode = State.new(id)
     @modes[label] = mode
     @root.children << mode

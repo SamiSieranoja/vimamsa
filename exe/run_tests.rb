@@ -48,9 +48,10 @@ end
 if test_files.empty?
   test_files = Dir[File.join(scriptdir, "tests", "test_*.rb")].sort
   # test_random_edit: stress test, run explicitly.
-  # test_notepad_bindings: loads the notepad keybinding scheme, which would
-  # corrupt bindings for later test files in the shared process.
-  excluded = ["test_random_edit.rb", "test_notepad_bindings.rb"]
+  # test_notepad_bindings / test_vim_bindings: load alternative keybinding
+  # schemes, which would corrupt bindings for later test files in the
+  # shared process.
+  excluded = ["test_random_edit.rb", "test_notepad_bindings.rb", "test_vim_bindings.rb"]
   test_files.reject! { |f| excluded.include?(File.basename(f)) }
 end
 
