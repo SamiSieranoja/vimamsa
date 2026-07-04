@@ -68,6 +68,13 @@ class FuncPanel
       set_placeholder("(no file)")
       return
     end
+    # LangSrv is only defined when LSP is enabled (require guarded in
+    # Editor#start). Without this check, opening the panel with LSP off
+    # raises NameError inside the GTK callback and glib2 kills the whole app.
+    unless cnf.lsp.enabled? && defined?(LangSrv)
+      set_placeholder("(no LSP)")
+      return
+    end
     lsp = LangSrv.get(buf.lang)
     unless lsp
       set_placeholder("(no LSP)")
