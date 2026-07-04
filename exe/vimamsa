@@ -34,6 +34,11 @@ $LOAD_PATH.unshift(File.expand_path("ext"))
 
 require "vimamsa"
 include Vimamsa
+
+# Persist crash/segfault debug info (native stderr dump + structured reports)
+# to ~/.config/vimamsa/crash/ .
+Vimamsa::CrashHandler.setup
+
 # Ilib:ext
 # r rbvma -e "puts VMA.new.run"
 $vmag = Vimamsa::VMAgui.new()

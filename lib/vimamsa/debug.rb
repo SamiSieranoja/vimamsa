@@ -51,7 +51,7 @@ end
 def crash(message, e = nil)
   puts "FATAL ERROR:#{message}"
   puts caller().join("\n")
-  # savedebug(message, e)
+  CrashHandler.report("fatal", e, message)
   _quit()
 end
 
