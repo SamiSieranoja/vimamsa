@@ -68,6 +68,16 @@ class FuncPanel
       set_placeholder("(no file)")
       return
     end
+    if hyperplaintext_buffer?(buf)
+      entries = hyperplaintext_outline_entries(buf)
+      @store.clear
+      if entries.empty?
+        set_placeholder("(no headings)")
+      else
+        populate_hyperplaintext(entries)
+      end
+      return
+    end
     # LangSrv is only defined when LSP is enabled (require guarded in
     # Editor#start). Without this check, opening the panel with LSP off
     # raises NameError inside the GTK callback and glib2 kills the whole app.
@@ -124,6 +134,48 @@ class FuncPanel
       end
     end
     @tree.expand_all  # show all classes expanded by default
+  end
+
+  def populate_hyperplaintext(entries)
+    parents = {}
+    entries.each do |entry|
+      parent = nil
+      if entry[:level] > 0
+        parent = parents[entry[:level] - 1]
+      end
+      row = @store.append(parent)
+      row[COL_NAME] = entry[:name]
+      row[COL_LINE] = entry[:line]
+      parents[entry[:level]] = row
+      parents.delete_if { |level, _iter| level > entry[:level] }
+    end
+    @tree.expand_all
+  end
+
+  def hyperplaintext_buffer?(buf)
+    buf.lang == "hyperplaintext" || buf.fname&.end_with?(".txt")
+  end
+
+  def hyperplaintext_outline_entries(buf)
+    entries = []
+    buf.to_s.each_line.with_index(1) do |line, line_no|
+      stripped = line.strip
+      next if stripped.empty?
+
+      if (m = stripped.match(/\A❙\s*(.*?)\s*❙\z/))
+        title = m[1].strip
+        entries << { name: title, line: line_no, level: 0 } unless title.empty?
+        next
+      end
+
+      if (m = stripped.match(/\A(◼+)\s+(.*)\z/))
+        name = m[2].strip
+        next if name.empty?
+        level = [m[1].length, 6].min
+        entries << { name: name, line: line_no, level: level }
+      end
+    end
+    entries
   end
 
   # Replace the entire store contents with a single non-clickable status message.
