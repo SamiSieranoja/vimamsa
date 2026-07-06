@@ -102,6 +102,18 @@ module Vimamsa
       end
     end
 
+    # Markup hint (e.g. "   [C] , d") showing the key binding for an action,
+    # or "" if the action is unbound. Shared by regular and module menu items.
+    def kbd_hint(action)
+      for mode_str in ["C", "V"]
+        c_kbd = vma.kbd.act_bindings[mode_str][action]
+        if c_kbd.class == String
+          return "   <span foreground='#888888'><span weight='bold'>[#{mode_str}]</span> #{c_kbd}</span>"
+        end
+      end
+      return ""
+    end
+
     # Add a menu item under the top-level "Modules" menu.
     # Creates the Modules menu the first time it is called.
     def add_module_action(action, label)
@@ -116,7 +128,8 @@ module Vimamsa
       @app.add_action(act)
       act.signal_connect("activate") { call_action(action) }
 
-      item = Gio::MenuItem.new(label, "app.#{action}")
+      item = Gio::MenuItem.new(label + kbd_hint(action), "app.#{action}")
+      item.set_attribute_value("use-markup", "true")
       @module_menu.append_item(item)
       @module_actions << action
     end
@@ -138,16 +151,7 @@ module Vimamsa
     def build_menu(nfo, parent)
       menu = Gio::Menu.new
       if nfo[:action]
-        kbd_str = ""
-        for mode_str in ["C", "V"]
-          c_kbd = vma.kbd.act_bindings[mode_str][nfo[:action]]
-          if c_kbd.class == String
-            kbd_str = "   <span foreground='#888888'><span weight='bold'>[#{mode_str}]</span> #{c_kbd}</span>"
-            break
-          end
-        end
-
-        label_str = nfo[:label] + kbd_str
+        label_str = nfo[:label] + kbd_hint(nfo[:action])
         actkey = nfo[:action].to_s
         menuitem = Gio::MenuItem.new(label_str, "app.#{actkey}")
 
