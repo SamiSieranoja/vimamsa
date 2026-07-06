@@ -480,30 +480,6 @@ def open_file_dialog()
   gui_open_file_dialog(File.dirname(path))
 end
 
-class Clipboard
-  def initialize
-    @clipboard = []
-  end
-
-  def set(s)
-    if !(s.class <= String) or s.size == 0
-      debug s.inspect
-      debug [s, s.class, s.size]
-      log_error("s.class != String or s.size == 0")
-      return
-    end
-    @clipboard << s
-    set_system_clipboard(s)
-    vma.register[vma.cur_register] = s
-    debug "SET CLIPBOARD: [#{s}]"
-    debug "REGISTER: #{vma.cur_register}:#{vma.register[vma.cur_register]}"
-  end
-
-  def get()
-    return @clipboard[-1]
-  end
-end
-
 def set_cursor_pos(new_pos)
   buf.set_pos(new_pos)
   #render_buffer(vma.buf)
@@ -672,11 +648,6 @@ def jump_to_file(filename, tnum = nil, charn = nil)
     center_on_current_line
     return
   end
-end
-
-#TODO: needed?
-def open_existing_file(filename)
-  open_new_file(filename)
 end
 
 def do_open_file(filename)

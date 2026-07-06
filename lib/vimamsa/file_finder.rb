@@ -151,8 +151,6 @@ class FileFinder
 
   def filter_files(search_str)
     puts "search list: #{@@dir_list.size}"
-    dir_hash = {}
-
     res = @@idx.find(search_str)
     resultarr = []
     for (idx, score) in res
@@ -161,22 +159,6 @@ class FileFinder
       resultarr << [fn, score]
     end
     return resultarr
-
-    # Ripl.start :binding => binding
-
-    scores = Parallel.map(@@dir_list, in_threads: 8) do |file|
-      [file, srn_dst(search_str, file)]
-    end
-    for s in scores
-      dir_hash[s[0]] = s[1] if s[1] > 0
-    end
-    # debug scores
-    dir_hash = dir_hash.sort_by { |k, v| -v }
-    dir_hash = dir_hash[0..20]
-    dir_hash.map do |file, d|
-      debug "D:#{d} #{file}"
-    end
-    return dir_hash
   end
 end
 end # module Vimamsa

@@ -27,6 +27,9 @@ require "uri"
 require "vimamsa/conf"
 require "vimamsa/util"
 require "vimamsa/string_util"
+# Clipboard must load before main: main.rb runs Editor.new at load time,
+# and Editor#initialize creates a Clipboard.
+require "vimamsa/clipboard"
 # exit!
 require "vimamsa/main"
 require "vimamsa/terminal"
@@ -34,7 +37,6 @@ require "vimamsa/terminal"
 require "vimamsa/key_binding_tree"
 require "vimamsa/key_bindings_report"
 
-require "vimamsa/clipboard"
 require "vimamsa/desktop_install"
 
 # Graphical stuff:

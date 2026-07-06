@@ -412,49 +412,8 @@ class KeyBindingTree
     return s
   end
 
-  # Print key bindings to show as documentation or for debugging
   def to_s()
     return self.class.to_s
-    s = ""
-    # @cur_state = @root
-    stack = [[@root, ""]]
-    lines = []
-
-    # Traverse the tree (class State objects) using a stack
-    while stack.any?
-      t, p = *stack.pop # t = current state, p = current path
-      if t.children.any?
-        t.children.reverse.each { |c|
-          if c.eval_rule.size > 0
-            new_p = "#{p} #{c.key_name}(#{c.eval_rule})"
-          else
-            if c.level == 1
-              new_p = "#{p} [#{c.key_name}]"
-            else
-              new_p = "#{p} #{c.key_name}"
-            end
-          end
-          stack << [c, new_p]
-        }
-        # stack.concat[t.children]
-      else
-        method_desc = t.action
-        if t.action.class == Symbol
-          if @actions&.include?(t.action)
-            a = @actions[t.action].method_name
-            if !a.nil? and !a.empty?
-              method_desc = a
-            end
-          end
-        end
-
-        kw = ""
-        # kw = ", " + t.keywords.join(",") if !t.keywords.empty?
-        lines << p + " : #{method_desc}#{kw}"
-      end
-    end
-    s = lines.sort.join("\n")
-    return s
   end
 
   # Returns [badge_str, badge_key, trail_str]:

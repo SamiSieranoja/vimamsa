@@ -113,7 +113,7 @@ class CommandLine
       buf.save
       exec_action(:quit)
     when /\Ae\s+(\S.*)\z/
-      open_existing_file(File.expand_path(Regexp.last_match(1).strip))
+      open_new_file(File.expand_path(Regexp.last_match(1).strip))
     else
       eval_ruby(line)
     end

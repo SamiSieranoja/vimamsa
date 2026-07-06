@@ -859,7 +859,7 @@ class VSourceView < GtkSource::View
           open_url(@context_link)
         else
           fn = hpt_check_cur_word(@context_link)
-          open_existing_file(fn) if fn
+          open_new_file(fn) if fn
         end
       end
     end

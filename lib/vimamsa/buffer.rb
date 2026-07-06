@@ -1070,11 +1070,11 @@ class Buffer < String
     elsif wtype == :linepointer
       jump_to_file(word[0], word[1], word[2])
     elsif wtype == :textfile
-      open_existing_file(word)
+      open_new_file(word)
     elsif wtype == :file
       open_with_default_program(word)
     elsif wtype == :hpt_link
-      open_existing_file(word)
+      open_new_file(word)
     elsif wtype == :help
       if word == "keybindings"
         call_action(:show_key_bindings)
