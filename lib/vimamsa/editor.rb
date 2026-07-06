@@ -291,6 +291,7 @@ class Editor
           []
         end
         success = run_vma_tests(*classes)
+        $vma_tests_ok = success # exe/run_tests.rb turns this into the exit code
         # Defer shutdown so GTK can drain all pending idle callbacks from test
         # teardown before widget destruction begins (avoids heap corruption).
         GLib::Timeout.add(300) { shutdown(); false }
