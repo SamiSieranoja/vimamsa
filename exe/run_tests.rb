@@ -107,6 +107,13 @@ end
 
 $vma_test_class_filter = class_filter.empty? ? nil : class_filter
 
+# Tests must not read or write the real user config (~/.config/vimamsa): the
+# user's settings.rb/custom.rb would change editor behaviour, and test runs
+# should not leave backups, sessions, etc. behind there. Point the config/data
+# directory at an isolated location dedicated to tests (override with
+# VMA_USER_DIR). See vma_user_dir/get_dot_path in editor.rb.
+$vma_user_dir = File.expand_path(ENV["VMA_USER_DIR"] || "~/.config/vimamsa-test")
+
 ARGV.replace(["--test"] + test_files)
 
 require "vimamsa"

@@ -727,8 +727,17 @@ def scan_word_start_marks(search_str)
   return wsmarks
 end
 
+# Base directory for user config/data (settings.rb, custom.rb, backups,
+# session, listen dir, crash reports, ...). Defaults to ~/.config/vimamsa but
+# can be overridden with the --user-dir switch or by setting $vma_user_dir
+# before startup. Tests point this at an isolated directory so they never read
+# or write the real user config.
+def vma_user_dir
+  $vma_user_dir ||= File.expand_path("~/.config/vimamsa")
+end
+
 def get_dot_path(sfx)
-  dot_dir = File.expand_path("~/.config/vimamsa")
+  dot_dir = vma_user_dir
   FileUtils.mkdir_p(dot_dir) unless File.exist?(dot_dir)
   dpath = "#{dot_dir}/#{sfx}"
   return dpath

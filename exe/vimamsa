@@ -8,8 +8,20 @@ selfpath = __FILE__
 selfpath = File.readlink(selfpath) if File.lstat(selfpath).symlink?
 scriptdir = File.expand_path(File.dirname(selfpath) + "/..")
 
+# --user-dir PATH (or --user-dir=PATH): use PATH as the config/data directory
+# instead of ~/.config/vimamsa. Consumed here (and removed from ARGV) so it is
+# available before anything reads the user dir, including the listen check below.
+if (i = ARGV.index("--user-dir"))
+  $vma_user_dir = File.expand_path(ARGV[i + 1]) if ARGV[i + 1]
+  ARGV.slice!(i, 2)
+elsif (arg = ARGV.find { |a| a.start_with?("--user-dir=") })
+  $vma_user_dir = File.expand_path(arg.split("=", 2)[1])
+  ARGV.delete(arg)
+end
+$vma_user_dir ||= File.expand_path("~/.config/vimamsa")
+
 # If process is already running, open the parameter file in the running process and exit.
-listen_dir = File.expand_path("~/.config/vimamsa/listen")
+listen_dir = File.join($vma_user_dir, "listen")
 if File.exist?(listen_dir) and !ARGV[0].nil?
   tmpf = Tempfile.new("vmarun", listen_dir)
   fp = tmpf.path
