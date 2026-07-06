@@ -133,6 +133,10 @@ class Buffer < String
 
   def init_lsp()
     if cnf.lsp.enabled?
+      # LangSrv is loaded lazily here: buffers (e.g. the minibuffer) can be
+      # created during startup before editor.rb requires langservp, so require
+      # it on demand. require is idempotent, so this is cheap after first load.
+      require "vimamsa/langservp"
       @lsp = LangSrv.get(@lang)
 
       if @lang == "php"
