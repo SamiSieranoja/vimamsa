@@ -257,9 +257,12 @@ class Buffer < String
     debug range.inspect
     debug range.inspect
     debug "------"
-    delete_range(range.first, range.last)
-    pos = [range.first, @pos].min
-    set_pos(pos)
+    # Flash the range first so it is visible before the text is removed. When
+    # flashing is inactive (tests, config off) the block runs synchronously.
+    Gui.flash_range(self, range) do
+      delete_range(range.first, range.last)
+      set_pos([range.first, @pos].min)
+    end
     return true
   end
 

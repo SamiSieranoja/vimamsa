@@ -804,6 +804,7 @@ class Buffer < String
     return if range.nil?
     debug range.inspect
     vma.clipboard.set(self[range])
+    Gui.flash_range(self, range)
   end
 
   def recalc_line_ends()
