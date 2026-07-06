@@ -1,29 +1,101 @@
 module Vimamsa
   def flip_term(str)
-    puts "STR:#{str}"
     y = str.downcase
-    replacements = [["true", "false"], ["left", "right"], ["begin", "end"], ["spring","summer", "autumn","winter"]]
+    replacements = [
+      %w[true false],
+      %w[left right],
+      %w[begin end],
+      %w[spring summer autumn winter],
+      ("a".."z").to_a,
+      %w[january february march april may june july august september october november december],
+      %w[jan feb mar apr may jun jul aug sep oct nov dec],
+      %w[monday tuesday wednesday thursday friday saturday sunday],
+      %w[mon tue wed thu fri sat sun],
+      %w[zero one two three four five six seven eight nine ten],
+      %w[north east south west],
+      %w[am pm],
+      %w[todo doing done],
+      %w[yes no],
+      %w[on off],
+      %w[enabled disabled],
+      %w[enable disable],
+      %w[active inactive],
+      %w[open closed],
+      %w[public private],
+      %w[visible hidden],
+      %w[show hide],
+      %w[up down],
+      %w[top bottom],
+      %w[first last],
+      %w[next previous],
+      %w[before after],
+      %w[min max],
+      %w[minimum maximum],
+      %w[increase decrease],
+      %w[push pop],
+      %w[add remove],
+      %w[include exclude],
+      %w[read write],
+      %w[input output],
+      %w[source target],
+      %w[start stop],
+      # %w[start finish],
+      %w[create destroy],
+      %w[connect disconnect],
+      %w[attach detach],
+      %w[lock unlock],
+      %w[valid invalid],
+      %w[success failure],
+      %w[pass fail],
+      %w[positive negative],
+      %w[ascending descending],
+      %w[horizontal vertical],
+      %w[portrait landscape],
+      %w[absolute relative],
+      %w[local remote],
+      %w[client server],
+      %w[request response],
+      %w[parent child],
+      %w[head tail],
+      %w[prefix suffix],
+      %w[foreground background],
+      %w[light dark],
+      %w[black white],
+    ]
+
     rep = nil
     for x in replacements
       i = x.find_index(y)
       if i
-        i += 1
-        if i >= x.size
-          i = 0
-        end
+        i = (i + 1) % x.size
         rep = x[i]
-        # rep = (x - [y])[0]
-        if str == str.upcase
-          rep = rep.upcase
-        elsif str[0] == str[0].upcase
-          rep = rep.capitalize
-        else
-          rep = rep.downcase
-        end
+        rep = preserve_case(str, rep)
         return rep
       end
     end
-    return rep
+    flip_numbered_term(str)
+  end
+
+  def flip_numbered_term(str)
+    return nil unless str =~ /\A(.*?)(\d+)\z/
+
+    prefix = Regexp.last_match(1)
+    number = Regexp.last_match(2)
+
+    next_number = number.to_i + 1
+
+    # Preserve zero padding: item001 -> item002
+    "#{prefix}#{next_number.to_s.rjust(number.length, "0")}"
+  end
+
+  def preserve_case(original, replacement)
+    if original == original.upcase
+      replacement.upcase
+    elsif original[0] == original[0]&.upcase
+      replacement.capitalize
+    else
+      replacement.downcase
+    end
   end
 
   def to_camel_case(str)

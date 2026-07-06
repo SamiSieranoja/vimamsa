@@ -222,10 +222,6 @@ class Buffer < String
     p = @pos
     return if !is_legal_pos(p)
     (word, range) = get_word_in_pos(p, boundary: :word2)
-    # if word.match(/(true|false)/i)
-      # rep = flip_true_false(word)
-    # elsif word.match(/(begin|end)/i)
-      # rep = flip_begin_end(word)
     if x = flip_term(word)
       rep = x  
     else
