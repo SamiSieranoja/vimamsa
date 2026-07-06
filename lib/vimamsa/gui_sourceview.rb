@@ -807,7 +807,8 @@ class VSourceView < GtkSource::View
 
     # Sometimes we lose focus and the cursor vanishes because of that
     # TODO: determine why&when
-    if !self.has_focus?
+    # Not when an entry widget (e.g. the ":" command line) has focus on purpose.
+    if !self.has_focus? and !vma.gui.entry_focused?
       self.grab_focus
       self.cursor_visible = false
       self.cursor_visible = true

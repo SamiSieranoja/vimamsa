@@ -205,7 +205,7 @@ end
 
 class VMAgui
   attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c, :scheme_is_light
-  attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel, :func_panel, :keylog_panel, :keytrail
+  attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel, :func_panel, :keylog_panel, :keytrail, :cmd_line
 
   def initialize()
     @two_column = false
@@ -226,6 +226,12 @@ class VMAgui
   # gains or loses focus, so the vimamsa key handler knows to step aside.
   def notify_entry_focus(active)
     @entry_has_focus = active
+  end
+
+  # True while a text entry (command line, calculator field, ...) owns the
+  # keyboard focus and the editor view must not steal it back.
+  def entry_focused?
+    @entry_has_focus
   end
 
   def run
@@ -406,7 +412,7 @@ class VMAgui
     @minibuf_expanded = false
     @minibuf_history_height = 120
 
-    css = "label.minibuf, textview.minibuf { color: #cdd6f4; font-family: Monospace; font-size: 10pt; padding: 3px 8px; background-color: #1e1e2e; }"
+    css = "label.minibuf, textview.minibuf, entry.minibuf { color: #cdd6f4; font-family: Monospace; font-size: 10pt; padding: 3px 8px; background-color: #1e1e2e; }"
     provider = Gtk::CssProvider.new
     provider.load(data: css)
 
@@ -439,6 +445,10 @@ class VMAgui
     @minibuf_stack.add_named(@minibuf_label, "label")
     @minibuf_stack.add_named(scroll, "history")
 
+    # Interactive command line (vim-style ":"), third stack child
+    @cmd_line = CommandLine.new(provider)
+    @minibuf_stack.add_named(@cmd_line.widget, "cmdline")
+
     @minibuf_content = Gtk::Box.new(:vertical, 0)
     @minibuf_content.append(Gtk::Separator.new(:horizontal))
     @minibuf_content.append(@minibuf_stack)
@@ -459,6 +469,24 @@ class VMAgui
 
     @vbox.attach(@minibuf_vpane, 0, 2, 2, 1)
     @minibuf_hide_source = nil
+  end
+
+  # ── command line (vim-style ":", see gui_command_line.rb) ─────────────────
+
+  def cmd_line_show
+    GLib::Source.remove(@minibuf_hide_source) if @minibuf_hide_source
+    @minibuf_hide_source = nil
+    @minibuf_content.visible = true
+    @minibuf_stack.visible_child_name = "cmdline"
+    @minibuf_vpane.position = @minibuf_vpane.height - 34 unless @minibuf_expanded
+    notify_entry_focus(true)
+  end
+
+  def cmd_line_hide
+    notify_entry_focus(false)
+    @minibuf_stack.visible_child_name = @minibuf_expanded ? "history" : "label"
+    @minibuf_content.visible = false unless @minibuf_expanded
+    vma.buf.view.grab_focus if vma.buf&.view
   end
 
   def make_header_button(action_id, icon, cb)

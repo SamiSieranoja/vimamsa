@@ -168,7 +168,8 @@ add_keys "core", {
   #    'VC z z' => 'center_on_current_line',
   "VC *" => "buf.jump_to_next_instance_of_word",
 
-  "C , e" => "invoke_command", # Currently eval
+  "C , e" => :start_cmd_line,
+  "C :" => :start_cmd_line,
 
   "VC /" => :find_in_buffer,
 

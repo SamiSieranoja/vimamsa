@@ -162,6 +162,7 @@ add_keys "vim motion", {
 
   "VC *" => "buf.jump_to_next_instance_of_word",
   "VC /" => :find_in_buffer,
+  "C :" => :start_cmd_line,
   "C n" => :find_next,
   "C N" => "$search.jump_to_previous()",
 

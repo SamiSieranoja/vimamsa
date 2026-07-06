@@ -76,6 +76,7 @@ reg_act(:set_executable, proc { buf.set_executable }, "Set current file permissi
 reg_act(:close_current_buffer, proc { bufs.close_current_buffer(true) }, "Close current buffer")
 reg_act(:toggle_file_panel, proc { vma.gui.toggle_file_panel }, "Toggle file panel")
 reg_act(:show_message_history, proc { vma.gui.show_message_history }, "Show message history")
+reg_act(:start_cmd_line, proc { vma.gui.cmd_line.start }, "Open command line (:)")
 reg_act(:toggle_func_panel, proc { vma.gui.toggle_func_panel }, "Toggle LSP function panel")
 reg_act(:refresh_func_panel, proc { vma.gui.func_panel_refresh }, "Refresh LSP function panel")
 reg_act(:toggle_keylog_panel, proc { vma.gui.toggle_keylog_panel }, "Toggle key log panel")
