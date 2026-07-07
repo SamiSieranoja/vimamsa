@@ -1400,19 +1400,39 @@ class Buffer < String
     return true
   end
 
-  def transform_selection(op)
+  # Apply a text transform to the current visual selection: yields the selected
+  # text, replaces the range with the block's return value, and ends visual
+  # mode. No-op returning nil when not in visual mode; otherwise returns the
+  # replacement text (truthy), so callers can guard follow-up work on it.
+  def transform_visual_selection
     return if !@visual_mode
     r = get_visual_mode_range
-    txt = self[r]
-    txt.upcase! if op == :upcase
-    txt.downcase! if op == :downcase
-    txt.gsub!(/\w+/, &:capitalize) if op == :capitalize
-    txt.swapcase! if op == :swapcase
-    txt.reverse! if op == :reverse
-    txt = to_camel_case(txt) if op == :camelcase
-
+    txt = yield(self[r])
     replace_range(r, txt)
     end_visual_mode
+    txt
+  end
+
+  # Wrap `txt` with hyperplaintext style markers for `op`, or strip all markers
+  # when op == :clear. Shared by style_transform (selection) and set_line_style.
+  def apply_style_markers(txt, op)
+    txt = "⦁" + txt + "⦁" if op == :bold
+    txt = "⟦" + txt + "⟧" if op == :link
+    txt = "❙" + txt + "❙" if op == :title
+    txt.gsub!(/[❙◼⟦⟧⦁]/, "") if op == :clear
+    txt
+  end
+
+  def transform_selection(op)
+    transform_visual_selection do |txt|
+      txt.upcase! if op == :upcase
+      txt.downcase! if op == :downcase
+      txt.gsub!(/\w+/, &:capitalize) if op == :capitalize
+      txt.swapcase! if op == :swapcase
+      txt.reverse! if op == :reverse
+      txt = to_camel_case(txt) if op == :camelcase
+      txt
+    end
   end
 
   def eval_whole_buf(x = 888)
@@ -1426,40 +1446,24 @@ class Buffer < String
   end
 
   def convert_selected_text(converter_id)
-    return if !@visual_mode
-    r = get_visual_mode_range
-    txt = self[r]
-    txt = $vma.apply_conv(converter_id, txt)
     #TODO: Detect if changed?
-    replace_range(r, txt)
-    end_visual_mode
+    return if !transform_visual_selection { |txt| $vma.apply_conv(converter_id, txt) }
     view.after_action
   end
 
   def style_transform(op)
-    return if !@visual_mode
-    r = get_visual_mode_range
     #TODO: if txt[-1]=="\n"
-    txt = self[r]
-    txt = "⦁" + txt + "⦁" if op == :bold
-    txt = "⟦" + txt + "⟧" if op == :link
-    txt = "❙" + txt + "❙" if op == :title
-    txt.gsub!(/[❙◼⟦⟧⦁]/, "") if op == :clear
-
-    replace_range(r, txt)
-    end_visual_mode
+    transform_visual_selection { |txt| apply_style_markers(txt, op) }
   end
 
   def set_line_style(op)
     lrange = line_range(@lpos, 1, false)
     txt = self[lrange]
-    # txt = "◼ " + txt if op == :heading
-    txt = "⦁" + txt + "⦁" if op == :bold
-    txt = "❙" + txt + "❙" if op == :title
     txt.gsub!(/◼ /, "") if op == :clear
-    txt.gsub!(/[❙◼⟦⟧⦁]/, "") if op == :clear or [:h1, :h2, :h3, :h4].include?(op)
+    txt = apply_style_markers(txt, op)
 
     if [:h1, :h2, :h3, :h4].include?(op)
+      txt.gsub!(/[❙◼⟦⟧⦁]/, "")
       txt.strip!
       txt = "◼ " + txt if op == :h1
       txt = "◼◼ " + txt if op == :h2
