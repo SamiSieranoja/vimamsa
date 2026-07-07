@@ -330,21 +330,28 @@ class LangSrv
     groups
   end
 
-  # Send textDocument/documentSymbol and return [{name:, line:}, ...] for functions/methods.
-  # Returns nil on error, empty array if no functions found.
-  def document_functions(fpath)
+  # Send textDocument/documentSymbol for fpath and return the raw symbols array
+  # (either DocumentSymbol or SymbolInformation shape), or nil on error /
+  # malformed response.
+  private def request_document_symbols(fpath)
     ensure_file_open(fpath)
-    fpuri = file_uri(fpath)
     a = LSP::Interface::DocumentSymbolParams.new(
-      text_document: LSP::Interface::TextDocumentIdentifier.new(uri: fpuri),
+      text_document: LSP::Interface::TextDocumentIdentifier.new(uri: file_uri(fpath)),
     )
     id = new_id
     @writer.write(id: id, params: a, method: "textDocument/documentSymbol")
     r = wait_for_response(id)
     return nil if r.nil?
-
     symbols = r[:result]
-    return nil if !symbols.is_a?(Array)
+    return nil unless symbols.is_a?(Array)
+    symbols
+  end
+
+  # Send textDocument/documentSymbol and return [{name:, line:}, ...] for functions/methods.
+  # Returns nil on error, empty array if no functions found.
+  def document_functions(fpath)
+    symbols = request_document_symbols(fpath)
+    return nil if symbols.nil?
 
     functions = collect_functions(symbols)
     functions.map do |s|
@@ -357,18 +364,8 @@ class LangSrv
   # Returns [{name:, line:, functions: [{name:, line:}, ...]}, ...]
   # name: nil means top-level (ungrouped) functions.
   def document_functions_grouped(fpath)
-    ensure_file_open(fpath)
-    fpuri = file_uri(fpath)
-    a = LSP::Interface::DocumentSymbolParams.new(
-      text_document: LSP::Interface::TextDocumentIdentifier.new(uri: fpuri),
-    )
-    id = new_id
-    @writer.write(id: id, params: a, method: "textDocument/documentSymbol")
-    r = wait_for_response(id)
-    return nil if r.nil?
-
-    symbols = r[:result]
-    return nil unless symbols.is_a?(Array)
+    symbols = request_document_symbols(fpath)
+    return nil if symbols.nil?
 
     # Detect nested (DocumentSymbol) vs flat (SymbolInformation) format
     if symbols.any? { |s| s.key?(:children) }
