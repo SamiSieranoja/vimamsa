@@ -2,6 +2,30 @@
 module Vimamsa
 # PopupFormGenerator.new().run
 class PopupFormGenerator
+  # Modal popups are serialized: only one is visible at a time. Presenting two
+  # transient modal windows together (e.g. the session-restore dialog and a
+  # startup file's autosave dialog at startup) makes them grab input from each
+  # other and get stuck, so queue any popup requested while another is active
+  # and show it once the active one closes.
+  @@popup_active = nil
+  @@popup_queue = []
+
+  # Present the next queued popup, if any. Called when the active popup closes.
+  def self.advance_popup_queue
+    @@popup_active = nil
+    nxt = @@popup_queue.shift
+    nxt&.present_now
+  end
+
+  # Test/utility hook: forget any queued/active popups.
+  def self.reset_popup_queue
+    @@popup_active = nil
+    @@popup_queue = []
+  end
+
+  def self.popup_active? = !@@popup_active.nil?
+  def self.popup_queue_size = @@popup_queue.size
+
   def submit()
     for id, entry in @vals
       @ret[id] = entry.text
@@ -9,7 +33,15 @@ class PopupFormGenerator
     if !@callback.nil?
       @callback.call(@ret)
     end
+    close
+  end
+
+  # Close this popup and present the next queued one, if any. All close paths
+  # (submit, cancel, escape, window close) route through here. GTK4 has no
+  # widget "destroy" signal to hook, so the queue is advanced explicitly.
+  def close
     @window.destroy
+    PopupFormGenerator.advance_popup_queue if @@popup_active.equal?(self)
   end
 
   def initialize(params = nil)
@@ -29,6 +61,12 @@ class PopupFormGenerator
     @window.title = ""
     @window.set_transient_for($vmag.window) if $vmag&.window
     @window.modal = true
+    # Window manager close (title-bar X): advance the queue too, then let GTK
+    # destroy the window (return false). Programmatic closes go through #close.
+    @window.signal_connect("close-request") do
+      PopupFormGenerator.advance_popup_queue if @@popup_active.equal?(self)
+      false
+    end
 
     frame = Gtk::Frame.new()
     frame.margin = 8
@@ -83,7 +121,7 @@ class PopupFormGenerator
             submit
             true
           elsif keyval == Gdk::Keyval::KEY_Escape
-            @window.destroy
+            close
             true
           else
             false
@@ -96,7 +134,7 @@ class PopupFormGenerator
 
     cancel_button = Gtk::Button.new(:label => "Cancel")
     cancel_button.signal_connect "clicked" do
-      @window.destroy
+      close
     end
     hbox.append(cancel_button)
     @cancel_button = cancel_button
@@ -104,11 +142,19 @@ class PopupFormGenerator
   end
 
   def run
-    if !@window.visible?
-      @window.present
-    else
-      @window.destroy
+    # If another popup is already showing, queue this one; it is presented when
+    # the active popup closes (see advance_popup_queue).
+    if @@popup_active && !@@popup_active.instance_variable_get(:@window).destroyed?
+      @@popup_queue << self
+      return @window
     end
+    present_now
+  end
+
+  # Actually show the window now and mark it as the active popup.
+  def present_now
+    @@popup_active = self
+    @window.present
     if !@default_button.nil?
       @default_button.grab_focus
     end
