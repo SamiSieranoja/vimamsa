@@ -12,7 +12,7 @@ $ifuncon = false
 class Buffer < String
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images, :last_save, :access_time, :selection_active, :lsp, :edit_version
   attr_writer :call_func, :update_highlight
-  attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle, :paste_lines, :mode_stack, :default_mode, :git_root
+  attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle, :paste_lines, :mode_stack, :default_mode, :git_root, :needs_autosave_check
 
   @@num_buffers = 0
 
@@ -42,6 +42,11 @@ class Buffer < String
     @t_modified = @last_save
     @last_autosave = @last_save
     @autosave_thread = nil
+    # Set when a buffer is loaded via session restore: its autosave file is not
+    # checked at load time (that path bypasses check_autosave_load), so defer
+    # the check until the user first switches to the buffer. See
+    # check_session_restore and BufferList#set_current_buffer.
+    @needs_autosave_check = false
 
     @crypt = nil
     @update_highlight = true
@@ -1725,10 +1730,27 @@ class Buffer < String
     debug "delete autosave failed: #{ex}"
   end
 
+  # Run a deferred autosave check the first time a session-restored buffer is
+  # entered. No-op unless flagged (see @needs_autosave_check). Cleared before
+  # the check so it fires at most once.
+  def check_autosave_load_if_pending
+    return unless @needs_autosave_check
+    @needs_autosave_check = false
+    check_autosave_load
+  end
+
   def check_autosave_load
     apath = autosave_path
     return if apath.nil? || !File.exist?(apath)
     if File.read(apath) == self.to_s
+      delete_autosave_file
+      return
+    end
+    # The autosave predates the file on disk: the file has been saved/changed
+    # more recently, so the autosave holds an outdated version. Drop it silently
+    # rather than prompting. (A newer autosave — unsaved changes from a crash —
+    # still prompts below.)
+    if File.exist?(@fname) && File.mtime(apath) < File.mtime(@fname)
       delete_autosave_file
       return
     end

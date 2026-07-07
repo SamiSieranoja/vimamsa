@@ -386,7 +386,7 @@ class Editor
     # After a restart (restart_editor) reopen the previous files silently.
     if ENV["VIMAMSA_RESTORE_SESSION"]
       initial = vma.buffers.list.find { |b| b.fname.nil? }
-      fnames.each { |f| load_buffer(f) }
+      fnames.each { |f| b = load_buffer(f); b&.needs_autosave_check = true }
       initial&.close
       message("Session restored: #{fnames.size} file(s)")
       return
@@ -403,7 +403,7 @@ class Editor
       :callback => proc { |x|
         if x["yes_btn"] == "submit"
           initial = vma.buffers.list.find { |b| b.fname.nil? }
-          fnames.each { |f| load_buffer(f) }
+          fnames.each { |f| b = load_buffer(f); b&.needs_autosave_check = true }
           initial&.close
           message("Session restored: #{label}")
         end

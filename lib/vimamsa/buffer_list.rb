@@ -125,6 +125,7 @@ class BufferList
     vma.hook.call(:change_buffer, vma.buf)
 
     bu.set_active # TODO
+    bu.check_autosave_load_if_pending # deferred check for session-restored buffers
     bu.update_access_time if update_history
     reset_navigation if update_history
     vma.gui.set_current_buffer(idx)
