@@ -18,11 +18,14 @@ module Gui
   # Briefly highlight buffer range `r`, then clear it after cnf.flash.duration.
   # If a block is given it runs *after* the flash clears — used by delete so the
   # range is shown before the text is removed. When flashing is inactive
-  # (disabled in config, running under --test, no GUI view, or an empty/inverted
-  # range) the block runs immediately and no highlight is drawn, preserving
-  # synchronous behaviour for tests.
+  # (disabled in config, running under --test, running a macro, no GUI view, or
+  # an empty/inverted range) the block runs immediately and no highlight is
+  # drawn, preserving synchronous behaviour. Macros must stay synchronous: the
+  # deferred timeout used for the flash reorders the delete relative to the rest
+  # of the macro and breaks playback.
   def self.flash_range(bf, r, &after)
     active = cnf.flash.enabled? && !ARGV.include?("--test") &&
+             !vma.macro&.running_macro &&
              bf.view && r && r.begin <= r.last
     unless active
       after&.call
