@@ -31,10 +31,7 @@ class PopupFormGenerator
     @window.modal = true
 
     frame = Gtk::Frame.new()
-    frame.margin_bottom = 8
-    frame.margin_top = 8
-    frame.margin_end = 8
-    frame.margin_start = 8
+    frame.margin = 8
 
     @window.set_child(frame)
 
@@ -43,10 +40,7 @@ class PopupFormGenerator
     # @callback = params["callback"]
 
     vbox = Gtk::Box.new(:vertical, 8)
-    vbox.margin_bottom = 8
-    vbox.margin_top = 8
-    vbox.margin_end = 8
-    vbox.margin_start = 8
+    vbox.margin = 8
 
     frame.set_child(vbox)
 

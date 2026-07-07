@@ -1470,12 +1470,7 @@ class Buffer < String
   end
 
   def copy_line()
-    vma.kbd.method_handles_repeat = true
-    num_lines = 1
-    if !vma.kbd.next_command_count.nil? and vma.kbd.next_command_count > 0
-      num_lines = vma.kbd.next_command_count
-      debug "copy num_lines:#{num_lines}"
-    end
+    num_lines = get_repeat_num()
     vma.clipboard.set(self[line_range(@lpos, num_lines)])
     @paste_lines = true
   end

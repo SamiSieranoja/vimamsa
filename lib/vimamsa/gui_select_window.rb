@@ -76,7 +76,7 @@ class SelectUpdateWindow
 
     if !opt[:desc].nil?
       descl = Gtk::Label.new(opt[:desc])
-      set_margin_all(descl,15)
+      descl.margin = 15
       # vbox.append(descl, :expand => false, :fill => false, :padding => 0)
       vbox.append(descl)
     end

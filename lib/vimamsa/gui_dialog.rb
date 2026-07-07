@@ -12,7 +12,7 @@ module Gui
 end
 
 module ::Gtk
-  class Frame
+  class Widget
     def margin=(a)
       self.margin_bottom = a
       self.margin_top = a
@@ -20,22 +20,6 @@ module ::Gtk
       self.margin_start = a
     end
   end
-
-  class Box
-    def margin=(a)
-      self.margin_bottom = a
-      self.margin_top = a
-      self.margin_end = a
-      self.margin_start = a
-    end
-  end
-end
-
-def set_margin_all(widget, m)
-  widget.margin_bottom = m
-  widget.margin_top = m
-  widget.margin_end = m
-  widget.margin_start = m
 end
 
 class OneInputAction
