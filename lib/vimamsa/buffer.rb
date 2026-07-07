@@ -327,38 +327,35 @@ class Buffer < String
     }
   end
 
+  # Map every line spanning the visual selection through the block and replace
+  # the range with the result, then restore the selection to cover the same
+  # lines. The block receives one line (with its trailing "\n") and returns the
+  # replacement line.
+  def transform_selected_lines
+    (startpos, endpos) = get_visual_mode_range2
+    first = get_line_start(startpos)
+    last = get_line_end(endpos - 1)
+    start_lpos = get_line_pos(first)
+    end_lpos   = get_line_pos(last)
+    r = first..last
+    mod = self[r].lines.map { |line| yield(line) }.join
+    replace_range(r, mod)
+    @selection_start = line_range(start_lpos, 1).begin
+    set_pos(line_range(end_lpos, 1).begin)
+  end
+
   def indent_selection
     tw = cnf.tab.width!
     convert = cnf.tab.to_spaces_default?
     convert = true if cnf.tab.to_spaces_languages?.include?(@lang)
     convert = false if cnf.tab.to_spaces_not_languages?.include?(@lang)
     pad = convert ? " " * tw : "\t"
-    (startpos, endpos) = get_visual_mode_range2
-    first = get_line_start(startpos)
-    last = get_line_end(endpos - 1)
-    start_lpos = get_line_pos(first)
-    end_lpos   = get_line_pos(last)
-    r = first..last
-    lines = self[r].lines
-    mod = lines.map { |line| line == "\n" ? line : pad + line }.join
-    replace_range(r, mod)
-    @selection_start = line_range(start_lpos, 1).begin
-    set_pos(line_range(end_lpos, 1).begin)
+    transform_selected_lines { |line| line == "\n" ? line : pad + line }
   end
 
   def unindent_selection
     tw = cnf.tab.width!
-    (startpos, endpos) = get_visual_mode_range2
-    first = get_line_start(startpos)
-    last = get_line_end(endpos - 1)
-    start_lpos = get_line_pos(first)
-    end_lpos   = get_line_pos(last)
-    r = first..last
-    lines = self[r].lines
-    mod = lines.map { |line| line.sub(/^\t| {1,#{tw}}/, "") }.join
-    replace_range(r, mod)
-    @selection_start = line_range(start_lpos, 1).begin
-    set_pos(line_range(end_lpos, 1).begin)
+    transform_selected_lines { |line| line.sub(/^\t| {1,#{tw}}/, "") }
   end
 
   def handle_drag_and_drop(fname)

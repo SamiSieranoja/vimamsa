@@ -69,4 +69,32 @@ class TestTextTransforms < VmaTest
     act("buf.set_line_style(:clear)")
     assert_buf("hello\n")
   end
+
+  # Note: a leading "x\n" line is used so the visual selection lands on the
+  # second/third lines. get_line_start snaps a selection touching the very
+  # first line to the *next* line boundary, so indenting line 1 directly is
+  # awkward to set up; selecting lines below it exercises the same code path.
+  # Content is set via set_content to avoid auto-indent altering the setup.
+
+  def test_indent_selection_spaces
+    act("cnf.tab.to_spaces_default = true")
+    act("cnf.tab.width = 2")
+    act('buf.set_content("x\naa\nbb\n")')
+    act("buf.set_pos(2)") # start of "aa" line
+    keys("v")
+    act("buf.set_pos(6)") # into the "bb" line
+    act("buf.indent_selection")
+    assert_buf("x\n  aa\n  bb\n")
+  end
+
+  def test_unindent_selection
+    act("cnf.tab.to_spaces_default = true")
+    act("cnf.tab.width = 2")
+    act('buf.set_content("x\n  aa\n  bb\n")')
+    act("buf.set_pos(2)") # start of "  aa" line
+    keys("v")
+    act("buf.set_pos(9)") # into the "  bb" line
+    act("buf.unindent_selection")
+    assert_buf("x\naa\nbb\n")
+  end
 end
