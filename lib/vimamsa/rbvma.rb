@@ -40,6 +40,8 @@ require "vimamsa/key_bindings_report"
 require "vimamsa/desktop_install"
 
 # Graphical stuff:
+require "vimamsa/bundled_fonts"
+Vimamsa::BundledFonts.setup!   # install bundled Oxanium before the GUI renders
 require "vimamsa/gui"
 require "vimamsa/gui_form_generator"
 require "vimamsa/gui_text"
