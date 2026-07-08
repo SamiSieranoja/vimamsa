@@ -37,7 +37,7 @@ CYBER_COLOR_DEFAULTS = {
   window_fg: "#d6f7ff",
   header_bg: "#014a47",
   button_bg: "#0d172e",
-  button_hover_bg: "#1f3330",
+  button_hover_bg: "#5c9b98", #1f3330 #64aaa6
   sidebar_bg: "#080e1c",
   stack_bg: "#03080f",
   status_bg: "#080e1c",
