@@ -36,19 +36,20 @@ def cyberpunk_css
   base = c[:base]
   highlight = c[:highlight]
   # Neon-sign mode badge: transparent center, thin border + text glowing in
-  # the mode's color (colors match the baseline badge palette in gui.rb).
-  badge_glow = { "mode-command" => "#7c68f2", "mode-insert" => "#78bf78",
-                 "mode-visual" => "#d49e63", "mode-browse" => "#a96bb0",
-                 "mode-replace" => "#d66d63", "mode-other" => "#9670d6" }
+  # the mode's color (lightened tints of the baseline badge palette in gui.rb
+  # so they read as lit neon tubes on the dark chrome).
+  badge_glow = { "mode-command" => "#a99aff", "mode-insert" => "#9fe8a4",
+                 "mode-visual" => "#ffc890", "mode-browse" => "#dda3e4",
+                 "mode-replace" => "#ff9d94", "mode-other" => "#c3a4ff" }
     .map { |cls, col|
       <<~RULE
         label.mode-badge.#{cls} {
           color: #{col};
           border-color: #{col};
           background-color: transparent;
-          text-shadow: 0 0 6px #{cyber_rgba(col, 0.7)};
-          box-shadow: 0 0 8px #{cyber_rgba(col, 0.35)},
-                      inset 0 0 8px #{cyber_rgba(col, 0.12)};
+          text-shadow: 0 0 5px #{cyber_rgba(col, 0.8)};
+          box-shadow: 0 0 6px #{cyber_rgba(col, 0.5)},
+                      inset 0 0 5px #{cyber_rgba(col, 0.25)};
         }
       RULE
     }.join("\n  ")
@@ -133,7 +134,11 @@ def cyberpunk_css
   label.mode-badge {
     background-color: transparent;
     border: 1px solid #{base};
-    border-radius: 6px;
+    border-radius: 5px;
+    padding: 2px 12px;
+    font-family: "Oxanium", monospace;
+    font-size: 10pt;
+    font-weight: 700;
     color: #{base};
   }
 
