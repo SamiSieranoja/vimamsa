@@ -29,10 +29,10 @@
     <style background="#bg" foreground="#66D9EF" italic="true" name="def:specials"/>
     <style bold="true" foreground="#F92672" name="def:statement"/>
     <style foreground="#66D9EF" name="def:type"/>
-    <style background="#020303" foreground="#F8F8F2" name="text"/> 
+    <style background="#0b0c0c" foreground="#F8F8F2" name="text"/> 
     <style foreground="#b0b0b0" name="def:comment"/>
     <style background="#141d33" name="current-line"/>
-    <style background="#020303" foreground="#8fb0b8" name="line-numbers"/>
+    <style background="#0b0c0c" foreground="#8fb0b8" name="line-numbers"/>
 
   <style name="def:title"                scale="2.0" bold="true" />
   <style name="def:hyperlink"                foreground="lightblue" bold="true" />

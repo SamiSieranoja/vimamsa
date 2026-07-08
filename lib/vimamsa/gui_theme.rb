@@ -45,8 +45,8 @@ CYBER_COLOR_DEFAULTS = {
   status_fg: "#9fd7e4",
   tree_selection_fg: "#d5f7f5",
   # neon mode-badge tints (lit-tube colors per mode)
-  badge_glow_command: "#ffc5ff",
-  badge_glow_insert:  "#9fe8a4",
+  badge_glow_command: "#9fe8a4",
+  badge_glow_insert:  "#ffc5ff",
   badge_glow_visual:  "#ffc890",
   badge_glow_browse:  "#ff9fb7",
   badge_glow_replace: "#ff9d94",
