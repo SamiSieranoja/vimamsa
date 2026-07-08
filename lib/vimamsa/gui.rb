@@ -782,9 +782,9 @@ class VMAgui
         /*border-bottom: 1px solid #05d9e8;*/
       }
       
-      textview border.left gutter { color: #8aa; font-size:8pt; }     
-      
-      textview border.left gutter { padding: 0px 0px 0px 0px; margin: 0px 0px 0px 0px; color: #8aa; font-size:9pt; }     
+      /* Relative size so the gutter tracks the editor font setting
+         (a fixed pt size left the gutter unchanged when the font changed). */
+      textview border.left gutter { padding: 0px 0px 0px 0px; margin: 0px 0px 0px 0px; color: #8aa; font-size: 85%; }
       
          headerbar .title {
       font-weight: bold;
