@@ -50,6 +50,7 @@ class FuncPanel
     # @box is the outermost widget: header label on top, scrollable tree below.
     @box = Gtk::Box.new(:vertical, 0)
     @box.set_size_request(160, -1)
+    @box.add_css_class("side-panel")
     @box.append(header)
     @box.append(sw)
   end

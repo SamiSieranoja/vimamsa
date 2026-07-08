@@ -47,6 +47,7 @@ class PopupFormGenerator
   def initialize(params = nil)
     @ret = {}
     @window = Gtk::Window.new()
+    @window.add_css_class("vma-dialog")
     # @window.screen = main_window.screen
     # @window.title = title
     # params = {}

@@ -45,6 +45,7 @@ class FileTreePanel
     @sw.set_child(@tree)
     @sw.set_size_request(180, -1)
     @sw.vexpand = true
+    @sw.add_css_class("side-panel")
   end
 
   def widget

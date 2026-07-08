@@ -21,6 +21,7 @@ SETTINGS_DEFS = [
     :settings => [
       { :key => [:match, :highlight, :color], :label => "Search highlight color", :type => :string },
       { :key => [:highlight_colors, :enabled], :label => "Highlight hex color codes (#rrggbb)", :type => :bool },
+      { :key => [:theme, :cyberpunk_glow], :label => "Cyberpunk glow theme (neon glow & shadows)", :type => :bool },
       { :key => [:kbd, :show_prev_action], :label => "Show previous action in toolbar", :type => :bool },
       { :key => [:style_scheme], :label => "Color scheme", :type => :select,
         :options => proc {
@@ -88,6 +89,7 @@ class SettingsDialog
   def initialize
     @widgets = {}
     @window = Gtk::Window.new
+    @window.add_css_class("vma-dialog")
     @window.set_transient_for($vmag.window) if $vmag&.window
     @window.modal = true
     @window.title = "Preferences"
@@ -264,6 +266,9 @@ class SettingsDialog
             end
       cnf_set(key, val) unless val.nil?
     end
+    # Before save_settings_to_file: may flip cnf.style_scheme to keep the
+    # buffer scheme in step with the theme toggle.
+    gui_refresh_theme
     save_settings_to_file
     gui_refresh_font
     gui_refresh_style_scheme

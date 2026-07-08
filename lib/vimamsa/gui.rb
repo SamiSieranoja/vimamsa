@@ -204,7 +204,7 @@ def gui_set_window_title(wtitle, subtitle = "", modified: false)
 end
 
 class VMAgui
-  attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c, :scheme_is_light
+  attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c, :scheme_is_light, :cyber_css_provider
   attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel, :func_panel, :keylog_panel, :keytrail, :cmd_line
 
   def initialize()
@@ -826,6 +826,10 @@ class VMAgui
       sc = Gtk::StyleContext.add_provider_for_display(Gdk::Display.default, prov)
 
       vma.start
+
+      # After vma.start: user settings.rb (which may enable the theme) is
+      # loaded during Editor#start.
+      gui_refresh_theme
     end
 
     GLib::Idle.add(proc { self.monitor })
@@ -927,6 +931,7 @@ class VMAgui
   def new_window(win_id)
     n_sw = Gtk::ScrolledWindow.new
     n_sw.set_policy(:automatic, :automatic)
+    n_sw.add_css_class("editor-frame")
     n_overlay = Gtk::Overlay.new
     n_overlay.add_overlay(n_sw)
     # @pane = Gtk::Paned.new(:horizontal)
