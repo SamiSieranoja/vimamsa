@@ -204,7 +204,7 @@ def gui_set_window_title(wtitle, subtitle = "", modified: false)
 end
 
 class VMAgui
-  attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c, :scheme_is_light, :cyber_css_provider
+  attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c, :scheme_is_light, :cyber_css_provider, :chrome_css_provider, :minibuf_css_provider
   attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel, :func_panel, :keylog_panel, :keytrail, :cmd_line
 
   def initialize()
@@ -412,9 +412,9 @@ class VMAgui
     @minibuf_expanded = false
     @minibuf_history_height = 120
 
-    css = "label.minibuf, textview.minibuf, entry.minibuf { color: #cdd6f4; font-family: Monospace; font-size: 10pt; padding: 3px 8px; background-color: #1e1e2e; }"
     provider = Gtk::CssProvider.new
-    provider.load(data: css)
+    provider.load(data: minibuf_css)   # colors from gui_theme.rb (cnf-backed)
+    self.minibuf_css_provider = provider
 
     # Collapsed view: single line, latest message
     @minibuf_label = Gtk::Label.new("")
@@ -766,61 +766,13 @@ class VMAgui
 
       run_as_idle proc { idle_set_size }
 
-      prov = Gtk::CssProvider.new
+      # Baseline chrome CSS + all its colors live in gui_theme.rb (cnf-backed).
       # See gtk-4.9.4/gtk/theme/Default/_common.scss  on how to theme
       # gtksourceview/gtksourcestyleschemepreview.c
       # gtksourceview/gtksourcestylescheme.c
-      prov.load(data: "
-      /* Edge-lit panel: near-black chrome, neon-cyan bottom edge */
-      headerbar { padding: 0 0px; min-height: 16px; border-width: 0 0 0px; border-style: solid; /*background: #0a0a12;*/ color: #d8e6ee; }
-
-      menubar { background: transparent; }
-      menubar > item { color: #b8ccd8; }
-
-      box.menubar-row {
-        /*background-color: #0a0a12;*/
-        /*border-bottom: 1px solid #05d9e8;*/
-      }
-      
-      /* Relative size so the gutter tracks the editor font setting
-         (a fixed pt size left the gutter unchanged when the font changed). */
-      textview border.left gutter { padding: 0px 0px 0px 0px; margin: 0px 0px 0px 0px; color: #8aa; font-size: 85%; }
-      
-         headerbar .title {
-      font-weight: bold;
-      font-size: 11pt;
-      color: #cdffee;
-  }
-  
- headerbar > windowhandle > box .start {
-      border-spacing: 6px;
-  }
- 
- headerbar windowcontrols button {
-        min-height: 15px;
-        min-width: 15px;
-      }
-  
- popover background > contents { padding: 8px; border-radius: 20px; }
-
- label.action-trail { font-family: monospace; font-size: 10pt; margin-right: 8px; color: #aaaaaa; }
-
- label.mode-badge {
-   font-family: monospace; font-size: 9pt; font-weight: 800;
-   padding: 1px 7px; margin: 2px 4px 2px 0;
-   border-radius: 5px; min-width: 65px;
-   color: #1b1d1e; background-color: #75715e;
-   transition: background-color 120ms ease-out;
- }
- label.mode-badge.mode-command { background-color: #7c68f2; }
- label.mode-badge.mode-insert  { background-color: #78bf78; }
- label.mode-badge.mode-visual  { background-color: #d49e63; }
- label.mode-badge.mode-browse  { background-color: #a96bb0; }
- label.mode-badge.mode-replace { background-color: #d66d63; }
- label.mode-badge.mode-other   { background-color: #9670d6; }
-
- label.keytrail { font-family: monospace; font-size: 10pt; font-weight: bold; color: #e6db74; }
-         ")
+      prov = Gtk::CssProvider.new
+      prov.load(data: base_chrome_css)
+      self.chrome_css_provider = prov
       @window.style_context.add_provider(prov)
 
       sc = Gtk::StyleContext.add_provider_for_display(Gdk::Display.default, prov)
@@ -828,8 +780,9 @@ class VMAgui
       vma.start
 
       # After vma.start: user settings.rb (which may enable the theme) is
-      # loaded during Editor#start.
-      gui_refresh_theme
+      # loaded during Editor#start. Refresh reads any cnf color overrides and
+      # installs the cyberpunk provider if enabled.
+      gui_refresh_colors
     end
 
     GLib::Idle.add(proc { self.monitor })

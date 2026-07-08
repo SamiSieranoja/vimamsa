@@ -241,7 +241,7 @@ class FileManager
       r = vma.buf.line_range(2, @cdirs.size+1)
       
       # Hilight works only if done after buffer is drawn
-      run_as_idle proc { Gui.hilight_range(vma.buf, r, color: "#4488ffff") }
+      run_as_idle proc { Gui.hilight_range(vma.buf, r, color: theme_color(:search_jump)) }
     end
   end
 

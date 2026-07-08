@@ -29,9 +29,9 @@ class KeyLogPanel
     @list = Gtk::ListBox.new
     @list.selection_mode = :none
 
-    # Highlight for the newest row
+    # Highlight for the newest row (color from gui_theme.rb, cnf-backed)
     @row_css = Gtk::CssProvider.new
-    @row_css.load(data: "row.keylog-newest { color:#fff; background-color: alpha(#000000, 0.12); border: 3px solid #94ffbb; }")
+    @row_css.load(data: keylog_row_css)
 
     @sw = Gtk::ScrolledWindow.new
     @sw.set_policy(:never, :automatic)
@@ -78,6 +78,11 @@ class KeyLogPanel
 
   def set_active(v)
     @active = v
+  end
+
+  # Re-read the newest-row highlight color from cnf and reload it live.
+  def refresh_css
+    @row_css.load(data: keylog_row_css)
   end
 
   def clear

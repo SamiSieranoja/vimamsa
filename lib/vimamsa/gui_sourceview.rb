@@ -750,7 +750,7 @@ class VSourceView < GtkSource::View
         end
         prov = Gtk::CssProvider.new
         # prov.load(data: ".view text selection { background-color: #{bg}; color: #ffffff; }")
-        prov.load(data: ".view text selection { background-color: #{bg}; color: #ffffff; } .view { caret-color: #{bg};  }")
+        prov.load(data: ".view text selection { background-color: #{bg}; color: #{theme_color(:selection_fg)}; } .view { caret-color: #{bg};  }")
         self.style_context.add_provider(prov)
         @cursor_prov = prov
       end

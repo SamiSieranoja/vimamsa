@@ -218,7 +218,7 @@ class Buffer < String
     provider = Gtk::CssProvider.new
     mc.add_css_class("medctr")
 
-    provider.load(data: ".medctr {   background-color:#353535; }")
+    provider.load(data: ".medctr {   background-color:#{theme_color(:medctr_bg)}; }")
     mc.style_context.add_provider(provider)
 
     pp mf.set_prepared(true)

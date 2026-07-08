@@ -7,9 +7,22 @@ module Vimamsa
 # Only window chrome is themed — source view text colors stay with the
 # GtkSourceView style scheme.
 
-# Palette mirrors the user's live rterm colors (~/.config/rterm/settings.json),
-# not the rterm repo defaults.
-CYBER_COLORS = {
+# ── Palettes ──────────────────────────────────────────────────────────────
+# All GUI chrome / highlight colors live here as two named palettes. Every
+# entry is overridable at runtime via config with no restart:
+#   cnf.theme.colors.<name> = "#rrggbb"   # baseline palette (theme off)
+#   cnf.theme.cyber.<name>  = "#rrggbb"   # cyberpunk-glow palette (theme on)
+# after which `gui_refresh_colors` (called on settings-save, or bind it to a
+# key) re-reads the values and reloads the CSS providers live.
+#
+# The hashes below are only the *defaults* — a cnf override wins per-key
+# (see theme_color / cyber_color). Mode *cursor* colors and the search-match
+# color already have their own config (cnf.mode.*.cursor, cnf.match.highlight
+# .color) and are intentionally not duplicated here.
+
+# Cyberpunk-glow palette. Defaults mirror the user's live rterm colors
+# (~/.config/rterm/settings.json), not the rterm repo defaults.
+CYBER_COLOR_DEFAULTS = {
   base: "#3dcbb8",        # neon teal — primary accent
   base_bright: "#81dbd6", # same teal hue, brighter — hover states
   highlight: "#81dbd6",   # light cyan — secondary accent / glow
@@ -25,22 +38,128 @@ CYBER_COLORS = {
   status_bg: "#080e1c",
   status_fg: "#9fd7e4",
   tree_selection_fg: "#d5f7f5",
+  # neon mode-badge tints (lit-tube colors per mode)
+  badge_glow_command: "#ffc5ff",
+  badge_glow_insert:  "#9fe8a4",
+  badge_glow_visual:  "#ffc890",
+  badge_glow_browse:  "#ff9fb7",
+  badge_glow_replace: "#ff9d94",
+  badge_glow_other:   "#c3a4ff",
 }
+
+# Baseline (default, non-cyberpunk) palette.
+THEME_COLOR_DEFAULTS = {
+  # chrome
+  header_fg:       "#d8e6ee",
+  menu_item_fg:    "#b8ccd8",
+  gutter_fg:       "#8aa",
+  title_fg:        "#cdffee",
+  action_trail_fg: "#aaaaaa",
+  keytrail_fg:     "#e6db74",
+  # mode badge (base + per-mode background)
+  badge_fg:        "#1b1d1e",
+  badge_bg:        "#75715e",
+  badge_command:   "#9e4cff",
+  badge_insert:    "#78bf78",
+  badge_visual:    "#d49e63",
+  badge_browse:    "#a96bb0",
+  badge_replace:   "#d66d63",
+  badge_other:     "#9670d6",
+  # minibuffer / command line
+  minibuf_fg:      "#cdd6f4",
+  minibuf_bg:      "#1e1e2e",
+  # key log panel newest-row outline
+  keylog_newest_border: "#94ffbb",
+  # media controls strip
+  medctr_bg:       "#353535",
+  # source-view selected-text foreground
+  selection_fg:    "#ffffff",
+  # text-highlight helpers (Gui.hilight_range / highlight_match defaults + callers)
+  highlight_default: "#aa0000ff", # generic range highlight
+  search_jump:       "#4488ffff", # jump-to-match highlight (file_manager)
+  buffer_switch:     "#666666ff", # buffer-switch highlight (buffer_manager)
+}
+
+# Look up a baseline palette color by name: a cnf.theme.colors.<name> override
+# if set, else the default. Callable everywhere (the Vimamsa module is mixed
+# into Object), including as a default-argument expression.
+def theme_color(name)
+  cnf_get([:theme, :colors, name]) || THEME_COLOR_DEFAULTS.fetch(name)
+end
+
+# Look up a cyberpunk palette color: a cnf.theme.cyber.<name> override if set,
+# else the default.
+def cyber_color(name)
+  cnf_get([:theme, :cyber, name]) || CYBER_COLOR_DEFAULTS.fetch(name)
+end
+
+# Baseline chrome CSS (always installed; the cyberpunk provider layers over it
+# at PRIORITY_USER when enabled). Colors come from theme_color; layout is
+# literal. Relocated here from gui.rb so all color code lives in this file.
+def base_chrome_css
+  <<~CSS
+    /* Edge-lit panel: near-black chrome, neon-cyan bottom edge */
+    headerbar { padding: 0 0px; min-height: 16px; border-width: 0 0 0px; border-style: solid; color: #{theme_color(:header_fg)}; }
+
+    menubar { background: transparent; }
+    menubar > item { color: #{theme_color(:menu_item_fg)}; }
+
+    /* Relative size so the gutter tracks the editor font setting
+       (a fixed pt size left the gutter unchanged when the font changed). */
+    textview border.left gutter { padding: 0px 0px 0px 0px; margin: 0px 0px 0px 0px; color: #{theme_color(:gutter_fg)}; font-size: 85%; }
+
+    headerbar .title { font-weight: bold; font-size: 11pt; color: #{theme_color(:title_fg)}; }
+
+    headerbar > windowhandle > box .start { border-spacing: 6px; }
+
+    headerbar windowcontrols button { min-height: 15px; min-width: 15px; }
+
+    popover background > contents { padding: 8px; border-radius: 20px; }
+
+    label.action-trail { font-family: monospace; font-size: 10pt; margin-right: 8px; color: #{theme_color(:action_trail_fg)}; }
+
+    label.mode-badge {
+      font-family: monospace; font-size: 9pt; font-weight: 800;
+      padding: 1px 7px; margin: 2px 4px 2px 0;
+      border-radius: 2px; min-width: 65px;
+      color: #{theme_color(:badge_fg)}; background-color: #{theme_color(:badge_bg)};
+      transition: background-color 120ms ease-out;
+    }
+    label.mode-badge.mode-command { background-color: #{theme_color(:badge_command)}; }
+    label.mode-badge.mode-insert  { background-color: #{theme_color(:badge_insert)}; }
+    label.mode-badge.mode-visual  { background-color: #{theme_color(:badge_visual)}; }
+    label.mode-badge.mode-browse  { background-color: #{theme_color(:badge_browse)}; }
+    label.mode-badge.mode-replace { background-color: #{theme_color(:badge_replace)}; }
+    label.mode-badge.mode-other   { background-color: #{theme_color(:badge_other)}; }
+
+    label.keytrail { font-family: monospace; font-size: 10pt; font-weight: bold; color: #{theme_color(:keytrail_fg)}; }
+  CSS
+end
+
+# CSS for the minibuffer / command-line widgets (shared provider in gui.rb).
+def minibuf_css
+  "label.minibuf, textview.minibuf, entry.minibuf { color: #{theme_color(:minibuf_fg)}; font-family: Monospace; font-size: 10pt; padding: 3px 8px; background-color: #{theme_color(:minibuf_bg)}; }"
+end
+
+# CSS for the key log panel's highlighted newest row.
+def keylog_row_css
+  "row.keylog-newest { color:#fff; background-color: alpha(#000000, 0.12); border: 3px solid #{theme_color(:keylog_newest_border)}; }"
+end
 
 def cyber_rgba(hex, alpha)
   "rgba(#{hex[1, 2].to_i(16)}, #{hex[3, 2].to_i(16)}, #{hex[5, 2].to_i(16)}, #{alpha})"
 end
 
 def cyberpunk_css
-  c = CYBER_COLORS
+  c = Hash.new { |_h, k| cyber_color(k) }
   base = c[:base]
   highlight = c[:highlight]
   # Neon-sign mode badge: transparent center, thin border + text glowing in
-  # the mode's color (lightened tints of the baseline badge palette in gui.rb
-  # so they read as lit neon tubes on the dark chrome).
-  badge_glow = { "mode-command" => "#a99aff", "mode-insert" => "#9fe8a4",
-                 "mode-visual" => "#ffc890", "mode-browse" => "#dda3e4",
-                 "mode-replace" => "#ff9d94", "mode-other" => "#c3a4ff" }
+  # the mode's color (lightened tints of the baseline badge palette so they
+  # read as lit neon tubes on the dark chrome).
+  badge_glow = { "mode-command" => c[:badge_glow_command], "mode-insert" => c[:badge_glow_insert],
+                 "mode-visual" => c[:badge_glow_visual], "mode-browse" => c[:badge_glow_browse],
+                 "mode-replace" => c[:badge_glow_replace], "mode-other" => c[:badge_glow_other] }
     .map { |cls, col|
       <<~RULE
         label.mode-badge.#{cls} {
@@ -48,8 +167,8 @@ def cyberpunk_css
           border-color: #{col};
           background-color: transparent;
           text-shadow: 0 0 5px #{cyber_rgba(col, 0.8)};
-          box-shadow: 0 0 6px #{cyber_rgba(col, 0.5)},
-                      inset 0 0 5px #{cyber_rgba(col, 0.25)};
+          box-shadow: 0 0 6px #{cyber_rgba(col, 1.0)},
+                      inset 0 0 5px #{cyber_rgba(col, 1.00)};
         }
       RULE
     }.join("\n  ")
@@ -148,7 +267,7 @@ def cyberpunk_css
   label.mode-badge {
     background-color: transparent;
     border: 1px solid #{base};
-    border-radius: 5px;
+    border-radius: 2px;
     padding: 2px 12px;
     font-family: "Oxanium", monospace;
     font-size: 10pt;
@@ -284,6 +403,18 @@ def gui_refresh_theme
     Gtk::StyleContext.add_provider_for_display(disp, prov, Gtk::StyleProvider::PRIORITY_USER)
     $vmag.cyber_css_provider = prov
   end
+end
+
+# Re-read every color from cnf and reload the CSS providers in place, so
+# changing a cnf.theme.colors.* / cnf.theme.cyber.* value takes effect at
+# runtime without restarting. Bound to :refresh_colors (see key_actions.rb)
+# and called by the settings dialog on save.
+def gui_refresh_colors
+  return unless $vmag
+  $vmag.chrome_css_provider&.load(data: base_chrome_css)
+  $vmag.minibuf_css_provider&.load(data: minibuf_css)
+  $vmag.keylog_panel&.refresh_css
+  gui_refresh_theme   # rebuilds/reloads the cyberpunk provider from current cnf
 end
 
 end

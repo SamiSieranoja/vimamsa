@@ -7,7 +7,7 @@
         Molokai variant with navy backgrounds to match the Cyberpunk glow GUI theme.
     </_description>
 
-  <color name="heading"                       value="#CF6A4C"/>
+  <color name="heading"                       value="#ffffff" />
 <style name="selection" foreground="#ffffff" background="#10bd8e"/>
 
 
@@ -29,16 +29,16 @@
     <style background="#bg" foreground="#66D9EF" italic="true" name="def:specials"/>
     <style bold="true" foreground="#F92672" name="def:statement"/>
     <style foreground="#66D9EF" name="def:type"/>
-    <style background="#0d1224" foreground="#F8F8F2" name="text"/>
+    <style background="#020303" foreground="#F8F8F2" name="text"/> 
     <style foreground="#b0b0b0" name="def:comment"/>
     <style background="#141d33" name="current-line"/>
-    <style background="#080e1c" foreground="#8fb0b8" name="line-numbers"/>
+    <style background="#020303" foreground="#8fb0b8" name="line-numbers"/>
 
   <style name="def:title"                scale="2.0" bold="true" />
   <style name="def:hyperlink"                foreground="lightblue" bold="true" />
   <style name="def:heading0"                scale="2.0" bold="true" foreground="heading" />
-  <style name="def:heading1"                scale="1.75" bold="true" foreground="heading" />
-  <style name="def:heading2"                scale="1.5" bold="true" foreground="heading" />
+  <style name="def:heading1"                scale="1.75" bold="true" foreground="heading" underline="true"  />
+  <style name="def:heading2"                scale="1.5" foreground="heading" underline="single" />
   <style name="def:heading3"                scale="1.25" bold="true" foreground="heading" />
   <style name="def:heading4"                scale="1.175" bold="true" foreground="heading" />
   <style name="def:heading5"                scale="1.1" bold="true" foreground="heading" />

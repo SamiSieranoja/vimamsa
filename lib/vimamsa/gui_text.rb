@@ -1,7 +1,7 @@
 
 module Vimamsa
 module Gui
-  def self.hilight_range(bf, r, color: "#aa0000ff", weight: nil, tag: nil)
+  def self.hilight_range(bf, r, color: theme_color(:highlight_default), weight: nil, tag: nil)
     vbuf = bf.view.buffer
 
     if tag.nil?
@@ -54,7 +54,7 @@ module Gui
     end
   end
 
-  def self.highlight_match(bf, str, color: "#aa0000ff", weight: 650)
+  def self.highlight_match(bf, str, color: theme_color(:highlight_default), weight: 650)
     r = Regexp.new(Regexp.escape(str), Regexp::IGNORECASE)
     tag = vma.gui.view.buffer.create_tag
     tag.weight = weight

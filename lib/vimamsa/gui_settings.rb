@@ -29,6 +29,7 @@ SETTINGS_DEFS = [
           ssm.set_search_path(ssm.search_path << ppath("styles/"))
           ssm.scheme_ids.reject { |id| [VIMAMSA_OVERLAY_SCHEME_ID, VIMAMSA_CONTRAST_SCHEME_ID].include?(id) }.sort
         } },
+      { :key => [:color_adjustments, :enabled], :label => "Enable color scheme contrast/brightness adjustments", :type => :bool },
       { :key => [:color_contrast],   :label => "Color scheme contrast (1.0 = original)",  :type => :float, :min => 0.5, :max => 2.0, :step => 0.05 },
       { :key => [:color_brightness], :label => "Color scheme brightness (0.0 = original)", :type => :float, :min => -0.5, :max => 0.5, :step => 0.01 },
     ],
@@ -266,9 +267,10 @@ class SettingsDialog
             end
       cnf_set(key, val) unless val.nil?
     end
-    # Before save_settings_to_file: may flip cnf.style_scheme to keep the
-    # buffer scheme in step with the theme toggle.
-    gui_refresh_theme
+    # Before save_settings_to_file: gui_refresh_colors re-reads every cnf color
+    # and reloads the CSS providers live, and (via gui_refresh_theme) may flip
+    # cnf.style_scheme to keep the buffer scheme in step with the theme toggle.
+    gui_refresh_colors
     save_settings_to_file
     gui_refresh_font
     gui_refresh_style_scheme
@@ -428,9 +430,13 @@ end
 # hyperlink styles on top. Written to styles/_vimamsa_overlay.xml.
 # Foreground colors are read from the parent scheme so they are preserved.
 def generate_vimamsa_overlay(base_scheme_id)
-  contrast   = (cnf_get([:color_contrast])   || 1.0).to_f
-  brightness = (cnf_get([:color_brightness]) || 0.0).to_f
-  parent_id  = apply_contrast_transformation(base_scheme_id, contrast, brightness)
+  adjustments_enabled = cnf_get([:color_adjustments, :enabled]) != false
+  parent_id = base_scheme_id
+  if adjustments_enabled
+    contrast   = (cnf_get([:color_contrast])   || 1.0).to_f
+    brightness = (cnf_get([:color_brightness]) || 0.0).to_f
+    parent_id  = apply_contrast_transformation(base_scheme_id, contrast, brightness)
+  end
 
   # Load the parent scheme to read existing foreground colors for headings/links
   user_styles_dir = File.expand_path("~/.config/vimamsa/styles")
@@ -443,9 +449,9 @@ def generate_vimamsa_overlay(base_scheme_id)
     <style-scheme id="#{VIMAMSA_OVERLAY_SCHEME_ID}" name="#{VIMAMSA_OVERLAY_SCHEME_ID}" version="1.0" parent-scheme="#{parent_id}">
       <style name="def:title"     scale="2.0"   bold="true"#{style_fg_attr(parent_sty, "def:title")}/>
       <style name="def:hyperlink" bold="true"#{style_fg_attr(parent_sty, "def:hyperlink", "#4FC3F7")}/>
-      <style name="def:heading0"  scale="2.0"   bold="true"#{style_fg_attr(parent_sty, "def:heading0")}/>
-      <style name="def:heading1"  scale="1.75"  bold="true"#{style_fg_attr(parent_sty, "def:heading1")}/>
-      <style name="def:heading2"  scale="1.5"   bold="true"#{style_fg_attr(parent_sty, "def:heading2")}/>
+      <style name="def:heading0"  scale="2.0"   bold="true"#{style_fg_attr(parent_sty, "def:heading0")} underline="low"/>
+      <style name="def:heading1"  scale="1.75"  bold="true"#{style_fg_attr(parent_sty, "def:heading1")}  underline="low"/>
+      <style name="def:heading2"  scale="1.5"   bold="true"#{style_fg_attr(parent_sty, "def:heading2")}  underline="low"/>
       <style name="def:heading3"  scale="1.25"  bold="true"#{style_fg_attr(parent_sty, "def:heading3")}/>
       <style name="def:heading4"  scale="1.175" bold="true"#{style_fg_attr(parent_sty, "def:heading4")}/>
       <style name="def:heading5"  scale="1.1"   bold="true"#{style_fg_attr(parent_sty, "def:heading5")}/>

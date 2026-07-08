@@ -29,6 +29,7 @@ reg_act(:lsp_jump_to_definition, proc { vma.buf.lsp_jump_to_def }, "LSP jump to 
 reg_act(:eval_buf, proc { vma.buf.eval_whole_buf }, "Eval whole current buffer as ruby code (DANGEROUS)")
 
 reg_act(:show_settings, proc { show_settings_dialog }, "Show settings")
+reg_act(:refresh_colors, proc { gui_refresh_colors }, "Re-read theme colors from config and reload the UI (no restart)")
 reg_act(:cut_selection, proc { buf.delete(SELECTION) }, "Cut selection to clipboard")
 
 reg_act(:insert_backspace, proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(BACKWARD_CHAR) }, "Delete backwards")
