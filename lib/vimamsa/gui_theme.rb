@@ -1,6 +1,11 @@
 
 module Vimamsa
 
+# Absolute path to this file, captured once, so gui_reload_theme_and_colors
+# can `load` it again to pick up hand-edited palette defaults at runtime.
+# `unless defined?` keeps a reload from re-pinning / warning on it.
+GUI_THEME_FILE = File.expand_path(__FILE__) unless defined?(GUI_THEME_FILE)
+
 # Optional "cyberpunk glow" chrome theme: neon teal/amber accents with glow
 # shadows on near-black navy, ported from the rterm terminal project.
 # Off by default; toggled via cnf.theme.cyberpunk_glow (Settings > Appearance).
@@ -44,7 +49,7 @@ CYBER_COLOR_DEFAULTS = {
   badge_glow_visual:  "#ffc890",
   badge_glow_browse:  "#ff9fb7",
   badge_glow_replace: "#ff9d94",
-  badge_glow_other:   "#c3a4ff",
+  badge_glow_other:   "#c5c5ff",
 }
 
 # Baseline (default, non-cyberpunk) palette.
@@ -415,6 +420,22 @@ def gui_refresh_colors
   $vmag.minibuf_css_provider&.load(data: minibuf_css)
   $vmag.keylog_panel&.refresh_css
   gui_refresh_theme   # rebuilds/reloads the cyberpunk provider from current cnf
+end
+
+# Re-`load` this source file, then refresh. Unlike gui_refresh_colors (which
+# only re-reads cnf), this also picks up edits to the THEME_COLOR_DEFAULTS /
+# CYBER_COLOR_DEFAULTS palette constants in the source — so tweaking the
+# default colors and hitting :refresh_colors applies them without a restart.
+# Warnings from redefining the palette constants are silenced during the load.
+def gui_reload_theme_and_colors
+  begin
+    verbose, $VERBOSE = $VERBOSE, nil
+    load GUI_THEME_FILE
+  ensure
+    $VERBOSE = verbose
+  end
+  gui_refresh_colors
+  message("Theme colors reloaded from #{File.basename(GUI_THEME_FILE)}") if defined?(message)
 end
 
 end

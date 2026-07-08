@@ -792,6 +792,7 @@ def reload_customrb
   custom_fn = get_dot_path("custom.rb")
   custom_script = read_file("", custom_fn)
   eval(custom_script) if custom_script
+  gui_refresh_colors   # apply any cnf.theme.colors/cyber overrides live
   message("Reloaded #{custom_fn}")
 end
 
