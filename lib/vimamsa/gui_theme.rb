@@ -114,6 +114,20 @@ def cyberpunk_css
 
   .side-panel label { color: #{base}; font-family: "Oxanium", sans-serif; }
 
+  .side-panel list, .side-panel list > row {
+    background: transparent;
+    color: #{base};
+  }
+
+  .side-panel row.keylog-newest {
+    color: #fff;
+    background-color: transparent;
+    border: 1px solid #{cyber_rgba(c[:base_bright], 0.9)};
+    border-radius: 5px;
+    box-shadow: 0 0 8px #{cyber_rgba(c[:base_bright], 0.4)},
+                inset 0 0 6px #{cyber_rgba(c[:base_bright], 0.15)};
+  }
+
   scrolledwindow.editor-frame {
     border: 1px solid #{cyber_rgba(base, 0.34)};
     box-shadow: 0 0 7px #{cyber_rgba(highlight, 0.15)},

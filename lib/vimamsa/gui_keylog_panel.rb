@@ -57,6 +57,7 @@ class KeyLogPanel
     # @box is the outermost widget: header on top, scrollable log below.
     @box = Gtk::Box.new(:vertical, 0)
     @box.set_size_request(320, -1)
+    @box.add_css_class("side-panel")
     @box.append(header)
     @box.append(@sw)
   end
