@@ -30,6 +30,7 @@ GUI_THEME_FILE = File.expand_path(__FILE__) unless defined?(GUI_THEME_FILE)
 CYBER_COLOR_DEFAULTS = {
   base: "#3dcbb8",        # neon teal — primary accent
   base_bright: "#81dbd6", # same teal hue, brighter — hover states
+  hover_bright: "#ffffff", # same teal hue, brighter — hover states
   highlight: "#81dbd6",   # light cyan — secondary accent / glow
   bg_start: "#026b65",
   bg_mid: "#0d1224",
@@ -290,11 +291,13 @@ def cyberpunk_css
     box-shadow: 0 0 12px #{cyber_rgba(base, 0.18)};
   }
 
-  button:hover {
+  /* Keyboard focus (Tab) mirrors mouse hover. */
+  button:hover, button:focus, button:focus-visible, button:focus-within {
     background: #{cyber_rgba(c[:button_hover_bg], 0.96)};
-    color: #{c[:base_bright]};
+    color: #{c[:hover_bright]};
     border-color: #{cyber_rgba(c[:base_bright], 0.9)};
     box-shadow: 0 0 16px #{cyber_rgba(c[:base_bright], 0.3)};
+    outline: none;
   }
 
   popover > contents {
