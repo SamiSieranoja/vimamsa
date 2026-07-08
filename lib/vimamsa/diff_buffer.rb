@@ -146,13 +146,20 @@ def resolve_diff_path(new_path, old_path)
   expand.call(old_path)
 end
 
+# Git worktree root containing the current buffer's file (or CWD when the buffer
+# has no file), or nil if it is not inside a git repository.
+def buffer_git_root
+  dir = vma.buf.fname ? File.dirname(vma.buf.fname) : Dir.pwd
+  root = `git -C #{Shellwords.escape(dir)} rev-parse --show-toplevel 2>/dev/null`.strip
+  root.empty? ? nil : root
+end
+
 def git_diff_w()
   return if !if_cmd_exists("git")
   diff_buffer_init
 
-  dir = vma.buf.fname ? File.dirname(vma.buf.fname) : Dir.pwd
-  git_root = `git -C #{Shellwords.escape(dir)} rev-parse --show-toplevel 2>/dev/null`.strip
-  if git_root.empty?
+  git_root = buffer_git_root
+  if git_root.nil?
     message("Not a git repository")
     return
   end
@@ -179,9 +186,8 @@ def git_diff_buffer()
   end
   
   
-  dir = vma.buf.fname ? File.dirname(vma.buf.fname) : Dir.pwd
-  git_root = `git -C #{Shellwords.escape(dir)} rev-parse --show-toplevel 2>/dev/null`.strip
-  if git_root.empty?
+  git_root = buffer_git_root
+  if git_root.nil?
     message("Not a git repository")
     return
   end
