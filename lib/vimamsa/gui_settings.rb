@@ -89,11 +89,7 @@ end
 class SettingsDialog
   def initialize
     @widgets = {}
-    @window = Gtk::Window.new
-    @window.add_css_class("vma-dialog")
-    @window.set_transient_for($vmag.window) if $vmag&.window
-    @window.modal = true
-    @window.title = "Preferences"
+    @window = make_modal_window("Preferences")
     @window.default_width = 500
 
     outer = Gtk::Box.new(:vertical, 12)
@@ -151,17 +147,7 @@ class SettingsDialog
     hbox.append(save_btn)
     outer.append(hbox)
 
-    press = Gtk::EventControllerKey.new
-    press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
-    @window.add_controller(press)
-    press.signal_connect("key-pressed") do |_g, keyval, _kc, _y|
-      if keyval == Gdk::Keyval::KEY_Escape
-        @window.destroy
-        true
-      else
-        false
-      end
-    end
+    on_submit_escape(@window, escape: proc { @window.destroy })
   end
 
   def make_widget(s)
@@ -198,17 +184,8 @@ class SettingsDialog
     store = Gtk::ListStore.new(String)
     paths.each { |p| store.append[0] = p }
 
-    tv = Gtk::TreeView.new(store)
-    tv.headers_visible = false
-    renderer = Gtk::CellRendererText.new
-    renderer.ellipsize = Pango::EllipsizeMode::START
-    col = Gtk::TreeViewColumn.new("", renderer, text: 0)
-    col.expand = true
-    tv.append_column(col)
-
-    sw = Gtk::ScrolledWindow.new
-    sw.set_policy(:automatic, :automatic)
-    sw.set_child(tv)
+    tv, sw = build_list_tree(store, ellipsize: Pango::EllipsizeMode::START,
+                             single_click: false, hpolicy: :automatic)
     sw.set_size_request(-1, 120)
     sw.vexpand = true
 

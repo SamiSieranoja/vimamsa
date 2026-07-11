@@ -6,24 +6,13 @@ class FileTreePanel
 
   def initialize
     @store = Gtk::TreeStore.new(String, Integer)
-    @tree = Gtk::TreeView.new(@store)
-    @tree.headers_visible = false
-    @tree.activate_on_single_click = true
-    @tree.level_indentation = 7 
-
-    renderer = Gtk::CellRendererText.new
-    renderer.ellipsize = Pango::EllipsizeMode::START
-    col = Gtk::TreeViewColumn.new("", renderer, text: COL_LABEL)
-    col.expand = true
-    @tree.append_column(col)
-
-    @tree.signal_connect("row-activated") do |tv, path, _col|
-      iter = @store.get_iter(path)
-      next if iter.nil?
+    @tree, @sw = build_list_tree(@store, ellipsize: Pango::EllipsizeMode::START,
+                                 text_col: COL_LABEL) do |iter|
       buf_id = iter[COL_BUF_ID]
       next if buf_id.nil? || buf_id == 0
       vma.buffers.set_current_buffer(buf_id)
     end
+    @tree.level_indentation = 7
 
     @context_menu = nil
     rightclick = Gtk::GestureClick.new
@@ -40,9 +29,6 @@ class FileTreePanel
       show_context_menu(x, y)
     end
 
-    @sw = Gtk::ScrolledWindow.new
-    @sw.set_policy(:never, :automatic)
-    @sw.set_child(@tree)
     @sw.set_size_request(180, -1)
     @sw.vexpand = true
     @sw.add_css_class("side-panel")

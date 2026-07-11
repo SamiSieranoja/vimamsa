@@ -1103,6 +1103,18 @@ class VMAgui
     view.draw_cursor
   end
 
+  # Wrap a side panel widget and the current editor content in a horizontal
+  # Paned with the panel on the left at the given divider position.
+  def make_side_pane(panel_widget, inner, pos)
+    pane = Gtk::Paned.new(:horizontal)
+    pane.hexpand = true
+    pane.vexpand = true
+    pane.set_start_child(panel_widget)
+    pane.set_end_child(inner)
+    pane.set_position(pos)
+    pane
+  end
+
   def file_panel_init
     @file_panel = FileTreePanel.new
     @file_panel_shown = false
@@ -1124,12 +1136,7 @@ class VMAgui
       @windows[1][:overlay]
     end
     @minibuf_vpane.set_start_child(nil)  # unparent inner before re-parenting
-    @file_panel_pane = Gtk::Paned.new(:horizontal)
-    @file_panel_pane.hexpand = true
-    @file_panel_pane.vexpand = true
-    @file_panel_pane.set_start_child(@file_panel.widget)
-    @file_panel_pane.set_end_child(inner)
-    @file_panel_pane.set_position(180)
+    @file_panel_pane = make_side_pane(@file_panel.widget, inner, 180)
     set_editor_area(@file_panel_pane)
     @file_panel_shown = true
     @file_panel.refresh
@@ -1170,12 +1177,7 @@ class VMAgui
       inner = @windows[1][:overlay]
       @minibuf_vpane.set_start_child(nil)
     end
-    @func_panel_pane = Gtk::Paned.new(:horizontal)
-    @func_panel_pane.hexpand = true
-    @func_panel_pane.vexpand = true
-    @func_panel_pane.set_start_child(@func_panel.widget)
-    @func_panel_pane.set_end_child(inner)
-    @func_panel_pane.set_position(160)
+    @func_panel_pane = make_side_pane(@func_panel.widget, inner, 160)
     if @file_panel_shown
       @file_panel_pane.set_end_child(@func_panel_pane)
     else

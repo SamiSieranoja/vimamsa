@@ -11,32 +11,14 @@ class FuncPanel
     # under their parent class. Two columns: the display string and the line number.
     @store = Gtk::TreeStore.new(String, Integer)
 
-    # @tree is the GTK widget that renders @store. It holds expand/collapse state
-    # and handles row selection. Backed by @store — clearing @store clears the view.
-    @tree = Gtk::TreeView.new(@store)
-    @tree.headers_visible = false
-    @tree.activate_on_single_click = true
-
-    # Single text column; ellipsize at end so long names don't overflow the panel width.
-    renderer = Gtk::CellRendererText.new
-    renderer.ellipsize = Pango::EllipsizeMode::END
-    col = Gtk::TreeViewColumn.new("", renderer, text: COL_NAME)
-    col.expand = true
-    @tree.append_column(col)
-
-    # Jump to the function's line when a row is clicked.
-    # Class header rows have COL_LINE = 0 and are skipped (no jump).
-    @tree.signal_connect("row-activated") do |_tv, path, _col|
-      iter = @store.get_iter(path)
-      next if iter.nil?
+    # @tree renders @store; it holds expand/collapse state and row selection.
+    # Clicking a row jumps to the function's line; class header rows have
+    # COL_LINE = 0 and are skipped (no jump).
+    @tree, sw = build_list_tree(@store, text_col: COL_NAME) do |iter|
       line = iter[COL_LINE]
       next if line <= 0
       vma.buf.jump_to_line(line)
     end
-
-    sw = Gtk::ScrolledWindow.new
-    sw.set_policy(:never, :automatic)
-    sw.set_child(@tree)
     sw.vexpand = true
 
     header = Gtk::Label.new("<span weight='ultrabold'>Functions</span> (click to jump)")

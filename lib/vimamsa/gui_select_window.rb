@@ -9,6 +9,8 @@ def gui_select_update_window(item_list, jump_keys, select_callback, update_callb
 end
 
 class SelectUpdateWindow
+  include PopupRun
+
   COLUMN_JUMP_KEY = 0
   COLUMN_DESCRIPTION = 1
 
@@ -43,14 +45,7 @@ class SelectUpdateWindow
   end
 
   def initialize(main_window, item_list, jump_keys, select_callback, update_callback, opt = {})
-    @window = Gtk::Window.new()
-    @window.add_css_class("vma-dialog")
-    @window.set_transient_for($vmag.window) if $vmag&.window
-    # @window.screen = main_window.screen
-    @window.title = ""
-    if !opt[:title].nil?
-      @window.title = opt[:title]
-    end
+    @window = make_modal_window(opt[:title] || "", modal: false)
 
     @selected_row = 0
     @opt = opt
@@ -102,32 +97,19 @@ class SelectUpdateWindow
     # @entry.handle_event(event)
     # end
 
-    press = Gtk::EventControllerKey.new
-    press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
-
-    @entry.add_controller(press)
-    # @window.add_controller(press)
-    press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
-      name = Gdk::Keyval.to_name(keyval)
-      uki = Gdk::Keyval.to_unicode(keyval)
-      keystr = uki.chr("UTF-8")
-      debug "keyval=#{keyval}"
-
+    on_submit_escape(@entry,
+                     submit: proc {
+                       path = Gtk::TreePath.new(@selected_row.to_s)
+                       iter = @model.get_iter(path)
+                       @select_callback.call(iter[1], @selected_row)
+                       @window.destroy
+                     },
+                     escape: proc { @window.destroy }) do |keyval|
       if keyval == Gdk::Keyval::KEY_Down
-        debug "DOWN"
         set_selected_row(@selected_row + 1)
         true
       elsif keyval == Gdk::Keyval::KEY_Up
         set_selected_row(@selected_row - 1)
-        debug "UP"
-        true
-      elsif keyval == Gdk::Keyval::KEY_Return
-        path = Gtk::TreePath.new(@selected_row.to_s)
-        iter = @model.get_iter(path)
-        ret = iter[1]
-        @select_callback.call(ret, @selected_row)
-        @window.destroy
-        # debug iter[1].inspect
         true
       elsif keyval == Gdk::Keyval::KEY_Delete && @opt[:delete_callback]
         path = Gtk::TreePath.new(@selected_row.to_s)
@@ -139,9 +121,6 @@ class SelectUpdateWindow
           @window.present
         }
         @opt[:delete_callback].call(name, refresh)
-        true
-      elsif keyval == Gdk::Keyval::KEY_Escape
-        @window.destroy
         true
       else
         false
@@ -203,18 +182,6 @@ class SelectUpdateWindow
 
     @window.set_default_size(280, 500)
     debug "SelectUpdateWindow"
-  end
-
-  def run
-    if !@window.visible?
-      @window.show
-      # add_spinner
-    else
-      @window.destroy
-      # GLib::Source.remove(@tiemout) unless @timeout.zero?
-      @timeout = 0
-    end
-    @window
   end
 end
 end # module Vimamsa

@@ -46,10 +46,7 @@ class PopupFormGenerator
 
   def initialize(params = nil)
     @ret = {}
-    @window = Gtk::Window.new()
-    @window.add_css_class("vma-dialog")
-    # @window.screen = main_window.screen
-    # @window.title = title
+    @window = make_modal_window()
     # params = {}
     # params["inputs"] = {}
     # params["inputs"]["search"] = { :label => "Search", :type => :entry }
@@ -57,11 +54,7 @@ class PopupFormGenerator
     # params["inputs"]["btn1"] = { :label => "Replace all", :type => :button }
     # params[:callback] = proc { |x| puts "====="; puts x.inspect; puts "=====" }
 
-
     @callback = params[:callback]
-    @window.title = ""
-    @window.set_transient_for($vmag.window) if $vmag&.window
-    @window.modal = true
     # Window manager close (title-bar X): advance the queue too, then let GTK
     # destroy the window (return false). Programmatic closes go through #close.
     @window.signal_connect("close-request") do
@@ -114,20 +107,7 @@ class PopupFormGenerator
         hbox.append(entry)
         @vals[id] = entry
 
-        press = Gtk::EventControllerKey.new
-        press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
-        entry.add_controller(press)
-        press.signal_connect "key-pressed" do |gesture, keyval, keycode, y|
-          if keyval == Gdk::Keyval::KEY_Return
-            submit
-            true
-          elsif keyval == Gdk::Keyval::KEY_Escape
-            close
-            true
-          else
-            false
-          end
-        end
+        on_submit_escape(entry, submit: method(:submit), escape: method(:close))
       end
     end  # each
 
