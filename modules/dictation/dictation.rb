@@ -685,9 +685,7 @@ def dictation_disable
   unreg_act(:dictation_exit_mode)
   unbindkey "C , k"
   unbindkey "C , ; k"
-  unbindkey "dictation space"
-  unbindkey "dictation enter || dictation return"
-  unbindkey "dictation esc || dictation ctrl! || dictation , k"
+  unbindkey "dictation", include_child_nodes: true
   vma.gui.menu.remove_module_action(:dictation_toggle)
   vma.gui.menu.remove_module_action(:dictation_toggle_dialog)
   vma.gui.menu.remove_module_action(:dictation_release_vram)

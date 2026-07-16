@@ -107,6 +107,69 @@ class TestKeyBindings < VmaTest
     assert_eq 2, count, "neither binding should fire after unbind"
   end
 
+  # include_child_nodes: clear every binding under a node in one call.
+
+  def test_unbindkey_include_child_nodes_clears_mode
+    count = 0
+    reg_act(:_test_uc1, proc { count += 1 }, "test")
+    reg_act(:_test_uc2, proc { count += 1 }, "test")
+    vma.kbd.add_minor_mode("tdictmode", :tdictmode, :command)
+    bindkey "tdictmode ctrl-F10", :_test_uc1
+    bindkey "tdictmode ctrl-F11 ctrl-F12", :_test_uc2
+
+    vma.kbd.set_mode(:tdictmode)
+    keys "ctrl-F10"
+    keys "ctrl-F11 ctrl-F12"
+    assert_eq 2, count, "both mode bindings should fire before unbind"
+
+    unbindkey "tdictmode", include_child_nodes: true
+    keys "ctrl-F10"
+    keys "ctrl-F11 ctrl-F12"
+    assert_eq 2, count, "no mode binding should fire after clearing children"
+  ensure
+    vma.kbd.set_mode(:command)
+  end
+
+  # A bare mode id (no chord) implies include_child_nodes.
+  def test_unbindkey_bare_mode_clears_children
+    count = 0
+    reg_act(:_test_ub_bare, proc { count += 1 }, "test")
+    vma.kbd.add_minor_mode("tbaremode", :tbaremode, :command)
+    bindkey "tbaremode ctrl-F9", :_test_ub_bare
+
+    vma.kbd.set_mode(:tbaremode)
+    keys "ctrl-F9"
+    assert_eq 1, count, "mode binding should fire before unbind"
+
+    unbindkey "tbaremode"
+    keys "ctrl-F9"
+    assert_eq 1, count, "bare-mode unbind should clear children"
+  ensure
+    vma.kbd.set_mode(:command)
+  end
+
+  # Clearing a minor mode's children must leave the inherited (command) mode.
+  def test_unbindkey_include_child_nodes_keeps_parent_mode
+    parent_count = 0
+    child_count = 0
+    reg_act(:_test_parent, proc { parent_count += 1 }, "test")
+    reg_act(:_test_child, proc { child_count += 1 }, "test")
+    bindkey "C ctrl-F7", :_test_parent
+    vma.kbd.add_minor_mode("tdmodeb", :tdmodeb, :command)
+    bindkey "tdmodeb ctrl-F8", :_test_child
+
+    vma.kbd.set_mode(:tdmodeb)
+    unbindkey "tdmodeb", include_child_nodes: true
+
+    keys "ctrl-F8"
+    assert_eq 0, child_count, "child binding should be cleared"
+    keys "ctrl-F7"
+    assert_eq 1, parent_count, "inherited command binding should still fire"
+  ensure
+    vma.kbd.set_mode(:command)
+    unbindkey "C ctrl-F7"
+  end
+
   # ── || (pipe) multi-binding syntax ───────────────────────────────────────
 
   def test_pipe_syntax_both_keys_trigger_same_action

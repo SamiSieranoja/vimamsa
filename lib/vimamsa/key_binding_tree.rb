@@ -637,12 +637,58 @@ class KeyBindingTree
     key.each { |k| _bindkey(k, a, keywords: keywords) }
   end
 
-  def unbindkey(key)
+  # Unbind one or more key definitions (split on "||").
+  #
+  # Normally each key addresses a single binding to remove, e.g.
+  #   unbindkey "C , k"
+  #
+  # To tear down every binding under a node without listing each key, pass
+  # include_child_nodes: true (or address a bare mode with no chord, which has
+  # no leaf of its own to delete and so implies the same). Both of these clear
+  # all child bindings of the addressed node while leaving the node itself:
+  #   unbindkey "dictation"                          # whole minor mode
+  #   unbindkey "dictation", include_child_nodes: true
+  #   unbindkey "C ,", include_child_nodes: true     # every "C , x" chord
+  def unbindkey(key, include_child_nodes: false)
     if key.class != Array
       key = key.split("||")
     end
-    #TODO: test
-    key.each { |k| _bindkey(k.strip, :delete_state) }
+    key.each { |k|
+      k = k.strip
+      if include_child_nodes || k.split(/\s+/).size == 1
+        unbind_child_nodes(k)
+      else
+        _bindkey(k, :delete_state)
+      end
+    }
+  end
+
+  # Remove every child binding under the node addressed by `key`, leaving the
+  # node itself in place. No-op if the node doesn't exist.
+  def unbind_child_nodes(key)
+    tokens = key.strip.split(/\s+/)
+    node = find_state_by_path(tokens)
+    return if node.nil?
+    node.children.clear
+    # Drop the action->keydef map for a whole mode so menus/help stop listing
+    # its bindings (only meaningful when addressing a bare mode root).
+    @act_bindings.delete(tokens[0]) if tokens.size == 1 && @act_bindings.key?(tokens[0])
+  end
+
+  # Resolve the State addressed by a key path: the first token is a mode id (a
+  # direct child of @root), any remaining tokens are chord keys walked down from
+  # there. Accepts a string or a pre-split token array. Returns nil if unfound.
+  def find_state_by_path(key)
+    tokens = key.class == Array ? key.dup : key.strip.split(/\s+/)
+    mode_id = tokens.shift
+    node = @root.children.find { |s| s.key_name == mode_id }
+    tokens.each { |k|
+      return nil if node.nil?
+      m = /(.+)\((.*)\)/.match(k)   # strip an (eval_rule) suffix, as binding does
+      key_name = m ? m[1] : k
+      node = node.children.find { |s| s.key_name == key_name }
+    }
+    node
   end
 
   def _bindkey(key, action, keywords: [])
@@ -789,8 +835,8 @@ def bindkey(key, action, keywords: "")
   vma.kbd.bindkey(key, action, keywords: keywords)
 end
 
-def unbindkey(key)
-  vma.kbd.unbindkey(key)
+def unbindkey(key, include_child_nodes: false)
+  vma.kbd.unbindkey(key, include_child_nodes: include_child_nodes)
 end
 
 def add_keys(keywords, to_add)
