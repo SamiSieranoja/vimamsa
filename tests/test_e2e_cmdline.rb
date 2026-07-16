@@ -69,7 +69,17 @@ class TestE2eCmdline < VmaTest
     skip "xmodmap not available" if !KeyTyper.available?
     vkb = nil
     vma.gui.window.present
-    if !wait_until(3) { vma.gui.window.active? }
+    # Wayland won't let a non-interactively launched window steal focus. In the
+    # semi-interactive VM mode (VMA_E2E_INTERACTIVE), wait longer and prompt for a
+    # single click; a real user click legitimately focuses the window, after which
+    # every following test in the run finds it already active (no more clicks).
+    focus_wait = ENV["VMA_E2E_INTERACTIVE"] ? 90 : 3
+    if ENV["VMA_E2E_INTERACTIVE"] && !vma.gui.window.active?
+      puts "\n>>> [E2E] Click the vimamsa window in the VM to give it focus " \
+           "(waiting up to #{focus_wait}s)…"
+      $stdout.flush
+    end
+    if !wait_until(focus_wait) { vma.gui.window.active? }
       skip "editor window is not focused; typing would go to another window"
     end
     vkb = VirtualKeyboard.new.open
