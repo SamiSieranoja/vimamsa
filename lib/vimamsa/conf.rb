@@ -203,5 +203,5 @@ cnf.style_scheme = "molokai_edit"
 cnf.color_adjustments.enabled = true
 cnf.color_contrast = 1.0
 cnf.color_brightness = 0.0
-cnf.theme.cyberpunk_glow = false
+cnf.theme.cyberpunk_glow = true
 
