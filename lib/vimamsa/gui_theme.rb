@@ -380,6 +380,63 @@ def cyberpunk_css
   .vma-dialog notebook stack { background: transparent; }
 
   .vma-dialog frame > border { border-color: #{cyber_rgba(base, 0.34)}; }
+
+  /* File chooser: strip the default gray backgrounds off the internal
+     containers so the window gradient shows through, then tint the list. */
+  .vma-dialog filechooser,
+  .vma-dialog filechooser box,
+  .vma-dialog filechooser paned,
+  .vma-dialog filechooser stack,
+  .vma-dialog filechooser scrolledwindow,
+  .vma-dialog filechooser actionbar,
+  .vma-dialog .dialog-vbox,
+  .vma-dialog .dialog-vbox box {
+    background: transparent;
+    background-color: transparent;
+  }
+
+  .vma-dialog filechooser .view,
+  .vma-dialog filechooser list,
+  .vma-dialog filechooser columnview,
+  .vma-dialog filechooser columnview > listview,
+  .vma-dialog filechooser treeview.view {
+    background-color: #{c[:stack_bg]};
+    color: #{base};
+  }
+
+  .vma-dialog placessidebar,
+  .vma-dialog placessidebar list,
+  .vma-dialog placessidebar row,
+  .vma-dialog placessidebar scrolledwindow {
+    background: transparent;
+    background-color: transparent;
+    color: #{base};
+  }
+
+  .vma-dialog placessidebar row:selected {
+    background: #{cyber_rgba(highlight, 0.24)};
+    color: #{c[:tree_selection_fg]};
+  }
+
+  .vma-dialog pathbar,
+  .vma-dialog pathbar button {
+    background: transparent;
+  }
+
+  /* Recolor the folder/place symbolic icons to the neon accent so they fit
+     the theme. (Only symbolic icons honor `color`; full-color folder icons
+     from the system icon theme in the main list cannot be recolored here.) */
+  .vma-dialog placessidebar image.symbolic,
+  .vma-dialog filechooser image.symbolic,
+  .vma-dialog pathbar image.symbolic {
+    color: #{base};
+    -gtk-icon-shadow: 0 0 6px #{cyber_rgba(base, 0.45)};
+  }
+
+  .vma-dialog placessidebar row:selected image.symbolic {
+    color: #{c[:tree_selection_fg]};
+    -gtk-icon-shadow: 0 0 8px #{cyber_rgba(highlight, 0.5)};
+  }
   CSS
 end
 
@@ -411,6 +468,80 @@ def gui_refresh_theme
     Gtk::StyleContext.add_provider_for_display(disp, prov, Gtk::StyleProvider::PRIORITY_USER)
     $vmag.cyber_css_provider = prov
   end
+  gui_refresh_folder_icons
+end
+
+# Cyberpunk folder icons for the file dialogs (and anywhere else a "folder"
+# icon shows). CSS cannot recolor the full-color folder icons the file chooser
+# pulls from the system icon theme, so instead we generate a tiny icon theme
+# that *inherits* the user's current theme and overrides only the folder
+# icons, then point GTK at it while the cyberpunk theme is on. Turning the
+# theme off restores the user's original icon theme.
+VMA_ICON_THEME_NAME = "VimamsaCyber" unless defined?(VMA_ICON_THEME_NAME)
+
+def vma_icon_theme_dir
+  File.expand_path("~/.local/share/icons/#{VMA_ICON_THEME_NAME}")
+end
+
+def gui_refresh_folder_icons
+  return unless $vmag
+  settings = Gtk::Settings.default
+  if cnf.theme.cyberpunk_glow?
+    # Remember the real icon theme once, ignoring our own override name so a
+    # restart with the theme already on doesn't inherit itself.
+    current = settings.gtk_icon_theme_name.to_s
+    if $vmag.orig_icon_theme.nil? && current != VMA_ICON_THEME_NAME
+      $vmag.orig_icon_theme = current
+    end
+    parent = $vmag.orig_icon_theme.to_s
+    parent = "Adwaita" if parent.empty? || parent == VMA_ICON_THEME_NAME
+    write_vma_icon_theme(parent)
+    settings.gtk_icon_theme_name = VMA_ICON_THEME_NAME
+  elsif $vmag.orig_icon_theme
+    settings.gtk_icon_theme_name = $vmag.orig_icon_theme
+  end
+end
+
+# (Re)write the override icon theme to disk: an index.theme that inherits the
+# user's real theme plus neon folder SVGs. Regenerated on every refresh so a
+# changed palette (cnf.theme.cyber.*) updates the icon colors too.
+def write_vma_icon_theme(parent)
+  dir = vma_icon_theme_dir
+  places = File.join(dir, "scalable", "places")
+  FileUtils.mkdir_p(places)
+  File.write(File.join(dir, "index.theme"), <<~INI)
+    [Icon Theme]
+    Name=#{VMA_ICON_THEME_NAME}
+    Comment=Vimamsa cyberpunk folder icon overrides
+    Inherits=#{parent},hicolor
+    Directories=scalable/places
+
+    [scalable/places]
+    MinSize=8
+    Size=16
+    MaxSize=512
+    Type=Scalable
+    Context=Places
+  INI
+  fill   = cyber_color(:stack_bg)
+  stroke = cyber_color(:base)
+  accent = cyber_color(:highlight)
+  File.write(File.join(places, "folder.svg"), vma_folder_svg(fill, stroke, accent, open: false))
+  File.write(File.join(places, "folder-open.svg"), vma_folder_svg(fill, stroke, accent, open: true))
+rescue => ex
+  warn "write_vma_icon_theme failed: #{ex}"
+end
+
+# A neon-outline folder on a dark fill, matching the cyberpunk palette.
+def vma_folder_svg(fill, stroke, accent, open: false)
+  if open
+    body = %{<path d="M1.5 4.2c0-.44.35-.8.8-.8h3.1c.2 0 .4.08.55.24l1 1.02c.15.15.35.24.55.24H13c.44 0 .8.36.8.8v1H4.6c-.5 0-.94.32-1.08.8L1.5 12.6z" fill="#{fill}" stroke="#{stroke}" stroke-width="0.9" stroke-linejoin="round"/>} +
+           %{<path d="M3.6 12.8 5.2 7.6c.1-.34.42-.58.78-.58H15l-1.7 5.2c-.11.34-.42.58-.78.58z" fill="#{fill}" stroke="#{stroke}" stroke-width="0.9" stroke-linejoin="round"/>}
+  else
+    body = %{<path d="M1.5 4.2c0-.44.35-.8.8-.8h3.1c.2 0 .4.08.55.24l1 1.02c.15.15.35.24.55.24h6.15c.44 0 .8.36.8.8v6.3c0 .44-.36.8-.8.8H2.3c-.45 0-.8-.36-.8-.8z" fill="#{fill}" stroke="#{stroke}" stroke-width="0.9" stroke-linejoin="round"/>} +
+           %{<path d="M1.9 7.1h12.2" stroke="#{accent}" stroke-width="0.7" opacity="0.75"/>}
+  end
+  %{<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">#{body}</svg>}
 end
 
 # Re-read every color from cnf and reload the CSS providers in place, so

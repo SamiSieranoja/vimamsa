@@ -196,6 +196,7 @@ class SettingsDialog
         :action => :select_folder,
         :buttons => [["Select", :accept], ["Cancel", :cancel]],
       )
+      chooser.add_css_class("vma-dialog")
       chooser.set_transient_for(@window)
       chooser.modal = true
       chooser.signal_connect("response") do |dlg, resp|

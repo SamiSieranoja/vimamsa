@@ -63,6 +63,7 @@ def gui_open_file_dialog(dirpath)
                                       :action => :open,
                                       :buttons => [["Open", :accept],
                                                    ["Cancel", :cancel]])
+  dialog.add_css_class("vma-dialog")
   dialog.set_current_folder(Gio::File.new_for_path(dirpath))
 
   dialog.signal_connect("response") do |dialog, response_id|
@@ -81,6 +82,7 @@ def gui_file_saveas(dirpath)
                                       :action => :save,
                                       :buttons => [["Save", :accept],
                                                    ["Cancel", :cancel]])
+  dialog.add_css_class("vma-dialog")
   dialog.set_current_folder(Gio::File.new_for_path(dirpath))
   dialog.signal_connect("response") do |dialog, response_id|
     if response_id == Gtk::ResponseType::ACCEPT
@@ -204,7 +206,7 @@ def gui_set_window_title(wtitle, subtitle = "", modified: false)
 end
 
 class VMAgui
-  attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c, :scheme_is_light, :cyber_css_provider, :chrome_css_provider, :minibuf_css_provider
+  attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c, :scheme_is_light, :cyber_css_provider, :chrome_css_provider, :minibuf_css_provider, :orig_icon_theme
   attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel, :func_panel, :keylog_panel, :keytrail, :cmd_line
 
   def initialize()
