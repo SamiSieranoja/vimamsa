@@ -115,4 +115,55 @@ class TestDictation < VmaTest
     act("buf.insert_txt_at('Hello, there, world.', #{start})")
     assert_buf "Hello, there, world.\n", "final replacement incorrect"
   end
+
+  # --- dictation keyboard mode (no microphone / recorder involved) ---
+
+  def test_mode_actions_registered
+    ensure_disabled
+    load_dictation
+    dictation_init
+    [:dictation_enter_mode, :dictation_toggle_stay,
+     :dictation_newline, :dictation_exit_mode].each do |a|
+      assert vma.actions.include?(a), "#{a} not registered after init"
+    end
+    dictation_disable
+    [:dictation_enter_mode, :dictation_toggle_stay,
+     :dictation_newline, :dictation_exit_mode].each do |a|
+      assert !vma.actions.include?(a), "#{a} still registered after disable"
+    end
+  end
+
+  # The mode is a minor mode that inherits command mode, and exiting returns to
+  # the previous mode. Drive the mode machinery directly so no recorder starts.
+  def test_mode_enter_inherits_and_exit
+    ensure_disabled
+    load_dictation
+    dictation_init
+    vma.kbd.set_mode(:command)
+    vma.kbd.set_mode(:dictation)
+    assert_eq :dictation, vma.kbd.get_mode, "did not enter dictation mode"
+    assert vma.kbd.mode_root_state.major_modes.include?(:command),
+           "dictation mode should inherit command mode"
+    # Session is inactive, so exit is just a mode pop back to command.
+    assert !dictation_session.active?, "no dictation should be active in this test"
+    dictation_exit_mode
+    assert_eq :command, vma.kbd.get_mode, "did not return to command mode on exit"
+  ensure
+    vma.kbd.set_mode(:command)
+    dictation_disable
+  end
+
+  # Enter with no active dictation just inserts a newline at the cursor.
+  def test_newline_when_inactive_inserts_newline
+    ensure_disabled
+    load_dictation
+    dictation_init
+    act("buf.insert_txt_at('abc', 0)")  # fresh buffer "\n" -> "abc\n"
+    act("buf.set_pos(3)")               # end of "abc", before the trailing "\n"
+    assert !dictation_session.active?, "precondition: no active dictation"
+    act(:dictation_newline)
+    assert_buf "abc\n\n", "Enter should insert a newline when not dictating"
+  ensure
+    dictation_disable
+  end
 end

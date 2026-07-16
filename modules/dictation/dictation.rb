@@ -301,10 +301,16 @@ class VmaDictationSession
 
   # Stop recording and produce the final high-quality transcript, replacing the
   # preliminary text. Runs the heavy work off the main thread.
-  def stop
+  # add_newline: end the finalized text with a trailing "\n" (default). The space
+  #   toggle in dictation mode passes false so pausing doesn't break the line.
+  # restart: begin a fresh dictation segment once the finalize lands (used by the
+  #   Enter key to continue speaking on the new line).
+  def stop(add_newline: true, restart: false)
     return unless @active
     @active = false
     @running = false
+    @finalize_newline = add_newline
+    @restart_after = restart
     message("Dictation: finalizing…")
 
     Thread.new do
@@ -410,20 +416,34 @@ class VmaDictationSession
     @dict_len = 0
 
     if final.empty?
-      @buf.view.handle_deltas
+      # Nothing recognized: still honor an explicit newline request (e.g. Enter)
+      # so the caret moves to the next line, then optionally continue dictating.
+      if @finalize_newline
+        @buf.insert_txt_at("\n", @dict_start)
+        @buf.view.handle_deltas
+        @buf.set_pos(@dict_start + 1)
+      else
+        @buf.view.handle_deltas
+      end
       @buf.new_undo_group
       message("Dictation: no speech recognized")
+      start(@prompt) if @restart_after
       return
     end
 
-    # Append a newline so the dictation ends a line, and leave the cursor at the
-    # start of the next line.
-    text = final + "\n"
+    # Optionally append a newline so the dictation ends a line; leave the cursor
+    # after the inserted text (start of the next line when a newline was added).
+    text = final + (@finalize_newline ? "\n" : "")
     @buf.insert_txt_at(text, @dict_start)
     @buf.view.handle_deltas
     @buf.set_pos(@dict_start + text.size)
     @buf.new_undo_group
     message("Dictation: done (#{final.length} chars)")
+
+    # Enter continues the dictation on the new line: begin a fresh segment now that
+    # the span replace is done (main thread, @active already false — span tracking
+    # for the new segment starts clean at the new caret position).
+    start(@prompt) if @restart_after
   end
 end
 
@@ -546,10 +566,54 @@ def dictation_toggle
   if s.active?
     s.stop
   else
-    last = $vma_dict_prompts && $vma_dict_prompts["last"]
-    last = nil if last.nil? || last.to_s.strip.empty?
-    s.start(last)
+    s.start(dictation_last_prompt)
   end
+end
+
+# The last-used whisper prompt (nil when unset/blank).
+def dictation_last_prompt
+  last = $vma_dict_prompts && $vma_dict_prompts["last"]
+  (last.nil? || last.to_s.strip.empty?) ? nil : last
+end
+
+# `, k`: switch into the dedicated dictation keyboard mode and start listening.
+def dictation_enter_mode
+  vma.kbd.set_mode(:dictation)
+  s = dictation_session
+  s.start(dictation_last_prompt) unless s.active?
+end
+
+# Dictation mode Space: toggle listening on/off without leaving the mode and
+# without ending the line (so a pause doesn't insert a newline).
+def dictation_toggle_stay
+  s = dictation_session
+  if s.active?
+    s.stop(add_newline: false)
+  else
+    s.start(dictation_last_prompt)
+  end
+end
+
+# Dictation mode Enter: start a new line. If listening, finalize the current
+# segment with a newline and resume on the next line; otherwise just insert one.
+def dictation_newline
+  s = dictation_session
+  if s.active?
+    s.stop(add_newline: true, restart: true)
+  else
+    b = vma.buf
+    b.insert_txt_at("\n", b.pos)
+    b.set_pos(b.pos + 1)
+    b.view.handle_deltas
+  end
+end
+
+# Dictation mode Esc / Ctrl-tap / `, k`: finalize any listening (with a trailing
+# newline) and return to the previous mode.
+def dictation_exit_mode
+  s = dictation_session
+  s.stop(add_newline: true) if s.active?
+  vma.kbd.to_previous_mode
 end
 
 # Toggle with the prompt-selection dialog, or stop.
@@ -585,8 +649,25 @@ def dictation_init
           "Voice dictation: start/stop (choose prompt)")
   reg_act(:dictation_release_vram, proc { dictation_release_vram },
           "Voice dictation: unload model to free VRAM")
-  add_keys "dictation", { "C , k" => :dictation_toggle,
-                          "C , ; k" => :dictation_toggle_dialog }
+  reg_act(:dictation_enter_mode, proc { dictation_enter_mode },
+          "Voice dictation: enter dictation mode")
+  reg_act(:dictation_toggle_stay, proc { dictation_toggle_stay },
+          "Dictation mode: toggle listening (stay in mode)")
+  reg_act(:dictation_newline, proc { dictation_newline },
+          "Dictation mode: new line")
+  reg_act(:dictation_exit_mode, proc { dictation_exit_mode },
+          "Dictation mode: exit")
+
+  # A dedicated dictation input mode that inherits command mode (like `audio`),
+  # so unoverridden command chords stay available while dictating.
+  vma.kbd.add_minor_mode("dictation", :dictation, :command)
+  add_keys "dictation", {
+    "C , k" => :dictation_enter_mode,        # start + enter dictation mode
+    "C , ; k" => :dictation_toggle_dialog,   # plain toggle (choose prompt), no mode
+    "dictation space" => :dictation_toggle_stay,
+    "dictation enter || dictation return" => :dictation_newline,
+    "dictation esc || dictation ctrl! || dictation , k" => :dictation_exit_mode,
+  }
   vma.gui.menu.add_module_action(:dictation_toggle, "Start/Stop Dictation")
   vma.gui.menu.add_module_action(:dictation_toggle_dialog, "Start Dictation (choose prompt)")
   vma.gui.menu.add_module_action(:dictation_release_vram, "Release Dictation VRAM")
@@ -598,8 +679,15 @@ def dictation_disable
   unreg_act(:dictation_toggle)
   unreg_act(:dictation_toggle_dialog)
   unreg_act(:dictation_release_vram)
+  unreg_act(:dictation_enter_mode)
+  unreg_act(:dictation_toggle_stay)
+  unreg_act(:dictation_newline)
+  unreg_act(:dictation_exit_mode)
   unbindkey "C , k"
   unbindkey "C , ; k"
+  unbindkey "dictation space"
+  unbindkey "dictation enter || dictation return"
+  unbindkey "dictation esc || dictation ctrl! || dictation , k"
   vma.gui.menu.remove_module_action(:dictation_toggle)
   vma.gui.menu.remove_module_action(:dictation_toggle_dialog)
   vma.gui.menu.remove_module_action(:dictation_release_vram)
