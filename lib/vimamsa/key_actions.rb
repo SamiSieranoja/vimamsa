@@ -151,12 +151,6 @@ reg_act(:toggle_autocomplete, proc {
   message("Autocomplete: #{cnf.autocomplete.enabled? ? "ON" : "OFF"}")
 }, "Toggle autocomplete on/off")
 
-reg_act(:toggle_highlight_colors, proc {
-  cnf.highlight_colors.enabled = !(cnf.highlight_colors.enabled? != false)
-  vma.gui.buffers.each_value { |v| v.highlight_colors }
-  message("Color code highlighting: #{cnf.highlight_colors.enabled? ? "ON" : "OFF"}")
-}, "Toggle hex color code highlighting on/off")
-
 reg_act(:restart_editor, proc { restart_editor }, "Restart: quit, reload config and reopen files")
 
 reg_act :start_browse_mode, proc {

@@ -329,7 +329,6 @@ add_keys "core", {
  "C , w" => :toggle_active_window,
  "C , , w" => :toggle_two_column,
  "C , ; a c" => :toggle_autocomplete,
- "C , ; h c" => :toggle_highlight_colors,
  "C , R" => :restart_editor,
 
  "VC s" => :easy_jump,

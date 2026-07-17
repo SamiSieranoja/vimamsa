@@ -20,7 +20,6 @@ SETTINGS_DEFS = [
     :label => "Appearance",
     :settings => [
       { :key => [:match, :highlight, :color], :label => "Search highlight color", :type => :string },
-      { :key => [:highlight_colors, :enabled], :label => "Highlight hex color codes (#rrggbb)", :type => :bool },
       { :key => [:theme, :cyberpunk_glow], :label => "Cyberpunk glow theme (neon glow & shadows)", :type => :bool },
       { :key => [:kbd, :show_prev_action], :label => "Show previous action in toolbar", :type => :bool },
       { :key => [:style_scheme], :label => "Color scheme", :type => :select,
@@ -252,7 +251,8 @@ class SettingsDialog
     save_settings_to_file
     gui_refresh_font
     gui_refresh_style_scheme
-    vma.gui.buffers.each_value { |v| v.highlight_colors }
+    # Re-highlight color swatches after a color change, if the plugin is loaded.
+    vma.gui.buffers.each_value { |v| v.highlight_colors if v.respond_to?(:highlight_colors) }
     activate_no_restart_modules
     @window.destroy
   end

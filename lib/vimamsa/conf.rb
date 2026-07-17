@@ -157,7 +157,7 @@ cnf.match.highlight.color = "#10bd8e"
 cnf.flash.enabled = true    # briefly flash the range yanked/deleted (y ', d ', d w, ...)
 cnf.flash.duration = 0.15   # seconds the flash stays visible
 
-cnf.highlight_colors.enabled = true   # paint #rrggbb hex codes with their color
+cnf.modules.color_highlight.enabled = true   # paint #rrggbb hex codes with their color
 
 cnf.lsp.enabled = false
 

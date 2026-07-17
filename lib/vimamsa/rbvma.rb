@@ -58,7 +58,6 @@ require "vimamsa/gui_sourceview"
 require "vimamsa/gui_sourceview_autocomplete"
 require "vimamsa/gui_image"
 require "vimamsa/hyper_plain_text"
-require "vimamsa/color_highlight"
 
 require "vimamsa/ack"
 require "vimamsa/buffer"

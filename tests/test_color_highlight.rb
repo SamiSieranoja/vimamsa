@@ -36,7 +36,7 @@ class TestColorHighlight < VmaTest
   # ── Live tagging in the GTK buffer ─────────────────────────────────────────
 
   def test_hex_code_gets_a_color_tag
-    cnf.highlight_colors.enabled = true
+    cnf.modules.color_highlight.enabled = true
     vma.buf.set_content("bg = #3DCBB5\n")
     view.highlight_colors
     idx = vma.buf.to_s.index("#3DCBB5")
@@ -46,41 +46,47 @@ class TestColorHighlight < VmaTest
   end
 
   def test_non_color_text_untagged
-    cnf.highlight_colors.enabled = true
+    cnf.modules.color_highlight.enabled = true
     vma.buf.set_content("just words here\n")
     view.highlight_colors
     assert color_tag_at(2).nil?, "plain text must not get a color tag"
   end
 
   def test_disabled_clears_tags
-    cnf.highlight_colors.enabled = true
+    cnf.modules.color_highlight.enabled = true
     vma.buf.set_content("c = #ff0000\n")
     view.highlight_colors
     idx = vma.buf.to_s.index("#ff0000")
     assert !color_tag_at(idx).nil?, "tag should be present while enabled"
-    cnf.highlight_colors.enabled = false
+    cnf.modules.color_highlight.enabled = false
     view.highlight_colors
     assert color_tag_at(idx).nil?, "disabling must remove color tags"
   ensure
-    cnf.highlight_colors.enabled = true
+    cnf.modules.color_highlight.enabled = true
   end
 
   def test_toggle_action
-    prev = cnf.highlight_colors.enabled?
-    cnf.highlight_colors.enabled = true
+    prev = cnf.modules.color_highlight.enabled?
+    cnf.modules.color_highlight.enabled = true
     act :toggle_highlight_colors
-    assert_eq false, cnf.highlight_colors.enabled?
+    assert_eq false, cnf.modules.color_highlight.enabled?
     act :toggle_highlight_colors
-    assert_eq true, cnf.highlight_colors.enabled?
+    assert_eq true, cnf.modules.color_highlight.enabled?
   ensure
-    cnf.highlight_colors.enabled = prev
+    cnf.modules.color_highlight.enabled = prev
   end
 
-  # Exposed in the Preferences dialog (data-driven settings defs)
+  # The module decouples from core via view hooks rather than direct calls.
+  def test_view_hooks_registered
+    assert vma.hook[:view_content_set]&.any?, "content-set hook should be registered"
+    assert vma.hook[:view_text_changed]&.any?, "text-changed hook should be registered"
+  end
+
+  # Exposed in the Preferences dialog as an auto-discovered module toggle.
   def test_setting_exposed
     all = all_settings_defs.flat_map { |sec| sec[:settings] }
-    s = all.find { |x| x[:key] == [:highlight_colors, :enabled] }
-    assert !s.nil?, "highlight_colors.enabled must appear in settings defs"
+    s = all.find { |x| x[:key] == [:modules, :color_highlight, :enabled] }
+    assert !s.nil?, "color_highlight module toggle must appear in settings defs"
     assert_eq :bool, s[:type]
   end
 end
