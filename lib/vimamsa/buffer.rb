@@ -611,6 +611,10 @@ class Buffer < String
         @marks[k] = @marks[k] + changeamount
       end
     end
+    # Keep closed-fold placeholder anchors (fold.rb) in sync with edits elsewhere.
+    @fold_anchors&.each_key do |k|
+      @fold_anchors[k] = @fold_anchors[k] + changeamount if @fold_anchors[k] > pos
+    end
   end
 
   # Flush @current_group into @edit_history and start a new group.
@@ -1123,6 +1127,8 @@ class Buffer < String
 
   # Activated when enter/return pressed
   def handle_line_action()
+    # Enter on a fold-start ({{{) or a closed-fold placeholder toggles the fold.
+    return if fold_toggle_at(lpos)
     if line_action_handler.class == Proc or line_action_handler.class == Method
       # Custom handler
       line_action_handler.call(lpos)
@@ -1600,12 +1606,15 @@ class Buffer < String
   end
 
   def write_contents_to_file(fpath)
+    # content_for_disk re-inflates any closed folds so the file always holds the
+    # fully expanded text (see fold.rb); equals self.to_s when nothing is folded.
+    disk = content_for_disk
     if @crypt != nil
       mode = "wb+"
-      contents = Encrypt::HEADER_V2 + @crypt.encrypt(self.to_s)
+      contents = Encrypt::HEADER_V2 + @crypt.encrypt(disk)
     else
       mode = "w+"
-      contents = self.to_s
+      contents = disk
     end
 
     Thread.new {
@@ -1701,7 +1710,7 @@ class Buffer < String
     return if @fname.nil?
     return if @t_modified <= @last_autosave
     apath = autosave_path
-    contents = self.to_s
+    contents = content_for_disk   # re-inflate closed folds (fold.rb)
     Thread.new {
       begin
         File.open(apath, "w+") { |io| io.set_encoding(self.encoding); io.write(contents) }
@@ -1742,7 +1751,7 @@ class Buffer < String
   def check_autosave_load
     apath = autosave_path
     return if apath.nil? || !File.exist?(apath)
-    if File.read(apath) == self.to_s
+    if File.read(apath) == content_for_disk   # autosave stores the inflated form
       delete_autosave_file
       return
     end
