@@ -396,8 +396,16 @@ class VmaDictationSession
     opts
   end
 
+  # True once the target buffer has been closed out from under an async pass:
+  # `Buffer#view` returns nil (gui_close_buffer removed it), so any GTK sync
+  # would crash. Text mutation would also be pointless once the buffer is gone.
+  def _target_gone?
+    @buf.nil? || @buf.view.nil?
+  end
+
   # (main thread) Append a preliminary phrase to the tracked span.
   def _append_prelim(text)
+    return if _target_gone?
     t = (@dict_len > 0 ? " " : "") + text
     @buf.insert_txt_at(t, @dict_start + @dict_len)
     @dict_len += t.size
@@ -409,6 +417,10 @@ class VmaDictationSession
   def _finalize_replace(res)
     if !res[:ok]
       message("Dictation: transcription failed — #{res[:error]}")
+      return
+    end
+    if _target_gone?
+      message("Dictation: target buffer closed — transcript discarded")
       return
     end
     final = res[:text].to_s
