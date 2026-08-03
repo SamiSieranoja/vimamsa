@@ -1674,6 +1674,9 @@ class Buffer < String
   def check_if_modified_outside
     # Don't check if less than 8 seconds since last checked
     return false if @fname.nil?
+    # Tests write and reload files quickly; the reload prompt would pop up
+    # unasked in the middle of a run and take the keyboard with it.
+    return false if vma_test_mode?
     return false if Time.now - 8 < @file_last_cheked
     @file_last_cheked = Time.now
     return false if !File.exist?(@fname)

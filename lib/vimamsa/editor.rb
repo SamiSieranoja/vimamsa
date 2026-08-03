@@ -263,7 +263,9 @@ class Editor
     # To access via vma.FileFinder
     # self.define_singleton_method(:FileFinder) { @_plugins[:FileFinder] }
 
-    check_session_restore unless argv_has_files
+    # Not in test mode: the dialog grabs focus from the editor window, which
+    # breaks (and is never the subject of) an automated run.
+    check_session_restore unless argv_has_files || vma_test_mode?
 
     @hook.call(:after_init)
 
@@ -654,7 +656,10 @@ def do_open_file(filename)
   message "New file opened: #{filename}"
   bu = load_buffer(filename)
   vma.buffers.set_current_buffer_by_id(bu.id)
-  bu.check_autosave_load
+  # The repo/working dir is full of *_vma_autosave files; prompting about them
+  # mid-test steals the keyboard. tests/test_autosave.rb calls
+  # check_autosave_load directly, so the prompt itself stays covered.
+  bu.check_autosave_load unless vma_test_mode?
 end
 
 def open_new_file(filename, file_contents = "")

@@ -23,6 +23,15 @@ def running_wayland?
   end
 end
 
+# True when the editor was started by exe/run_tests.rb (--test). Used to skip
+# dialogs the user did not ask for (session restore, autosave found, reload
+# from disk): a modal popup grabs the keyboard, so it would swallow the keys an
+# e2e test types and leave the run stuck. Tests that cover those dialogs call
+# the prompting methods directly, so only the unsolicited call sites check this.
+def vma_test_mode?
+  ARGV.include?("--test")
+end
+
 def tilde_path(abspath)
   userhome = File.expand_path("~/")
   abspath.sub(/^#{Regexp.escape(userhome)}\//, "~/")
