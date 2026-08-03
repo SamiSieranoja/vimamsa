@@ -133,6 +133,12 @@ add_keys "core", {
   "I shift-tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
   "I shift!(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select",
 
+  # Typing a character. Reached both from a key press and from an input method
+  # commit (AltGr, dead keys, compose — those produce no key press at all, see
+  # VSourceView#register_buffer_signals), so insertion lives here rather than in
+  # the GUI layer.
+  "I <char>" => "buf.insert_txt(<char>)",
+
   "I tab" => "buf.insert_tab",
   "I shift-tab" => "buf.unindent",
 

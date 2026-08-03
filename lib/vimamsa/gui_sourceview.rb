@@ -19,7 +19,8 @@ class VSourceView < GtkSource::View
 
     @tt = nil
     @applying_delta = false
-    @im_inserted_count = 0
+    @last_key_press_text = nil
+    @deltas_idle_pending = false
     autocp_init
 
     # Mainly after page-up or page-down
@@ -383,24 +384,64 @@ class VSourceView < GtkSource::View
     # Catch Wayland IM text commits (e.g. AltGr+q → ä).
     # On Wayland the compositor feeds composed characters directly into the
     # GtkTextBuffer via the text-input protocol, bypassing key events entirely.
-    # Our key handler never sees a key_press for these characters, so the Ruby
-    # buffer never gets updated.  We catch them here and sync to the Ruby buffer.
+    # Our key handler never sees a key_press for these characters, so they are
+    # routed into the key binding tree here instead — what a character does is
+    # then up to the bindings ("I <char>" inserts, "C r <char>" replaces), not
+    # to this handler.
     buffer.signal_connect_after("insert-text") do |_buf, iter, text, _len|
       unless @applying_delta || @bufo.nil?
-        if vma.kbd.get_mode == :insert
-          # IM inserted text while in insert mode: mirror into Ruby buffer.
-          # Increment counter so handle_deltas skips the GTK re-insert.
-          @im_inserted_count += 1
-          @bufo.insert_txt(text)
-        else
-          # IM inserted text while NOT in insert mode: schedule deletion to revert.
-          pos_before = iter.offset - text.length
-          @bufo.deltas << [pos_before, DELETE, text.length, nil]
-        end
-        handle_deltas
+        # A printable key arrives twice: as a key event AND as this IM commit.
+        # The key event already went to the key binding tree, so only a commit
+        # with no matching key press (AltGr, dead keys, compose) still needs to
+        # be fed in. Consume the record either way — the next keystroke, even a
+        # repeat of the same character, gets its own.
+        im_keys = (@last_key_press_text == text) ? nil : text
+        @last_key_press_text = nil
+        # Whatever the mode, take the IM's text back out of the GTK buffer: the
+        # Ruby buffer is the source of truth and the binding that handles the
+        # character ("I <char>", "C r <char>", ...) puts it in through the
+        # normal delta path.
+        pos_before = iter.offset - text.length
+        @bufo.deltas << [pos_before, DELETE, text.length, nil]
+        # Don't flush here: we are inside the "insert-text" emission, and the
+        # emitter (plus every other handler in the chain) still holds live
+        # iterators into this buffer. handle_deltas mutates it — the revert path
+        # deletes the committed text, remask_gtk_buffer rewrites masked regions —
+        # which invalidates those iterators ("Invalid text buffer iterator"
+        # Gtk-WARNING). Flush once the emission has unwound instead.
+        flush_deltas_idle
+        # After flush_deltas_idle, so the revert is applied before any action
+        # the character triggers.
+        dispatch_im_text_as_keys(im_keys) if im_keys
       end
       false
     end
+  end
+
+  # Flush pending deltas to the GTK buffer after the current signal emission has
+  # unwound. One idle is enough however many deltas queued up: handle_deltas
+  # drains the whole queue. A key press arriving first will drain it too — the
+  # queue is FIFO either way — and the idle then finds nothing to do.
+  def flush_deltas_idle
+    return if @deltas_idle_pending
+    @deltas_idle_pending = true
+    GLib::Idle.add(proc {
+      @deltas_idle_pending = false
+      handle_deltas
+      false
+    })
+  end
+
+  # Hand IM-committed text to the key binding tree as if it had arrived as key
+  # presses. Deferred to an idle for two reasons: we are inside the "insert-text"
+  # emission (the action may mutate the buffer other handlers hold iterators
+  # into), and the revert delta queued above must be applied first — idles run
+  # in the order they were added, so the flush_deltas_idle below goes first.
+  def dispatch_im_text_as_keys(text)
+    GLib::Idle.add(proc {
+      text.each_char { |c| vma.kbd.match_key_conf(c, nil, :key_press) }
+      false
+    })
   end
 
   def coord_to_iter(xloc, yloc, transform_coord = false)
@@ -565,6 +606,9 @@ class VSourceView < GtkSource::View
         vma.kbd.match_key_conf(key_str + "!", nil, :key_release)
         @last_event = [keynfo, :key_release]
       elsif sig == :key_press
+        # Remember a printable key so the IM commit that echoes it (see
+        # register_buffer_signals) is not fed to the bindings a second time.
+        @last_key_press_text = key_str.size == 1 ? key_str.dup : nil
         vma.kbd.match_key_conf(key_str, nil, :key_press)
         @last_event = [keynfo, key_str, :key_press]
       end
@@ -615,15 +659,10 @@ class VSourceView < GtkSource::View
         enditer = buffer.get_iter_at(:offset => pos + num)
         buffer.delete(startiter, enditer)
       elsif op == INSERT
-        if @im_inserted_count > 0
-          # GTK buffer already has this text from the Wayland IM commit — skip.
-          @im_inserted_count -= 1
-        else
-          @applying_delta = true
-          startiter = buffer.get_iter_at(:offset => pos)
-          buffer.insert(startiter, txt)
-          @applying_delta = false
-        end
+        @applying_delta = true
+        startiter = buffer.get_iter_at(:offset => pos)
+        buffer.insert(startiter, txt)
+        @applying_delta = false
       end
     end
     if any_change
