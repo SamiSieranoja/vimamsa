@@ -35,6 +35,9 @@ require "json"
 #   cnf.dictation.idle_timeout   worker self-exits after   (default 300; <=0 disables)
 #                                this many idle seconds to
 #                                release VRAM
+#   cnf.dictation.startup_timeout give up waiting for the  (default 600; <=0 waits
+#                                model to load after this   forever)
+#                                many seconds
 #   cnf.dictation.source         GStreamer mic source     (default "autoaudiosrc")
 #
 # Requires faster-whisper (pip install faster-whisper) and ffmpeg on PATH.
@@ -128,16 +131,30 @@ class VmaDictationRecorder
     true
   end
 
-  # Stop recording, finalize the WAV header, and return its path (or nil).
-  def stop
-    return nil unless @recording
+  # Stop capturing, right now. Split from #finalize so the mic can be released the
+  # moment the user asks for it, even while a preliminary pass is still reading
+  # the file (rewriting the header under a concurrent reader is what's unsafe,
+  # not stopping the pipeline).
+  def stop_capture
+    return false unless @recording
     @pipeline.set_state(:null)
     @pipeline = nil
     @recording = false
+    true
+  end
 
+  # Fix up the streaming placeholder header of the stopped recording and return
+  # its path (or nil). Call only once no one else is reading the file.
+  def finalize
     return nil unless @wav_path && File.exist?(@wav_path)
     vma_wav_fix_header!(@wav_path)
     @wav_path
+  end
+
+  # Stop recording, finalize the WAV header, and return its path (or nil).
+  def stop
+    return nil unless stop_capture
+    finalize
   end
 end
 
@@ -157,11 +174,23 @@ class VmaWhisperWorker
     @start_error = nil
   end
 
-  # Start the worker if not already running. Non-blocking: the model loads in the
-  # worker; readiness is awaited in #transcribe. Safe to call repeatedly (used to
-  # warm the model when recording starts).
+  # Start the worker and wait for the model to finish loading. Blocks the calling
+  # thread (never the main loop): call it from a background thread at dictation
+  # start so the load overlaps with the user speaking. Safe to call repeatedly.
   def ensure_started
-    @mutex.synchronize { _spawn unless _alive? }
+    @mutex.synchronize do
+      _spawn unless _alive?
+      _await_ready
+    end
+  end
+
+  # True when a request would be served without waiting for the model to load.
+  # Deliberately lock-free so a preliminary pass can cheaply skip itself during a
+  # cold start instead of queueing on the mutex behind the load. Racing with
+  # _spawn/_await_ready is benign: at worst one preliminary pass is skipped, or
+  # one is attempted a moment early and blocks as it used to.
+  def ready?
+    @ready && _alive?
   end
 
   # Transcribe a WAV file with optional per-request overrides:
@@ -243,9 +272,20 @@ class VmaWhisperWorker
   end
 
   # Block until the worker prints its readiness line (model loaded). Cached.
+  #
+  # Bounded, because this runs while holding @mutex: a worker that never becomes
+  # ready (model download stalled, wedged CUDA init) would otherwise hang every
+  # later request behind it forever, leaving the editor stuck on "finalizing…"
+  # with nothing to report. A first-ever run legitimately downloads several GB,
+  # so the default is generous.
   def _await_ready
     return true if @ready
     return false unless @stdout
+    limit = cnf.dictation.startup_timeout! || 600
+    if limit > 0 && !@stdout.wait_readable(limit)
+      @start_error = "model not loaded after #{limit}s (first run still downloading?)"
+      return false
+    end
     line = @stdout.gets
     if line.nil?
       @start_error = "worker exited before becoming ready (check faster-whisper/ffmpeg)"
@@ -312,10 +352,15 @@ class VmaDictationSession
     @finalize_newline = add_newline
     @restart_after = restart
     message("Dictation: finalizing…")
+    # Release the mic here, not after the join below: on a cold start the
+    # preliminary pass can still be blocked waiting for the model to load, and
+    # recording through that wait would append seconds of audio the user
+    # recorded after they asked to stop.
+    @recorder.stop_capture
 
     Thread.new do
       @prelim_thread&.join          # no more preliminary file reads / inserts
-      wav = @recorder.stop          # finalize header (safe: no concurrent reader)
+      wav = @recorder.finalize      # rewrite header (safe: no concurrent reader)
       if wav.nil?
         GLib::Idle.add { message("Dictation: nothing recorded"); false }
       else
@@ -352,6 +397,14 @@ class VmaDictationSession
 
   # Transcribe the not-yet-processed tail of the growing recording and append it.
   def _process_tail
+    # Cold start: the model is still loading. Preliminary passes are best-effort,
+    # so skip rather than block — a blocked pass holds the worker mutex, which is
+    # what the final pass then has to wait on, turning a slow start into a stall
+    # with the editor sitting on "finalizing…". The audio isn't lost: @pcm_off
+    # only advances on a pass that actually runs, so the next tick picks up the
+    # whole tail.
+    return unless dictation_worker.ready?
+
     path = @recorder.wav_path
     return unless path && File.exist?(path)
 

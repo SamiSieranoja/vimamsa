@@ -95,6 +95,46 @@ class TestDictation < VmaTest
     File.delete(path) if path && File.exist?(path)
   end
 
+  # --- cold start (model not loaded yet) ---
+
+  # A worker that hasn't loaded its model reports itself not ready, so the
+  # preliminary passes skip themselves instead of queueing on the worker mutex
+  # and stalling the final pass behind the load.
+  def test_worker_not_ready_before_model_loads
+    load_dictation
+    w = VmaWhisperWorker.new
+    assert_eq false, w.ready?, "a freshly built worker should not claim to be ready"
+  end
+
+  # A worker that never becomes ready must fail the request rather than block
+  # forever: an unbounded wait leaves every later request stuck behind it with
+  # the editor sitting on "finalizing…" and nothing to report.
+  def test_await_ready_gives_up_instead_of_hanging
+    load_dictation
+    prev = cnf.dictation.startup_timeout!
+    cnf.dictation.startup_timeout = 1
+
+    r, wr = IO.pipe          # nothing is ever written -> never becomes ready
+    blocked = Thread.new { sleep 30 }
+    w = VmaWhisperWorker.new
+    w.instance_variable_set(:@stdout, r)
+    w.instance_variable_set(:@stdin, wr)
+    w.instance_variable_set(:@wait, blocked)   # looks alive, so no respawn
+
+    t0 = Time.now
+    res = w.transcribe("/nonexistent.wav")
+    elapsed = Time.now - t0
+
+    assert_eq false, res[:ok], "transcribe should fail when the model never loads"
+    assert res[:error].to_s.include?("not loaded"), "unexpected error: #{res[:error].inspect}"
+    assert elapsed < 10, "transcribe blocked #{elapsed.round(1)}s; should give up after the timeout"
+  ensure
+    cnf.dictation.startup_timeout = prev
+    blocked&.kill
+    r&.close
+    wr&.close
+  end
+
   # The span-replace approach: insert preliminary chunks into a buffer, then
   # delete the whole tracked span and insert the final text in its place.
   def test_span_replace
