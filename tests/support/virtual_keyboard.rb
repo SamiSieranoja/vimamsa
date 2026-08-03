@@ -16,6 +16,7 @@ class VirtualKeyboard
   SYN_REPORT = 0x00
 
   KEY_LEFTSHIFT = 42
+  KEY_RIGHTALT  = 100 # AltGr on international layouts
 
   # _IOC encoding (asm-generic/ioctl.h)
   IOC_NONE  = 0
@@ -101,16 +102,16 @@ class VirtualKeyboard
     sleep pause
   end
 
-  # Hold `mod`, tap `code` inside it, release `mod` (e.g. Shift-;).
-  def chord(mod, code, pause: 0.02)
-    key_down(mod)
-    sleep pause
+  # Hold `mods` (one code or an array, e.g. AltGr+Shift), tap `code` inside them,
+  # release in reverse order (e.g. Shift-; or AltGr-q).
+  def chord(mods, code, pause: 0.02)
+    mods = Array(mods)
+    mods.each { |m| key_down(m); sleep pause }
     key_down(code)
     sleep pause
     key_up(code)
     sleep pause
-    key_up(mod)
-    sleep pause
+    mods.reverse_each { |m| key_up(m); sleep pause }
   end
 
   def close
@@ -152,23 +153,39 @@ class KeyTyper
     str.each_char { |c| tap_keysym(Gdk::Keyval.to_name(c.ord)) }
   end
 
-  # Tap a key by keysym name, e.g. tap_keysym("Return"), tap_keysym("Escape")
+  # Tap a key by keysym name, e.g. tap_keysym("Return"), tap_keysym("Escape"),
+  # tap_keysym("adiaeresis") (AltGr-q on an us(altgr-intl) layout).
   def tap_keysym(name)
-    code, shift = @map[name]
+    code, mods = @map[name]
     raise "no keycode found for keysym #{name.inspect}" if code.nil?
-    if shift
-      @vkb.chord(VirtualKeyboard::KEY_LEFTSHIFT, code)
-    else
+    if mods.empty?
       @vkb.tap(code)
+    else
+      @vkb.chord(mods, code)
     end
+  end
+
+  # True if this keyboard layout can produce `str` at all (all its characters
+  # have a keycode). Lets a test skip cleanly on a layout that lacks e.g. "ä".
+  def can_type?(str)
+    str.each_char.all? { |c| @map.key?(Gdk::Keyval.to_name(c.ord)) }
   end
 
   private
 
+  SHIFT = VirtualKeyboard::KEY_LEFTSHIFT
+  ALTGR = VirtualKeyboard::KEY_RIGHTALT
+
+  # Modifiers for each keysym column of a `xmodmap -pke` row. XKB maps a 4-level
+  # layout into the core keymap as [g1l1, g1l2, g2l1, g2l2, g1l3, g1l4], so the
+  # AltGr levels sit at 4/5 when a second group is present (the usual case: the
+  # single configured layout is duplicated into group 2) and at 2/3 when not.
+  COLUMN_MODS_6 = { 0 => [], 1 => [SHIFT], 4 => [ALTGR], 5 => [ALTGR, SHIFT] }.freeze
+  COLUMN_MODS_4 = { 0 => [], 1 => [SHIFT], 2 => [ALTGR], 3 => [ALTGR, SHIFT] }.freeze
+
   # Parse lines like "keycode  47 = semicolon colon semicolon colon ..." into
-  # { "semicolon" => [39, false], "colon" => [39, true] }. Columns 0/1 are the
-  # plain/shifted keysyms of group 1; an unshifted position wins if a keysym
-  # appears in both.
+  # { "semicolon" => [39, []], "colon" => [39, [SHIFT]] }. When a keysym appears
+  # in several positions, the one needing the fewest modifiers wins.
   def parse_xmodmap
     map = {}
     `xmodmap -pke`.each_line do |line|
@@ -176,11 +193,62 @@ class KeyTyper
       code = m[1].to_i - 8
       next if code <= 0
       syms = m[2].split
-      [[syms[0], false], [syms[1], true]].each do |sym, shift|
+      cols = syms.length > 4 ? COLUMN_MODS_6 : COLUMN_MODS_4
+      cols.each do |i, mods|
+        sym = syms[i]
         next if sym.nil? || sym == "NoSymbol"
-        map[sym] = [code, shift] if !map.key?(sym) || (map[sym][1] && !shift)
+        map[sym] = [code, mods] if !map.key?(sym) || map[sym][1].length > mods.length
       end
     end
     map
+  end
+end
+
+# Mixin for VmaTest subclasses that drive the editor with a real virtual
+# keyboard: `with_vkb { |kb| … }` guards the preconditions, opens the uinput
+# device, and closes it again.
+module VkbTest
+  # Guard preconditions, open/close the uinput device around the block.
+  def with_vkb
+    # uinput events go to the real seat's focused window. Only type when this
+    # app is itself on the real Wayland session — never on a headless backend
+    # (Broadway/Xvfb), where the keystrokes would land in some other program.
+    # gtype.name: ruby-gnome has no named Ruby class for some backends.
+    backend = Gdk::Display.default&.gtype&.name.to_s
+    if !backend.include?("Wayland")
+      skip "not on a real Wayland seat (#{backend})"
+    end
+    skip "no writable /dev/uinput" if !VirtualKeyboard.available?
+    skip "xmodmap not available" if !KeyTyper.available?
+    vkb = nil
+    vma.gui.window.present
+    # Wayland won't let a non-interactively launched window steal focus. In the
+    # semi-interactive VM mode (VMA_E2E_INTERACTIVE), wait longer and prompt for a
+    # single click; a real user click legitimately focuses the window, after which
+    # every following test in the run finds it already active (no more clicks).
+    focus_wait = ENV["VMA_E2E_INTERACTIVE"] ? 90 : 3
+    if ENV["VMA_E2E_INTERACTIVE"] && !vma.gui.window.active?
+      puts "\n>>> [E2E] Click the vimamsa window in the VM to give it focus " \
+           "(waiting up to #{focus_wait}s)…"
+      $stdout.flush
+    end
+    if !wait_until(focus_wait) { vma.gui.window.active? }
+      skip "editor window is not focused; typing would go to another window"
+    end
+    vkb = VirtualKeyboard.new.open
+    yield KeyTyper.new(vkb)
+  ensure
+    vkb&.close
+  end
+
+  # Poll cond while letting the GTK main loop process the incoming key events.
+  def wait_until(timeout)
+    t0 = Time.now
+    loop do
+      drain_idle
+      return true if yield
+      return false if Time.now - t0 > timeout
+      sleep 0.05
+    end
   end
 end
