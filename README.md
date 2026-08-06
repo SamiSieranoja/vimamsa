@@ -161,6 +161,17 @@ For example, to bind ctrl-n to action "create new file":
 bindkey 'C ctrl-n',  'create_new_file()'
 ```
 
+custom.rb is loaded in two phases. The body of the file runs early, before
+modules are initialized, so that the settings it makes (cnf.\*) are visible to
+them. Modes that are created by modules (e.g. "fexp" for the file selector,
+"grep") do not exist yet at that point; bindings for those go in an optional
+function `hook_custom_after_init`, which is called after everything is loaded:
+```
+def hook_custom_after_init
+  bindkey 'fexp , x', :my_action
+end
+```
+
 
 ## Known issues
  - Cursor sometimes vanishes when dragging or resizing the window. At least some cases are fixed in new GTK4 versions ( >= 4.18, in Ubuntu Ubuntu 25.04). Workaround is to press ctrl key twice.

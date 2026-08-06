@@ -3,7 +3,7 @@ require "fileutils"
 module Vimamsa
 
 class FileManager
-  @@cur
+  @@cur = nil # Current object of class
 
   def initialize()
     @buf = nil
@@ -12,11 +12,21 @@ class FileManager
   end
 
   def self.chdir_parent()
-    @@cur.chdir_parent
+    with_cur { |fm| fm.chdir_parent }
   end
 
   def self.cur()
     return @@cur
+  end
+
+  # Run the block with the active FileManager. No-op (with a message) if the
+  # file selector has never been opened, i.e. @@cur is still nil.
+  def self.with_cur()
+    if @@cur.nil?
+      message("File selector is not open")
+      return nil
+    end
+    return yield @@cur
   end
 
   def self.init()
@@ -25,8 +35,8 @@ class FileManager
     reg_act(:fexp_chdir_parent, proc { FileManager.chdir_parent }, "File selector")
     reg_act(:fexp_select, proc { buf.module.select_line }, "")
 
-    reg_act(:fexp_sort_mtime, proc { FileManager.cur.sort_mtime }, "Sort based on time")
-    reg_act(:fexp_sort_fname, proc { FileManager.cur.sort_fname }, "Sort based on file name")
+    reg_act(:fexp_sort_mtime, proc { FileManager.with_cur { |fm| fm.sort_mtime } }, "Sort based on time")
+    reg_act(:fexp_sort_fname, proc { FileManager.with_cur { |fm| fm.sort_fname } }, "Sort based on file name")
 
     bindkey "C , j f", :start_file_selector
     bindkey "C , f", :start_file_selector
@@ -40,10 +50,10 @@ class FileManager
 
     # These are not yet safe to use
     if cnf.fexp.experimental?
-      reg_act(:fexp_cut_file, proc { FileManager.cur.cut_file }, "Cut file (to paste elsewhere)")
-      reg_act(:fexp_copy_file, proc { FileManager.cur.copy_file }, "Copy file (to paste elsewhere)")
-      reg_act(:fexp_delete_file, proc { FileManager.cur.delete_file }, "Delete current file")
-      reg_act(:fexp_paste_files, proc { FileManager.cur.paste_files }, "Move previously cut files here")
+      reg_act(:fexp_cut_file, proc { FileManager.with_cur { |fm| fm.cut_file } }, "Cut file (to paste elsewhere)")
+      reg_act(:fexp_copy_file, proc { FileManager.with_cur { |fm| fm.copy_file } }, "Copy file (to paste elsewhere)")
+      reg_act(:fexp_delete_file, proc { FileManager.with_cur { |fm| fm.delete_file } }, "Delete current file")
+      reg_act(:fexp_paste_files, proc { FileManager.with_cur { |fm| fm.paste_files } }, "Move previously cut files here")
 
       bindkey "fexp d d", :fexp_cut_file
       bindkey "fexp y y", :fexp_copy_file
@@ -53,7 +63,7 @@ class FileManager
 
     # bindkey "fexp l", [:fexp_right, proc { debug "==fexp_right==" }, ""]
     bindkey "fexp h", :fexp_chdir_parent
-    bindkey "fexp esc", [:fexp_quit, proc { FileManager.cur.quit }, ""]
+    bindkey "fexp esc", [:fexp_quit, proc { FileManager.with_cur { |fm| fm.quit } }, ""]
     bindkey "fexp enter", :fexp_select
     bindkey "fexp l", :fexp_select
 

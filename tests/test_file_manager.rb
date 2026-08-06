@@ -27,4 +27,46 @@ class TestFileManager < VmaTest
       assert_eq ["bfile.txt", "afile.txt"], file_lines, "files should remain sorted by mtime descending"
     end
   end
+
+  # FileManager.cur used to raise NameError (uninitialized class variable @@cur)
+  # when the file selector had never been opened, crashing any action that
+  # called it.
+  def test_cur_is_nil_before_file_selector_is_opened
+    without_current_filemanager {
+      assert_eq nil, Vimamsa::FileManager.cur, "cur should be nil, not raise"
+    }
+  end
+
+  def test_with_cur_does_not_yield_when_no_file_manager
+    without_current_filemanager {
+      yielded = false
+      ret = Vimamsa::FileManager.with_cur { |fm| yielded = true }
+      assert !yielded, "block should not run without an open file selector"
+      assert_eq nil, ret
+    }
+  end
+
+  def test_with_cur_yields_the_current_file_manager
+    fm = Vimamsa::FileManager.new
+    prev = Vimamsa::FileManager.cur
+    Vimamsa::FileManager.class_variable_set(:@@cur, fm)
+    begin
+      assert_eq fm, Vimamsa::FileManager.with_cur { |x| x }
+    ensure
+      Vimamsa::FileManager.class_variable_set(:@@cur, prev)
+    end
+  end
+
+  private
+
+  # Run blk with no file selector open (@@cur = nil), restoring it afterwards.
+  def without_current_filemanager
+    prev = Vimamsa::FileManager.cur
+    Vimamsa::FileManager.class_variable_set(:@@cur, nil)
+    begin
+      yield
+    ensure
+      Vimamsa::FileManager.class_variable_set(:@@cur, prev)
+    end
+  end
 end

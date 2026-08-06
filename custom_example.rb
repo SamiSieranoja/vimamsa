@@ -117,3 +117,12 @@ end
 # Add comment character rule for a file type not detected automatically:
 # cnf.comment_chars! << { pattern: /\.lua$/, char: "--" }
 
+# Second phase of this file. Everything above runs early during startup, before
+# the file selector, grep and the modules are initialized, so that the cnf.*
+# settings above are visible to them. Their keyboard modes (e.g. "fexp" for the
+# file selector, "grep") do not exist yet at that point: bindings for those go
+# here, in a function that is called after everything has been loaded.
+# def hook_custom_after_init
+#   bindkey "fexp , x", :my_file_action
+# end
+

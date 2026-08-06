@@ -45,7 +45,7 @@ end
 
 class KeyBindingTree
   attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action, :modifiers, :next_command_count, :method_handles_repeat, :default_mode
-  attr_accessor :action_handler, :on_action_error, :logger, :fatal_handler
+  attr_accessor :action_handler, :on_action_error, :logger, :fatal_handler, :error_handler
   attr_reader :mode_root_state, :state_trail, :act_bindings, :default_mode_stack
 
   # This class is host-agnostic: it never touches the editor or GUI directly.
@@ -65,6 +65,8 @@ class KeyBindingTree
     @action_handler = nil
     @logger = nil
     @fatal_handler = proc { |msg| raise msg }
+    # Non-fatal problems the user should see (e.g. a binding to an unknown mode)
+    @error_handler = proc { |msg| warn msg }
     @on_action_error = nil
     @next_command_count = nil
     @modes = {}
@@ -101,6 +103,13 @@ class KeyBindingTree
     @logger.call(msg, level) if @logger
   end
   private :log
+
+  # Report a non-fatal problem (bad binding definition etc.) to the host.
+  def error(msg)
+    log(msg)
+    @error_handler.call(msg) if @error_handler
+  end
+  private :error
 
   def set_mode(label)
     return if get_mode == :label
@@ -468,6 +477,11 @@ class KeyBindingTree
     return [s_trail, children]
   end
 
+  # True for a bare modifier key event ("ctrl", "shift!", ...)
+  def modifier_key?(c)
+    %w[ctrl alt shift meta super caps].include?(c.to_s.delete_suffix("!"))
+  end
+
   def set_next_command_count(num)
     if @next_command_count != nil
       @next_command_count = @next_command_count * 10 + num.to_i
@@ -541,8 +555,13 @@ class KeyBindingTree
 
     if new_state == nil
       log("NO MATCH")
-      if event_type == :key_press and !%w[ctrl alt shift meta super caps].include?(c)
+      if event_type == :key_press and !modifier_key?(c)
         emit(:key_no_match, c, get_state_trail_str[0])
+        # A key that leads nowhere (e.g. esc) also aborts a count that is being
+        # typed: "2 0 0 esc" must not leave 200 pending for the next command.
+        # Modifier keys are excluded: they arrive as separate press events and
+        # must not break e.g. "2 0 ctrl-d".
+        @next_command_count = nil
       end
       if event_type == :key_press and c != "shift"
         # TODO:include other modifiers in addition to shift?
@@ -708,6 +727,7 @@ class KeyBindingTree
 
     m = key.match(/^(\S+)\s(\S.*)$/)
     # Match/split e.g. "VC , , s" to "VC" and ", , s"
+    modes = nil
     if m
       modetmp = m[1]
       log [key, modetmp, m].inspect
@@ -726,9 +746,17 @@ class KeyBindingTree
       @fatal_handler.call("Error in keydef #{key.inspect}")
     end
 
+    # Mode part is neither all uppercase nor all lowercase, e.g. "Fexp , x"
+    if modes.nil?
+      error("bindkey: invalid mode #{modetmp.inspect} in #{key.inspect}: " \
+            "mode must be all uppercase (major modes, e.g. \"C\") or all " \
+            "lowercase (minor modes, e.g. \"fexp\"). Binding skipped.")
+      return
+    end
+
     # puts "keywords #{keywords}"
     modes.each { |mode_id|
-      mode_bind_key(mode_id, keydef, action, keywords: keywords)
+      next if !mode_bind_key(mode_id, keydef, action, keywords: keywords)
 
       # Map froma actions to keybindings (e.g. to show bindings in menu)
       @act_bindings[mode_id][action] = keydef
@@ -737,6 +765,7 @@ class KeyBindingTree
 
   # Binds a keyboard key combination to an action,
   # for a given keyboard mode like insert ("I") or command ("C")
+  # Returns true if the binding was created, false if the mode is unknown.
   def mode_bind_key(mode_id, keydef, action, keywords: [])
     # debug "mode_bind_key #{mode_id.inspect}, #{keydef.inspect}, #{action.inspect}", 2
     # Example:
@@ -744,7 +773,18 @@ class KeyBindingTree
     # mode_id = "C", keydef = ", f"
     # and action = :gui_file_finder
 
-    set_state(mode_id, "") # TODO: check is ok?
+    # Bind only to a mode that exists. Without this check the binding would
+    # silently end up in the current default mode (see set_state), e.g. a
+    # 'bindkey "fexp , x"' in custom.rb (loaded before FileManager.init creates
+    # the fexp mode) would become "C , x" and fire in every buffer.
+    mode_state = @root.children.find { |s| s.key_name == mode_id }
+    if mode_state.nil?
+      error("bindkey: unknown mode #{mode_id.inspect} for #{keydef.inspect} => " \
+            "#{action.inspect}. Binding skipped. If the mode is created by a " \
+            "module, bind it in hook_custom_after_init.")
+      return false
+    end
+    @cur_state = mode_state
     start_state = @cur_state
 
     k_arr = keydef.split #e.g. definition: "C y e" = > ["C", "y", "e"]
@@ -792,6 +832,7 @@ class KeyBindingTree
     end
     @cur_state.keywords = keywords
     @cur_state = @root
+    return true
   end
 
   def handle_key_bindigs_action(action, c)

@@ -73,6 +73,16 @@ class Editor
     @kbd.action_handler = method(:exec_action)
     @kbd.logger = method(:debug)
     @kbd.fatal_handler = method(:fatal_error)
+    # Non-fatal binding problems (e.g. custom.rb binding to an unknown mode).
+    # message() can fire before the minibuffer exists (custom.rb is loaded
+    # during start), so it must not be allowed to break startup.
+    @kbd.error_handler = proc { |msg|
+      warn msg
+      begin
+        message(msg)
+      rescue Exception
+      end
+    }
     @kbd.on_action_error = proc { |action, e|
       if e.is_a?(SyntaxError)
         message("SYNTAX ERROR with eval cmd #{action}: " + e.to_s)
@@ -192,6 +202,10 @@ class Editor
     # Install desktop launcher + icon into ~/.local/share on first run.
     install_desktop_integration
 
+    # Phase 1 of custom.rb: the body of the file. Runs before the inits below so
+    # that cnf.* set there is visible to them. Anything that needs modes/actions
+    # they register goes in phase 2 (hook_custom_after_init, called at the end of
+    # start; see call_custom_after_init).
     custom_script = read_file("", custom_fn)
     eval(custom_script) if custom_script
 
@@ -268,6 +282,9 @@ class Editor
     check_session_restore unless argv_has_files || vma_test_mode?
 
     @hook.call(:after_init)
+
+    # Phase 2 of custom.rb: everything (modules, plugins, buffers) now exists.
+    call_custom_after_init
 
     # Paint the initial mode badge (e.g. COMMAND). show_state_trail is otherwise
     # only called from key handling, so without this the badge stays blank until
@@ -797,8 +814,27 @@ def reload_customrb
   custom_fn = get_dot_path("custom.rb")
   custom_script = read_file("", custom_fn)
   eval(custom_script) if custom_script
+  call_custom_after_init # everything is loaded already: run phase 2 right away
   gui_refresh_colors   # apply any cnf.theme.colors/cyber overrides live
   message("Reloaded #{custom_fn}")
+end
+
+# Phase 2 of custom.rb. The body of custom.rb is evaluated early during
+# Editor#start, before the modes and actions of Grep/FileManager/Autocomplete
+# and of the modules are registered — so that cnf.* from custom.rb is visible to
+# them (e.g. cnf.fexp.experimental). Anything that depends on those, above all
+# key bindings for their modes ("fexp ...", "grep ...", module minor modes),
+# belongs in an optional hook_custom_after_init function, which is called from
+# here once everything is loaded.
+def call_custom_after_init
+  return if !respond_to?(:hook_custom_after_init, true)
+  begin
+    send(:hook_custom_after_init)
+  rescue Exception => e
+    warn e.inspect
+    warn e.backtrace
+    message("Error in hook_custom_after_init: #{e}")
+  end
 end
 
 def save_settings_to_file

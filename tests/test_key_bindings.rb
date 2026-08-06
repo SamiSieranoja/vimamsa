@@ -185,6 +185,48 @@ class TestKeyBindings < VmaTest
 
   # ── repeat count ─────────────────────────────────────────────────────────
 
+  # Seed the buffer with `n` numbered lines ("line1".."lineN") and park the
+  # cursor at the top. The fresh test buffer is already "\n", so chomp.
+  def seed_numbered_lines(n)
+    text = (1..n).map { |i| "line#{i}" }.join("\n")
+    act "buf.insert_txt(#{text.inspect})"
+    act "buf.set_pos(0)"
+  end
+
+  # Text of the line the cursor is on.
+  def cur_line_text
+    vma.buf.to_s.lines[vma.buf.lpos].to_s.chomp
+  end
+
+  # "20G" jumps to line 20. Exercises a multi-digit count: each digit folds into
+  # next_command_count, then G's counted variant routes to buf.jump_to_line.
+  # The "0" matters — it is bound separately from [1-9] (a leading "0" is
+  # jump-to-column-0, not a count), so a two-digit count is the case that breaks.
+  def test_count_20_G_jumps_to_line_20
+    seed_numbered_lines(30)
+    keys "2 0 G"
+    assert_eq "line20", cur_line_text, "20G should land on line 20"
+    assert_pos 19, 0, "20G should put the cursor at the start of line 20"
+  end
+
+  # Single-digit count, for contrast: proves the count path itself works, so a
+  # failure above is specific to accumulating a second digit.
+  def test_count_5_G_jumps_to_line_5
+    seed_numbered_lines(30)
+    keys "5 G"
+    assert_eq "line5", cur_line_text, "5G should land on line 5"
+    assert_pos 4, 0, "5G should put the cursor at the start of line 5"
+  end
+
+  # esc aborts a count that is being typed, so the digits don't silently attach
+  # to the next command ("2 0 0 esc d d" must delete one line, not 200).
+  def test_esc_cancels_pending_count
+    keys "2 0 0"
+    assert_eq 200, vma.kbd.next_command_count, "digits should accumulate into a count"
+    keys "esc"
+    assert_eq nil, vma.kbd.next_command_count, "esc should cancel the pending count"
+  end
+
   def test_repeat_count_executes_action_n_times
     count = 0
     reg_act(:_test_repeat, proc { count += 1 }, "test")
@@ -210,6 +252,68 @@ class TestKeyBindings < VmaTest
     keys "i"
     assert_mode :insert
     keys "esc"
+  end
+
+  # ── binding to a mode that does not exist ────────────────────────────────
+
+  # A binding for an unknown mode used to be installed silently into the
+  # current default mode instead: 'bindkey "fexp , x"' in custom.rb (loaded
+  # before FileManager.init creates the fexp mode) became "C , x" and fired in
+  # every buffer.
+  def test_bindkey_unknown_mode_is_reported_and_binds_nothing
+    errors = capture_kbd_errors {
+      bindkey "nosuchmode z z", :_test_unknown_mode_action
+    }
+    assert_eq 1, errors.size, "unknown mode should be reported once: #{errors.inspect}"
+    assert errors[0].include?("nosuchmode"), "error should name the mode: #{errors[0]}"
+    assert_eq [], find_binding_paths(:_test_unknown_mode_action),
+      "nothing should have been bound"
+  end
+
+  # Mode part neither all uppercase (major modes) nor all lowercase (minor
+  # modes): used to raise NoMethodError on nil while loading custom.rb.
+  def test_bindkey_mixed_case_mode_is_reported_and_binds_nothing
+    errors = capture_kbd_errors {
+      bindkey "Fexp z z", :_test_mixed_case_mode_action
+    }
+    assert_eq 1, errors.size, "invalid mode should be reported once: #{errors.inspect}"
+    assert_eq [], find_binding_paths(:_test_mixed_case_mode_action),
+      "nothing should have been bound"
+  end
+
+  def test_bindkey_known_minor_mode_binds_to_that_mode
+    bindkey "fexp z z", :_test_fexp_action
+    assert_eq ["fexp z z"], find_binding_paths(:_test_fexp_action)
+    unbindkey "fexp z z"
+  end
+
+  private
+
+  # Collect the errors the key binding tree reports while running blk.
+  def capture_kbd_errors
+    errors = []
+    prev = vma.kbd.error_handler
+    vma.kbd.error_handler = proc { |msg| errors << msg }
+    begin
+      yield
+    ensure
+      vma.kbd.error_handler = prev
+    end
+    errors
+  end
+
+  # Every key sequence in the whole tree bound to action, e.g. ["C , x"]
+  def find_binding_paths(action)
+    found = []
+    walk = lambda { |state, path|
+      state.children.each { |c|
+        p2 = path + [c.key_name]
+        found << p2.join(" ") if c.action == action
+        walk.call(c, p2)
+      }
+    }
+    vma.kbd.root.children.each { |mode| walk.call(mode, [mode.key_name]) }
+    found
   end
 
 end
