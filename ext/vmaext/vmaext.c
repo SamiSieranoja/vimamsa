@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <ruby/thread.h>  
 typedef struct node {
 int i;
 void * next;
@@ -140,13 +141,14 @@ float srn_dst(char * s1_sgn, char * s2_sgn) {
     return score;
 }
 
-void srn_dst_wrap(void *y) {
+void *srn_dst_wrap(void *y) {
   void **x = (void **)y;
   char *a = (char *)x[0];
   char *b = (char *)x[1];
   float *d = (float *)x[2];
   *d = srn_dst(a, b);
   // printf("00000 A:%s B:%s %f\n",a,b,*d);
+  return NULL;
 }
 
 VALUE _srn_dst(VALUE self, VALUE s1, VALUE s2) {
