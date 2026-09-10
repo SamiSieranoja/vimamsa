@@ -1,0 +1,134 @@
+```markdown
+# Vimamsa
+
+Vi/Vim -inspired experimental GUI-oriented text editor written with Ruby and GTK.
+
+<!-- toc -->
+
+- [Requirements](#requirements)
+- [Installation](#installation)
+  * [Other install options](#other-install-options)
+- [Run](#run)
+- [Screenshots](#screenshots)
+- [Key bindings](#key-bindings)
+- [Known issues](#known-issues)
+- [Current limitations](#current-limitations)
+
+<!-- tocstop -->
+
+## はじめに
+rubyのみを使用してGVimのような動作をするエディタがこのVimamsaです、画期的なプロジェクトだと思います。
+
+数年前から更新が止まっているようですが、どういった仕組みで動作させているのか気になったので、フォークさせてもらいました。
+
+LINUXでの動作を前提として開発されていたようですので、そのままではmacOSでは動作しません。そこで、必要な依存ファイル群をインストールし、macOSで起動できるようにしました。
+
+
+## Requirements
+ - Ruby 3.0+
+ - GTK 4
+
+
+## Installation
+
+### On Ubuntu (22.04):
+```bash
+sudo apt install ruby-dev build-essential
+sudo gem install vimamsa
+
+```
+
+### On macOS (Using [Homebrew](https://brew.sh/)):
+
+```bash
+brew install gtk4 ruby
+gem install vimamsa
+
+```
+
+### Other install options
+
+Install from sources:
+
+```bash
+git clone [https://github.com/SamiSieranoja/vimamsa.git](https://github.com/SamiSieranoja/vimamsa.git)
+cd vimamsa
+gem build vimamsa.gemspec 
+sudo gem install --local vimamsa-0.1.*.gem
+
+```
+
+Older version for GTK3:
+
+```bash
+sudo gem install vimamsa -v 0.1.10
+
+```
+
+## Run
+
+```bash
+vimamsa
+
+```
+
+Install packages for optional features:
+
+```bash
+sudo apt install ack-grep clang-format
+
+```
+
+For customization, edit `~/.vimamsa/custom.rb`
+
+## Screenshots
+
+## Key bindings
+
+Key bindings are very much like in VIm. For details, see menu item "Help -> Show key bindings" and file `lib/vimamsa/key_bindings_vimlike.rb`
+
+Keys that work somewhat similarly as in Vim:
+
+In Command mode:
+
+```text
+j k l h w b p P G f F ; 0 $ v i o  J * / a A I u ctrl-r x 
+zz dd dw gg <linenum>G r<char>
+
+```
+
+In Visual mode:
+
+```text
+d y gU gu 
+
+```
+
+Keys that work differently to Vim are documented in the tables below.
+
+Syntax:
+
+* `ctrl!` means press and immediate release of ctrl key. Triggered by key up event when no other keys were pressed between key down and key up events.
+* `ctrl-x` means press and hold ctrl key, press x
+
+Bindings can be customized in `~/.vimamsa/custom.rb`
+For example, to bind ctrl-n to action "create new file":
+
+```ruby
+bindkey 'C ctrl-n',  'create_new_file()'
+
+```
+
+## Known issues
+
+* Cursor sometimes vanishes when dragging or resizing the window. At least some cases are fixed in new GTK4 versions ( >= 4.18, in Ubuntu Ubuntu 25.04). Workaround is to press ctrl key twice.
+
+## Current limitations
+
+* UTF8 only
+* Line endings with "\n"
+
+```
+
+```
+
