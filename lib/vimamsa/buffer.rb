@@ -1638,7 +1638,7 @@ class Buffer < String
       end
       @last_save = Time.now
       GLib::Idle.add { refresh_title; false }
-      if cnf.auto_chmod_exec? && !@crypt && contents.start_with?("#!/usr/bin/")
+      if cnf.auto_chmod_exec? && !@crypt && contents.match?(%r{\A#!\s*/\S})
         begin
           FileUtils.chmod("+x", fpath)
           GLib::Idle.add { message("Set executable: #{fpath}"); false }
