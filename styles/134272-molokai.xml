@@ -29,5 +29,8 @@
 	<style foreground="#465457" name="def:comment"/>
 	<style background="#3e3d32" name="current-line"/>
 	<style background="#3b3a32" foreground="#bcbca7" name="line-numbers"/>
+  <style name="def:hyperlink"                foreground="lightblue" bold="true" />
+  <style name="def:bold"                bold="true" />
+  <style name="def:emphasis"                italic="true" />
 </style-scheme>
 

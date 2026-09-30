@@ -7,13 +7,13 @@
 
   <styles>
     <style id="comment"           name="Comment"               map-to="def:comment"/>
-    <style id="title"           name="title"               map-to="def:heading"/>
-    <style id="hyperlink"           name="hyperlink"               map-to="def:link-text"/>
+    <style id="title"           name="title"               map-to="def:title"/>
+    <style id="hyperlink"           name="hyperlink"               map-to="def:hyperlink"/>
     <style id="heading1"           name="heading1"               map-to="def:heading1"/>
     <style id="heading2"           name="heading2"               map-to="def:heading2"/>
     <style id="heading3"           name="heading4"               map-to="def:heading3"/>
     <style id="heading4"           name="heading4"               map-to="def:heading4"/>
-    <style id="bold"           name="bold"               map-to="def:strong-emphasis"/>
+    <style id="bold"           name="bold"               map-to="def:bold"/>
     <style id="italic"           name="italic"               map-to="def:emphasis"/>
     <style id="string"            name="String"                map-to="def:string"/>
     <style id="floating-point"    name="Floating point number" map-to="def:floating-point"/>
