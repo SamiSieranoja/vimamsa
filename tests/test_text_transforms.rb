@@ -47,6 +47,12 @@ class TestTextTransforms < VmaTest
     assert_buf("⦁hello⦁\n")
   end
 
+  def test_style_italic
+    select_first_word
+    act("buf.style_transform(:italic)")
+    assert_buf("╱hello╱\n")
+  end
+
   def test_style_clear
     keys("i ❙ h i ❙ esc")
     act("buf.set_pos(0)")
@@ -60,6 +66,14 @@ class TestTextTransforms < VmaTest
     keys("i h e l l o esc")
     act("buf.set_line_style(:title)")
     assert_buf("❙hello❙\n")
+  end
+
+  def test_line_style_italic_then_clear
+    keys("i h e l l o esc")
+    act("buf.set_line_style(:italic)")
+    assert_buf("╱hello╱\n")
+    act("buf.set_line_style(:clear)")
+    assert_buf("hello\n")
   end
 
   def test_line_style_h2_then_clear

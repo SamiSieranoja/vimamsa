@@ -149,7 +149,7 @@ add_keys "vim motion", {
 
   # Counts; "0" is BOL only when no count is pending
   "VC /[1-9]/" => "vma.kbd.set_next_command_count(<char>)",
-  "VC 0(vma.kbd.next_command_count!=nil)" => "set_next_command_count(<char>)",
+  "VC 0(vma.kbd.next_command_count!=nil)" => "vma.kbd.set_next_command_count(<char>)",
   "VC 0(vma.kbd.next_command_count==nil)" => "buf.jump(BEGINNING_OF_LINE)",
   "VC ^" => "buf.jump(FIRST_NON_WHITESPACE)",
   "VC $" => "buf.jump(END_OF_LINE)",
@@ -317,6 +317,9 @@ add_keys "vim misc", {
 
   # Kept deviations (documented in the header)
   "C tab" => "bufs.switch_to_last_buf",
+  # prev/next file in file panel order (no-op while the panel is hidden)
+  "C alt-h" => :file_panel_prev_file,
+  "C alt-l" => :file_panel_next_file,
   "C enter || C return" => [:line_action, proc { buf.handle_line_action() }, "Line action"],
 
   # Browse mode keys (mode reachable only via the :start_browse_mode action)

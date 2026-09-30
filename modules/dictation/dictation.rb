@@ -165,6 +165,14 @@ end
 # whisper_worker.py). Requests are serialized with a mutex; a dead worker is
 # restarted on the next request.
 class VmaWhisperWorker
+  # Why the last start/transcribe attempt failed, for display (nil when fine).
+  attr_reader :start_error
+
+  # proc {|phase, fraction| } called as the worker reports progress of a long
+  # phase ("download"/"load"/"transcribe"; fraction is 0..1 or nil). Runs on
+  # whichever thread is talking to the worker, never the main loop.
+  attr_accessor :on_progress
+
   def initialize
     @mutex = Mutex.new
     @stdin = nil
@@ -211,9 +219,8 @@ class VmaWhisperWorker
 
         @stdin.puts(JSON.generate(req))
         @stdin.flush
-        line = @stdout.gets
-        return { ok: false, error: "worker closed unexpectedly" } if line.nil?
-        resp = JSON.parse(line)
+        resp = _read_response
+        return { ok: false, error: "worker closed unexpectedly" } if resp.nil?
         if resp["ok"]
           { ok: true, text: (resp["text"] || "").strip }
         else
@@ -271,6 +278,32 @@ class VmaWhisperWorker
     @stdin = @stdout = @wait = nil
   end
 
+  # Read protocol lines until a terminating (non-progress) one arrives, handing
+  # each {"progress": …} line to the observer. Returns the parsed terminating
+  # line, or nil if the worker closed its pipe first.
+  def _read_response
+    loop do
+      line = @stdout.gets
+      return nil if line.nil?
+      resp = JSON.parse(line) rescue nil
+      next if resp.nil? # ignore anything that isn't protocol JSON
+      if (p = resp["progress"])
+        _notify_progress(p)
+        next
+      end
+      return resp
+    end
+  end
+
+  # Fan a progress report out to whoever registered interest. Called on the
+  # worker-facing thread, so the observer is responsible for getting itself onto
+  # the main thread before touching any widget.
+  def _notify_progress(p)
+    @on_progress&.call(p["phase"].to_s, p["fraction"])
+  rescue => e
+    debug "Dictation: progress handler error: #{e}"
+  end
+
   # Block until the worker prints its readiness line (model loaded). Cached.
   #
   # Bounded, because this runs while holding @mutex: a worker that never becomes
@@ -282,22 +315,32 @@ class VmaWhisperWorker
     return true if @ready
     return false unless @stdout
     limit = cnf.dictation.startup_timeout! || 600
-    if limit > 0 && !@stdout.wait_readable(limit)
-      @start_error = "model not loaded after #{limit}s (first run still downloading?)"
-      return false
-    end
-    line = @stdout.gets
-    if line.nil?
-      @start_error = "worker exited before becoming ready (check faster-whisper/ffmpeg)"
-      return false
-    end
-    resp = JSON.parse(line) rescue {}
-    if resp["ready"]
-      @ready = true
-      true
-    else
+
+    loop do
+      # The limit is per line, not for the whole startup: progress lines prove
+      # the worker is alive and downloading, so they legitimately extend the
+      # wait. Only silence for the full period counts as wedged.
+      if limit > 0 && !@stdout.wait_readable(limit)
+        @start_error = "no progress from the speech model for #{limit}s (download stalled?)"
+        return false
+      end
+      line = @stdout.gets
+      if line.nil?
+        @start_error = "worker exited before becoming ready (check faster-whisper/ffmpeg)"
+        return false
+      end
+      resp = JSON.parse(line) rescue nil
+      next if resp.nil?
+      if (p = resp["progress"])
+        _notify_progress(p)
+        next
+      end
+      if resp["ready"]
+        @ready = true
+        return true
+      end
       @start_error = resp["error"] || "worker failed to load model"
-      false
+      return false
     end
   end
 end
@@ -311,6 +354,7 @@ end
 class VmaDictationSession
   def initialize
     @active = false
+    @finalizing = false
   end
 
   def active?
@@ -332,10 +376,27 @@ class VmaDictationSession
     @active = true
     @buf.new_undo_group
 
-    Thread.new { dictation_worker.ensure_started }
+    # The mic is already live either way; what differs is whether anything can be
+    # transcribed yet. Say which, because a cold start is silent for as long as
+    # the model takes to load (seconds warm, minutes on a first download) and
+    # otherwise looks like dictation simply not working.
+    if dictation_worker.ready?
+      _status(:listening)
+      message("Dictation: listening… (toggle again to stop)")
+    else
+      _status(:loading)
+      message("Dictation: loading speech model… (already listening; text appears once loaded)")
+    end
+
+    # ensure_started blocks until the model is loaded, so report the outcome
+    # back on the main thread once it lands. Progress arrives meanwhile.
+    dictation_worker.on_progress = method(:_progress_update)
+    Thread.new do
+      ok = dictation_worker.ensure_started
+      GLib::Idle.add { _on_worker_ready(ok); false }
+    end
     @running = true
     @prelim_thread = Thread.new { _prelim_loop }
-    message("Dictation: listening… (toggle again to stop)")
     true
   end
 
@@ -351,7 +412,18 @@ class VmaDictationSession
     @running = false
     @finalize_newline = add_newline
     @restart_after = restart
-    message("Dictation: finalizing…")
+    @finalizing = true
+    # On a cold start the final pass just queues behind the model load, so don't
+    # claim to be transcribing while we are really still waiting for the model
+    # (a first-use download can sit here for minutes). _on_worker_ready promotes
+    # this to :transcribing once the model actually lands.
+    if dictation_worker.ready?
+      _status(:transcribing)
+      message("Dictation: finalizing…")
+    else
+      _status(:queued)
+      message("Dictation: waiting for the speech model before transcribing…")
+    end
     # Release the mic here, not after the join below: on a cold start the
     # preliminary pass can still be blocked waiting for the model to load, and
     # recording through that wait would append seconds of audio the user
@@ -362,7 +434,7 @@ class VmaDictationSession
       @prelim_thread&.join          # no more preliminary file reads / inserts
       wav = @recorder.finalize      # rewrite header (safe: no concurrent reader)
       if wav.nil?
-        GLib::Idle.add { message("Dictation: nothing recorded"); false }
+        GLib::Idle.add { @finalizing = false; _status(nil); message("Dictation: nothing recorded"); false }
       else
         res = dictation_worker.transcribe(wav, _final_opts)
         File.delete(wav) if wav && File.exist?(wav)
@@ -372,6 +444,86 @@ class VmaDictationSession
   end
 
   private
+
+  # Status-area slot key, and the text/style for each phase of a dictation.
+  STATUS_KEY = :dictation
+  # Base labels, without trailing ellipsis: #_status appends either "…" or a
+  # percentage, so a phase reads "DOWNLOADING MODEL 42%" once the worker starts
+  # reporting and "DOWNLOADING MODEL…" before it can.
+  STATUS_PHASES = {
+    loading:      ["🎙 LOADING MODEL",     "status-busy"],
+    downloading:  ["⬇ DOWNLOADING MODEL", "status-busy"],
+    listening:    ["🎙 LISTENING",         "status-active"],
+    queued:       ["⏳ WAITING FOR MODEL", "status-busy"],
+    transcribing: ["⏳ TRANSCRIBING",      "status-busy"],
+    failed:       ["🎙 MODEL FAILED",      "status-error"],
+  }.freeze
+
+  # Steady states rather than work in progress: no ellipsis, no percentage.
+  STATUS_STEADY = %i[listening failed].freeze
+
+  # (main thread) Show a dictation phase in the status area, or clear the slot
+  # when phase is nil. Unlike the minibuf messages this stays put, so the user
+  # can see at a glance whether it is still listening, still loading, or done.
+  # `fraction` (0..1) renders as a percentage.
+  def _status(phase, fraction = nil)
+    if phase.nil?
+      vma.gui&.set_status_indicator(STATUS_KEY, nil)
+      return
+    end
+    text, css = STATUS_PHASES[phase]
+    return if text.nil?
+    if fraction
+      text = "#{text} #{(fraction.to_f * 100).round}%"
+    elsif !STATUS_STEADY.include?(phase)
+      text = "#{text}…"
+    end
+    vma.gui&.set_status_indicator(STATUS_KEY, text, css_class: css)
+  end
+
+  # (worker thread) A progress report from the worker. Hop onto the main thread,
+  # then map the phase onto whichever status this session is currently in — a
+  # download can be running while still listening or while already finalizing,
+  # and the two must not show the same thing.
+  def _progress_update(phase, fraction)
+    GLib::Idle.add do
+      case phase
+      when "download"
+        _status(:downloading, fraction) if @active || @finalizing
+      when "load"
+        _status(@active ? :loading : (@finalizing ? :queued : nil))
+      when "transcribe"
+        # Preliminary passes report progress too, but they run while listening
+        # and must not overwrite LISTENING with TRANSCRIBING.
+        _status(:transcribing, fraction) if @finalizing && !@active
+      end
+      false
+    end
+  end
+
+  # (main thread) The model finished loading, or failed to. Which state that
+  # lands in depends on whether the user has stopped in the meantime: still
+  # listening, or already stopped with a finalize queued behind the load. Once
+  # the finalize has completed, neither holds and the slot is left alone.
+  def _on_worker_ready(ok)
+    if @active
+      if ok
+        _status(:listening)
+        message("Dictation: model loaded — listening")
+      else
+        _status(:failed)
+        message("Dictation: could not load speech model — #{dictation_worker.start_error}")
+      end
+    elsif @finalizing
+      if ok
+        _status(:transcribing)
+        message("Dictation: model loaded — transcribing…")
+      else
+        _status(:failed)
+        message("Dictation: could not load speech model — #{dictation_worker.start_error}")
+      end
+    end
+  end
 
   def _chunk_secs
     (cnf.dictation.chunk_secs! || 4).to_f
@@ -468,6 +620,11 @@ class VmaDictationSession
 
   # (main thread) Replace the preliminary span with the final transcript.
   def _finalize_replace(res)
+    # Transcription is done however this turns out; clear the slot up front so
+    # every path below (including the early returns) leaves it empty. A restart
+    # at the end re-populates it via start.
+    @finalizing = false
+    _status(nil)
     if !res[:ok]
       message("Dictation: transcription failed — #{res[:error]}")
       return
@@ -539,6 +696,132 @@ end
 
 # Modal dialog shown when starting a dictation: pick a saved prompt, edit it, or
 # add a new one. Calls `on_start` with the chosen prompt (or nil) on Start.
+# ── Model selection ─────────────────────────────────────────────────────────────
+
+# Presets offered by Modules ▸ "Select Dictation Model…", as
+# [model id, label, language]. All are CTranslate2 format, which faster-whisper
+# loads straight from the HuggingFace id with no conversion step.
+#
+# The language travels with the model on purpose: a Finnish fine-tune transcribes
+# badly while the language stays "en", and nothing in the UI would show that
+# mismatch, so choosing a preset sets both.
+VMA_DICT_MODELS = [
+  ["large-v3",                                  "large-v3 — multilingual, general purpose (default)", "en"],
+  ["Finnish-NLP/whisper-large-finnish-v3-ct2",  "Finnish — large-v3 fine-tune (best Finnish accuracy)", "fi"],
+  ["RASMUS/whisper-large-v3-turbo-finnish-ct2", "Finnish — large-v3-turbo fine-tune (faster)", "fi"],
+  ["mpasila/faster-whisper-large-finnish-v3",   "Finnish — large-v3 fine-tune (alternate packaging)", "fi"],
+  ["tiny.en",                                   "tiny.en — English only, fast and low quality", "en"],
+].freeze
+
+# Apply a model choice: update the live config, remember it, and retire the
+# running worker so the next dictation loads the new weights (the worker holds
+# one model for its whole life).
+def vma_dict_apply_model(model, language)
+  return if model.nil? || model.to_s.strip.empty?
+  cnf.dictation.model = model
+  cnf.dictation.language = language unless language.nil? || language.to_s.empty?
+
+  data = ($vma_dict_prompts ||= vma_dict_load_prompts)
+  data["model"] = model
+  data["language"] = cnf.dictation.language!
+  vma_dict_save_prompts(data)
+
+  $vma_dictation_worker&.stop
+  message("Dictation model: #{model} (#{cnf.dictation.language!}) — loads on next dictation")
+end
+
+# Restore the stored model choice at init, so it survives a restart without the
+# user having to hand-edit settings.rb.
+def vma_dict_restore_model
+  data = ($vma_dict_prompts ||= vma_dict_load_prompts)
+  return if data["model"].nil? || data["model"].to_s.empty?
+  cnf.dictation.model = data["model"]
+  cnf.dictation.language = data["language"] if data["language"]
+end
+
+# Pick the speech model (and its language). Presets in a dropdown, plus a free
+# text field for any other CTranslate2 model id or local path.
+def vma_dictation_model_dialog
+  current = cnf.dictation.model! || "large-v3"
+
+  window = Gtk::Window.new
+  window.set_transient_for($vmag.window) if $vmag&.window
+  window.modal = true
+  window.title = "Select dictation model"
+
+  frame = Gtk::Frame.new
+  window.set_child(frame)
+  vbox = Gtk::Box.new(:vertical, 8)
+  vbox.margin = 12
+  frame.set_child(vbox)
+
+  vbox.append(Gtk::Label.new("Speech recognition model:"))
+
+  labels = VMA_DICT_MODELS.map { |_id, label, _lang| label }
+  dropdown = Gtk::DropDown.new(Gtk::StringList.new(labels), nil)
+  vbox.append(dropdown)
+
+  entry = Gtk::Entry.new
+  entry.text = current
+  entry.hexpand = true
+  vbox.append(entry)
+
+  lang_box = Gtk::Box.new(:horizontal, 8)
+  lang_box.append(Gtk::Label.new("Language code:"))
+  lang_entry = Gtk::Entry.new
+  lang_entry.text = (cnf.dictation.language! || "en").to_s
+  lang_box.append(lang_entry)
+  vbox.append(lang_box)
+
+  note = Gtk::Label.new("Any CTranslate2 model id or local path works. " \
+                        "A model not yet downloaded is fetched on first use.")
+  note.wrap = true
+  note.xalign = 0
+  vbox.append(note)
+
+  sel = VMA_DICT_MODELS.index { |id, _l, _lang| id == current }
+  dropdown.selected = sel if sel
+  dropdown.signal_connect("notify::selected") do
+    id, _label, lang = VMA_DICT_MODELS[dropdown.selected]
+    if id
+      entry.text = id
+      lang_entry.text = lang.to_s
+    end
+  end
+
+  hbox = Gtk::Box.new(:horizontal, 8)
+  hbox.halign = :end
+  cancel_btn = Gtk::Button.new(:label => "Cancel")
+  ok_btn = Gtk::Button.new(:label => "Use model")
+  hbox.append(cancel_btn)
+  hbox.append(ok_btn)
+  vbox.append(hbox)
+
+  apply = proc do
+    vma_dict_apply_model(entry.text.to_s.strip, lang_entry.text.to_s.strip)
+    window.destroy
+  end
+  ok_btn.signal_connect("clicked") { apply.call }
+  cancel_btn.signal_connect("clicked") { window.destroy }
+
+  press = Gtk::EventControllerKey.new
+  press.set_propagation_phase(Gtk::PropagationPhase::CAPTURE)
+  window.add_controller(press)
+  press.signal_connect "key-pressed" do |_g, keyval, _kc, _y|
+    if keyval == Gdk::Keyval::KEY_Return
+      apply.call
+      true
+    elsif keyval == Gdk::Keyval::KEY_Escape
+      window.destroy
+      true
+    else
+      false
+    end
+  end
+
+  window.show
+end
+
 def vma_dictation_prompt_dialog(&on_start)
   data = ($vma_dict_prompts ||= vma_dict_load_prompts)
   prompts = data["prompts"] || []
@@ -708,6 +991,9 @@ end
 
 def dictation_init
   $vma_dict_prompts = vma_dict_load_prompts
+  vma_dict_restore_model
+  reg_act(:dictation_select_model, proc { vma_dictation_model_dialog },
+          "Voice dictation: choose speech model")
   reg_act(:dictation_toggle, proc { dictation_toggle },
           "Voice dictation: start/stop (fast, last prompt)")
   reg_act(:dictation_toggle_dialog, proc { dictation_toggle_dialog },
@@ -736,11 +1022,15 @@ def dictation_init
   vma.gui.menu.add_module_action(:dictation_toggle, "Start/Stop Dictation")
   vma.gui.menu.add_module_action(:dictation_toggle_dialog, "Start Dictation (choose prompt)")
   vma.gui.menu.add_module_action(:dictation_release_vram, "Release Dictation VRAM")
+  vma.gui.menu.add_module_action(:dictation_select_model, "Select Dictation Model…")
 end
 
 def dictation_disable
   dictation_session.stop if $vma_dict_session&.active?
   $vma_dictation_worker&.stop
+  # The module is going away; don't leave a stale indicator behind. (stop above
+  # only queues the finalize that would normally clear it.)
+  vma.gui&.set_status_indicator(VmaDictationSession::STATUS_KEY, nil)
   unreg_act(:dictation_toggle)
   unreg_act(:dictation_toggle_dialog)
   unreg_act(:dictation_release_vram)
@@ -748,10 +1038,12 @@ def dictation_disable
   unreg_act(:dictation_toggle_stay)
   unreg_act(:dictation_newline)
   unreg_act(:dictation_exit_mode)
+  unreg_act(:dictation_select_model)
   unbindkey "C , k"
   unbindkey "C , ; k"
   unbindkey "dictation", include_child_nodes: true
   vma.gui.menu.remove_module_action(:dictation_toggle)
   vma.gui.menu.remove_module_action(:dictation_toggle_dialog)
   vma.gui.menu.remove_module_action(:dictation_release_vram)
+  vma.gui.menu.remove_module_action(:dictation_select_model)
 end

@@ -7,7 +7,7 @@ class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook, :macro, :actions
   # @!attribute [rw] kbd
   #   @return [KeyBindingTree]
-  attr_accessor :converters, :fh, :paint_stack, :kbd, :langsrv, :register, :cur_register, :clipboard
+  attr_accessor :converters, :fh, :bookmarks, :paint_stack, :kbd, :langsrv, :register, :cur_register, :clipboard
   #attr_writer :call_func, :update_highlight
 
   def initialize()
@@ -180,6 +180,7 @@ class Editor
     sleep(0.03)
 
     BufferManager.init
+    Bookmarks.init
 
     @gui.init_menu
 
@@ -271,6 +272,7 @@ class Editor
     require "vimamsa/file_history.rb"
     @fh = FileHistory.new
     @_plugins[:FileHistory] = @fh
+    @bookmarks = Bookmarks.new
 
     register_plugin(:FileHistory, @fh)
     register_plugin(:FileFinder, FileFinder.new)

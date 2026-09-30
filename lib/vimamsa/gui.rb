@@ -719,9 +719,18 @@ class VMAgui
       # To show e.g. current folder
       @subtitle = Gtk::Label.new("")
 
+      # Persistent status slots for long-running work that outlives a minibuf
+      # line — e.g. dictation reporting that its speech model is still loading.
+      # Modules claim a slot by key via #set_status_indicator; core attaches no
+      # meaning to the keys.
+      @status_indicators = {}
+      @status_indicator_css = {}
+      @status_indicator_box = Gtk::Box.new(:horizontal, 6)
+
       @statbox = Gtk::Box.new(:horizontal, 6)
       @statbox.append(@subtitle)
       @subtitle.hexpand = true
+      @statbox.append(@status_indicator_box)
       @statbox.append(@keytrail)
       @statbox.append(@statnfo)
 
@@ -809,6 +818,44 @@ class VMAgui
     @keytrail.text = trail if trail != @last_trail_text
     @last_badge_text = badge
     @last_trail_text = trail
+  end
+
+  # Show a persistent status message in its own slot in the status area, for
+  # work that takes long enough that the user needs to see it is still going —
+  # a minibuf line scrolls away and is easy to miss. `key` namespaces the slot
+  # (one per module/feature), `text` nil or empty removes it, `css_class` styles
+  # the label. Call from the main thread (GLib::Idle.add from a worker thread).
+  def set_status_indicator(key, text, css_class: nil)
+    return if @status_indicator_box.nil? # GUI not built yet
+    label = @status_indicators[key]
+
+    if text.nil? || text.to_s.empty?
+      return if label.nil?
+      @status_indicator_box.remove(label)
+      @status_indicators.delete(key)
+      @status_indicator_css.delete(key)
+      return
+    end
+
+    if label.nil?
+      label = Gtk::Label.new("")
+      label.add_css_class("status-indicator")
+      @status_indicators[key] = label
+      @status_indicator_box.append(label)
+    end
+
+    if css_class != @status_indicator_css[key]
+      prev = @status_indicator_css[key]
+      label.remove_css_class(prev) if prev
+      label.add_css_class(css_class) if css_class
+      @status_indicator_css[key] = css_class
+    end
+    label.text = text.to_s
+  end
+
+  # Text currently shown in a status slot, nil when the slot is empty.
+  def status_indicator(key)
+    @status_indicators[key]&.text
   end
 
   # Show the last executed key chord and action next to the menubar.
@@ -1125,6 +1172,24 @@ class VMAgui
   def file_panel_refresh
     return unless @file_panel_shown
     @file_panel.refresh
+  end
+
+  def file_panel_shown?
+    @file_panel_shown
+  end
+
+  # alt-h / alt-l: previous/next file in the panel's display order.
+  # A no-op while the panel is hidden.
+  def file_panel_select_adjacent(delta)
+    return unless @file_panel_shown
+    @file_panel.select_adjacent(delta)
+  end
+
+  # ` s: label the panel's file rows and switch to the file whose label is
+  # typed (see FileTreePanel#easy_jump_start). A no-op while the panel is hidden.
+  def file_panel_easy_jump
+    return unless @file_panel_shown
+    @file_panel.easy_jump_start
   end
 
   def show_file_panel

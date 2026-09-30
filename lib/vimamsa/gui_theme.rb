@@ -62,6 +62,10 @@ THEME_COLOR_DEFAULTS = {
   title_fg:        "#cdffee",
   action_trail_fg: "#aaaaaa",
   keytrail_fg:     "#e6db74",
+  # module status indicators in the status area (see set_status_indicator)
+  status_busy_bg:   "#d49e63",
+  status_active_bg: "#e05c5c",
+  status_error_bg:  "#b03030",
   # mode badge (base + per-mode background)
   badge_fg:        "#1b1d1e",
   badge_bg:        "#75715e",
@@ -139,6 +143,17 @@ def base_chrome_css
     label.mode-badge.mode-other   { background-color: #{theme_color(:badge_other)}; }
 
     label.keytrail { font-family: monospace; font-size: 10pt; font-weight: bold; color: #{theme_color(:keytrail_fg)}; }
+
+    label.status-indicator {
+      font-family: monospace; font-size: 9pt; font-weight: 700;
+      padding: 1px 7px; margin: 2px 4px 2px 0; border-radius: 2px;
+      color: #{theme_color(:badge_fg)}; background-color: #{theme_color(:status_busy_bg)};
+    }
+    /* waiting on something slow (model load, download) */
+    label.status-indicator.status-busy   { background-color: #{theme_color(:status_busy_bg)}; }
+    /* actively capturing — the state the user most needs to not miss */
+    label.status-indicator.status-active { background-color: #{theme_color(:status_active_bg)}; }
+    label.status-indicator.status-error  { background-color: #{theme_color(:status_error_bg)}; }
   CSS
 end
 

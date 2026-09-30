@@ -432,6 +432,11 @@ class Buffer < String
       str << "\n"
     end
 
+    # Any previously stashed folds refer to the text being replaced (fold.rb);
+    # with cnf.fold.start_closed the new content loads with all folds collapsed.
+    fold_reset
+    str = fold_collapse_all(str) if cnf.fold.start_closed?
+
     self.replace(str)
     @line_ends = scan_indexes(self, /\n/)
     words = scan_all_words
@@ -1427,7 +1432,8 @@ class Buffer < String
     txt = "⦁" + txt + "⦁" if op == :bold
     txt = "⟦" + txt + "⟧" if op == :link
     txt = "❙" + txt + "❙" if op == :title
-    txt.gsub!(/[❙◼⟦⟧⦁]/, "") if op == :clear
+    txt = "╱" + txt + "╱" if op == :italic
+    txt.gsub!(/[❙◼⟦⟧⦁╱]/, "") if op == :clear
     txt
   end
 
@@ -1471,7 +1477,7 @@ class Buffer < String
     txt = apply_style_markers(txt, op)
 
     if [:h1, :h2, :h3, :h4].include?(op)
-      txt.gsub!(/[❙◼⟦⟧⦁]/, "")
+      txt.gsub!(/[❙◼⟦⟧⦁╱]/, "")
       txt.strip!
       txt = "◼ " + txt if op == :h1
       txt = "◼◼ " + txt if op == :h2

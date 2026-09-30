@@ -20,7 +20,6 @@ class VSourceView < GtkSource::View
     @tt = nil
     @applying_delta = false
     @last_key_press_text = nil
-    @deltas_idle_pending = false
     autocp_init
 
     # Mainly after page-up or page-down
@@ -388,8 +387,14 @@ class VSourceView < GtkSource::View
     # routed into the key binding tree here instead — what a character does is
     # then up to the bindings ("I <char>" inserts, "C r <char>" replaces), not
     # to this handler.
-    buffer.signal_connect_after("insert-text") do |_buf, iter, text, _len|
+    buffer.signal_connect("insert-text") do |_buf, _iter, text, _len|
       unless @applying_delta || @bufo.nil?
+        # Cancel the insertion before it happens: the Ruby buffer is the source
+        # of truth, and letting the text land here first would put it on screen
+        # in the wrong place (or in the wrong mode) until a delete took it back
+        # out. Stopping the emission keeps the default handler from running, so
+        # nothing is ever inserted and nothing has to be undone.
+        _buf.signal_emit_stop("insert-text")
         # A printable key arrives twice: as a key event AND as this IM commit.
         # The key event already went to the key binding tree, so only a commit
         # with no matching key press (AltGr, dead keys, compose) still needs to
@@ -397,49 +402,23 @@ class VSourceView < GtkSource::View
         # repeat of the same character, gets its own.
         im_keys = (@last_key_press_text == text) ? nil : text
         @last_key_press_text = nil
-        # Whatever the mode, take the IM's text back out of the GTK buffer: the
-        # Ruby buffer is the source of truth and the binding that handles the
-        # character ("I <char>", "C r <char>", ...) puts it in through the
-        # normal delta path.
-        pos_before = iter.offset - text.length
-        @bufo.deltas << [pos_before, DELETE, text.length, nil]
-        # Don't flush here: we are inside the "insert-text" emission, and the
-        # emitter (plus every other handler in the chain) still holds live
-        # iterators into this buffer. handle_deltas mutates it — the revert path
-        # deletes the committed text, remask_gtk_buffer rewrites masked regions —
-        # which invalidates those iterators ("Invalid text buffer iterator"
-        # Gtk-WARNING). Flush once the emission has unwound instead.
-        flush_deltas_idle
-        # After flush_deltas_idle, so the revert is applied before any action
-        # the character triggers.
+        # The binding that handles the character ("I <char>", "C r <char>", ...)
+        # puts it in through the normal delta path.
         dispatch_im_text_as_keys(im_keys) if im_keys
       end
       false
     end
   end
 
-  # Flush pending deltas to the GTK buffer after the current signal emission has
-  # unwound. One idle is enough however many deltas queued up: handle_deltas
-  # drains the whole queue. A key press arriving first will drain it too — the
-  # queue is FIFO either way — and the idle then finds nothing to do.
-  def flush_deltas_idle
-    return if @deltas_idle_pending
-    @deltas_idle_pending = true
-    GLib::Idle.add(proc {
-      @deltas_idle_pending = false
-      handle_deltas
-      false
-    })
-  end
-
   # Hand IM-committed text to the key binding tree as if it had arrived as key
-  # presses. Deferred to an idle for two reasons: we are inside the "insert-text"
-  # emission (the action may mutate the buffer other handlers hold iterators
-  # into), and the revert delta queued above must be applied first — idles run
-  # in the order they were added, so the flush_deltas_idle below goes first.
+  # presses. Deferred to an idle because we are inside the "insert-text"
+  # emission, whose emitter still holds iterators into the buffer that the
+  # action is free to mutate. Whatever the action queued is flushed afterwards,
+  # the same way handle_key_event flushes after a real key press.
   def dispatch_im_text_as_keys(text)
     GLib::Idle.add(proc {
       text.each_char { |c| vma.kbd.match_key_conf(c, nil, :key_press) }
+      handle_deltas
       false
     })
   end

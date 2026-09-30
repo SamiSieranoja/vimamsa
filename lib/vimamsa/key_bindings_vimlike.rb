@@ -50,6 +50,8 @@ add_keys "intro", {
   "VCX right" => "buf.move(FORWARD_CHAR)",
   "VCX left" => "buf.move(BACKWARD_CHAR)",
  "C , b" => :start_buf_manager,
+  "C , M" => :bookmark_add,
+  "C , '" => :bookmark_list,
   "VC l" => "buf.move(FORWARD_CHAR)",
   "VC , , s" => :search_actions,
   "C , n b" => :buf_new,
@@ -117,6 +119,11 @@ add_keys "core", {
   # Buffer handling
   # "C B" => "bufs.switch",
   "C tab" => "bufs.switch_to_last_buf",
+  # prev/next file in file panel order (no-op while the panel is hidden)
+  "C alt-h" => :file_panel_prev_file,
+  "C alt-l" => :file_panel_next_file,
+  # label the file panel rows, jump to a file by typing its label
+  "C ` s" => :file_panel_easy_jump,
   #    'C , s'=> 'gui_select_buffer',
   "C , r v b" => :buf_revert,
   "C , c b" => "bufs.close_current_buffer",
@@ -167,7 +174,7 @@ add_keys "core", {
   "VC /[1-9]/" => "vma.kbd.set_next_command_count(<char>)",
   #    'VC number=/[0-9]/+ g'=> 'jump_to_line(<number>)',
   #    'VC X=/[0-9]/+ * Y=/[0-9]/+ '=> 'x_times_y(<X>,<Y>)',
-  "VC 0(vma.kbd.next_command_count!=nil)" => "set_next_command_count(<char>)",
+  "VC 0(vma.kbd.next_command_count!=nil)" => "vma.kbd.set_next_command_count(<char>)",
   "VC 0(vma.kbd.next_command_count==nil)" => "buf.jump(BEGINNING_OF_LINE)",
   # 'C 0'=> 'buf.jump(BEGINNING_OF_LINE)',
   "VC ^" => "buf.jump(BEGINNING_OF_LINE)",
@@ -360,6 +367,7 @@ add_keys "core", {
 add_keys "hyperplaintext", {
   "V , t b" => :set_style_bold,
   "V , t l" => :set_style_link,
+  "V , t i" => :set_style_italic,
   "V , t c" => :clear_formats,
   "C , t h" => :set_line_style_heading,
   "C , t 1" => :set_line_style_h1,
@@ -368,6 +376,7 @@ add_keys "hyperplaintext", {
   "C , t 4" => :set_line_style_h4,
   "C , t b" => :set_line_style_bold,
   "C , t t" => :set_line_style_title,
+  "C , t i" => :set_line_style_italic,
   "C , t c" => :clear_line_styles,
 }
 

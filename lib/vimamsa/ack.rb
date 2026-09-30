@@ -147,7 +147,8 @@ class Ack
     instr = Shellwords.escape(_instr)
     bufstr = ""
     for path in vma.get_content_search_paths
-      bufstr += run_cmd("ack -Q --type-add=gd=.gd -ki --nohtml --nojs --nojson #{instr} #{Shellwords.escape(path)}")
+      # Skip editor autosave files (.<name>_vma_autosave, see Buffer#autosave_path)
+      bufstr += run_cmd("ack -Q --type-add=gd=.gd -ki --nohtml --nojs --nojson --ignore-file=match:/_vma_autosave$/ #{instr} #{Shellwords.escape(path)}")
     end
 
     b = ""
@@ -157,6 +158,7 @@ class Ack
         fn = $1
         lineno = $2
         matchpart = $3
+        next if fn.end_with?("_vma_autosave")
         pp [fn, lineno, matchpart]
         b << "[#{fn},#{lineno},#{matchpart}]\n"
         list << { fpath: fn, lineno: lineno, matchpart: matchpart }

@@ -66,6 +66,38 @@ class TestFold < VmaTest
     assert_buf "hello\nworld\n"
   end
 
+  # cnf.fold.start_closed (default): content set via set_content — the path all
+  # file loads and reverts go through — arrives with every fold collapsed, with
+  # no undo history for the collapse, and still serialises fully expanded.
+  def test_start_closed_collapses_on_load
+    act "buf.set_content(#{("before\n" + BLOCK + "after\n").inspect})"
+    assert_buf "before\n#{COLLAPSED}after\n"
+    assert_eq "before\n#{BLOCK}after\n", vma.buf.content_for_disk
+    act "buf.set_pos(#{"before\n".size})"
+    keys("enter")               # placeholder opens like a manually closed fold
+    assert_buf "before\n#{BLOCK}after\n"
+  end
+
+  def test_start_closed_collapses_multiple_blocks
+    act "buf.set_content(#{(BLOCK + "mid\n" + "{{{\nx\n}}}\n").inspect})"
+    assert_buf "#{COLLAPSED}mid\n{{{  ⟨3 lines⟩\n"
+    assert_eq "#{BLOCK}mid\n{{{\nx\n}}}\n", vma.buf.content_for_disk
+  end
+
+  # An unbalanced {{{ line (no matching }}}) is left as plain text at load.
+  def test_start_closed_leaves_unbalanced_marker_alone
+    act "buf.set_content(#{"{{{ dangling\nrest\n".inspect})"
+    assert_buf "{{{ dangling\nrest\n"
+  end
+
+  def test_start_closed_disabled_keeps_expanded
+    act "cnf.fold.start_closed = false"
+    act "buf.set_content(#{BLOCK.inspect})"
+    assert_buf BLOCK
+  ensure
+    act "cnf.fold.start_closed = true"
+  end
+
   # A fold containing a nested fold collapses to one line and round-trips.
   def test_nested_fold_round_trip
     nested = "{{{ outer\na\n{{{ inner\nb\n}}}\nc\n}}}\n"

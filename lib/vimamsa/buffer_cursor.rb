@@ -51,6 +51,9 @@ class Buffer < String
     calculate_line_and_column_pos
 
     check_if_modified_outside
+    # Actions often end in set_pos; a false return would keep them out of
+    # macro recordings and abort macro playback.
+    return true
   end
 
   # Get the line number of character position

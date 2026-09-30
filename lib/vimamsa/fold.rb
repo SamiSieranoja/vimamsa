@@ -12,10 +12,11 @@ module Vimamsa
 # fully expanded text.
 #
 # Known v1 limitations (inherent to the extract & stash approach): folded text is
-# absent from in-buffer search / replace / LSP while closed, and fold state does
-# not persist across restart (the {{{ }}} markers do, so a reopened file starts
-# fully expanded). A region that already contains a *closed* fold cannot be
-# folded until the inner fold is opened.
+# absent from in-buffer search / replace / LSP while closed, and per-fold state
+# does not persist across restart (the {{{ }}} markers do; with
+# cnf.fold.start_closed — the default — a reopened file starts fully collapsed,
+# otherwise fully expanded). A region that already contains a *closed* fold
+# cannot be folded until the inner fold is opened.
 
 # One closed fold. `body` is the exact original block text (the {{{ line through
 # the }}} line, trailing newline included) so open/save round-trips byte-for-byte.
@@ -29,6 +30,60 @@ class Buffer < String
     @folds ||= []
     @fold_anchors ||= {}
     @fold_next_id ||= 0
+  end
+
+  # Drop all fold state. Called whenever the buffer content is replaced
+  # wholesale (set_content / revert): the stashed bodies and anchors refer to
+  # the old text and would splice garbage into the new one.
+  def fold_reset
+    @folds = []
+    @fold_anchors = {}
+    @fold_next_id = 0
+  end
+
+  def _fold_placeholder(label, nlines)
+    head = label.empty? ? "{{{" : "{{{ #{label}"
+    "#{head}  ⟨#{nlines} lines⟩\n"
+  end
+
+  # Return `str` with every top-level {{{...}}} block replaced by a closed-fold
+  # placeholder, the bodies stashed as if each fold had been closed by hand.
+  # Runs on the raw string *before* it is installed as buffer content
+  # (set_content), so anchors are positions in the returned string and no
+  # deltas / undo history / modified state are produced. Unbalanced {{{ lines
+  # are left as plain text.
+  def fold_collapse_all(str)
+    fold_reset
+    lines = str.lines
+    out = +""
+    i = 0
+    while i < lines.size
+      line = lines[i]
+      if line =~ FOLD_START_RE
+        depth = 1
+        j = i + 1
+        while j < lines.size
+          depth += 1 if lines[j] =~ FOLD_START_RE
+          depth -= 1 if lines[j] =~ FOLD_END_RE
+          break if depth == 0
+          j += 1
+        end
+        if depth == 0
+          body = lines[i..j].join
+          label = line.sub(FOLD_START_RE, "").strip
+          nlines = body.count("\n")
+          anchor_id = (@fold_next_id += 1)
+          @fold_anchors[anchor_id] = out.size
+          @folds << FoldRecord.new(anchor_id, label, body, nlines)
+          out << _fold_placeholder(label, nlines)
+          i = j + 1
+          next
+        end
+      end
+      out << line
+      i += 1
+    end
+    out
   end
 
   def fold_line_text(line_i)
@@ -99,8 +154,7 @@ class Buffer < String
 
     body = self[block_begin..block_end]
     nlines = body.count("\n")
-    head = label.empty? ? "{{{" : "{{{ #{label}"
-    placeholder = "#{head}  ⟨#{nlines} lines⟩\n"
+    placeholder = _fold_placeholder(label, nlines)
 
     # Insert the placeholder first, then delete the original block (now shifted
     # past it). Deleting first would momentarily empty the buffer and trip

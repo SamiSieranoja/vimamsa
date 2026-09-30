@@ -56,8 +56,9 @@ class FileTreePanel
     @context_menu.popup
   end
 
-  def refresh
-    @store.clear
+  # Buffers grouped by directory in the panel's display order:
+  # [[dirname, [{bname:, buf:}, ...]], ...], dirs and files sorted by name.
+  def grouped_buffers
     bh = {}
     vma.buffers.list.each do |b|
       dname = b.fname ? File.dirname(b.fname) : "*"
@@ -65,12 +66,98 @@ class FileTreePanel
       bh[dname] ||= []
       bh[dname] << { bname: bname, buf: b }
     end
+    bh.keys.sort.map { |dname| [dname, bh[dname].sort_by { |x| x[:bname] }] }
+  end
 
-    bh.keys.sort.each do |dname|
+  # Switch to the file `delta` rows away (±1) from the current buffer in the
+  # panel's display order, wrapping at the ends.
+  def select_adjacent(delta)
+    ids = grouped_buffers.flat_map { |_, files| files.map { |x| x[:buf].id } }
+    return if ids.empty?
+    i = ids.index(vma.buf&.id)
+    target = i.nil? ? ids.first : ids[(i + delta) % ids.size]
+    vma.buffers.set_current_buffer(target)
+  end
+
+  # ── Easy jump: label file rows, switch to the file whose label is typed ──
+  # Same mechanism as EasyJump (easy_jump.rb): a whole-keyboard override
+  # captures label input; labels are rendered by prefixing the row text.
+
+  EJ_CHARS = "ASDFJKLGHQWERUIOPTYZXCVBNM".split("")
+
+  def easy_jump_active?
+    !@ej_targets.nil?
+  end
+
+  # Single-char labels while they suffice, else all 2-char pairs — never mixed
+  # lengths, so no label is a prefix of another.
+  def ej_labels(n)
+    return EJ_CHARS.first(n) if n <= EJ_CHARS.size
+    EJ_CHARS.product(EJ_CHARS).map(&:join).first(n)
+  end
+
+  def easy_jump_start
+    easy_jump_cancel if easy_jump_active?
+    file_rows = grouped_buffers.flat_map { |_, files| files }
+    return if file_rows.empty?
+
+    labels = ej_labels(file_rows.size)
+    @ej_targets = {}
+    file_rows.each_with_index { |bnfo, i| @ej_targets[labels[i]] = bnfo[:buf].id }
+    @ej_input = ""
+
+    # Prefix each file row's label in the store; row order matches
+    # grouped_buffers (refresh builds the store from it).
+    i = 0
+    @store.each do |_model, _path, iter|
+      next if iter[COL_BUF_ID] == 0
+      iter[COL_LABEL] = "#{labels[i]}  #{iter[COL_LABEL]}"
+      i += 1
+    end
+
+    vma.kbd.set_keyhandling_override(self.method(:easy_jump_input_char))
+  end
+
+  def easy_jump_input_char(c, event_type)
+    return true if event_type != :key_press
+    # esc or any non-plain key (ctrl-x, alt-x, ...) aborts
+    if c.size != 1
+      easy_jump_cancel
+      return true
+    end
+
+    @ej_input << c.upcase
+    id = @ej_targets[@ej_input]
+    if id
+      target = id
+      easy_jump_cancel        # remove override before switching; switch refreshes
+      vma.buffers.set_current_buffer(target)
+    elsif @ej_targets.keys.none? { |l| l.start_with?(@ej_input) }
+      easy_jump_cancel
+    end
+    return true
+  end
+
+  def easy_jump_cancel
+    vma.kbd.remove_keyhandling_override
+    @ej_targets = nil
+    refresh                    # rebuild rows without label prefixes
+  end
+
+  def refresh
+    # A buffer-list change mid-pick must not leave a stale override installed
+    # or labels pointing at rows that no longer exist.
+    if easy_jump_active?
+      vma.kbd.remove_keyhandling_override
+      @ej_targets = nil
+    end
+
+    @store.clear
+    grouped_buffers.each do |dname, files|
       dir_iter = @store.append(nil)
       dir_iter[COL_LABEL] = "📂 #{tilde_path(dname)}"
       dir_iter[COL_BUF_ID] = 0
-      bh[dname].sort_by { |x| x[:bname] }.each do |bnfo|
+      files.each do |bnfo|
         active_mark = bnfo[:buf].is_active? ? "● " : "  "
         file_iter = @store.append(dir_iter)
         file_iter[COL_LABEL] = "#{active_mark}#{bnfo[:bname]}"

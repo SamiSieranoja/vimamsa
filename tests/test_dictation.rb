@@ -95,6 +95,65 @@ class TestDictation < VmaTest
     File.delete(path) if path && File.exist?(path)
   end
 
+  # --- status indicator ---
+
+  # The generic status slot the module drives: set, replace, and clear.
+  def test_status_indicator_slot
+    vma.gui.set_status_indicator(:_test_slot, "WORKING…", css_class: "status-busy")
+    assert_eq "WORKING…", vma.gui.status_indicator(:_test_slot)
+
+    vma.gui.set_status_indicator(:_test_slot, "DONE", css_class: "status-active")
+    assert_eq "DONE", vma.gui.status_indicator(:_test_slot)
+
+    vma.gui.set_status_indicator(:_test_slot, nil)
+    assert_eq nil, vma.gui.status_indicator(:_test_slot), "slot should be gone once cleared"
+  ensure
+    vma.gui.set_status_indicator(:_test_slot, nil)
+  end
+
+  # Every phase must map to text, or the user gets a blank badge mid-dictation.
+  def test_status_phases_all_have_text
+    load_dictation
+    %i[loading listening transcribing failed].each do |phase|
+      text, css = VmaDictationSession::STATUS_PHASES[phase]
+      assert !text.to_s.empty?, "phase #{phase} has no text"
+      assert !css.to_s.empty?, "phase #{phase} has no css class"
+    end
+  end
+
+  # --- model selection ---
+
+  # Applying a preset must set the language too: a Finnish model left on "en"
+  # transcribes badly and nothing in the UI would show the mismatch.
+  def test_apply_model_sets_model_and_language
+    load_dictation
+    prev_model = cnf.dictation.model!
+    prev_lang = cnf.dictation.language!
+
+    vma_dict_apply_model("Finnish-NLP/whisper-large-finnish-v3-ct2", "fi")
+    assert_eq "Finnish-NLP/whisper-large-finnish-v3-ct2", cnf.dictation.model!
+    assert_eq "fi", cnf.dictation.language!
+  ensure
+    cnf.dictation.model = prev_model
+    cnf.dictation.language = prev_lang
+  end
+
+  # A blank id must not wipe the current model.
+  def test_apply_model_ignores_blank
+    load_dictation
+    cnf.dictation.model = "large-v3"
+    vma_dict_apply_model("   ", "fi")
+    assert_eq "large-v3", cnf.dictation.model!, "blank model id should be ignored"
+  end
+
+  # The Finnish model the presets are built around must be offered, with "fi".
+  def test_model_presets_include_finnish
+    load_dictation
+    entry = VMA_DICT_MODELS.find { |id, _l, _lang| id == "Finnish-NLP/whisper-large-finnish-v3-ct2" }
+    assert !entry.nil?, "Finnish large-v3 preset missing"
+    assert_eq "fi", entry[2], "Finnish preset should select the fi language"
+  end
+
   # --- cold start (model not loaded yet) ---
 
   # A worker that hasn't loaded its model reports itself not ready, so the
