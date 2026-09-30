@@ -38,11 +38,13 @@ module Gui
       tag = vbuf.create_tag("vma_flash")
       tag.background = cnf.match.highlight.color!
     end
+    # An earlier flash's edit must land before this range is computed on.
+    flush_flash
     lo = r.begin
     hi = [r.last + 1, bf.size].min # +1: cover the last char inclusively
     vbuf.apply_tag(tag, vbuf.get_iter_at(:offset => lo), vbuf.get_iter_at(:offset => hi))
 
-    GLib::Timeout.add((cnf.flash.duration! * 1000).to_i) do
+    finish = proc {
       vbuf.remove_tag(tag, vbuf.get_iter_at(:offset => lo), vbuf.get_iter_at(:offset => hi))
       after&.call
       # `after` may have edited the buffer (e.g. delete-to-mark). The normal
@@ -50,8 +52,25 @@ module Gui
       # deferred edit to the GTK view and redraw the cursor here.
       bf.view.handle_deltas
       bf.view.draw_cursor
+    }
+    src = GLib::Timeout.add((cnf.flash.duration! * 1000).to_i) do
+      @pending_flash = nil
+      finish.call
       false
     end
+    @pending_flash = [src, finish]
+  end
+
+  # Finish a flash that is still showing now: clear it and run its deferred
+  # block (e.g. the delete). Called when the next key arrives, so that key's
+  # action sees the edit done — otherwise typing "d w j" within
+  # cnf.flash.duration moves first and the late delete snaps the cursor back.
+  def self.flush_flash
+    pf = @pending_flash
+    return if pf.nil?
+    @pending_flash = nil
+    GLib::Source.remove(pf[0])
+    pf[1].call
   end
 
   def self.highlight_match(bf, str, color: theme_color(:highlight_default), weight: 650)

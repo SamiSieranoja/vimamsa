@@ -497,6 +497,9 @@ class KeyBindingTree
   # if no, go back to root
   def match_key_conf(c, translated_c, event_type)
     log "MATCH KEY CONF: #{[c, translated_c]}"
+    # A delete still flashing from the previous key must land before this
+    # key's action runs.
+    Gui.flush_flash
 
     if !@override_keyhandling_callback.nil?
       ret = @override_keyhandling_callback.call(c, event_type)

@@ -51,4 +51,28 @@ class TestFlash < VmaTest
       ARGV.push("--test") if had_test
     end
   end
+
+  # A key pressed while a delete is still flashing must see the delete
+  # already done. Typing "d w j" faster than cnf.flash.duration used to run
+  # j first; the deferred delete then snapped the cursor back to line 0
+  # (and a macro recorded that way replayed from the wrong place).
+  def test_key_during_flash_runs_pending_delete_first
+    act('buf.insert_txt("  sdf sdfsdf\n  sdf sdfsdf\n  sdf sdfsdf")')
+    skip("no GUI view in this environment") unless buf.view
+    act :jump_to_start_of_buffer
+
+    had_test = ARGV.delete("--test")
+    prev_dur = cnf.flash.duration!
+    cnf.flash.enabled = true
+    cnf.flash.duration = 5 # long enough that it can't fire during the test
+    begin
+      keys "d w j"
+      assert_buf "sdf sdfsdf\n  sdf sdfsdf\n  sdf sdfsdf\n"
+      assert_pos 1, 0
+    ensure
+      Gui.flush_flash
+      cnf.flash.duration = prev_dur
+      ARGV.push("--test") if had_test
+    end
+  end
 end
