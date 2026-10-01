@@ -201,6 +201,10 @@ add_keys "vim edit", {
   "C d $" => :vim_delete_to_eol,
   "C d 0" => :delete_to_line_start,
   "C d ' <char>" => "buf.delete2(:to_mark,<char>)",
+  "C d f <char>" => "buf.delete2(:to_char,<char>)",
+  "C d F <char>" => "buf.delete2(:to_char_backward,<char>)",
+  "C d f space" => "buf.delete2(:to_char,' ')",
+  "C d F space" => "buf.delete2(:to_char_backward,' ')",
   "C D" => :vim_delete_to_eol,
 
   # Change / substitute

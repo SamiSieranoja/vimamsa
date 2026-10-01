@@ -37,6 +37,17 @@ class TestVimBindings < VmaTest
     assert_matches_vim("abcdef\n", "lld$")
   end
 
+  def test_delete_find_char
+    assert_matches_vim("foo bar baz\n", "dfa")
+    assert_matches_vim("foo bar baz\n", "wdf ")
+    assert_matches_vim("foo bar baz\n", "dfz")   # to end of line
+    assert_matches_vim("foo\nbar\n", "dfb")     # char only on next line: no-op
+    assert_matches_vim("foo bar baz\n", "$dFa")
+    assert_matches_vim("foo bar baz\n", "$dF ")
+    assert_matches_vim("foo\nbar\n", "j$dFo")   # char only on prev line: no-op
+    assert_matches_vim("foo bar\n", "dFf")       # at col 0: no-op
+  end
+
   def test_delete_and_change_to_eol
     assert_matches_vim("abcdef\n", "llD")
     assert_matches_vim("abcdef\n", "llCxy\e")

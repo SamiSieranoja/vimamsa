@@ -90,3 +90,27 @@ class TestKeySequences < VmaTest
     assert_mode :command
   end
 end
+
+class TestDeleteFindChar < VmaTest
+  def test_df_char
+    act 'buf.insert_txt("foo bar baz")'
+    act :jump_to_start_of_buffer
+    keys "d f a"
+    assert_buf "r baz\n"
+  end
+
+  def test_dF_char
+    act 'buf.insert_txt("foo bar baz")'
+    act :jump_to_start_of_buffer
+    act "buf.set_pos(10)" # on the final 'z'
+    keys "d F a"
+    assert_buf "foo bar bz\n"
+  end
+
+  def test_df_not_on_line_is_noop
+    act 'buf.insert_txt("foo\nbar")'
+    act :jump_to_start_of_buffer
+    keys "d f b"
+    assert_buf "foo\nbar\n"
+  end
+end

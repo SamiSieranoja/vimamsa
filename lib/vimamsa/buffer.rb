@@ -925,6 +925,17 @@ class Buffer < String
       else
         return nil
       end
+    elsif range_id == :to_char # vim d f <char>: up to and including next <char> on line
+      lend = @line_ends[@lpos]
+      cpos = self.index(mark, @pos + 1)
+      return nil if cpos.nil? or cpos >= lend
+      range = @pos..cpos
+    elsif range_id == :to_char_backward # vim d F <char>: from prev <char> on line, excluding cursor
+      lstart = @lpos == 0 ? 0 : @line_ends[@lpos - 1] + 1
+      return nil if @pos <= lstart
+      cpos = self.rindex(mark, @pos - 1)
+      return nil if cpos.nil? or cpos < lstart
+      range = cpos..(@pos - 1)
     elsif range_id == :to_line_end
       debug "TO LINE END"
       range = @pos..(@line_ends[@lpos] - 1)

@@ -227,6 +227,10 @@ add_keys "core", {
   #    'C d e'=> 'buf.delete_to_next_word_end',
   "C d <num> e" => "delete_next_word",
   "C d ' <char>" => "buf.delete2(:to_mark,<char>)",
+  "C d f <char>" => "buf.delete2(:to_char,<char>)",
+  "C d F <char>" => "buf.delete2(:to_char_backward,<char>)",
+  "C d f space" => "buf.delete2(:to_char,' ')",
+  "C d F space" => "buf.delete2(:to_char_backward,' ')",
   "C r <char>" => "buf.replace_with_char(<char>)", # TODO
   "C r space" => "buf.replace_with_char(' ')", # TODO
   "C , l b" => "load_buffer_list",
