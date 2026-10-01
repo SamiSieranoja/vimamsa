@@ -44,6 +44,10 @@ CYBER_COLOR_DEFAULTS = {
   status_bg: "#080e1c",
   status_fg: "#9fd7e4",
   tree_selection_fg: "#d5f7f5",
+  file_panel_current_fg: "#e8fffc", # current file row in the file panel
+  # file panel easy-jump (` s) labels: neon red + translucent "glow" tint
+  file_panel_ej_label_fg: "#ff7a90",
+  file_panel_ej_label_glow: "#ff2a55",
   # neon mode-badge tints (lit-tube colors per mode)
   badge_glow_command: "#9fe8a4",
   badge_glow_insert:  "#ffc5ff",
@@ -78,6 +82,11 @@ THEME_COLOR_DEFAULTS = {
   # minibuffer / command line
   minibuf_fg:      "#cdd6f4",
   minibuf_bg:      "#1e1e2e",
+  # current file row in the file panel (also bold)
+  file_panel_current_fg: "#ffffff",
+  # file panel easy-jump (` s) labels + translucent background tint
+  file_panel_ej_label_fg:   "#ff6b6b",
+  file_panel_ej_label_glow: "#d03030",
   # key log panel newest-row outline
   keylog_newest_border: "#94ffbb",
   # media controls strip
@@ -568,6 +577,7 @@ def gui_refresh_colors
   $vmag.chrome_css_provider&.load(data: base_chrome_css)
   $vmag.minibuf_css_provider&.load(data: minibuf_css)
   $vmag.keylog_panel&.refresh_css
+  $vmag.file_panel_refresh
   gui_refresh_theme   # rebuilds/reloads the cyberpunk provider from current cnf
 end
 

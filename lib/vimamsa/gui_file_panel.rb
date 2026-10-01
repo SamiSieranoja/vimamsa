@@ -1,13 +1,13 @@
 
 module Vimamsa
 class FileTreePanel
-  COL_LABEL = 0
+  COL_LABEL = 0   # Pango markup
   COL_BUF_ID = 1  # 0 = folder row (not selectable)
 
   def initialize
     @store = Gtk::TreeStore.new(String, Integer)
     @tree, @sw = build_list_tree(@store, ellipsize: Pango::EllipsizeMode::START,
-                                 text_col: COL_LABEL) do |iter|
+                                 text_col: COL_LABEL, markup: true) do |iter|
       buf_id = iter[COL_BUF_ID]
       next if buf_id.nil? || buf_id == 0
       vma.buffers.set_current_buffer(buf_id)
@@ -36,6 +36,20 @@ class FileTreePanel
 
   def widget
     @sw
+  end
+
+  # { buf_id => label markup } for the file rows (tests / introspection).
+  def row_labels
+    file_rows.transform_values { |iter| iter[COL_LABEL] }
+  end
+
+  def file_rows
+    h = {}
+    @store.each do |_model, _path, iter|
+      next if iter[COL_BUF_ID] == 0
+      h[iter[COL_BUF_ID]] = iter
+    end
+    h
   end
 
   def init_context_menu
@@ -111,7 +125,7 @@ class FileTreePanel
     i = 0
     @store.each do |_model, _path, iter|
       next if iter[COL_BUF_ID] == 0
-      iter[COL_LABEL] = "#{labels[i]}  #{iter[COL_LABEL]}"
+      iter[COL_LABEL] = "#{ej_label_markup(labels[i])} #{iter[COL_LABEL]}"
       i += 1
     end
 
@@ -144,6 +158,23 @@ class FileTreePanel
     refresh                    # rebuild rows without label prefixes
   end
 
+  def panel_color(name)
+    cnf.theme.cyberpunk_glow? ? cyber_color(name) : theme_color(name)
+  end
+
+  # Current file: bold + brighter fg. Kept in the markup (not a cell-wide
+  # attribute) so an easy-jump label span keeps its own color on this row.
+  def current_markup(escaped)
+    "<span foreground=\"#{panel_color(:file_panel_current_fg)}\" weight=\"bold\">#{escaped}</span>"
+  end
+
+  # Reddish bold label; a TreeView cell cannot do a CSS text-shadow, so the
+  # "glow" is a translucent background tint around the label.
+  def ej_label_markup(label)
+    "<span foreground=\"#{panel_color(:file_panel_ej_label_fg)}\" weight=\"bold\" " \
+      "background=\"#{panel_color(:file_panel_ej_label_glow)}\" bgalpha=\"30%\"> #{label} </span>"
+  end
+
   def refresh
     # A buffer-list change mid-pick must not leave a stale override installed
     # or labels pointing at rows that no longer exist.
@@ -155,12 +186,14 @@ class FileTreePanel
     @store.clear
     grouped_buffers.each do |dname, files|
       dir_iter = @store.append(nil)
-      dir_iter[COL_LABEL] = "📂 #{tilde_path(dname)}"
+      dir_iter[COL_LABEL] = CGI.escapeHTML("📂 #{tilde_path(dname)}")
       dir_iter[COL_BUF_ID] = 0
       files.each do |bnfo|
         active_mark = bnfo[:buf].is_active? ? "● " : "  "
+        current = bnfo[:buf].equal?(vma.buf) # Buffer < String: == compares text
         file_iter = @store.append(dir_iter)
-        file_iter[COL_LABEL] = "#{active_mark}#{bnfo[:bname]}"
+        label = CGI.escapeHTML("#{active_mark}#{bnfo[:bname]}")
+        file_iter[COL_LABEL] = current ? current_markup(label) : label
         file_iter[COL_BUF_ID] = bnfo[:buf].id
       end
     end

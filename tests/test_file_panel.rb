@@ -8,12 +8,12 @@ class TestFilePanel < VmaTest
   # Two files in one fresh temp dir: adjacent names in the same dir group are
   # guaranteed adjacent in the flattened panel order, whatever other buffers
   # exist from earlier tests.
-  def with_two_files
+  def with_two_files(same_content: false)
     Dir.mktmpdir do |dir|
       fa = File.join(dir, "aaa.txt")
       fb = File.join(dir, "bbb.txt")
-      File.write(fa, "a\n")
-      File.write(fb, "b\n")
+      File.write(fa, same_content ? "x\n" : "a\n")
+      File.write(fb, same_content ? "x\n" : "b\n")
       ba = open_new_file(fa)
       bb = open_new_file(fb)
       begin
@@ -44,6 +44,21 @@ class TestFilePanel < VmaTest
     end
   end
 
+  # The current file's row is bold with the brighter fg; the others are plain.
+  # Same contents: Buffer < String, so buffer identity must not use ==.
+  def test_current_file_row_is_highlighted
+    with_two_files(same_content: true) do |ba, bb|
+      with_panel_open do
+        fp = vma.gui.file_panel
+        assert_eq fp.current_markup("● bbb.txt"), fp.row_labels[bb.id]
+        assert_eq "  aaa.txt", fp.row_labels[ba.id]
+        keys("alt-h")
+        assert_eq fp.current_markup("● aaa.txt"), fp.row_labels[ba.id]
+        assert_eq "  bbb.txt", fp.row_labels[bb.id]
+      end
+    end
+  end
+
   # ` s labels the panel's file rows; typing a label switches to that file.
   # Labels follow panel order: first file row gets "A", second "S", ...
   def test_easy_jump_picks_file_by_label
@@ -62,6 +77,42 @@ class TestFilePanel < VmaTest
         keys(label.downcase.chars.join(" "))
         assert_eq ba.id, vma.buf.id
         assert_eq false, vma.gui.file_panel.easy_jump_active?
+      end
+    end
+  end
+
+  # ` s labels are reddish markup spans in front of the (escaped) file name.
+  def test_easy_jump_labels_are_colored
+    with_two_files do |ba, bb|
+      with_panel_open do
+        fp = vma.gui.file_panel
+        keys("` s")
+        label = fp.instance_variable_get(:@ej_targets).key(ba.id)
+        markup = fp.row_labels[ba.id]
+        assert markup.start_with?(fp.ej_label_markup(label)), "label span missing: #{markup}"
+        assert markup.include?(fp.panel_color(:file_panel_ej_label_fg))
+        assert markup.end_with?("aaa.txt")
+        # the current row's label keeps its own span ahead of the bold name
+        cur = fp.row_labels[bb.id]
+        assert cur.start_with?(fp.ej_label_markup(fp.instance_variable_get(:@ej_targets).key(bb.id)))
+        keys("esc")
+        assert_eq false, fp.row_labels[ba.id].include?("<span")
+      end
+    end
+  end
+
+  # Row text is markup, so file names with markup chars must be escaped.
+  def test_file_name_markup_is_escaped
+    Dir.mktmpdir do |dir|
+      fn = File.join(dir, "a&<b>.txt")
+      File.write(fn, "x\n")
+      b = open_new_file(fn)
+      begin
+        with_panel_open do
+          assert vma.gui.file_panel.row_labels[b.id].include?("a&amp;&lt;b&gt;.txt")
+        end
+      ensure
+        vma.buffers.close_buffer(b.id)
       end
     end
   end

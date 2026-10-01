@@ -58,14 +58,15 @@ end
 # with a single ellipsized, expanding text column, inside a
 # ScrolledWindow(hpolicy, :automatic). The optional block is invoked with the
 # iter of an activated row. Returns [tree, scrolled_window].
+# markup: true renders text_col as Pango markup instead of plain text.
 def build_list_tree(store, ellipsize: Pango::EllipsizeMode::END, text_col: 0,
-                    single_click: true, hpolicy: :never)
+                    single_click: true, hpolicy: :never, markup: false)
   tree = Gtk::TreeView.new(store)
   tree.headers_visible = false
   tree.activate_on_single_click = single_click
   renderer = Gtk::CellRendererText.new
   renderer.ellipsize = ellipsize
-  col = Gtk::TreeViewColumn.new("", renderer, text: text_col)
+  col = Gtk::TreeViewColumn.new("", renderer, (markup ? :markup : :text) => text_col)
   col.expand = true
   tree.append_column(col)
   if block_given?

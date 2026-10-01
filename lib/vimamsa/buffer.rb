@@ -87,7 +87,7 @@ class Buffer < String
   def is_active?
     for k in vma.gui.windows.keys
       next if vma.gui.windows[k][:sw].child.nil?
-      return true if vma.gui.windows[k][:sw].child.bufo == self
+      return true if vma.gui.windows[k][:sw].child.bufo.equal?(self)
     end
     return false
   end
