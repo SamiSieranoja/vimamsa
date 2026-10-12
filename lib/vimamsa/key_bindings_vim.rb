@@ -329,6 +329,8 @@ add_keys "vim misc", {
   # Browse mode keys (mode reachable only via the :start_browse_mode action)
   "B h" => :history_switch_backwards,
   "B l" => :history_switch_forwards,
+  "B p" => :file_panel_prev_file,
+  "B n" => :file_panel_next_file,
   "B z" => "center_on_current_line();call_action(:exit_browse_mode)",
   "B enter || B return || B esc || B j || B ctrl!" => :exit_browse_mode,
   "B s" => :page_up,
