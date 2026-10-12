@@ -111,4 +111,54 @@ class TestTextTransforms < VmaTest
     act("buf.unindent_selection")
     assert_buf("x\naa\nbb\n")
   end
+
+  def test_converter_on_selection
+    keys("i b space a space c esc")
+    act("buf.set_pos(0)")
+    keys("v")
+    act("buf.set_pos(4)")
+    act("buf.convert_selected_text(:sortwords)")
+    assert_buf("a b c\n")
+    assert_mode(:command)
+  end
+
+  # Not in visual mode: converter runs on the current line only
+  def test_converter_on_current_line
+    act("buf.insert_txt(\"x\\nb a c\\ny\")")
+    act("buf.set_pos(3)")
+    act("buf.convert_selected_text(:sortwords)")
+    assert_buf("x\na b c\ny\n")
+  end
+
+  # Converter result ending in a newline doesn't add a blank line
+  def test_converter_on_current_line_trailing_newline
+    act("buf.insert_txt(\"x\\n  a  \\ny\")")
+    act("buf.set_pos(3)")
+    act("buf.convert_selected_text(:joinlines)")
+    assert_buf("x\na\ny\n")
+  end
+
+  def test_converter_on_empty_line
+    act("buf.insert_txt(\"x\\n\\ny\")")
+    act("buf.set_pos(2)")
+    act("buf.convert_selected_text(:sortwords)")
+    assert_buf("x\n\ny\n")
+  end
+
+  def test_remove_extra_spaces_current_line
+    act("buf.insert_txt(\"x  y\\n  a   b\\tc  \\nz  w\")")
+    act("buf.set_pos(6)")
+    keys("g w")
+    assert_buf("x  y\n  a b c\nz  w\n")
+  end
+
+  def test_remove_extra_spaces_selection
+    act("buf.insert_txt(\"a  b\\nc   d  \\ne  f\")")
+    act("buf.set_pos(0)")
+    keys("v")
+    act("buf.set_pos(11)") # through the trailing spaces of line 2
+    keys("g w")
+    assert_buf("a b\nc d\ne  f\n")
+    assert_mode(:command)
+  end
 end

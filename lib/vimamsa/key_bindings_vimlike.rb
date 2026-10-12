@@ -252,6 +252,8 @@ add_keys "core", {
   "V g c" => :selection_capitalize,
   "V g s" => :selection_swapcase,
   "V g r" => :selection_reverse,
+  "V g w" => :remove_extra_spaces,
+  "C g w" => :remove_extra_spaces,
 
   "VC j" => :forward_line,
   "VC k" => :backward_line,

@@ -24,6 +24,10 @@ Converter.new(lambda { |x| x.split("\n").sort.join("\n") }, :lambda, :sortlines)
 Converter.new(lambda { |x| x.split("\n").reverse.join("\n") }, :lambda, :reverse_lines)
 
 Converter.new(lambda { |x| x.split(/\s+/).sort.join(" ") }, :lambda, :sortwords)
+
+# Collapse runs of spaces/tabs to one space and strip trailing whitespace on
+# each line. Leading indentation is kept.
+Converter.new(lambda { |x| x.gsub(/^([ \t]*)(.*?)[ \t]*$/) { $1 + $2.gsub(/[ \t]+/, " ") } }, :lambda, :remove_extra_spaces)
 Converter.new(lambda { |x| x.split("\n").collect { |b| b.scan(/(\d+(\.\d+)?)/).collect { |c| c[0] }.join(" ") }.join("\n") }, :lambda, :getnums_on_lines)
 
 Converter.new(lambda { |x| x + "\n" + x.split("\n").collect { |b| b.scan(/(\d+(\.\d+)?)/).collect { |c| c[0] }.join(" ") }.join("\n") }, :lambda, :getnums_on_lines)

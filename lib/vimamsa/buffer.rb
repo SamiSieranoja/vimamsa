@@ -1470,9 +1470,19 @@ class Buffer < String
     end
   end
 
+  # Apply converter to the visual selection, or to the current line (without
+  # its newline) when not in visual mode.
   def convert_selected_text(converter_id)
     #TODO: Detect if changed?
-    return if !transform_visual_selection { |txt| $vma.apply_conv(converter_id, txt) }
+    if @visual_mode
+      return if !transform_visual_selection { |txt| $vma.apply_conv(converter_id, txt) }
+    else
+      r = line_range(@lpos, 1, false)
+      r = r.begin..(r.begin - 1) if self[r] == "\n" # empty line
+      # Converters may add a trailing newline; the line already has one
+      txt = $vma.apply_conv(converter_id, self[r]).chomp
+      replace_range(r, txt)
+    end
     view.after_action
   end
 
