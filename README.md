@@ -1,172 +1,144 @@
-# Vimamsa
+# Vimamsa (日本語版)
 
-Vi/Vim -inspired experimental GUI-oriented text editor written with Ruby and GTK.
+**Vimamsa**は、RubyとGTK4で構築された、Vi/Vimにインスパイアされた画期的な実験的GUIテキストエディタです。
+オリジナルはLinux環境を前提に開発されていましたが、依存パッケージを適切にインストールすることで、macOSでもスムーズに動作させることができます。
 
-<!-- toc -->
+---
 
-- [Requirements](#requirements)
-- [Installation](#installation)
-  * [Other install options](#other-install-options)
-- [Run](#run)
-- [Screenshots](#screenshots)
-- [Key bindings](#key-bindings)
-- [Current limitations](#current-limitations)
+## 🌟 開発者へ
 
-<!-- tocstop -->
+本プロジェクトのオリジナル開発者である **Sami Sieranoja (SamiSieranoja)** 氏の素晴らしい設計と実装に、深い敬意と感謝の意を表します。
+Rubyのみを用いて、GVimのような極めて軽快かつ直感的なキーバインド操作を実現した本エディタは、非常に画期的で素晴らしい成果物です。私たちはこの素晴らしい遺産を大切にし、macOSでも快適に動作するようにフォークして環境を整備しました。
 
-## Requirements
- - Ruby 3.0+
- - GTK 4
+---
 
+## 📋 必要動作環境
 
-## Installation
+- **Ruby 3.0以上**
+- **GTK 4** (および各種依存ライブラリ)
 
+---
 
-On Ubuntu (22.04):
-```
-sudo apt install ruby-dev build-essential
-sudo gem install vimamsa
-```
+## 🚀 macOSでのインストール・起動手順
 
-Run:
-```
-vimamsa
+macOS環境において、GTK4や各種Ruby拡張をコンパイル・起動するためには、以下の手順に従って依存パッケージをインストールしてください。
+
+### 1. Homebrewを使用した依存ライブラリのインストール
+ターミナルを開き、以下のHomebrewコマンドを実行して、必要なパッケージをシステムにインストールします。
+
+```bash
+brew install pkg-config glib gobject-introspection gtk4 gtksourceview5 gstreamer vte3 ruby
 ```
 
-### Other install options
+### 2. 環境変数の設定 (特にApple Silicon搭載Macの場合)
+Homebrewでインストールした最新のRubyや `pkg-config` の情報をビルド時に正しく参照させるため、使用しているシェル（Zshなど）の設定ファイル（`~/.zshrc` や `~/.bash_profile`）に、以下の環境変数を追加してください。
 
-Install from sources:
-
+```bash
+# HomebrewでインストールしたRubyとpkg-configへのパスを優先する設定
+export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
+export LDFLAGS="-L/opt/homebrew/opt/ruby/lib"
+export CPPFLAGS="-I/opt/homebrew/opt/ruby/include"
+export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/libffi/lib/pkgconfig"
 ```
-git clone https://github.com/SamiSieranoja/vimamsa.git
+
+追加後、設定を反映させます：
+```bash
+source ~/.zshrc
+```
+
+### 3. リポジトリのクローンと依存Gemのインストール
+リポジトリをローカルにクローンし、Bundlerを使って依存Gem群をインストールします。
+（※`YOUR_USERNAME` の箇所は、ご自身のGitHubアカウント名などに適宜置き換えてください。直接 `flzroche` を指定しても構いません）
+
+```bash
+git clone https://github.com/YOUR_USERNAME/vimamsa.git
 cd vimamsa
-gem build vimamsa.gemspec 
-sudo gem install --local vimamsa-0.1.*.gem
-
+bundle install
 ```
 
-Older version for GTK3:
+### 4. 拡張モジュールのビルドとインストール
+C言語で書かれた高速化用の拡張モジュール (`vmaext`) をビルドし、ローカル環境にGemとしてインストールします。付属の `install.sh` を使用するのが最も簡単です。
 
-    sudo gem install vimamsa -v 0.1.10
-
-## Run
+```bash
+chmod +x install.sh
+./install.sh
 ```
+
+手動でGemパッケージをビルドしてインストールする場合は、以下を実行します：
+```bash
+gem build vimamsa.gemspec
+gem install --local vimamsa-0.1.26.gem
+```
+
+---
+
+## 🏃 起動方法
+
+インストールが正常に完了したら、以下のコマンドでVimamsaを起動できます：
+
+```bash
 vimamsa
 ```
 
-Install packages for optional features:
-```
-sudo apt install ack-grep clang-format
-```
-
-For customization, edit ~/.vimamsa/custom.rb
-
-## Screenshots
-
-<a href="https://raw.githubusercontent.com/SamiSieranoja/vimamsa/refs/heads/master/img/screenshot1.png" target="_blank"><img src="https://raw.githubusercontent.com/SamiSieranoja/vimamsa/refs/heads/master/img/screenshot1.png" width="400"/></a>
-<a href="https://raw.githubusercontent.com/SamiSieranoja/vimamsa/refs/heads/master/img/screenshot2.png" target="_blank"><img src="https://raw.githubusercontent.com/SamiSieranoja/vimamsa/refs/heads/master/img/screenshot2.png" width="400"/></a>
-
-## Key bindings
-
-Key bindings are very much like in VIm. For details, see menu item "Help -> Show key bindings" and file lib/vimamsa/key_bindings_vimlike.rb
-
-Keys that work somewhat similarly as in Vim:
-
-In Command mode: 
-```
-j k l h w b p P G f F ; 0 $ v i o  J * / a A I u ctrl-r x 
-zz dd dw gg <linenum>G r<char>
+開発中のソースコードから直接実行したい場合は、以下のコマンドを使用します：
+```bash
+bundle exec ruby exe/vimamsa
 ```
 
-In Visual mode:
-```
-d y gU gu 
-```
-
-Keys that work differently to Vim are documented in the tables below
-
-Syntax:  
-
- - ctrl! means press and immediate release of ctrl key. Triggered by key up event when no other keys were pressed between key down and key up events.
- - ctrl-x means press and hold ctrl key, press x  
-
-<table>
-<colgroup>
-<col style="text-align:center;"/>
-<col style="text-align:left;"/>
-</colgroup>
-
-<thead> <tr> <th style="text-align:center;" colspan="4">Command mode keys</th> </tr> </thead>
-
-<tbody>
-<tr><th>Key</th><th>Action</th></tr>
-<tr><td style="text-align:center;">ctrl!</td>     <td style="text-align:left;">switch between command and insert modes</td> </tr>
-<tr> <td style="text-align:center;">z</td> <td style="text-align:left;"> enter into BROWSE mode</td></tr>
-<tr>     <td style="text-align:center;">shift!</td>     <td style="text-align:left;">save file</td> </tr>
-<tr>     <td style="text-align:center;">s</td>     <td style="text-align:left;">Easy jump (Similar to Vim EasyMotion https://github.com/easymotion/vim-easymotion ) </td> </tr>
-<tr> <td style="text-align:center;">tab</td> <td style="text-align:left;">switch betwen current and previous buffer/file</td></tr>
-<tr> <td style="text-align:center;">enter</td> <td style="text-align:left;"> (when cursor on link) open url in browser </td></tr>
-<tr> <td style="text-align:center;">enter</td> <td style="text-align:left;">(when cursor on /path/to/file.txt:linenum ) open file in editor, jump to linenum </td></tr>
-<tr> <td style="text-align:center;">,a</td> <td style="text-align:left;">Search for string using ack
-</td></tr>
-<tr> <td style="text-align:center;">,b</td> <td style="text-align:left;"> Switch buffer (jump to other open file)</td></tr>
-<tr> <td style="text-align:center;">,g</td> <td style="text-align:left;">search for input string inside current buffer</td></tr>
-<tr> <td style="text-align:center;">,f</td> <td style="text-align:left;">File finder</td></tr>
-<tr> <td style="text-align:center;">space c</td> <td style="text-align:left;">insert character "c"</td></tr>
-</tbody>
-</table>
-
-<table>
-<colgroup>
-<col style="text-align:center;"/>
-<col style="text-align:left;"/>
-</colgroup>
-
-<thead> <tr> <th style="text-align:center;" colspan="4">Insert mode keys (similar to bash or emacs)</th> </tr> </thead>
-
-<tbody>
-<tr> <td style="text-align:center;">ctrl! OR esc</td> <td style="text-align:left;">Switch to command mode</td></tr>
-<tr> <td style="text-align:center;">ctrl-n</td> <td style="text-align:left;">Move to next line</td></tr>
-<tr> <td style="text-align:center;">ctrl-p</td> <td style="text-align:left;">Move to previous line</td></tr>
-<tr> <td style="text-align:center;">ctrl-a</td> <td style="text-align:left;">Move beginning of line</td></tr>
-<tr> <td style="text-align:center;">ctrl-e</td> <td style="text-align:left;">Move to end of line</td></tr>
-<tr> <td style="text-align:center;">ctrl-b</td> <td style="text-align:left;">Move backward one char</td></tr>
-<tr> <td style="text-align:center;">ctrl-f</td> <td style="text-align:left;">Move forward one char</td></tr>
-<tr> <td style="text-align:center;">alt-f</td> <td style="text-align:left;">Move forward one word</td></tr>
-<tr> <td style="text-align:center;">alt-b</td> <td style="text-align:left;">Move backward one word</td></tr>
-</tbody>
-</table>
-
-
-<table>
-<colgroup>
-<col style="text-align:center;"/>
-<col style="text-align:left;"/>
-</colgroup>
-
-<thead> <tr> <th style="text-align:center;" colspan="4">Browse mode keys</th> </tr> </thead>
-
-<tbody>
-<tr> <td style="text-align:center;">h</td> <td style="text-align:left;">jump to previous buffer in history</td></tr>
-<tr> <td style="text-align:center;">l</td> <td style="text-align:left;">jump to next buffer in history</td></tr>
-<tr> <td style="text-align:center;">q</td> <td style="text-align:left;">jump to previous edited position</td></tr>
-<tr> <td style="text-align:center;">w</td> <td style="text-align:left;">jump to next edited position</td></tr>
-<tr> <td style="text-align:center;">j OR esc</td> <td style="text-align:left;">switch from browse to command mode</td></tr>
-</tbody>
-</table>
-
-Bindings can be customized in ~/.vimamsa/custom.rb
-For example, to bind ctrl-n to action "create new file":  
-```
-bindkey 'C ctrl-n',  'create_new_file()'
+### オプション機能の有効化
+より高度な機能を利用したい場合は、以下の外部パッケージをインストールすることをお勧めします。
+```bash
+# 高速なファイル内検索(ack-grep)を利用する場合
+brew install ack
 ```
 
+---
 
-## Known issues
- - Cursor sometimes vanishes when dragging or resizing the window. At least some cases are fixed in new GTK4 versions ( >= 4.18, in Ubuntu Ubuntu 25.04). Workaround is to press ctrl key twice.
+## ⚙️ カスタマイズ
 
-## Current limitations
- - UTF8 only
- - Line endings with "\n"
+キーバインドやエディタの挙動は、`~/.vimamsa/custom.rb` に記述することで自在にカスタマイズできます。
 
+例えば、`Ctrl + N` で「新規ファイル作成」のアクションを実行できるようにしたい場合は、以下のように記述します。
 
+```ruby
+bindkey 'C ctrl-n', 'create_new_file()'
+```
+
+---
+
+## ⌨️ キーバインド
+
+Vimamsaのキーバインドは、Vimの操作体系を踏襲しています。詳細なバインド設定や一覧は、エディタ内のメニュー **[Help] -> [Show key bindings]** を選択するか、リポジトリ内の `lib/vimamsa/key_bindings_vimlike.rb` をご参照ください。
+
+### コマンドモード（主要キー抜粋）
+```text
+j k l h w b p P G f F ; 0 $ v i o J * / a A I u ctrl-r x
+zz dd dw gg <行番号>G r<文字>
+```
+
+### ビジュアルモード
+```text
+d y gU gu
+```
+
+### キー表記について
+- `ctrl!` : Ctrlキーを単独で押して、すぐに離す操作。
+- `ctrl-x` : Ctrlキーを押しながら、`x`キーを同時に押す操作。
+
+---
+
+## ⚠️ 既知の課題と制限事項
+
+### 既知の課題
+- **カーソルの消失**: ウィンドウのリサイズやドラッグを行った際に、稀にテキストカーソルが見えなくなる場合があります。これはGTK4の仕様によるもので、新しいGTKバージョン（4.18以上など）で改善されています。万が一消えてしまった場合は、**Ctrlキーを素早く2回押す**と再描画され、復帰します。
+
+### 制限事項
+- **UTF-8 エンコーディング専用**
+- **改行コードは LF (`\n`) のみ対応**
+
+---
+
+## ⚖️ ライセンス
+
+本プロジェクトは **MITライセンス** に基づいて提供されています。
+オリジナル開発者の意図およびRuby/GTKコミュニティへの感謝とともに、オープンソースソフトウェアとしてどなたでも自由に変更、拡張、再配布いただけます。
