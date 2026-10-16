@@ -69,6 +69,23 @@ class TestVimBindings < VmaTest
     assert_matches_vim("aBc\n", "~~")
   end
 
+  def test_case_operators
+    assert_matches_vim("foo bar baz\n", "gUw")
+    assert_matches_vim("foo bar baz\n", "llgUw")   # mid-word: to word end
+    assert_matches_vim("foo.bar baz\n", "gUw")     # w stops at punctuation
+    assert_matches_vim("foo bar baz\n", "wwlgUw")  # last word, no next word
+    assert_matches_vim("foo\nbar\n", "llgUw")      # does not reach next line
+    assert_matches_vim("foo\n\nbar\n", "jgUw")     # empty line: no-op
+    assert_matches_vim("FOO BAR\n", "wguw")
+    assert_matches_vim("aB1c\n", "lg~w")
+    assert_matches_vim("foo bar\nbaz\n", "wwgUU")
+    assert_matches_vim("FOO Bar\nBAZ\n", "jguu")
+    assert_matches_vim("a B\n", "g~~")
+    assert_matches_vim("foo\n\nbar\n", "jgUU")     # empty line: no-op
+    assert_matches_vim("foo bar\n", "wgUwx")      # cursor stays at word start
+    assert_matches_vim("foo bar\n", "wgUUx")      # cursor to line start
+  end
+
   def test_join
     assert_matches_vim("aa\nbb\n", "J")
   end
@@ -194,7 +211,10 @@ class TestVimBindings < VmaTest
     begin
       f.write(initial)
       f.flush
-      ok = system(NVIM, "--headless", "-u", "NONE", "-i", "NONE", "-n",
+      # Plain vim has no --headless: use silent ex mode, which starts on the
+      # last line, so jump to line 1 first.
+      mode = NVIM == "nvim" ? ["--headless"] : ["-E", "-s", "-c", "1"]
+      ok = system(NVIM, *mode, "-u", "NONE", "-i", "NONE", "-n",
                   "-c", "set noautoindent nosmartindent",
                   "-c", "normal! #{nkeys}",
                   "-c", "wq!", f.path,

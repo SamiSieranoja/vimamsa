@@ -225,6 +225,33 @@ act_list = {
   :selection_reverse => { :proc => proc { buf.transform_selection(:reverse) },
                           :desc => "Transform text: reverse", :group => :edit },
 
+  :word_upcase => { :proc => proc { buf.transform_range(:to_next_word, :upcase) },
+                    :desc => "Upcase to start of next word (vim gUw)", :group => :edit },
+
+  :word_downcase => { :proc => proc { buf.transform_range(:to_next_word, :downcase) },
+                      :desc => "Downcase to start of next word (vim guw)", :group => :edit },
+
+  :word_swapcase => { :proc => proc { buf.transform_range(:to_next_word, :swapcase) },
+                      :desc => "Swap case to start of next word (vim g~w)", :group => :edit },
+
+  :line_upcase => { :proc => proc { buf.transform_range(:line, :upcase) },
+                    :desc => "Upcase current line (vim gUU)", :group => :edit },
+
+  :line_downcase => { :proc => proc { buf.transform_range(:line, :downcase) },
+                      :desc => "Downcase current line (vim guu)", :group => :edit },
+
+  :line_swapcase => { :proc => proc { buf.transform_range(:line, :swapcase) },
+                      :desc => "Swap case of current line (vim g~~)", :group => :edit },
+
+  :vim_toggle_case => { :proc => proc {
+    b = buf
+    c = b.current_char
+    if !c.nil? and c != "\n"
+      b.replace_with_char(c.swapcase) # does not advance the cursor
+      b.move(FORWARD_CHAR)            # vim ~ advances, even on non-letters
+    end
+  }, :desc => "Toggle case of char and advance (vim ~)", :group => :edit },
+
   :forward_line => { :proc => proc { buf.move(FORWARD_LINE) },
                      :desc => "Move one line forward", :group => [:move, :basic] },
 

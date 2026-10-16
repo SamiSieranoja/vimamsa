@@ -1448,16 +1448,36 @@ class Buffer < String
     txt
   end
 
+  def transform_text(txt, op)
+    txt.upcase! if op == :upcase
+    txt.downcase! if op == :downcase
+    txt.gsub!(/\w+/, &:capitalize) if op == :capitalize
+    txt.swapcase! if op == :swapcase
+    txt.reverse! if op == :reverse
+    txt = to_camel_case(txt) if op == :camelcase
+    txt
+  end
+
   def transform_selection(op)
-    transform_visual_selection do |txt|
-      txt.upcase! if op == :upcase
-      txt.downcase! if op == :downcase
-      txt.gsub!(/\w+/, &:capitalize) if op == :capitalize
-      txt.swapcase! if op == :swapcase
-      txt.reverse! if op == :reverse
-      txt = to_camel_case(txt) if op == :camelcase
-      txt
+    transform_visual_selection { |txt| transform_text(txt, op) }
+  end
+
+  # Apply transform `op` to a motion range, like vim's gU/gu/g~ operators.
+  # range_id :line = current line without its newline (gUU); otherwise a
+  # get_range id, e.g. :to_next_word (gUw). Cursor goes to the range start.
+  def transform_range(range_id, op)
+    if range_id == :line
+      lstart = @lpos == 0 ? 0 : @line_ends[@lpos - 1] + 1
+      lend = @line_ends[@lpos]
+      range = lstart < lend ? lstart..(lend - 1) : nil
+    else
+      range = get_range(range_id)
     end
+    return if range.nil?
+    old = self[range]
+    txt = transform_text(old.dup, op)
+    replace_range(range, txt) if txt != old
+    set_pos(range.first)
   end
 
   def eval_whole_buf(x = 888)

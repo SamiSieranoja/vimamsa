@@ -41,6 +41,49 @@ class TestTextTransforms < VmaTest
     assert_buf("hello\n")
   end
 
+  # vim-style case operators in the default (vimlike) keymap
+  def test_case_operator_word
+    keys("i f o o space b a r esc")
+    act("buf.set_pos(0)")
+    keys("g U w")
+    assert_buf("FOO bar\n")
+    assert_pos(0, 0)
+    keys("w g ~ w")
+    assert_buf("FOO BAR\n")
+    keys("g u w")
+    assert_buf("FOO bar\n")
+  end
+
+  def test_case_operator_line
+    keys("i f o o space b a r esc")
+    keys("g U U")
+    assert_buf("FOO BAR\n")
+    assert_pos(0, 0)
+    keys("g u u")
+    assert_buf("foo bar\n")
+    keys("g ~ ~")
+    assert_buf("FOO BAR\n")
+  end
+
+  def test_toggle_case_char
+    keys("i a B c esc")
+    act("buf.set_pos(0)")
+    keys("~ ~")
+    assert_buf("Abc\n")
+    assert_pos(0, 2)
+  end
+
+  def test_visual_case_keys
+    select_first_word
+    keys("U")
+    assert_buf("HELLO\n")
+    act("buf.set_pos(0)")
+    keys("v")
+    act("buf.set_pos(4)")
+    keys("~")
+    assert_buf("hello\n")
+  end
+
   def test_style_bold
     select_first_word
     act("buf.style_transform(:bold)")

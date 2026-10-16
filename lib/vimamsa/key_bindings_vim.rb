@@ -104,15 +104,6 @@ reg_act(:vim_open_line_above, proc {
   vma.kbd.set_mode(:insert)
 }, "Open line above (vim O)")
 
-reg_act(:vim_toggle_case, proc {
-  b = buf
-  c = b.current_char
-  if !c.nil? and c != "\n"
-    b.replace_with_char(c.swapcase) # does not advance the cursor
-    b.move(FORWARD_CHAR)            # vim ~ advances, even on non-letters
-  end
-}, "Toggle case of char and advance (vim ~)")
-
 reg_act(:vim_change_selection, proc {
   buf.delete(SELECTION) # ends visual mode itself
   vma.kbd.set_mode(:insert)
@@ -232,6 +223,12 @@ add_keys "vim edit", {
   "C r space" => "buf.replace_with_char(' ')",
   "C J" => "buf.join_lines()",
   "C ~" => :vim_toggle_case,
+  "C g U w" => :word_upcase,
+  "C g u w" => :word_downcase,
+  "C g ~ w" => :word_swapcase,
+  "C g U U" => :line_upcase,
+  "C g u u" => :line_downcase,
+  "C g ~ ~" => :line_swapcase,
   "C ctrl-a" => "buf.increment_current_word", # vim ctrl-a: increment number
   "C ." => :vim_repeat_last_action,
 
