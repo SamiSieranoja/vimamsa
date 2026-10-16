@@ -462,6 +462,30 @@ class VSourceView < GtkSource::View
     }
   end
 
+  # Buffer offset of the line at the top of the visible area
+  def top_visible_pos
+    r = get_line_at_y(visible_rect.y)
+    return nil if r.nil? || r[0].nil?
+    r[0].offset
+  end
+
+  # Number of (logical) lines that fit in the visible area
+  def visible_line_count
+    vr = visible_rect
+    a = get_line_at_y(vr.y)
+    b = get_line_at_y(vr.y + vr.height - 1)
+    return nil if a.nil? || b.nil? || a[0].nil? || b[0].nil?
+    b[0].line - a[0].line
+  end
+
+  # Scroll so that the line containing pos is at the top of the view
+  def scroll_to_top_pos(pos)
+    itr = buffer.get_iter_at(:offset => pos)
+    @top_mark ||= buffer.create_mark("top", itr, true)
+    buffer.move_mark(@top_mark, itr)
+    scroll_to_mark(@top_mark, 0.0, true, 0.0, 0.0)
+  end
+
   def set_cursor_to_top
     debug "set_cursor_to_top", 2
     bc = window_to_buffer_coords(Gtk::TextWindowType::WIDGET, gutter_width + 2, 60)
@@ -625,7 +649,9 @@ class VSourceView < GtkSource::View
     return pos_to_coord(buffer.cursor_position)
   end
 
-  def handle_deltas()
+  # scroll: false places the cursor without scrolling to it (the caller
+  # positions the view itself, e.g. Buffer#revert_by_diff).
+  def handle_deltas(scroll: true)
     any_change = false
     while d = @bufo.deltas.shift
       any_change = true
@@ -647,7 +673,7 @@ class VSourceView < GtkSource::View
     if any_change
       remask_gtk_buffer
       #TODO: only when necessary
-      self.set_cursor_pos(@bufo.pos)
+      self.set_cursor_pos(@bufo.pos, scroll: scroll)
       $hook&.call(:view_text_changed, self)
     end
 
@@ -669,7 +695,7 @@ class VSourceView < GtkSource::View
     end
   end
 
-  def set_cursor_pos(pos)
+  def set_cursor_pos(pos, scroll: true)
     itr = buffer.get_iter_at(:offset => pos)
     itr2 = buffer.get_iter_at(:offset => pos + 1)
     buffer.place_cursor(itr)
@@ -684,6 +710,7 @@ class VSourceView < GtkSource::View
     else
       buffer.move_mark(@curpos_mark, itr)
     end
+    return true if !scroll
     scroll_to_mark(@curpos_mark, within_margin, use_align, xalign, yalign)
     $idle_scroll_to_mark = true
     ensure_cursor_visible

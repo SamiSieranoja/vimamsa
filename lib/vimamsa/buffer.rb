@@ -386,9 +386,183 @@ class Buffer < String
     return if !File.exist?(@fname)
     message("Revert buffer #{@fname}")
     str = read_file("", @fname)
-    self.set_content(str)
+    str << "\n" if str[-1] != "\n"
+    _fold_state
+    if !@folds.empty? || (cnf.fold.start_closed? && str =~ FOLD_START_RE)
+      # Folded text is not in the buffer as it is on disk, so a diff would
+      # not line up: replace wholesale, keep cursor and view by line number.
+      revert_by_replace(str)
+    else
+      revert_by_diff(str)
+    end
     @last_save = Time.now
     refresh_title
+  end
+
+  # Reload by applying only the differences as deltas, so that cursor, marks
+  # and edit positions move with the text around them (e.g. after the file
+  # was edited by an external program). The reload is one undo step.
+  def revert_by_diff(str)
+    return if str == self.to_s
+    v = view
+    top = v&.top_visible_pos
+    nvis = v&.visible_line_count
+    cur = @pos
+    new_undo_group
+    @reloading = true
+    for d in diff_deltas(str)
+      top = shift_pos_by_delta(top, d) if top
+      cur = shift_pos_by_delta(cur, d)
+      add_delta(d, true)
+    end
+    @reloading = false
+    new_undo_group
+    set_pos(cur.clamp(0, [self.size - 1, 0].max))
+    return if v.nil?
+    # Keep the same text at the top of the view, unless that would leave the
+    # cursor off screen (many lines added between them).
+    top = nil if top && nvis && @pos >= top && get_line_and_col_pos(@pos)[0] - get_line_and_col_pos(top)[0] >= nvis
+    top = nil if top && @pos < top
+    v.handle_deltas(scroll: top.nil?)
+    v.scroll_to_top_pos(top) if top
+  end
+
+  def revert_by_replace(str)
+    v = view
+    top = v&.top_visible_pos
+    toplnum = top ? get_line_and_col_pos(top)[0] : nil
+    (lnum, col) = [@lpos, @cpos]
+    self.set_content(str)
+    lnum = lnum.clamp(0, @line_ends.size - 1)
+    set_line_and_column_pos(lnum, col)
+    if v && toplnum
+      toplnum = toplnum.clamp(0, @line_ends.size - 1)
+      v.scroll_to_top_pos(toplnum == 0 ? 0 : @line_ends[toplnum - 1] + 1)
+    end
+  end
+
+  # Map position p over delta d. An insert at p moves p only when it is a
+  # whole-line insert (ends in "\n"), so text added above a line start pushes
+  # it down but text added after the cursor on the same spot does not.
+  def shift_pos_by_delta(p, d)
+    if d[1] == INSERT
+      return p + d[2] if d[0] < p || (d[0] == p && d[3].end_with?("\n"))
+    elsif d[1] == DELETE
+      return d[0] if p >= d[0] && p < d[0] + d[2]
+      return p - d[2] if p >= d[0] + d[2]
+    end
+    p
+  end
+
+  # Deltas (in application order) that turn the buffer contents into newstr.
+  # Diffs by line, then by char inside each changed hunk so positions on
+  # lines that were only partly edited map precisely.
+  def diff_deltas(newstr)
+    deltas = []
+    pos = 0 # Position in the partially updated buffer
+    for (op, a, b) in myers_diff(self.lines, newstr.lines, 1000)
+      if op == :eq
+        pos += a.sum(&:size)
+        next
+      end
+      del = a.join
+      ins = b.join
+      parts = [[:change, del, ins]]
+      if !del.empty? && !ins.empty? && del.size + ins.size < 4000
+        parts = myers_diff(del.chars, ins.chars, 300).map { |(o, x, y)| [o, x.join, y.join] }
+      end
+      for (o, x, y) in parts
+        if o == :eq
+          pos += x.size
+          next
+        end
+        deltas << [pos, DELETE, x.size] if !x.empty?
+        if !y.empty?
+          deltas << [pos, INSERT, y.size, y]
+          pos += y.size
+        end
+      end
+    end
+    deltas
+  end
+
+  # Myers diff of arrays a and b. Returns [[:eq, items, items] or
+  # [:change, deleted, inserted], ...]. If more than max_d edits are needed,
+  # the differing middle is returned as one :change.
+  def myers_diff(a, b, max_d)
+    # Common prefix/suffix are cheap and usually most of the input
+    pre = 0
+    pre += 1 while pre < a.size && pre < b.size && a[pre] == b[pre]
+    suf = 0
+    suf += 1 while suf < a.size - pre && suf < b.size - pre && a[-1 - suf] == b[-1 - suf]
+    am = a[pre...(a.size - suf)]
+    bm = b[pre...(b.size - suf)]
+    ops = [] # [:eq|:del|:ins, item]
+    n = am.size
+    m = bm.size
+    trace = []
+    v = { 1 => 0 }
+    found = false
+    (0..[n + m, max_d].min).each { |d|
+      trace << v.dup
+      (-d..d).step(2) { |k|
+        x = (k == -d || (k != d && v[k - 1] < v[k + 1])) ? v[k + 1] : v[k - 1] + 1
+        y = x - k
+        while x < n && y < m && am[x] == bm[y]
+          x += 1
+          y += 1
+        end
+        v[k] = x
+        if x >= n && y >= m
+          found = true
+          break
+        end
+      }
+      break if found
+    }
+    if found
+      x = n
+      y = m
+      (trace.size - 1).downto(0) { |d|
+        vd = trace[d]
+        k = x - y
+        prev_k = (k == -d || (k != d && vd[k - 1] < vd[k + 1])) ? k + 1 : k - 1
+        prev_x = d == 0 ? 0 : vd[prev_k]
+        prev_y = prev_x - prev_k
+        while x > prev_x && y > prev_y
+          x -= 1
+          y -= 1
+          ops << [:eq, am[x]]
+        end
+        break if d == 0
+        if x == prev_x
+          ops << [:ins, bm[y - 1]]
+        else
+          ops << [:del, am[x - 1]]
+        end
+        x = prev_x
+        y = prev_y
+      }
+      ops.reverse!
+    else
+      am.each { |e| ops << [:del, e] }
+      bm.each { |e| ops << [:ins, e] }
+    end
+
+    res = []
+    res << [:eq, a[0...pre], a[0...pre]] if pre > 0
+    for (op, e) in ops
+      if op == :eq
+        res << [:eq, [], []] if res.empty? || res[-1][0] != :eq
+        res[-1][1] << e
+        res[-1][2] << e
+      else
+        res << [:change, [], []] if res.empty? || res[-1][0] != :change
+        res[-1][op == :del ? 1 : 2] << e
+      end
+    end
+    res << [:eq, a[(a.size - suf)..], a[(a.size - suf)..]] if suf > 0
+    res
   end
 
   def init_encrypted(crypt:, filename:, encrypted:)
@@ -541,16 +715,20 @@ class Buffer < String
       @lsp.handle_delta(dc, @fname, @version)
     end
     pos = delta[0]
-    if @edit_pos_history.any? and (@edit_pos_history.last - pos).abs <= 2
-      @edit_pos_history.pop
-    end
+    # Reloading from disk keeps the user's own edit positions (shifted by
+    # update_index) instead of recording the external changes.
+    if !@reloading
+      if @edit_pos_history.any? and (@edit_pos_history.last - pos).abs <= 2
+        @edit_pos_history.pop
+      end
 
-    lsp = get_line_start(pos)
+      lsp = get_line_start(pos)
 
-    if @edit_pos_history[-1] != lsp
-      @edit_pos_history << lsp
+      if @edit_pos_history[-1] != lsp
+        @edit_pos_history << lsp
+      end
+      @edit_pos_history_i = 0
     end
-    @edit_pos_history_i = 0
 
     if delta[1] == DELETE
       delta[3] = self.slice!(delta[0], delta[2])
