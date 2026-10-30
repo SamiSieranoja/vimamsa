@@ -127,10 +127,6 @@ class TestTextTransforms < VmaTest
     assert_buf("hello\n")
   end
 
-  # Note: a leading "x\n" line is used so the visual selection lands on the
-  # second/third lines. get_line_start snaps a selection touching the very
-  # first line to the *next* line boundary, so indenting line 1 directly is
-  # awkward to set up; selecting lines below it exercises the same code path.
   # Content is set via set_content to avoid auto-indent altering the setup.
 
   def test_indent_selection_spaces
@@ -153,6 +149,72 @@ class TestTextTransforms < VmaTest
     act("buf.set_pos(9)") # into the "  bb" line
     act("buf.unindent_selection")
     assert_buf("x\naa\nbb\n")
+  end
+
+  def test_indent_selection_first_line
+    act("cnf.tab.to_spaces_default = true")
+    act("cnf.tab.width = 2")
+    act('buf.set_content("aa\nbb\ncc\n")')
+    act("buf.set_pos(1)")
+    keys("v")
+    act("buf.set_pos(4)") # into the "bb" line
+    act("buf.indent_selection")
+    assert_buf("  aa\n  bb\ncc\n")
+  end
+
+  def test_comment_selection_first_line
+    act('buf.set_content("aa\nbb\ncc\n")')
+    act("buf.set_pos(1)")
+    keys("v")
+    act("buf.set_pos(4)") # into the "bb" line
+    act("buf.comment_selection")
+    assert_buf("// aa\n// bb\ncc\n")
+  end
+
+  def test_indent_selection_last_line
+    act("cnf.tab.to_spaces_default = true")
+    act("cnf.tab.width = 2")
+    act('buf.set_content("aa\nbb\n")')
+    act("buf.set_pos(3)")
+    keys("v")
+    act("buf.set_pos(4)")
+    act("buf.indent_selection")
+    assert_buf("aa\n  bb\n")
+  end
+
+  def test_remove_indent_selection
+    act('buf.set_content("x\n      aa\n\t\t  bb\n   \n cc\n    dd\n")')
+    act("buf.set_pos(5)") # inside the indentation of "aa"
+    keys("v")
+    act("buf.set_pos(23)") # into the " cc" line
+    keys("g i")
+    assert_buf("x\naa\nbb\n\ncc\n    dd\n")
+    assert_mode(:visual)
+    assert_eq(buf.get_current_selection, "aa\nbb\n\nc")
+  end
+
+  def test_remove_indent_selection_partial_first_line
+    # The whole indent goes, also when the selection starts after it
+    act('buf.set_content("    aa bb\n    cc\n")')
+    act("buf.set_pos(7)")
+    keys("v")
+    act("buf.set_pos(15)")
+    keys("g i")
+    assert_buf("aa bb\ncc\n")
+  end
+
+  def test_remove_indent_selection_single_line
+    act('buf.set_content("  aa\n  bb\n")')
+    act("buf.set_pos(3)")
+    keys("v")
+    keys("g i")
+    assert_buf("aa\n  bb\n")
+  end
+
+  def test_remove_indent_selection_no_op_when_not_visual
+    act('buf.set_content("  aa\n")')
+    act(:selection_remove_indent)
+    assert_buf("  aa\n")
   end
 
   def test_converter_on_selection

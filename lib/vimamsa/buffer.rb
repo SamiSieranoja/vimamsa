@@ -363,6 +363,12 @@ class Buffer < String
     transform_selected_lines { |line| line.sub(/^\t| {1,#{tw}}/, "") }
   end
 
+  # Remove all leading whitespace from every line spanning the selection
+  def remove_indent_selection
+    return if !visual_mode?
+    transform_selected_lines { |line| line.sub(/^[ \t]+/, "") }
+  end
+
   def handle_drag_and_drop(fname)
     debug "[buffer] Dropped file: #{fname}"
     if is_image_file(fname)
@@ -897,11 +903,8 @@ class Buffer < String
 
     a = @line_ends[-1] if a == nil
     a = 0 if a == nil
-    if a > 0
-      a = a - 1
-    else
-      a = 0
-    end
+    return 0 if a == 0 # First line
+    a = a - 1
     ls = nil
     ls = @line_ends[a] if a != nil
     # if a != nil and ls != @line_ends[a]

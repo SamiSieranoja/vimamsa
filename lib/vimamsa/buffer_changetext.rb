@@ -245,6 +245,8 @@ class Buffer < String
   end
 
   def replace_range(range, text)
+    # add_delta restores the final "\n" of the buffer if the range deleted it
+    text = text.delete_suffix("\n") if range.last >= self.size - 1
     delete_range(range.first, range.last)
     insert_txt_at(text, range.begin)
   end

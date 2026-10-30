@@ -252,6 +252,7 @@ add_keys "core", {
   "V g c" => :selection_capitalize,
   "V g s" => :selection_swapcase,
   "V g r" => :selection_reverse,
+  "V g i" => :selection_remove_indent,
   "V U" => :selection_upcase,
   "V u" => :selection_downcase,
   "V ~" => :selection_swapcase,
