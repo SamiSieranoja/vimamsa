@@ -59,14 +59,14 @@ class TestFilePanel < VmaTest
     end
   end
 
-  # ` s labels the panel's file rows; typing a label switches to that file.
+  # g s labels the panel's file rows; typing a label switches to that file.
   # Labels follow panel order: first file row gets "A", second "S", ...
   def test_easy_jump_picks_file_by_label
     with_two_files do |ba, bb|
       with_panel_open do
         assert_eq bb.id, vma.buf.id
-        keys("` s")
-        assert vma.gui.file_panel.easy_jump_active?, "picker should be active after ` s"
+        keys("g s")
+        assert vma.gui.file_panel.easy_jump_active?, "picker should be active after g s"
         # ba ("aaa.txt") sorts first in its dir group; find its label.
         label = nil
         vma.gui.file_panel.instance_variable_get(:@ej_targets).each do |l, id|
@@ -81,12 +81,12 @@ class TestFilePanel < VmaTest
     end
   end
 
-  # ` s labels are reddish markup spans in front of the (escaped) file name.
+  # g s labels are reddish markup spans in front of the (escaped) file name.
   def test_easy_jump_labels_are_colored
     with_two_files do |ba, bb|
       with_panel_open do
         fp = vma.gui.file_panel
-        keys("` s")
+        keys("g s")
         label = fp.instance_variable_get(:@ej_targets).key(ba.id)
         markup = fp.row_labels[ba.id]
         assert markup.start_with?(fp.ej_label_markup(label)), "label span missing: #{markup}"
@@ -121,7 +121,7 @@ class TestFilePanel < VmaTest
     with_two_files do |ba, bb|
       with_panel_open do
         before = vma.buf.id
-        keys("` s")
+        keys("g s")
         assert vma.gui.file_panel.easy_jump_active?
         keys("esc")
         assert_eq false, vma.gui.file_panel.easy_jump_active?
@@ -136,7 +136,7 @@ class TestFilePanel < VmaTest
   def test_easy_jump_noop_when_panel_hidden
     with_two_files do |ba, bb|
       before = vma.buf.id
-      keys("` s")
+      keys("g s")
       assert_eq false, !!vma.gui.file_panel.easy_jump_active?
       assert_eq before, vma.buf.id
     end

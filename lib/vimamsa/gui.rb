@@ -1185,7 +1185,7 @@ class VMAgui
     @file_panel.select_adjacent(delta)
   end
 
-  # ` s: label the panel's file rows and switch to the file whose label is
+  # g s: label the panel's file rows and switch to the file whose label is
   # typed (see FileTreePanel#easy_jump_start). A no-op while the panel is hidden.
   def file_panel_easy_jump
     return unless @file_panel_shown

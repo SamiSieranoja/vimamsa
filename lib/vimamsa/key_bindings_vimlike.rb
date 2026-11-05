@@ -123,7 +123,7 @@ add_keys "core", {
   "C alt-h" => :file_panel_prev_file,
   "C alt-l" => :file_panel_next_file,
   # label the file panel rows, jump to a file by typing its label
-  "C ` s" => :file_panel_easy_jump,
+  "C g s" => :file_panel_easy_jump,
   #    'C , s'=> 'gui_select_buffer',
   "C , r v b" => :buf_revert,
   "C , c b" => "bufs.close_current_buffer",

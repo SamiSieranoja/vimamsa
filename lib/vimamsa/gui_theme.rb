@@ -45,7 +45,7 @@ CYBER_COLOR_DEFAULTS = {
   status_fg: "#9fd7e4",
   tree_selection_fg: "#d5f7f5",
   file_panel_current_fg: "#e8fffc", # current file row in the file panel
-  # file panel easy-jump (` s) labels: neon red + translucent "glow" tint
+  # file panel easy-jump (g s) labels: neon red + translucent "glow" tint
   file_panel_ej_label_fg: "#ff7a90",
   file_panel_ej_label_glow: "#ff2a55",
   # neon mode-badge tints (lit-tube colors per mode)
@@ -84,7 +84,7 @@ THEME_COLOR_DEFAULTS = {
   minibuf_bg:      "#1e1e2e",
   # current file row in the file panel (also bold)
   file_panel_current_fg: "#ffffff",
-  # file panel easy-jump (` s) labels + translucent background tint
+  # file panel easy-jump (g s) labels + translucent background tint
   file_panel_ej_label_fg:   "#ff6b6b",
   file_panel_ej_label_glow: "#d03030",
   # key log panel newest-row outline
