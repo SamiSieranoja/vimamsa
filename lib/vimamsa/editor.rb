@@ -269,6 +269,8 @@ class Editor
       create_new_buffer(file_contents = "\n")
     end
 
+    gui.restore_file_panel
+
     #Load plugins
     require "vimamsa/file_history.rb"
     @fh = FileHistory.new

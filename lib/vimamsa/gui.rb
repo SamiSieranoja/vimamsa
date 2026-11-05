@@ -1218,8 +1218,17 @@ class VMAgui
     @file_panel_shown = false
   end
 
+  # The shown/hidden state is remembered across restarts (see
+  # restore_file_panel). Tests toggle the panel too; they must not clobber it.
   def toggle_file_panel
     @file_panel_shown ? hide_file_panel : show_file_panel
+    vma.marshal_save("file_panel_shown", @file_panel_shown) unless vma_test_mode?
+  end
+
+  # Called at startup once the first buffer exists.
+  def restore_file_panel
+    return if vma_test_mode?
+    show_file_panel if vma.marshal_load("file_panel_shown", false)
   end
 
   def func_panel_init
