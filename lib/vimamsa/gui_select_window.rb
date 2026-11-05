@@ -101,7 +101,7 @@ class SelectUpdateWindow
                      submit: proc {
                        path = Gtk::TreePath.new(@selected_row.to_s)
                        iter = @model.get_iter(path)
-                       @select_callback.call(iter[1], @selected_row)
+                       run_dialog_callback("select") { @select_callback.call(iter[1], @selected_row) }
                        @window.destroy
                      },
                      escape: proc { @window.destroy }) do |keyval|
@@ -129,9 +129,9 @@ class SelectUpdateWindow
 
     @entry.signal_connect("search-changed") do |widget|
       debug "search changed: #{widget.text || ""}"
-      item_list = @update_callback.call(widget.text)
+      item_list = run_dialog_callback("select update") { @update_callback.call(widget.text) }
 
-      update_item_list(item_list)
+      update_item_list(item_list) if item_list
       # label.text = widget.text || ""
     end
     @entry.signal_connect("changed") { debug "[changed] " }

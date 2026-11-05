@@ -31,7 +31,7 @@ class PopupFormGenerator
       @ret[id] = entry.text
     end
     if !@callback.nil?
-      @callback.call(@ret)
+      run_dialog_callback("form submit") { @callback.call(@ret) }
     end
     close
   end

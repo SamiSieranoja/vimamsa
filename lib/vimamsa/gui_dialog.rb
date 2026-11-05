@@ -33,6 +33,18 @@ def make_modal_window(title = "", modal: true)
   w
 end
 
+# Run a dialog callback, reporting (not raising) its errors. An exception
+# escaping a GTK signal handler makes ruby-gnome call exit, quitting the
+# editor. Returns the block's value, or nil if it raised. Only StandardError
+# is caught, so exit/SystemExit still propagates.
+def run_dialog_callback(label = "dialog callback")
+  yield
+rescue StandardError => e
+  message("ERROR in #{label}: #{e.message}")
+  debug "#{label}: #{e.class}: #{e.message}\n#{(e.backtrace || []).first(10).join("\n")}"
+  nil
+end
+
 # Attach a CAPTURE-phase key controller to widget: Return calls submit,
 # Escape calls escape (each only when given). Any other key is offered to the
 # optional block with its keyval; a truthy result marks the key as handled.
@@ -42,13 +54,13 @@ def on_submit_escape(widget, submit: nil, escape: nil, &extra)
   widget.add_controller(press)
   press.signal_connect "key-pressed" do |_gesture, keyval, _keycode, _state|
     if submit && keyval == Gdk::Keyval::KEY_Return
-      submit.call
+      run_dialog_callback("dialog submit") { submit.call }
       true
     elsif escape && keyval == Gdk::Keyval::KEY_Escape
-      escape.call
+      run_dialog_callback("dialog escape") { escape.call }
       true
     else
-      (extra && extra.call(keyval)) ? true : false
+      (extra && run_dialog_callback("dialog key handler") { extra.call(keyval) }) ? true : false
     end
   end
   press
