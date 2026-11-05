@@ -2027,6 +2027,7 @@ class Buffer < String
   end
 
   def save()
+    return if @module.respond_to?(:on_save) and @module.on_save
     check_if_modified_outside #TODO
     if !@fname
       save_as()

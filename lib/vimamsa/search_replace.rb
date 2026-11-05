@@ -69,16 +69,6 @@ class Grep
   def self.init()
     vma.kbd.add_minor_mode("grep", :grep, :command)
 
-    if cnf.experimental?
-      bindkey "grep shift!", [:grep_apply_changes, proc {
-        if vma.buf.module.class == Grep
-          vma.buf.module.apply_changes
-        else
-          debug vma.buf.module, 2
-          message("ERROR")
-        end
-      }, "Write changes edited in grep buffer to the underlying file"]
-    end
     vma.kbd.add_minor_mode("bmgr", :buf_mgr, :command)
     reg_act(:grep_buffer, proc { Grep.new.run }, "Grep current buffer")
     reg_act(:grep_refresh, proc {
@@ -89,6 +79,14 @@ class Grep
 
     bindkey "C , g", :grep_buffer
     bindkey "grep ctrl-r", :grep_refresh
+  end
+
+  # Called by Buffer#save. Saving a grep buffer writes the edited lines back to
+  # the original buffer. Returns false to fall back to a normal save.
+  def on_save()
+    return false if !cnf.experimental?
+    apply_changes
+    return true
   end
 
   def apply_changes()
