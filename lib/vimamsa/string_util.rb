@@ -48,6 +48,7 @@ module Vimamsa
       %w[success failure],
       %w[pass fail],
       %w[positive negative],
+      %w[gain loss],
       %w[ascending descending],
       %w[horizontal vertical],
       %w[portrait landscape],
