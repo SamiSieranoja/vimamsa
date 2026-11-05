@@ -150,6 +150,9 @@ class Ack
       # Skip editor autosave files (.<name>_vma_autosave, see Buffer#autosave_path)
       bufstr += run_cmd("ack -Q --type-add=gd=.gd -ki --nohtml --nojs --nojson --ignore-file=match:/_vma_autosave$/ #{instr} #{Shellwords.escape(path)}")
     end
+    # Matches from non-UTF-8 files (e.g. latin-1) would make the regexp below
+    # raise "invalid byte sequence", which kills the app from a GTK callback.
+    bufstr = bufstr.scrub
 
     b = ""
     list = []
