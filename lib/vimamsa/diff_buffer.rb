@@ -97,7 +97,7 @@ def diff_buffer()
   infile.flush
   bufstr = run_cmd("diff -uw #{Shellwords.escape(orig_path)} #{Shellwords.escape(infile.path)}")
   infile.close; infile.unlink
-  create_new_file(nil, bufstr)
+  create_new_buffer(bufstr, "diff-unsaved-#{File.basename(orig_path.to_s)}")
   gui_set_file_lang(vma.buf.id, "diff")
   vma.kbd.set_mode(:diffview)
 end
@@ -170,7 +170,7 @@ def git_diff_w()
     return
   end
 
-  create_new_file(nil, bufstr)
+  create_new_buffer(bufstr, "gitdiff-#{File.basename(git_root)}")
   vma.buf.git_root = git_root
   gui_set_file_lang(vma.buf.id, "diff")
   vma.kbd.set_mode(:diffview)
@@ -196,7 +196,7 @@ def git_diff_buffer()
     message("git diff: no changes")
     return
   end
-  create_new_file(nil, bufstr)
+  create_new_buffer(bufstr, "gitdiff-#{File.basename(fname)}")
   vma.buf.git_root = git_root
   gui_set_file_lang(vma.buf.id, "diff")
   vma.kbd.set_mode(:diffview)
