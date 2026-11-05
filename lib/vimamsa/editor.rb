@@ -246,6 +246,7 @@ class Editor
       fname_ = File.expand_path(cnf.startup_file!)
       if File.exist?(fname_)
         fname = fname_
+        @startup_fname = fname_
       end
     else
       # fname = ppath("demo.txt")
@@ -406,9 +407,7 @@ class Editor
 
     # After a restart (restart_editor) reopen the previous files silently.
     if ENV["VIMAMSA_RESTORE_SESSION"]
-      initial = vma.buffers.list.find { |b| b.fname.nil? }
-      fnames.each { |f| b = load_buffer(f); b&.needs_autosave_check = true }
-      initial&.close
+      restore_session_files(fnames)
       message("Session restored: #{fnames.size} file(s)")
       return
     end
@@ -423,14 +422,23 @@ class Editor
       },
       :callback => proc { |x|
         if x["yes_btn"] == "submit"
-          initial = vma.buffers.list.find { |b| b.fname.nil? }
-          fnames.each { |f| b = load_buffer(f); b&.needs_autosave_check = true }
-          initial&.close
+          restore_session_files(fnames)
           message("Session restored: #{label}")
         end
       },
     }
     PopupFormGenerator.new(params).run
+  end
+
+  def restore_session_files(fnames)
+    initial = vma.buffers.list.find { |b| b.fname.nil? }
+    fnames.each { |f| b = load_buffer(f); b&.needs_autosave_check = true }
+    initial&.close
+    # Loading the session switches to its last file; cnf.startup_file stays
+    # the buffer shown on startup.
+    if @startup_fname and (id = vma.buffers.get_buffer_by_filename(@startup_fname))
+      vma.buffers.set_current_buffer(id)
+    end
   end
 
   def add_content_search_path(pathstr)
