@@ -152,4 +152,47 @@ class TestFilePanel < VmaTest
       assert_eq before, vma.buf.id
     end
   end
+
+  # File rows carry a close (x) icon right in front of the name; folder rows
+  # don't. Press shows a pressed background; release on the same button
+  # closes the file, release elsewhere cancels.
+  def test_close_button_closes_file
+    with_two_files do |ba, bb|
+      with_panel_open do
+        fp = vma.gui.file_panel
+        drain_idle # lay out the tree so cell areas exist
+        fp.file_rows.each_value { |it| assert it[FileTreePanel::COL_CLOSE].include?(FileTreePanel::CLOSE_GLYPH) }
+        fp.instance_variable_get(:@store).each do |_m, _p, it|
+          assert_eq nil, it[FileTreePanel::COL_CLOSE] if it[FileTreePanel::COL_BUF_ID] == 0
+        end
+
+        # hit test: the icon cell hits, the name text right after it doesn't
+        x, y = fp.close_button_center(ba.id)
+        assert_eq ba.id, fp.close_hit(x, y)
+        assert_eq nil, fp.close_hit(x + fp.close_w, y)
+
+        # hover tint, then pressed tint
+        fp.set_close_hover(ba.id)
+        assert fp.file_rows[ba.id][FileTreePanel::COL_CLOSE].include?(fp.panel_color(:file_panel_close_hover_bg))
+        fp.close_press(ba.id)
+        assert fp.file_rows[ba.id][FileTreePanel::COL_CLOSE].include?(fp.panel_color(:file_panel_close_pressed_bg))
+        assert_eq :normal, fp.close_state(bb.id)
+
+        # release off the button: cancelled, nothing closes
+        fp.close_release(nil)
+        drain_idle
+        assert fp.row_labels.key?(ba.id), "release elsewhere must not close"
+
+        # press + release on the button closes it; current file stays
+        assert_eq bb.id, vma.buf.id
+        fp.close_press(ba.id)
+        fp.close_release(ba.id)
+        drain_idle
+        assert vma.buffers.list.none? { |b| b.equal?(ba) }, "aaa.txt still open"
+        assert_eq nil, fp.row_labels[ba.id]
+        assert_eq bb.id, vma.buf.id
+        fp.set_close_hover(nil)
+      end
+    end
+  end
 end

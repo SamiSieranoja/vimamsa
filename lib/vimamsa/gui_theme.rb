@@ -48,6 +48,9 @@ CYBER_COLOR_DEFAULTS = {
   # file panel easy-jump (g s) labels: neon red + translucent "glow" tint
   file_panel_ej_label_fg: "#ff7a90",
   file_panel_ej_label_glow: "#ff2a55",
+  # file panel close (x) button: hover / pressed backgrounds
+  file_panel_close_hover_bg:   "#1f3a44",
+  file_panel_close_pressed_bg: "#5c9b98",
   # neon mode-badge tints (lit-tube colors per mode)
   badge_glow_command: "#9fe8a4",
   badge_glow_insert:  "#ffc5ff",
@@ -87,6 +90,9 @@ THEME_COLOR_DEFAULTS = {
   # file panel easy-jump (g s) labels + translucent background tint
   file_panel_ej_label_fg:   "#ff6b6b",
   file_panel_ej_label_glow: "#d03030",
+  # file panel close (x) button: hover / pressed backgrounds
+  file_panel_close_hover_bg:   "#4a4f55",
+  file_panel_close_pressed_bg: "#6e747b",
   # key log panel newest-row outline
   keylog_newest_border: "#94ffbb",
   # media controls strip

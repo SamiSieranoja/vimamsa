@@ -3,16 +3,31 @@ module Vimamsa
 class FileTreePanel
   COL_LABEL = 0   # Pango markup
   COL_BUF_ID = 1  # 0 = folder row (not selectable)
+  COL_CLOSE = 2   # close button markup; nil on folder rows
+
+  CLOSE_GLYPH = "×"
 
   def initialize
-    @store = Gtk::TreeStore.new(String, Integer)
+    @store = Gtk::TreeStore.new(String, Integer, String)
     @tree, @sw = build_list_tree(@store, ellipsize: Pango::EllipsizeMode::START,
                                  text_col: COL_LABEL, markup: true) do |iter|
       buf_id = iter[COL_BUF_ID]
       next if buf_id.nil? || buf_id == 0
+      next if @close_click # this click belonged to the close button
       vma.buffers.set_current_buffer(buf_id)
     end
     @tree.level_indentation = 7
+
+    # Small close (x) button directly in front of each file name: a glyph cell
+    # packed first into the name column, so it follows the row indentation.
+    # Its hover/pressed tint is a Pango span background, so it covers only the
+    # button (a cell background would also fill the indentation).
+    @close_renderer = Gtk::CellRendererText.new
+    col = @tree.get_column(0)
+    col.pack_start(@close_renderer, false)
+    col.reorder(@close_renderer, 0)
+    col.add_attribute(@close_renderer, "markup", COL_CLOSE)
+    init_close_button_events
 
     @context_menu = nil
     rightclick = Gtk::GestureClick.new
@@ -50,6 +65,128 @@ class FileTreePanel
       h[iter[COL_BUF_ID]] = iter
     end
     h
+  end
+
+  # Button-like feedback for the close icon: tinted on hover, darker while
+  # pressed; the file closes on release over the same button (dragging off
+  # cancels, like a real button).
+  def init_close_button_events
+    @close_hover = nil
+    @close_pressed = nil
+
+    click = Gtk::GestureClick.new
+    click.button = 1
+    # Capture phase + claim: the tree's own click handling (select/activate
+    # row) must not see presses on the close button.
+    click.propagation_phase = :capture
+    @tree.add_controller(click)
+    click.signal_connect("pressed") do |gesture, _n, x, y|
+      id = close_hit(x, y)
+      @close_click = !id.nil?
+      next unless id
+      gesture.set_state(:claimed)
+      close_press(id)
+    end
+    click.signal_connect("released") do |_g, _n, x, y|
+      close_release(close_hit(x, y))
+    end
+    click.signal_connect("stopped") { close_release(nil) if @close_pressed }
+
+    motion = Gtk::EventControllerMotion.new
+    @tree.add_controller(motion)
+    motion.signal_connect("motion") { |_c, x, y| set_close_hover(close_hit(x, y)) }
+    motion.signal_connect("leave") { set_close_hover(nil) }
+  end
+
+  # buf_id of the file row whose close button is at widget coords (x, y), else nil.
+  def close_hit(x, y)
+    bx, by = @tree.convert_widget_to_bin_window_coords(x.to_i, y.to_i)
+    path, col, = @tree.get_path_at_pos(bx, by)
+    return nil unless path && col
+    iter = @store.get_iter(path)
+    return nil unless iter && iter[COL_BUF_ID].to_i != 0
+    area = @tree.get_cell_area(path, col)
+    (bx >= area.x && bx < area.x + close_w) ? iter[COL_BUF_ID] : nil
+  end
+
+  # Width of the close button cell, px (its natural width: the glyph + padding).
+  def close_w
+    @close_renderer.markup = close_markup(nil)
+    @close_renderer.get_preferred_width(@tree)[1]
+  end
+
+  # Widget coords of the center of a file row's close button (tests).
+  def close_button_center(buf_id)
+    path = file_rows[buf_id]&.path
+    return nil unless path
+    area = @tree.get_cell_area(path, @tree.get_column(0))
+    @tree.convert_bin_window_to_widget_coords(area.x + close_w / 2, area.y + area.height / 2)
+  end
+
+  def close_press(buf_id)
+    @close_pressed = buf_id
+    update_close_bg
+  end
+
+  # Release over buf_id's close button (nil = elsewhere): closes the file only
+  # if it is the one that was pressed.
+  def close_release(buf_id)
+    pressed = @close_pressed
+    @close_pressed = nil
+    update_close_bg
+    # @close_click suppresses the row activation of this same click; clear it
+    # once the click's other handlers have run.
+    GLib::Idle.add { @close_click = false; false }
+    close_buffer_from_panel(pressed) if pressed && pressed == buf_id
+  end
+
+  def set_close_hover(buf_id)
+    return if buf_id == @close_hover
+    @close_hover = buf_id
+    update_close_bg
+  end
+
+  # :pressed, :hover or :normal
+  def close_state(buf_id)
+    if buf_id == @close_pressed
+      :pressed
+    elsif buf_id == @close_hover && @close_pressed.nil?
+      :hover
+    else
+      :normal
+    end
+  end
+
+  def close_markup(buf_id)
+    case close_state(buf_id)
+    when :pressed
+      "<span background=\"#{panel_color(:file_panel_close_pressed_bg)}\" weight=\"bold\"> #{CLOSE_GLYPH} </span>"
+    when :hover
+      "<span background=\"#{panel_color(:file_panel_close_hover_bg)}\"> #{CLOSE_GLYPH} </span>"
+    else
+      "<span fgalpha=\"55%\"> #{CLOSE_GLYPH} </span>"
+    end
+  end
+
+  def update_close_bg
+    file_rows.each do |id, iter|
+      m = close_markup(id)
+      iter[COL_CLOSE] = m if iter[COL_CLOSE] != m
+    end
+  end
+
+  # Deferred: closing refreshes (clears) the store, which must not happen
+  # inside the tree's own row-activated emission. A non-current file is
+  # closed in the background so the current file stays in view.
+  def close_buffer_from_panel(buf_id)
+    GLib::Idle.add do
+      if vma.buf&.id == buf_id
+        vma.buffers.close_buffer(buf_id)
+      else
+        vma.buffers.close_other_buffer(buf_id)
+      end
+      false
+    end
   end
 
   def init_context_menu
@@ -195,6 +332,7 @@ class FileTreePanel
         label = CGI.escapeHTML("#{active_mark}#{bnfo[:bname]}")
         file_iter[COL_LABEL] = current ? current_markup(label) : label
         file_iter[COL_BUF_ID] = bnfo[:buf].id
+        file_iter[COL_CLOSE] = close_markup(bnfo[:buf].id)
       end
     end
 
