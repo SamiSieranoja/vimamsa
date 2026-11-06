@@ -156,7 +156,9 @@ class Buffer < String
 
   def detect_file_language
     @lang = nil
-    @lang = "c" if @fname.match(/\.(c|h|cpp)$/)
+    @lang = "c" if @fname.match(/\.(c|h)$/)
+    # GtkSourceView (below) refines these; .hxx/.ipp/.inl it does not know
+    @lang = "cpp" if @fname.match(/\.(cpp|cc|cxx|hpp|hh|hxx|ipp|inl|tpp)$/)
     @lang = "java" if @fname.match(/\.(java)$/)
     @lang = "ruby" if @fname.match(/\.(rb)$/)
     @lang = "hyperplaintext" if @fname.match(/\.(txt)$/)

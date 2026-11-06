@@ -17,7 +17,12 @@ class LangSrv
     21 => "cons", 22 => "strt", 23 => "evt", 24 => "op", 25 => "tprm",
   }.freeze
 
+  # GtkSourceView language ids for header files => the language their LSP
+  # server is configured for, so headers share the server of their sources.
+  LSP_LANG = { "chdr" => "c", "cpphdr" => "cpp" }.freeze
+
   def self.get(lang)
+    lang = LSP_LANG.fetch(lang, lang)
     if @@languages[lang].nil?
       @@languages[lang] = LangSrv.new(lang)
       @@languages[lang] = nil if @@languages[lang].error
