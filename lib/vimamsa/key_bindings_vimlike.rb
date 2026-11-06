@@ -253,6 +253,7 @@ add_keys "core", {
   "V g s" => :selection_swapcase,
   "V g r" => :selection_reverse,
   "V g i" => :selection_remove_indent,
+  "V g I" => :selection_remove_common_indent,
   "V U" => :selection_upcase,
   "V u" => :selection_downcase,
   "V ~" => :selection_swapcase,
@@ -265,6 +266,8 @@ add_keys "core", {
   "C g ~ ~" => :line_swapcase,
   "V g w" => :remove_extra_spaces,
   "C g w" => :remove_extra_spaces,
+  "C g i" => :selection_remove_indent,
+  "C g I" => :selection_remove_common_indent,
 
   "VC j" => :forward_line,
   "VC k" => :backward_line,

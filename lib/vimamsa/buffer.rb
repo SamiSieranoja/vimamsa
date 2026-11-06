@@ -365,10 +365,31 @@ class Buffer < String
     transform_selected_lines { |line| line.sub(/^\t| {1,#{tw}}/, "") }
   end
 
-  # Remove all leading whitespace from every line spanning the selection
+  # Remove all leading whitespace from every line spanning the selection, or
+  # from the current line when not in visual mode. The cursor stays on the same
+  # character (or moves to the line start if it was inside the indentation).
   def remove_indent_selection
-    return if !visual_mode?
-    transform_selected_lines { |line| line.sub(/^[ \t]+/, "") }
+    return transform_selected_lines { |line| line.sub(/^[ \t]+/, "") } if visual_mode?
+    r = line_range(@lpos, 1, false)
+    indent = self[r][/\A[ \t]*/].size
+    return if indent == 0
+    newpos = [@pos - indent, r.begin].max
+    delete_range(r.begin, r.begin + indent - 1)
+    set_pos(newpos)
+  end
+
+  # Like remove_indent_selection, but remove only the indentation common to
+  # all selected lines: x leading whitespace chars from each line, where x is
+  # the smallest indent among the non-blank lines (relative indentation is
+  # kept). Blank lines lose at most x chars. On a single line this removes its
+  # whole indent, so outside visual mode it acts on the current line like g i.
+  def remove_common_indent_selection
+    return remove_indent_selection if !visual_mode?
+    (startpos, endpos) = get_visual_mode_range2
+    lines = self[get_line_start(startpos)..get_line_end(endpos - 1)].lines
+    x = lines.reject { |l| l.strip.empty? }.map { |l| l[/\A[ \t]*/].size }.min
+    return if x.nil? || x == 0
+    transform_selected_lines { |line| line.sub(/\A[ \t]{0,#{x}}/, "") }
   end
 
   def handle_drag_and_drop(fname)

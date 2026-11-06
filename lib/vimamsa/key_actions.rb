@@ -226,7 +226,10 @@ act_list = {
                           :desc => "Transform text: reverse", :group => :edit },
 
   :selection_remove_indent => { :proc => proc { buf.remove_indent_selection },
-                                :desc => "Remove indentation from selected lines", :group => :edit },
+                                :desc => "Remove indentation from selected lines (or current line)", :group => :edit },
+
+  :selection_remove_common_indent => { :proc => proc { buf.remove_common_indent_selection },
+                                       :desc => "Remove indentation common to all selected lines (keeps relative indent)", :group => :edit },
 
   :word_upcase => { :proc => proc { buf.transform_range(:to_next_word, :upcase) },
                     :desc => "Upcase to start of next word (vim gUw)", :group => :edit },

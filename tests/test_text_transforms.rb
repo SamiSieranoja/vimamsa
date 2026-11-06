@@ -211,10 +211,70 @@ class TestTextTransforms < VmaTest
     assert_buf("aa\n  bb\n")
   end
 
-  def test_remove_indent_selection_no_op_when_not_visual
-    act('buf.set_content("  aa\n")')
-    act(:selection_remove_indent)
-    assert_buf("  aa\n")
+  # g I removes only the smallest indent among the selected non-blank lines,
+  # keeping relative indentation; lines outside the selection are untouched.
+  def test_remove_common_indent_selection
+    act('buf.set_content("x\n    aa\n      bb\n  \n    cc\n  dd\n")')
+    act("buf.set_pos(2)")  # "aa" line
+    keys("v")
+    act("buf.set_pos(23)") # into the "cc" line
+    keys("g I")
+    assert_buf("x\naa\n  bb\n\ncc\n  dd\n")
+    assert_mode(:visual)
+  end
+
+  def test_remove_common_indent_tabs
+    act('buf.set_content("\t\taa\n\tbb\n")')
+    act("buf.set_pos(0)")
+    keys("v")
+    act("buf.set_pos(5)")
+    keys("g I")
+    assert_buf("\taa\nbb\n")
+  end
+
+  def test_remove_common_indent_noop_when_some_line_unindented
+    act('buf.set_content("  aa\nbb\n")')
+    act("buf.set_pos(0)")
+    keys("v")
+    act("buf.set_pos(6)")
+    keys("g I")
+    assert_buf("  aa\nbb\n")
+  end
+
+  def test_remove_common_indent_current_line
+    act('buf.set_content("x\n   aa\n")')
+    act("buf.set_pos(5)")
+    keys("g I")
+    assert_buf("x\naa\n")
+  end
+
+  # Outside visual mode g i works on the current line only; the cursor keeps
+  # its character.
+  def test_remove_indent_current_line
+    act('buf.set_content("  aa\n \t bb cc\n  dd\n")')
+    act("buf.set_pos(9)") # the "c" of "cc"
+    keys("g i")
+    assert_buf("  aa\nbb cc\n  dd\n")
+    assert_mode(:command)
+    assert_eq(6, buf.pos)
+  end
+
+  def test_remove_indent_current_line_cursor_in_indent
+    act('buf.set_content("x\n    aa\n")')
+    act("buf.set_pos(3)") # inside the indentation
+    keys("g i")
+    assert_buf("x\naa\n")
+    assert_eq(2, buf.pos)
+  end
+
+  def test_remove_indent_current_line_last_and_unindented
+    act('buf.set_content("aa\n  bb\n")')
+    act("buf.set_pos(1)")
+    keys("g i")                 # no indent: unchanged
+    assert_buf("aa\n  bb\n")
+    act("buf.set_pos(5)")
+    keys("g i")                 # last line
+    assert_buf("aa\nbb\n")
   end
 
   def test_converter_on_selection
