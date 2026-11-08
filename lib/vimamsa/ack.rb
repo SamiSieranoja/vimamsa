@@ -148,7 +148,9 @@ class Ack
     bufstr = ""
     for path in vma.get_content_search_paths
       # Skip editor autosave files (.<name>_vma_autosave, see Buffer#autosave_path)
-      bufstr += run_cmd("ack -Q --type-add=gd=.gd -ki --nohtml --nojs --nojson --ignore-file=match:/_vma_autosave$/ #{instr} #{Shellwords.escape(path)}")
+      # stdin from /dev/null: ack 3 reads a piped stdin instead of the given
+      # path, which hangs forever if the editor was started with stdin a pipe.
+      bufstr += run_cmd("ack -Q --type-add=gd=.gd -ki --nohtml --nojs --nojson --ignore-file=match:/_vma_autosave$/ #{instr} #{Shellwords.escape(path)} < /dev/null")
     end
     # Matches from non-UTF-8 files (e.g. latin-1) would make the regexp below
     # raise "invalid byte sequence", which kills the app from a GTK callback.
