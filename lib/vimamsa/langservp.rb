@@ -6,7 +6,7 @@ LSP = LanguageServer::Protocol
 class LangSrv
   @@languages = {}
   attr_accessor :error
-  attr_reader :completion_supported
+  attr_reader :completion_supported, :position_encoding
 
   # LSP CompletionItemKind (1..25) => short tag for the popup
   COMPLETION_KINDS = {
@@ -115,6 +115,9 @@ class LangSrv
       return
     end
     caps = init_result.dig(:result, :capabilities) || {}
+    # Units of Position.character: the server's choice (LSP 3.17
+    # positionEncoding, or clangd's older offsetEncoding), else the LSP default.
+    @position_encoding = caps[:positionEncoding] || init_result.dig(:result, :offsetEncoding) || "utf-16"
     @completion_supported = !!(caps[:completionProvider] || caps["completionProvider"])
     unless caps[:definitionProvider] || caps["definitionProvider"]
       message("Warning: LSP server #{lspconf[:name]} did not advertise definitionProvider — " \
@@ -132,11 +135,15 @@ class LangSrv
     # delta[2]: number of chars affected
     # delta[3]: text to add in case of insert
 
+    # Called before the buffer is changed, so line_text sees the old text the
+    # positions refer to.
+    sc = lsp_character(fpath, delta[4][0], delta[4][1])
     changes = nil
     if delta[1] == INSERT
-      changes = [{ 'rangeLength': 0, 'range': { 'start': { 'line': delta[4][0], 'character': delta[4][1] }, 'end': { 'line': delta[4][0], 'character': delta[4][1] } }, 'text': delta[3] }]
+      changes = [{ 'rangeLength': 0, 'range': { 'start': { 'line': delta[4][0], 'character': sc }, 'end': { 'line': delta[4][0], 'character': sc } }, 'text': delta[3] }]
     elsif delta[1] == DELETE
-      changes = [{ 'rangeLength': delta[2], 'range': { 'start': { 'line': delta[4][0], 'character': delta[4][1] }, 'end': { 'line': delta[5][0], 'character': delta[5][1] } }, 'text': "" }]
+      ec = lsp_character(fpath, delta[5][0], delta[5][1])
+      changes = [{ 'rangeLength': delta[2], 'range': { 'start': { 'line': delta[4][0], 'character': sc }, 'end': { 'line': delta[5][0], 'character': ec } }, 'text': "" }]
     end
     debug changes.inspect, 2
 
@@ -185,7 +192,7 @@ class LangSrv
   def get_definition(fpath_or_uri, lpos, cpos)
     fpuri = fpath_or_uri.start_with?("file://") ? fpath_or_uri : file_uri(fpath_or_uri)
     a = LSP::Interface::DefinitionParams.new(
-      position: LSP::Interface::Position.new(line: lpos, character: cpos),
+      position: LSP::Interface::Position.new(line: lpos, character: lsp_character(fpuri, lpos, cpos)),
       text_document: LSP::Interface::TextDocumentIdentifier.new(uri: fpuri),
     )
     id = new_id
@@ -218,14 +225,11 @@ class LangSrv
   # the GTK main loop with parsed items ([{text:, label:, kind:, detail:,
   # source: :lsp}, ...]) when the server responds. If no response arrives
   # within 3 s the request is silently dropped.
-  # Note: line/character are sent as Ruby char offsets although LSP defaults
-  # to UTF-16 code units — same pragmatic choice as didChange/definition
-  # above; differs only when non-BMP chars precede the cursor on the line.
   def request_completion(fpath, lpos, cpos, &callback)
     ensure_file_open(fpath)
     fpuri = file_uri(fpath)
     a = LSP::Interface::CompletionParams.new(
-      position: LSP::Interface::Position.new(line: lpos, character: cpos),
+      position: LSP::Interface::Position.new(line: lpos, character: lsp_character(fpath, lpos, cpos)),
       text_document: LSP::Interface::TextDocumentIdentifier.new(uri: fpuri),
     )
     id = new_id
@@ -397,6 +401,33 @@ class LangSrv
 
   def file_uri(fp)
     URI.join("file:///", fp).to_s
+  end
+
+  # Ruby character column cpos on line lpos -> Position.character in the
+  # server's encoding. They differ when non-ASCII text precedes the column:
+  # "ä" is 1 char but 2 bytes in utf-8; "😀" is 1 char but 2 utf-16 units.
+  def lsp_character(fpath_or_uri, lpos, cpos)
+    return cpos if @position_encoding == "utf-32"
+    pre = line_text(fpath_or_uri, lpos)[0, cpos].to_s.scrub
+    return cpos if pre.ascii_only?
+    if @position_encoding == "utf-8"
+      pre.bytesize
+    else
+      pre.encode("UTF-16LE").bytesize / 2
+    end
+  end
+
+  # Text of line lpos: from the editor buffer if the file is open (that is
+  # what the server has, via didChange), else from disk.
+  def line_text(fpath_or_uri, lpos)
+    fpath = fpath_or_uri
+    fpath = URI::DEFAULT_PARSER.unescape(URI.parse(fpath).path) if fpath.start_with?("file://")
+    id = vma.buffers.get_buffer_by_filename(fpath)
+    return vma.buffers.get_buffer_by_id(id).line(lpos).to_s if id
+    if File.file?(fpath)
+      File.foreach(fpath).with_index { |l, i| return l if i == lpos }
+    end
+    ""
   end
 
   def open_file(fp, fc = nil, lang: nil)
