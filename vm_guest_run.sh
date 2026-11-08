@@ -66,6 +66,13 @@ fi
 cp "$so_path" lib/
 touch "$MARKER"
 
+# The ruby-lsp tests run `bundle exec ruby-lsp`. The synced Gemfile.lock is the
+# host's and pins exact versions the guest doesn't have (gem install above picks
+# the newest matching ones), so resolve the bundle against the guest's gems,
+# installing only what's missing (e.g. the development dependencies).
+rm -f Gemfile.lock
+bundle check >/dev/null 2>&1 || sudo_do bundle install
+
 # 4. Run the suite on the real desktop (no --headless: the window shows on-screen).
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 # Prefer the real Wayland seat: the uinput E2E tests only run on the GTK Wayland
