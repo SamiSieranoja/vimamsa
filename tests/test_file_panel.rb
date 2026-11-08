@@ -195,4 +195,51 @@ class TestFilePanel < VmaTest
       end
     end
   end
+
+  # Marks (m <char>) of the current file are listed above the files; clicking
+  # one jumps to it; the list follows edits and buffer switches.
+  def test_marks_section
+    with_two_files do |ba, bb|
+      with_panel_open do
+        fp = vma.gui.file_panel
+        tree = fp.instance_variable_get(:@tree)
+        store = fp.instance_variable_get(:@store)
+        bb.set_content("one\ntwo\nthree\nfour\n")
+        assert_eq({}, fp.mark_rows)
+
+        bb.set_pos(bb.line_range(2, 1).begin)  # "three"
+        keys("m b")
+        bb.set_pos(bb.line_range(0, 1).begin)  # "one"
+        keys("m a")
+        bb.marks["bm:1"] = 0                    # bookmark entry: not a mark
+        sleep 0.4
+        drain_idle
+        assert_eq ["a", "b"], fp.mark_rows.keys
+        assert fp.mark_rows["a"].include?("1: one"), fp.mark_rows["a"]
+        assert fp.mark_rows["b"].include?("3: three"), fp.mark_rows["b"]
+        # section comes before the folder rows
+        first = store.iter_first
+        assert_eq "", first[FileTreePanel::COL_MARK]
+
+        # click mark b -> cursor on "three"
+        path = nil
+        store.each { |_m, pth, it| path = pth if it[FileTreePanel::COL_MARK] == "b" }
+        tree.row_activated(path, tree.get_column(0))
+        assert_eq 2, bb.lpos
+
+        # edit above the marks: line numbers follow
+        bb.insert_txt_at("new\n", 0)
+        sleep 0.4
+        drain_idle
+        assert fp.mark_rows["b"].include?("4: three"), fp.mark_rows["b"]
+
+        # another file: its (no) marks are shown instead
+        keys("alt-h")
+        assert_eq ba.id, vma.buf.id
+        assert_eq({}, fp.mark_rows)
+        assert_eq 0, store.iter_first[FileTreePanel::COL_BUF_ID]
+        assert store.iter_first[FileTreePanel::COL_MARK].nil?, "marks header left behind"
+      end
+    end
+  end
 end

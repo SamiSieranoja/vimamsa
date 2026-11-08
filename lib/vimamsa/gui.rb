@@ -1174,6 +1174,19 @@ class VMAgui
     @file_panel.refresh
   end
 
+  # Marks of the current buffer changed (set, or shifted by an edit): update
+  # the panel's marks section, coalescing bursts (typing) into one update.
+  def file_panel_marks_changed
+    return unless @file_panel_shown
+    return if @file_panel_marks_pending
+    @file_panel_marks_pending = true
+    GLib::Timeout.add(300) do
+      @file_panel_marks_pending = false
+      @file_panel.refresh_marks if @file_panel_shown
+      false
+    end
+  end
+
   def file_panel_shown?
     @file_panel_shown
   end

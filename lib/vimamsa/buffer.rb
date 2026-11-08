@@ -823,6 +823,10 @@ class Buffer < String
         @marks[k] = @marks[k] + changeamount
       end
     end
+    # The panel shows each mark's line number and text
+    if equal?(vma.buf) && @marks.keys.any? { |k| k.is_a?(String) && k.size == 1 }
+      vma.gui&.file_panel_marks_changed
+    end
     # Keep closed-fold placeholder anchors (fold.rb) in sync with edits elsewhere.
     @fold_anchors&.each_key do |k|
       @fold_anchors[k] = @fold_anchors[k] + changeamount if @fold_anchors[k] > pos
@@ -1254,6 +1258,13 @@ class Buffer < String
 
   def mark_current_position(mark_char)
     @marks[mark_char] = @pos
+    vma.gui&.file_panel_marks_changed if equal?(vma.buf)
+  end
+
+  # Marks set with m <char>, as { char => pos } sorted by char. @marks also
+  # holds internal entries (e.g. bookmarks' "bm:<id>"), which are excluded.
+  def user_marks
+    @marks.select { |k, _| k.is_a?(String) && k.size == 1 }.sort.to_h
   end
 
   # Get positions of last characters in words

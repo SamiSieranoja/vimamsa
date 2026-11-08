@@ -4,13 +4,19 @@ class FileTreePanel
   COL_LABEL = 0   # Pango markup
   COL_BUF_ID = 1  # 0 = folder row (not selectable)
   COL_CLOSE = 2   # close button markup; nil on folder rows
+  COL_MARK = 3    # mark char on mark rows; "" on the "Marks" header; nil otherwise
 
   CLOSE_GLYPH = "×"
 
   def initialize
-    @store = Gtk::TreeStore.new(String, Integer, String)
+    @store = Gtk::TreeStore.new(String, Integer, String, String)
     @tree, @sw = build_list_tree(@store, ellipsize: Pango::EllipsizeMode::START,
                                  text_col: COL_LABEL, markup: true) do |iter|
+      mark = iter[COL_MARK]
+      if mark && !mark.empty?
+        vma.buf.jump_to_mark(mark)
+        next
+      end
       buf_id = iter[COL_BUF_ID]
       next if buf_id.nil? || buf_id == 0
       next if @close_click # this click belonged to the close button
@@ -27,6 +33,13 @@ class FileTreePanel
     col.pack_start(@close_renderer, false)
     col.reorder(@close_renderer, 0)
     col.add_attribute(@close_renderer, "markup", COL_CLOSE)
+
+    # Paths are ellipsized at the start (keep the file name visible); mark
+    # rows at the end, so the mark char and line number stay visible.
+    text_renderer = col.cells.find { |c| !c.equal?(@close_renderer) }
+    col.set_cell_data_func(text_renderer) do |_col, r, _model, iter|
+      r.ellipsize = iter[COL_MARK].nil? ? Pango::EllipsizeMode::START : Pango::EllipsizeMode::END
+    end
     init_close_button_events
 
     @context_menu = nil
@@ -312,6 +325,55 @@ class FileTreePanel
       "background=\"#{panel_color(:file_panel_ej_label_glow)}\" bgalpha=\"30%\"> #{label} </span>"
   end
 
+  # ── Marks of the current file (m <char>), shown above the files ──
+
+  MARK_TEXT_MAX = 40 # chars of the marked line shown after the line number
+
+  # { char => [lpos (0-based), line text] } of vma.buf's user marks, by char.
+  def current_marks
+    b = vma.buf
+    return {} unless b
+    b.user_marks.to_h do |c, pos|
+      lpos = b.get_line_pos(pos)
+      [c, [lpos, b.line(lpos).to_s.chomp.strip]]
+    end
+  end
+
+  def mark_label(c, lpos, text)
+    text = text[0, MARK_TEXT_MAX] + "…" if text.size > MARK_TEXT_MAX
+    "<b>#{CGI.escapeHTML(c)}</b>  #{lpos + 1}: #{CGI.escapeHTML(text)}"
+  end
+
+  # { char => label markup } for the mark rows (tests / introspection).
+  def mark_rows
+    h = {}
+    @store.each do |_m, _p, iter|
+      m = iter[COL_MARK]
+      h[m] = iter[COL_LABEL] if m && !m.empty?
+    end
+    h
+  end
+
+  # Rebuild only the marks section (first top-level row), leaving the file
+  # rows and the scroll position alone.
+  def refresh_marks
+    first = @store.iter_first
+    @store.remove(first) if first && first[COL_MARK] == ""
+    marks = current_marks
+    return if marks.empty?
+    head = @store.insert(nil, 0)
+    head[COL_LABEL] = CGI.escapeHTML("📌 Marks")
+    head[COL_BUF_ID] = 0
+    head[COL_MARK] = ""
+    marks.each do |c, (lpos, text)|
+      it = @store.append(head)
+      it[COL_LABEL] = mark_label(c, lpos, text)
+      it[COL_BUF_ID] = 0
+      it[COL_MARK] = c
+    end
+    @tree.expand_row(head.path, true)
+  end
+
   def refresh
     # A buffer-list change mid-pick must not leave a stale override installed
     # or labels pointing at rows that no longer exist.
@@ -337,6 +399,7 @@ class FileTreePanel
     end
 
     @tree.expand_all
+    refresh_marks
   end
 end
 end # module Vimamsa
