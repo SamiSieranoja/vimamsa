@@ -154,4 +154,54 @@ class TestLspClangd < VmaTest
       end
     end
   end
+
+  def context_menu_labels(view)
+    m = view.instance_variable_get(:@context_menu).menu_model
+    (0...m.n_items).map { |i| m.get_item_attribute_value(i, "label", GLib::VariantType::STRING) }
+  ensure
+    view.instance_variable_get(:@context_menu)&.popdown
+  end
+
+  # Right-click menu offers "Jump to Definition" when the buffer has LSP, and
+  # choosing it jumps.
+  def test_context_menu_jump_to_definition
+    with_clangd do |b, _lsp, path|
+      line, col = loc("add(p")
+      b.set_pos(b.line_range(line, 1).begin + col)
+      b.view.show_context_menu(5, 5)
+      drain_idle
+      assert context_menu_labels(b.view).include?("Jump to Definition")
+      # show_context_menu moved the cursor to the click; put it back on `add`
+      b.set_pos(b.line_range(line, 1).begin + col)
+      sleep 1 # let clangd parse
+      vma.gui.app.lookup_action("ctx_lsp_jump_to_definition").activate(nil)
+      drain_idle
+      assert_eq loc("int add")[0], vma.buf.lpos
+    end
+  end
+
+  def test_no_context_menu_item_without_lsp
+    b = vma.buf # plain text test buffer, LSP disabled
+    b.view.show_context_menu(5, 5)
+    drain_idle
+    assert !context_menu_labels(b.view).include?("Jump to Definition")
+  end
+
+  # Saving an untitled buffer as .cpp attaches LSP (and the menu item).
+  def test_save_as_cpp_attaches_lsp
+    with_clangd do |_b, lsp, _path, dir|
+      nb = create_new_buffer("int main() { return 0; }\n", "untitled")
+      begin
+        assert_eq nil, nb.lsp
+        nb.save_as_callback(File.join(dir, "new.cpp"))
+        drain_idle
+        assert nb.lsp.equal?(lsp), "no LSP after Save As .cpp"
+        nb.view.show_context_menu(5, 5)
+        drain_idle
+        assert context_menu_labels(nb.view).include?("Jump to Definition")
+      ensure
+        vma.buffers.close_buffer(nb.id)
+      end
+    end
+  end
 end

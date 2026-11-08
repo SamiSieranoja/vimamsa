@@ -1864,6 +1864,9 @@ class Buffer < String
 
     set_filename(fpath)
     save()
+    # set_filename re-detects the language and drops the LSP client; attach the
+    # one for the new language (e.g. an untitled buffer saved as foo.cpp).
+    init_lsp if cnf.lsp.enabled?
     gui_set_window_title(@title, @subtitle) #TODO: if not active buffer?
   end
 
