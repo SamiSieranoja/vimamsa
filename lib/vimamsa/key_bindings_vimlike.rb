@@ -407,6 +407,7 @@ bindkey ["VCB M", "B m"], :run_last_macro
 add_keys "experimental", {
  "C ` k" => :lsp_debug,
  "C ` j" => :lsp_jump_to_definition,
+ "C ` r" => :lsp_restart,
  "C , u s" => :audio_stop,
 
   "C , t r" => "run_tests()",

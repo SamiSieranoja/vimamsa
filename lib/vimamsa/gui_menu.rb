@@ -79,6 +79,7 @@ module Vimamsa
       add_to_menu "View.MsgHistory", { :label => "Message history", :action => :show_message_history }
 
       add_to_menu "Actions.EncryptFile", { :label => "Encrypt file", :action => :encrypt_file }
+      add_to_menu "Actions.LspRestart", { :label => "Restart LSP server", :action => :lsp_restart }
       add_to_menu "Help.KeyBindings", { :label => "Show key bindings", :action => :show_key_bindings }
       add_to_menu "Help.InstallDemo", { :action => :install_demo_files }
 

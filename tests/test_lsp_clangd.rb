@@ -104,9 +104,10 @@ class TestLspClangd < VmaTest
     end
   end
 
-  # Positions are sent as Ruby character offsets. With --offset-encoding=utf-8
-  # clangd reads them as byte offsets, so on a line with non-ASCII text before
-  # the cursor ("ää" = 2 chars, 4 bytes) the position lands 2 bytes too early.
+  # Non-ASCII text before the cursor ("ää" = 2 chars, 4 bytes): the column
+  # must be sent in the server's position encoding (utf-8 bytes with
+  # --offset-encoding=utf-8, see LangSrv#lsp_character), else the lookup lands
+  # 2 bytes early, on `t`.
   def test_jump_to_definition_after_non_ascii
     with_clangd do |_b, lsp, path|
       line, col = loc("add(1")
@@ -201,6 +202,57 @@ class TestLspClangd < VmaTest
         assert context_menu_labels(nb.view).include?("Jump to Definition")
       ensure
         vma.buffers.close_buffer(nb.id)
+      end
+    end
+  end
+
+  # The pnnfast.c case: a header in another dir, no compile flags -> clangd
+  # drops declarations using its types, so definition lookup finds nothing.
+  # After adding compile_flags.txt, :lsp_restart (new clangd, buffers
+  # reattached) makes it work, and the old clangd process exits.
+  def test_restart_picks_up_compile_flags
+    with_clangd do |_b, _lsp, _path, dir|
+      inc = File.join(dir, "inc")
+      Dir.mkdir(inc)
+      File.write(File.join(inc, "types.h"), "typedef struct { int n; } CODEBOOK;\ntypedef double dist_t;\n")
+      cpath = File.join(dir, "prog.c")
+      # Like pnnfast.c: more than clang's error limit (19) of unknown-type
+      # errors before calc(), so without the header clang stops parsing
+      # before reaching it.
+      decls = (1..25).map { |i| "dist_t v#{i};\n" }.join
+      File.write(cpath, "#include \"types.h\"\n#{decls}void calc(CODEBOOK *cb) { cb->n = 1; }\nint main() { CODEBOOK c; calc(&c); return 0; }\n")
+      File.write(File.join(dir, "compile_flags.txt"), "") # no -Iinc yet
+      cb = open_new_file(cpath)
+      begin
+        drain_idle
+        old = cb.lsp
+        assert old, "no LSP for prog.c"
+        call = [27, "int main() { CODEBOOK c; ".size]
+        sleep 1
+        assert_eq nil, old.get_definition(cpath, *call), "should fail without include path"
+
+        File.write(File.join(dir, "compile_flags.txt"), "-Iinc\n")
+        old_pid = old.pid
+        act :lsp_restart
+        assert cb.lsp && !cb.lsp.equal?(old), "buffer not reattached to a new server"
+        d = retry_until { cb.lsp.get_definition(cpath, *call) }
+        assert d, "no definition after restart"
+        assert_eq [File.realpath(cpath), 27], [File.realpath(d[0]), d[1]]
+
+        # the old clangd exits (and is reaped)
+        gone = false
+        30.times do
+          begin
+            Process.kill(0, old_pid)
+          rescue Errno::ESRCH
+            gone = true
+            break
+          end
+          sleep 0.1
+        end
+        assert gone, "old clangd (pid #{old_pid}) still running"
+      ensure
+        vma.buffers.close_buffer(cb.id)
       end
     end
   end

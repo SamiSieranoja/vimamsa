@@ -21,6 +21,21 @@ class LangSrv
   # server is configured for, so headers share the server of their sources.
   LSP_LANG = { "chdr" => "c", "cpphdr" => "cpp" }.freeze
 
+  # Stop the server for lang (if running), start a new one and reattach every
+  # open buffer of that language (also ones whose server failed to start).
+  # Picks up configuration changes the server only reads at startup / file
+  # open, e.g. a new compile_flags.txt for clangd. Returns the new server or nil.
+  def self.restart(lang)
+    lang = LSP_LANG.fetch(lang, lang)
+    @@languages.delete(lang)&.shutdown
+    vma.buffers.list.each do |b|
+      next if b.fname.nil? || b.lang.nil?
+      next unless LSP_LANG.fetch(b.lang, b.lang) == lang
+      b.init_lsp
+    end
+    @@languages[lang]
+  end
+
   def self.get(lang)
     lang = LSP_LANG.fetch(lang, lang)
     if @@languages[lang].nil?
@@ -158,12 +173,43 @@ class LangSrv
     end
   end
 
-  def wait_for_response(id)
+  # Process id of the server (tests / introspection).
+  def pid
+    @io&.pid
+  end
+
+  # LSP shutdown request + exit notification. The process is reaped in the
+  # background, and killed if it has not exited within 2 s.
+  def shutdown
+    id = new_id
+    begin
+      @writer.write(id: id, method: "shutdown", params: nil)
+      wait_for_response(id, 2)
+      @writer.write(method: "exit", params: nil)
+    rescue IOError, SystemCallError => e
+      debug "LSP shutdown: #{e}"
+    end
+    @lst&.kill
+    io = @io
+    @io = nil
+    Thread.new do
+      pid = io.pid
+      20.times do
+        break if Process.waitpid(pid, Process::WNOHANG)
+        sleep 0.1
+      end
+      Process.kill("TERM", pid) rescue nil
+      Process.waitpid(pid) rescue nil
+      io.close rescue nil
+    end
+  end
+
+  def wait_for_response(id, timeout = 5)
     t = Time.now
     debug "Waiting for response id:#{id}"
     while @resp[id].nil?
       sleep 0.03
-      if Time.now - t > 5
+      if Time.now - t > timeout
         debug "Timeout LSP call id:#{id}"
         return nil
       end
@@ -454,6 +500,19 @@ class LangSrv
     @opened_files ||= {}
     fpuri = file_uri(fp)
     open_file(fp, fc) unless @opened_files[fpuri]
+  end
+end
+
+def lsp_restart
+  lang = vma.buf&.lang
+  if !cnf.lsp.enabled?
+    message("LSP is not enabled (Settings > Behavior)")
+  elsif lang.nil?
+    message("No language detected for this buffer")
+  elsif LangSrv.restart(lang)
+    message("Restarted LSP server for #{lang}")
+  else
+    message("No LSP server configured or started for #{lang}")
   end
 end
 
