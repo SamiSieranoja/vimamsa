@@ -95,8 +95,17 @@ def diff_buffer()
   infile = Tempfile.new("in")
   infile.write(vma.buf.to_s)
   infile.flush
-  bufstr = run_cmd("diff -uw #{Shellwords.escape(orig_path)} #{Shellwords.escape(infile.path)}")
+  # Compare like with like: the buffer is UTF-8 + \n, the file may be in
+  # another encoding / CRLF (see read_file_with_format), so diff against the
+  # file as it would be loaded. Both sides are labeled with the real path.
+  origfile = Tempfile.new("orig")
+  origfile.write(read_file("", orig_path))
+  origfile.flush
+  label = Shellwords.escape(orig_path)
+  bufstr = text_to_utf8(run_cmd("diff -uw --label #{label} --label #{label} " \
+                                "#{Shellwords.escape(origfile.path)} #{Shellwords.escape(infile.path)}"))
   infile.close; infile.unlink
+  origfile.close; origfile.unlink
   create_new_buffer(bufstr, "diff-unsaved-#{File.basename(orig_path.to_s)}")
   gui_set_file_lang(vma.buf.id, "diff")
   vma.kbd.set_mode(:diffview)
@@ -164,7 +173,7 @@ def git_diff_w()
     return
   end
 
-  bufstr = run_cmd("git -C #{Shellwords.escape(git_root)} diff -w")
+  bufstr = text_to_utf8(run_cmd("git -C #{Shellwords.escape(git_root)} diff -w"))
   if bufstr.strip.empty?
     message("git diff -w: no changes")
     return
@@ -191,7 +200,7 @@ def git_diff_buffer()
     message("Not a git repository")
     return
   end
-  bufstr = run_cmd("git -C #{Shellwords.escape(git_root)} diff -w -- #{Shellwords.escape(fname)}")
+  bufstr = text_to_utf8(run_cmd("git -C #{Shellwords.escape(git_root)} diff -w -- #{Shellwords.escape(fname)}"))
   if bufstr.strip.empty?
     message("git diff: no changes")
     return

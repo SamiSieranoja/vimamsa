@@ -290,7 +290,31 @@ def assert_binary_exists(bin)
   end
 end
 
+# Command output (e.g. a diff) as buffer text: UTF-8 with \n line endings.
+# Lines that are not valid UTF-8 (from files in other encodings, e.g.
+# Latin-1) are decoded with the same guess as read_file_with_format.
+def text_to_utf8(str)
+  str = str.dup.force_encoding(Encoding::UTF_8)
+  unless str.valid_encoding?
+    str = str.b.lines.map { |l|
+      u = l.dup.force_encoding(Encoding::UTF_8)
+      next u if u.valid_encoding?
+      enc = GUESS_ENCODING_ORDER.find { |e| l.dup.force_encoding(e).valid_encoding? }
+      l.force_encoding(enc).encode(Encoding::UTF_8, invalid: :replace, undef: :replace)
+    }.join
+  end
+  str.gsub("\r\n", "\n")
+end
+
 def read_file(text, path)
+  read_file_with_format(path, text.encoding)&.first
+end
+
+# Read a text file as UTF-8 with \n line endings. Returns [content, format]:
+# format = { encoding: the file's encoding (guessed if not valid UTF-8),
+#            crlf: true if every line ends in \r\n }
+# so that saving can restore the original format (see Buffer#save).
+def read_file_with_format(path, encoding = Encoding::UTF_8)
   path = Pathname(path.to_s).expand_path
   FileUtils.touch(path) unless File.exist?(path)
   if !File.exist?(path)
@@ -306,16 +330,12 @@ def read_file(text, path)
       content.force_encoding(enc)
       content.valid_encoding?
     }
-  read_file_with_format(path, text.encoding)&.first
-end
-
-# Read a text file as UTF-8 with \n line endings. Returns [content, format]:
-# format = { encoding: the file's encoding (guessed if not valid UTF-8),
-#            crlf: true if every line ends in \r\n }
-# so that saving can restore the original format (see Buffer#save).
-def read_file_with_format(path, encoding = Encoding::UTF_8)
   end
+  file_encoding = content.encoding
+  content.encode!(Encoding::UTF_8) if file_encoding != Encoding::UTF_8
   debug("END GUESS ENCODING")
+  nl = content.count("\n")
+  crlf = nl > 0 && content.scan("\r\n").size == nl
 
   #TODO: Should put these as option:
   content.gsub!(/\r\n/, "\n")
@@ -331,11 +351,7 @@ def expand_if_existing(fpath)
   return nil if fpath.class != String
   fpath = File.expand_path(fpath)
   fpath = nil if !File.exist?(fpath)
-  file_encoding = content.encoding
-  content.encode!(Encoding::UTF_8) if file_encoding != Encoding::UTF_8
   return fpath
-  nl = content.count("\n")
-  crlf = nl > 0 && content.scan("\r\n").size == nl
 end
 
 def ppath(s)

@@ -168,4 +168,50 @@ class TestFileFormat < VmaTest
     assert_eq ["ask", "keep", "convert"], s[:options]
     assert_eq "ask", cnf.file_format.on_save!
   end
+
+  # git diff of a Latin-1 + CRLF file: shown as UTF-8 with \n, no error.
+  def test_git_diff_of_latin1_file
+    skip("git not installed") unless system("which git >/dev/null 2>&1")
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, "f.c")
+      File.binwrite(path, LATIN1_CRLF)
+      system("git", "-C", dir, "init", "-q")
+      system("git", "-C", dir, "add", "f.c")
+      system("git", "-C", dir, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "init")
+      File.binwrite(path, "/* caf\xE9 */\r\nint y;\r\n".b)
+      b = open_new_file(path)
+      begin
+        git_diff_buffer
+        d = vma.buf
+        assert !d.equal?(b), "no diff buffer"
+        assert_eq Encoding::UTF_8, d.to_s.encoding
+        assert d.to_s.valid_encoding?
+        assert d.to_s.include?(" /* café */\n"), d.to_s
+        assert d.to_s.include?("-int x;\n+int y;\n"), d.to_s
+        assert !d.to_s.include?("\r")
+        vma.buffers.close_buffer(d.id)
+      ensure
+        vma.buffers.close_buffer(b.id)
+      end
+    end
+  end
+
+  # Diff of unsaved changes: the buffer (UTF-8 + \n) is compared with the file
+  # as loaded, so only the edited line differs, not every line.
+  def test_diff_unsaved_of_latin1_file
+    with_file("/* caf\xE9 */\r\nint x;\r\nint z;\r\n".b) do |b, path|
+      b.insert_txt_at("q", b.line_range(2, 1).begin) # "qint z;"
+      diff_buffer
+      d = vma.buf
+      changed = d.to_s.lines.select { |l| l =~ /^[-+][^-+]/ }
+      assert_eq ["-int z;\n", "+qint z;\n"], changed
+      assert d.to_s.start_with?("--- #{path}\n+++ #{path}\n"), d.to_s.lines.first(2).inspect
+      # enter on the changed line jumps back to the file
+      d.set_pos(d.to_s.index("+qint"))
+      diff_buffer_jump_to_source
+      assert vma.buf.equal?(b), "did not jump to the file"
+      assert_eq 2, b.lpos
+      vma.buffers.close_buffer(d.id)
+    end
+  end
 end
