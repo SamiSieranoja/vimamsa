@@ -410,11 +410,85 @@ class Buffer < String
     return @lang
   end
 
+  # Encoding and line endings of the file on disk ({ encoding:, crlf: }, see
+  # read_file_with_format); nil = UTF-8 with \n. The buffer itself is always
+  # UTF-8 with \n; save converts back unless the user chooses to convert.
+  attr_reader :file_format
+
+  def file_format=(fmt)
+    @file_format = fmt
+    @keep_file_format = nil # ask again on the next save
+  end
+
+  # "ISO-8859-1 with CRLF line endings", or nil for UTF-8 with \n.
+  def file_format_desc
+    return nil if @file_format.nil?
+    enc = @file_format[:encoding]
+    parts = []
+    parts << enc.name unless [Encoding::UTF_8, Encoding::US_ASCII].include?(enc)
+    parts << "CRLF line endings" if @file_format[:crlf]
+    return nil if parts.empty?
+    parts.join(" with ")
+  end
+
+  # Save in the file's original format? The user's answer for this buffer
+  # (true = keep, false = convert to UTF-8 + LF), set when asked on save.
+  attr_accessor :keep_file_format
+
+  # The decision for the next save: the answer given for this buffer, else
+  # cnf.file_format.on_save ("keep" / "convert"); nil = ask.
+  def keep_file_format_on_save
+    return @keep_file_format unless @keep_file_format.nil?
+    case cnf.file_format.on_save!
+    when "keep" then true
+    when "convert" then false
+    end
+  end
+
+  # What saving will do with this file's format, for the message shown on load.
+  def file_format_save_note
+    case keep_file_format_on_save
+    when true then "it will be saved in that format"
+    when false then "it will be saved as UTF-8 with LF"
+    else "you will be asked on first save whether to keep it"
+    end
+  end
+
+  def ask_file_format(&after)
+    params = {}
+    params["title"] = "#{CGI.escapeHTML(File.basename(@fname))} is #{file_format_desc}.\nSave it in that format?"
+    params["inputs"] = {}
+    params["inputs"]["keep_btn"] = { :label => "Keep #{file_format_desc}", :type => :button, :default_focus => true }
+    params["inputs"]["convert_btn"] = { :label => "Convert to UTF-8 with LF", :type => :button }
+    params[:callback] = proc { |x|
+      @keep_file_format = x["keep_btn"] == "submit"
+      after&.call
+    }
+    PopupFormGenerator.new(params).run
+  end
+
+  # The bytes to write for content in the file's chosen format, or nil when
+  # saving as UTF-8 + \n. Falls back to UTF-8 (with a message) if the text has
+  # characters the original encoding cannot hold.
+  def encode_for_disk(content)
+    return nil if file_format_desc.nil? || !keep_file_format_on_save
+    s = @file_format[:crlf] ? content.gsub("\n", "\r\n") : content.dup
+    enc = @file_format[:encoding]
+    begin
+      s = s.encode(enc) unless [Encoding::UTF_8, Encoding::US_ASCII].include?(enc)
+    rescue Encoding::UndefinedConversionError => ex
+      message("Cannot save #{File.basename(@fname)} as #{enc.name} (#{ex.error_char.dump} has no #{enc.name} code); saved as UTF-8")
+      @file_format = { encoding: Encoding::UTF_8, crlf: @file_format[:crlf] }
+    end
+    s.b
+  end
+
   def revert()
     return if !@fname
     return if !File.exist?(@fname)
     message("Revert buffer #{@fname}")
-    str = read_file("", @fname)
+    str, fmt = read_file_with_format(@fname)
+    @file_format = fmt
     str << "\n" if str[-1] != "\n"
     _fold_state
     if !@folds.empty? || (cnf.fold.start_closed? && str =~ FOLD_START_RE)
@@ -1870,11 +1944,17 @@ class Buffer < String
     gui_set_window_title(@title, @subtitle) #TODO: if not active buffer?
   end
 
-  def write_contents_to_file(fpath)
+  # original_format: write in the file's own encoding / line endings when the
+  # user chose to keep them (save only; backups etc. stay UTF-8).
+  def write_contents_to_file(fpath, original_format: false)
     # content_for_disk re-inflates any closed folds so the file always holds the
     # fully expanded text (see fold.rb); equals self.to_s when nothing is folded.
     disk = content_for_disk
-    if @crypt != nil
+    raw = original_format && @crypt.nil? ? encode_for_disk(disk) : nil
+    if raw
+      mode = "wb"
+      contents = raw
+    elsif @crypt != nil
       mode = "wb+"
       contents = Encrypt::HEADER_V2 + @crypt.encrypt(disk)
     else
@@ -1885,7 +1965,7 @@ class Buffer < String
     Thread.new {
       begin
         io = File.open(fpath, mode)
-        io.set_encoding(self.encoding)
+        io.set_encoding(self.encoding) unless raw # raw: already encoded bytes
         io.write(contents)
         io.close
       rescue Encoding::UndefinedConversionError => ex
@@ -2070,8 +2150,12 @@ class Buffer < String
       save_as()
       return
     end
+    if file_format_desc && keep_file_format_on_save.nil?
+      ask_file_format { save }
+      return
+    end
     message("Saving file #{@fname}")
-    write_contents_to_file(@fname)
+    write_contents_to_file(@fname, original_format: true)
     delete_autosave_file
     hook.call(:file_saved, self)
   end

@@ -147,6 +147,9 @@ cnf.kbd.show_prev_action = true
 cnf.keybindings.scheme = "vimlike"  # "vimlike" | "notepad" (applied on restart)
 
 cnf.tab.width = 4
+# Saving a file whose encoding / line endings are not UTF-8 + \n:
+# "ask" (once per file), "keep" (original format) or "convert" (UTF-8 + \n)
+cnf.file_format.on_save = "ask"
 cnf.tab.to_spaces_default = false
 cnf.tab.to_spaces_languages = ["c", "java", "ruby", "hyperplaintext", "php", "python"]
 cnf.tab.to_spaces_not_languages = ["makefile"]

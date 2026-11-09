@@ -58,7 +58,8 @@ class Editor
                           })
               false
             end
-          elsif file_is_text_file(fpath)
+          else
+            # open_new_file reports files it cannot open (e.g. not text)
             GLib::Idle.add { jump_to_file(fpath); false }
           end
         end
@@ -649,7 +650,12 @@ def load_buffer(fname)
     return nil
   end
   debug("LOAD BUFFER: #{fname}")
-  buffer = Buffer.new(read_file("", fname), fname)
+  content, fmt = read_file_with_format(fname)
+  buffer = Buffer.new(content, fname)
+  buffer.file_format = fmt
+  if buffer.file_format_desc
+    message("#{File.basename(fname)} is #{buffer.file_format_desc}; #{buffer.file_format_save_note}")
+  end
   # gui_set_current_buffer(buffer.id)
   buffer.set_active
   debug("DONE LOAD: #{fname}")

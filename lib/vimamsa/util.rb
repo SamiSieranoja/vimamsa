@@ -87,9 +87,10 @@ def file_is_text_file(fpath)
   end
 
   #TODO: not sure if needed
-  r = exec_cmd("file", fpath)
-  return true if r.match(/UTF-8.*text/)
-  return true if r.match(/ASCII.*text/)
+  # Any text encoding (e.g. "ISO-8859 text"): read_file converts it to UTF-8.
+  # -b: without the file name, which could itself contain "text".
+  r = exec_cmd("file", "-b", fpath)
+  return true if r.match(/\btext\b/)
   return false
 end
 
@@ -297,7 +298,6 @@ def read_file(text, path)
     return
   end
 
-  encoding = text.encoding
   content = path.open("r:#{encoding.name}") { |io| io.read }
 
   debug("GUESS ENCODING")
@@ -306,7 +306,14 @@ def read_file(text, path)
       content.force_encoding(enc)
       content.valid_encoding?
     }
-    content.encode!(Encoding::UTF_8)
+  read_file_with_format(path, text.encoding)&.first
+end
+
+# Read a text file as UTF-8 with \n line endings. Returns [content, format]:
+# format = { encoding: the file's encoding (guessed if not valid UTF-8),
+#            crlf: true if every line ends in \r\n }
+# so that saving can restore the original format (see Buffer#save).
+def read_file_with_format(path, encoding = Encoding::UTF_8)
   end
   debug("END GUESS ENCODING")
 
@@ -317,14 +324,18 @@ def read_file(text, path)
 
   #    content = filter_buffer(content)
   debug("END FILTER")
-  return content
+  return [content, { encoding: file_encoding, crlf: crlf }]
 end
 
 def expand_if_existing(fpath)
   return nil if fpath.class != String
   fpath = File.expand_path(fpath)
   fpath = nil if !File.exist?(fpath)
+  file_encoding = content.encoding
+  content.encode!(Encoding::UTF_8) if file_encoding != Encoding::UTF_8
   return fpath
+  nl = content.count("\n")
+  crlf = nl > 0 && content.scan("\r\n").size == nl
 end
 
 def ppath(s)
