@@ -539,7 +539,6 @@ class VMAgui
       start_ripl
     end
 
-    sleep 0.02
     return true
   end
 
@@ -678,9 +677,10 @@ class VMAgui
       @vbox = Gtk::Grid.new()
       @window.set_child(@vbox)
 
-      Thread.new {
-        GLib::Idle.add(proc { debug_idle_func })
-      }
+      # Periodic timeouts, not idles that always return true: an idle that is
+      # always ready keeps GLib from ever dispatching lower-priority sources,
+      # e.g. GtkSourceView's matching-bracket highlight never ran.
+      GLib::Timeout.add(200) { debug_idle_func }
 
       reset_controllers
 
@@ -796,7 +796,7 @@ class VMAgui
       gui_refresh_colors
     end
 
-    GLib::Idle.add(proc { self.monitor })
+    GLib::Timeout.add(200) { self.monitor }
 
     app.run
   end
@@ -878,16 +878,13 @@ class VMAgui
   def monitor
     return true if @windows[1].nil?
     swa = @windows[1][:sw]
-    @monitor_time ||= Time.now
     @sw_width ||= swa.width
-    return true if Time.now - @monitor_time < 0.2
     # Detect element resize
     if swa.width != @sw_width
       debug "Width change sw_width #{@sw_width}"
       @sw_width = swa.width
       DelayExecutioner.exec(id: :scale_images, wait: 0.7, callable: proc { debug ":scale_images"; vma.gui.scale_all_images })
     end
-    @monitor_time = Time.now
     return true
   end
 
