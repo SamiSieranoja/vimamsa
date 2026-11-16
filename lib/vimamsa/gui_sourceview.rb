@@ -4,6 +4,11 @@ module Vimamsa
 class VSourceView < GtkSource::View
   attr_accessor :bufo, :autocp_active
 
+  # Link / file under the last right-click. Class-wide: the app.ctx_* actions
+  # are registered once, by the first view, but serve the menus of all views.
+  @@context_link = nil
+  @@context_file = nil
+
   # def initialize(title = nil,bufo=nil)
   def initialize(title, bufo)
     # super(:toplevel)
@@ -899,13 +904,29 @@ class VSourceView < GtkSource::View
       act = Gio::SimpleAction.new("ctx_open_link")
       vma.gui.app.add_action(act)
       act.signal_connect("activate") do
-        next unless @context_link
-        if is_url(@context_link)
-          open_url(@context_link)
+        next unless @@context_link
+        if is_url(@@context_link)
+          open_url(@@context_link)
         else
-          fn = hpt_check_cur_word(@context_link)
+          fn = hpt_check_cur_word(@@context_link)
           open_new_file(fn) if fn
         end
+      end
+    end
+
+    unless vma.gui.app.lookup_action("ctx_open_file")
+      act = Gio::SimpleAction.new("ctx_open_file")
+      vma.gui.app.add_action(act)
+      act.signal_connect("activate") do
+        open_new_file(@@context_file) if @@context_file
+      end
+    end
+
+    unless vma.gui.app.lookup_action("ctx_open_file_external")
+      act = Gio::SimpleAction.new("ctx_open_file_external")
+      vma.gui.app.add_action(act)
+      act.signal_connect("activate") do
+        open_with_default_program(@@context_file) if @@context_file
       end
     end
 
@@ -925,6 +946,13 @@ class VSourceView < GtkSource::View
     nil
   end
 
+  def file_at(x, y)
+    bx, by = window_to_buffer_coords(:widget, x.to_i, y.to_i)
+    iter = get_iter_at_location(bx, by)
+    return nil unless iter
+    @bufo.file_path_at(iter.offset)
+  end
+
   def show_context_menu(x, y)
     init_context_menu if @context_menu.nil?
 
@@ -939,8 +967,14 @@ class VSourceView < GtkSource::View
     end
 
     menu = Gio::Menu.new
-    @context_link = link_at(x, y)
-    menu.append("Open link", "app.ctx_open_link") if @context_link
+    @@context_link = link_at(x, y)
+    menu.append("Open link", "app.ctx_open_link") if @@context_link
+    # Clicked text names an existing file (e.g. "report.pdf")
+    @@context_file = @@context_link ? nil : file_at(x, y)
+    if @@context_file
+      menu.append("Open file", "app.ctx_open_file") if file_is_text_file(@@context_file)
+      menu.append("Open file (external)", "app.ctx_open_file_external")
+    end
     menu.append("Jump to Definition", "app.ctx_lsp_jump_to_definition") if @bufo.lsp
     CONTEXT_MENU_ITEMS.each { |label, action_id| menu.append(label, "app.ctx_#{action_id}") }
     if @bufo.selection_active?

@@ -1513,6 +1513,48 @@ class Buffer < String
     return [word, wtype]
   end
 
+  # Existing file named by the whitespace-delimited word at pos, or nil.
+  # Surrounding quotes, brackets and punctuation are ignored ("(foo.pdf)." ->
+  # foo.pdf). Relative names resolve against this buffer's directory, then the
+  # last used directory, then the working directory.
+  def file_path_at(pos)
+    word, _range = get_word_in_pos(pos, boundary: :space)
+    return nil if word.nil?
+    resolve_file_path(word)
+  end
+
+  # Absolute path of the existing file that word names, or nil. See
+  # file_path_at for the rules.
+  def resolve_file_path(word)
+    word = word.strip.sub(/\A[("'`\[<{]+/, "").sub(/[)"'`\]>},.;:!?]+\z/, "")
+    return nil if word.empty? or is_url(word)
+    if word.start_with?("/", "~")
+      cands = [File.expand_path(word)]
+    else
+      dirs = [@fname && File.dirname(@fname), bufs.last_dir, Dir.pwd].compact.uniq
+      cands = dirs.map { |d| File.expand_path(word, d) }
+    end
+    cands.find { |p| File.file?(p) }
+  end
+
+  # Absolute paths of the existing files named in this buffer, unique, in
+  # order of first appearance: whitespace-separated words (as for
+  # file_path_at) and hyperplaintext links ⟦path⟧ / ⟦img:path⟧ / ⟦audio:path⟧.
+  # Like hpt_check_cur_word, a link may leave out a ".txt" extension. Plain
+  # words are only checked if they contain "." or "/", which skips most text.
+  def file_links
+    found = []
+    to_s.scan(/⟦(?:(?:audio|img):)?([^⟧]+)⟧|(\S+)/).uniq.each do |link, word|
+      if link
+        p = resolve_file_path(link) || resolve_file_path("#{link}.txt")
+      elsif word.include?(".") or word.include?("/")
+        p = resolve_file_path(word)
+      end
+      found << p if p
+    end
+    found.uniq
+  end
+
   def cur_nonwhitespace_word_action()
 
     # (word, wtype) = get_cur_nonwhitespace_word()

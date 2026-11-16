@@ -97,6 +97,7 @@ add_keys "intro", {
   "I ctrl-y" => :redo,
   "CI backspace" => :insert_backspace,
  "CI ctrl-o" => :open_file_dialog,
+  "C g f" => :open_file_under_cursor,
  "I ctrl-l" => :find_in_buffer,
  "I ctrl-g" => :find_next,
   

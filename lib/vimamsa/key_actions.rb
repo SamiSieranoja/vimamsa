@@ -121,6 +121,27 @@ reg_act(:diff_buffer_jump_to_source, proc { diff_buffer_jump_to_source }, "Jump 
 # reg_act(:invoke_grep_search, proc{invoke_grep_search}, "")
 reg_act(:invoke_grep_search, proc { gui_grep }, "Grep current buffer")
 reg_act(:ack_search, proc { gui_ack }, "") #invoke_ack_search
+reg_act(:extract_file_links, proc {
+  links = buf.file_links
+  if links.empty?
+    message("No links to existing files")
+  else
+    # One absolute path per line: enter on a line opens the file
+    create_new_buffer(links.join("\n") + "\n", "filelinks")
+    message("#{links.size} file link(s)")
+  end
+}, "Extract links to existing files from current file into a new buffer")
+reg_act(:open_file_under_cursor, proc {
+  # Like vim gf, and the "Open file" items of the right-click menu
+  fn = buf.file_path_at(buf.pos)
+  if fn.nil?
+    message("No file under cursor")
+  elsif file_is_text_file(fn)
+    open_new_file(fn)
+  else
+    open_with_default_program(fn)
+  end
+}, "Open file whose path is under the cursor", { :group => :file })
 reg_act :update_file_index, proc { FileFinder.update_index }, "Update file index"
 reg_act :delete_to_word_end, proc { buf.delete2(:to_word_end) }, "Delete to file end", { :group => [:edit, :basic] }
 reg_act :delete_to_next_word_start, proc { buf.delete2(:to_next_word) }, "Delete to start of next word", { :group => [:edit, :basic] }
