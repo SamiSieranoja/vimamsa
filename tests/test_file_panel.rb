@@ -242,4 +242,28 @@ class TestFilePanel < VmaTest
       end
     end
   end
+
+  # A mark on an empty line shows the nearest non-empty line, with an arrow
+  # telling whether it is below or above (a tie goes to the line below).
+  def test_mark_on_empty_line_shows_nearest_text
+    with_two_files do |_ba, bb|
+      with_panel_open do
+        fp = vma.gui.file_panel
+        bb.set_content("title\n\n\n\nbody\n\nend\n  \n\n")
+        { "a" => 1, "b" => 3, "c" => 2, "d" => 5, "e" => 7, "f" => 0 }.each do |c, l|
+          bb.set_pos(bb.line_range(l, 1).begin)
+          keys("m #{c}")
+        end
+        sleep 0.4
+        drain_idle
+        rows = fp.mark_rows
+        assert rows["a"].end_with?("2: ↑ title"), rows["a"]   # title is 1 above
+        assert rows["b"].end_with?("4: ↓ body"), rows["b"]    # body is 1 below
+        assert rows["c"].end_with?("3: ↓ body"), rows["c"]    # 2 either way: below
+        assert rows["d"].end_with?("6: ↓ end"), rows["d"]
+        assert rows["e"].end_with?("8: ↑ end"), rows["e"]     # whitespace-only line
+        assert rows["f"].end_with?("1: title"), rows["f"]     # non-empty: no arrow
+      end
+    end
+  end
 end

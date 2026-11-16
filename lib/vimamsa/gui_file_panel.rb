@@ -328,20 +328,40 @@ class FileTreePanel
   # ── Marks of the current file (m <char>), shown above the files ──
 
   MARK_TEXT_MAX = 40 # chars of the marked line shown after the line number
+  MARK_NEAR_MAX = 50 # how far to look for text when a mark is on an empty line
 
-  # { char => [lpos (0-based), line text] } of vma.buf's user marks, by char.
+  # { char => [lpos (0-based), text, dir] } of vma.buf's user marks, by char.
+  # text is the marked line's, or for an empty line the nearest non-empty
+  # line's, with dir :below / :above saying where it is (nil: the marked line).
   def current_marks
     b = vma.buf
     return {} unless b
     b.user_marks.to_h do |c, pos|
       lpos = b.get_line_pos(pos)
-      [c, [lpos, b.line(lpos).to_s.chomp.strip]]
+      [c, [lpos, *mark_text(b, lpos)]]
     end
   end
 
-  def mark_label(c, lpos, text)
+  # [text, dir] for the mark list; see current_marks. Ties go to the line
+  # below, which is usually what a mark before a paragraph is for.
+  def mark_text(b, lpos)
+    text = b.line(lpos).to_s.strip
+    return [text, nil] unless text.empty?
+    nlines = b.line_ends.size
+    (1..MARK_NEAR_MAX).each do |d|
+      [[lpos + d, :below], [lpos - d, :above]].each do |l, dir|
+        next if l < 0 or l >= nlines
+        t = b.line(l).to_s.strip
+        return [t, dir] unless t.empty?
+      end
+    end
+    ["", nil]
+  end
+
+  def mark_label(c, lpos, text, dir = nil)
     text = text[0, MARK_TEXT_MAX] + "…" if text.size > MARK_TEXT_MAX
-    "<b>#{CGI.escapeHTML(c)}</b>  #{lpos + 1}: #{CGI.escapeHTML(text)}"
+    arrow = { below: "↓ ", above: "↑ " }[dir].to_s
+    "<b>#{CGI.escapeHTML(c)}</b>  #{lpos + 1}: #{arrow}#{CGI.escapeHTML(text)}"
   end
 
   # { char => label markup } for the mark rows (tests / introspection).
@@ -365,9 +385,9 @@ class FileTreePanel
     head[COL_LABEL] = CGI.escapeHTML("📌 Marks")
     head[COL_BUF_ID] = 0
     head[COL_MARK] = ""
-    marks.each do |c, (lpos, text)|
+    marks.each do |c, (lpos, text, dir)|
       it = @store.append(head)
-      it[COL_LABEL] = mark_label(c, lpos, text)
+      it[COL_LABEL] = mark_label(c, lpos, text, dir)
       it[COL_BUF_ID] = 0
       it[COL_MARK] = c
     end
