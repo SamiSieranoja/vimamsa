@@ -925,7 +925,11 @@ def dictation_last_prompt
 end
 
 # `, k`: switch into the dedicated dictation keyboard mode and start listening.
+# Already in the mode (only reachable from the menu: in the mode `, k` is
+# bound to dictation_exit_mode), stop and leave it, so the "Start/Stop
+# Dictation" menu item toggles like the keys do.
 def dictation_enter_mode
+  return dictation_exit_mode if vma.kbd.get_mode == :dictation
   vma.kbd.set_mode(:dictation)
   s = dictation_session
   s.start(dictation_last_prompt) unless s.active?
@@ -1001,7 +1005,7 @@ def dictation_init
   reg_act(:dictation_release_vram, proc { dictation_release_vram },
           "Voice dictation: unload model to free VRAM")
   reg_act(:dictation_enter_mode, proc { dictation_enter_mode },
-          "Voice dictation: enter dictation mode")
+          "Voice dictation: start + enter dictation mode (exit if in it)")
   reg_act(:dictation_toggle_stay, proc { dictation_toggle_stay },
           "Dictation mode: toggle listening (stay in mode)")
   reg_act(:dictation_newline, proc { dictation_newline },
@@ -1019,7 +1023,8 @@ def dictation_init
     "dictation enter || dictation return" => :dictation_newline,
     "dictation esc || dictation ctrl! || dictation , k" => :dictation_exit_mode,
   }
-  vma.gui.menu.add_module_action(:dictation_toggle, "Start/Stop Dictation")
+  # Same action as `, k`, so the menu shows that binding
+  vma.gui.menu.add_module_action(:dictation_enter_mode, "Start/Stop Dictation")
   vma.gui.menu.add_module_action(:dictation_toggle_dialog, "Start Dictation (choose prompt)")
   vma.gui.menu.add_module_action(:dictation_release_vram, "Release Dictation VRAM")
   vma.gui.menu.add_module_action(:dictation_select_model, "Select Dictation Model…")
@@ -1042,7 +1047,7 @@ def dictation_disable
   unbindkey "C , k"
   unbindkey "C , ; k"
   unbindkey "dictation", include_child_nodes: true
-  vma.gui.menu.remove_module_action(:dictation_toggle)
+  vma.gui.menu.remove_module_action(:dictation_enter_mode)
   vma.gui.menu.remove_module_action(:dictation_toggle_dialog)
   vma.gui.menu.remove_module_action(:dictation_release_vram)
   vma.gui.menu.remove_module_action(:dictation_select_model)

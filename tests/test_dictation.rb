@@ -24,7 +24,18 @@ class TestDictation < VmaTest
     load_dictation
     dictation_init
     assert vma.actions.include?(:dictation_toggle),        "action not registered after init"
-    assert vma.gui.menu.module_action?(:dictation_toggle),  "menu item missing after init"
+    assert vma.gui.menu.module_action?(:dictation_enter_mode), "menu item missing after init"
+  ensure
+    dictation_disable
+  end
+
+  # "Start/Stop Dictation" runs the `, k` action, so its menu label shows the key
+  def test_menu_item_shows_key_binding
+    ensure_disabled
+    load_dictation
+    dictation_init
+    hint = vma.gui.menu.kbd_hint(:dictation_enter_mode)
+    assert hint.include?("[C]</span> , k"), "no , k hint: #{hint.inspect}"
   ensure
     dictation_disable
   end
@@ -35,7 +46,7 @@ class TestDictation < VmaTest
     dictation_init
     dictation_disable
     assert !vma.actions.include?(:dictation_toggle),       "action still registered after disable"
-    assert !vma.gui.menu.module_action?(:dictation_toggle), "menu item still present after disable"
+    assert !vma.gui.menu.module_action?(:dictation_enter_mode), "menu item still present after disable"
   end
 
   def test_init_disable_cycle
@@ -230,6 +241,21 @@ class TestDictation < VmaTest
      :dictation_newline, :dictation_exit_mode].each do |a|
       assert !vma.actions.include?(a), "#{a} still registered after disable"
     end
+  end
+
+  # The menu item runs :dictation_enter_mode; clicked while already in the
+  # mode it leaves the mode instead (session not active: no recorder starts).
+  def test_enter_mode_action_exits_when_in_mode
+    ensure_disabled
+    load_dictation
+    dictation_init
+    vma.kbd.set_mode(:dictation)
+    assert_eq :dictation, vma.kbd.get_mode
+    act(:dictation_enter_mode)
+    assert_eq :command, vma.kbd.get_mode, "menu toggle did not leave dictation mode"
+  ensure
+    vma.kbd.set_mode(:command)
+    dictation_disable
   end
 
   # The mode is a minor mode that inherits command mode, and exiting returns to
