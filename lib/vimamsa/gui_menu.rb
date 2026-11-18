@@ -81,6 +81,7 @@ module Vimamsa
       add_to_menu "Actions.EncryptFile", { :label => "Encrypt file", :action => :encrypt_file }
       add_to_menu "Actions.LspRestart", { :label => "Restart LSP server", :action => :lsp_restart }
       add_to_menu "Help.KeyBindings", { :label => "Show key bindings", :action => :show_key_bindings }
+      add_to_menu "Help.VimConflicts", { :label => "Vim keys that differ in vimlike", :action => :show_vim_binding_conflicts }
       add_to_menu "Help.InstallDemo", { :action => :install_demo_files }
 
       #TODO: :auto_indent_buffer

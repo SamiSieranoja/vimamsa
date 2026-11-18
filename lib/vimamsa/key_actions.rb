@@ -68,6 +68,7 @@ reg_act(:jump_to_random, proc { buf.jump_to_random_pos }, "")
 reg_act(:insert_new_line, proc { buf.insert_new_line() }, "Insert new line")
 reg_act(:show_key_bindings, proc { show_key_bindings }, "Show key bindings")
 reg_act(:show_free_key_bindings, proc { show_free_key_bindings }, "Show available (unbound) key binding slots")
+reg_act(:show_vim_binding_conflicts, proc { show_vim_binding_conflicts }, "Show which vim key bindings conflict with the vimlike keymap")
 reg_act(:put_file_path_to_clipboard, proc { buf.put_file_path_to_clipboard }, "Put file path of current file to clipboard")
 reg_act(:put_file_ref_to_clipboard, proc { buf.put_file_ref_to_clipboard }, "Put file ref of current file to clipboard")
 
