@@ -270,7 +270,7 @@ class Editor
       create_new_buffer(file_contents = "\n")
     end
 
-    gui.restore_file_panel
+    gui.restore_view_layout
 
     #Load plugins
     require "vimamsa/file_history.rb"
@@ -386,7 +386,9 @@ class Editor
     @gui.quit
   end
 
+  # Window size and view layout (see VMAgui#save_window_layout)
   def save_state
+    @gui.save_window_layout
   end
 
   def save_session
@@ -442,6 +444,7 @@ class Editor
     if @startup_fname and (id = vma.buffers.get_buffer_by_filename(@startup_fname))
       vma.buffers.set_current_buffer(id)
     end
+    gui.restore_column2_buffer
   end
 
   def add_content_search_path(pathstr)
@@ -754,6 +757,27 @@ def get_dot_path(sfx)
   return dpath
 end
 
+# Base directory for files the program generates (window layout, ...), as
+# opposed to user-edited config: $XDG_DATA_HOME/vimamsa, by default
+# ~/.local/share/vimamsa. When the user dir was moved (--user-dir, tests),
+# data goes there too, so those runs stay isolated. See doc/TODO.md (XDG item).
+def vma_data_dir
+  $vma_data_dir ||= begin
+    if File.expand_path(vma_user_dir) != File.expand_path("~/.config/vimamsa")
+      vma_user_dir
+    else
+      base = ENV["XDG_DATA_HOME"].to_s
+      base = File.expand_path("~/.local/share") if base.empty?
+      File.join(base, "vimamsa")
+    end
+  end
+end
+
+def get_data_path(sfx)
+  FileUtils.mkdir_p(vma_data_dir) unless File.exist?(vma_data_dir)
+  "#{vma_data_dir}/#{sfx}"
+end
+
 def get_file_line_pointer(s)
   #"/code/vimamsa/lib/vimamsa/buffer_select.rb:31:def"
   #    m = s.match(/(~[a-z]*)?\/.*\//)
@@ -818,6 +842,7 @@ end
 # current process with exec, so the same window is torn down as the new one comes up.
 def restart_editor
   vma.save_session
+  vma.gui.save_window_layout
   vma.hook.call(:shutdown)
   ruby = RbConfig.ruby
   script = $PROGRAM_NAME

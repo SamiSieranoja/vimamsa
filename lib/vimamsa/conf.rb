@@ -181,6 +181,10 @@ cnf.paste.cursor_at_start = false
 # then starts a move instead of a new selection.
 cnf.mouse.drag_selection = true
 
+# Start with the window size and columns/panels the editor had when it was
+# last closed (saved per screen resolution, see VMAgui#save_window_layout).
+cnf.restore_layout = true
+
 cnf.auto_chmod_exec = true
 
 # Auto-format commands. %{file} is replaced with the (escaped) temp file path.

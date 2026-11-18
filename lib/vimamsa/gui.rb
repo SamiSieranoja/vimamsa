@@ -21,25 +21,6 @@ def end_profiler
   printer.print(STDOUT)
 end
 
-# Wait for window resize to take effect
-# GTk3 had a resize notify event which got removed in gtk4
-# https://discourse.gnome.org/t/gtk4-any-way-to-connect-to-a-window-resize-signal/14869/3
-def wait_for_resize(window, tries = 200)
-  i = 0
-  widthold = @window.width
-  heightold = @window.height
-  while true
-    iterate_gui_main_loop
-    break if widthold != window.width
-    break if heightold != window.height
-    if i >= tries
-      debug "i >= tries", 2
-      break
-    end
-    i += 1
-  end
-end
-
 def gui_remove_controllers(widget)
   clist = widget.observe_controllers
   to_remove = []
@@ -624,29 +605,6 @@ class VMAgui
     end
   end
 
-  def idle_set_size()
-    # Need to wait for a while to window to be maximized to get correct @window.width
-    @window.maximize
-    wait_for_resize(@window)
-    # Set new size as half of the screeen
-    width = @window.width / 2
-    height = @window.height - 5
-    width = 600 if width < 600
-    height = 600 if height < 600
-
-    #Minimum size:
-    @window.set_size_request(600, 600)
-    @window.set_default_size(width, height)
-    debug "size #{[width, height]}", 2
-    @window.unmaximize
-
-    #set_default_size doesn't always have effect if run immediately
-    wait_for_resize(@window)
-    @window.set_default_size(width, height)
-
-    return false
-  end
-
   def init_window
     @last_debug_idle = Time.now
     # Stable application id so desktop environments can match the running window
@@ -767,6 +725,9 @@ class VMAgui
       func_panel_init
       keylog_panel_init
 
+      # Size the window before it is first shown (see apply_startup_window_size)
+      apply_startup_window_size
+      @window.signal_connect("map") { layout_recheck_monitor }
       @window.show
 
       surface = @window.native.surface
@@ -775,7 +736,6 @@ class VMAgui
         # puts "Window resized or moved, other redraw."
       end
 
-      run_as_idle proc { idle_set_size }
 
       # Baseline chrome CSS + all its colors live in gui_theme.rb (cnf-backed).
       # See gtk-4.9.4/gtk/theme/Default/_common.scss  on how to theme
@@ -902,6 +862,7 @@ class VMAgui
     else
       set_two_column
     end
+    save_window_layout
   end
 
   def set_one_column
@@ -909,6 +870,7 @@ class VMAgui
     #This always closes the leftmost column/window
     #TODO: close rightmost column if left active
     set_active_window(1)
+    @column_split = @pane.position # kept for the next set_two_column
 
     @windows[2][:sw].set_child(nil)
     @windows.delete(2)
@@ -976,6 +938,7 @@ class VMAgui
 
     # Remove overlay from its current parent and add the Gtk::Paned instead
     @pane = Gtk::Paned.new(:horizontal)
+    @pane.set_position(@column_split) if @column_split.to_i > 0
     if @func_panel_shown
       @func_panel_pane.set_end_child(nil)
       @pane.set_start_child(w2[:overlay])
@@ -1157,6 +1120,9 @@ class VMAgui
     pane.vexpand = true
     pane.set_start_child(panel_widget)
     pane.set_end_child(inner)
+    # The panel keeps its width when the window is resized (or maximized
+    # during startup); the editor takes the difference
+    pane.resize_start_child = false
     pane.set_position(pos)
     pane
   end
@@ -1213,7 +1179,7 @@ class VMAgui
       @windows[1][:overlay]
     end
     @minibuf_vpane.set_start_child(nil)  # unparent inner before re-parenting
-    @file_panel_pane = make_side_pane(@file_panel.widget, inner, 180)
+    @file_panel_pane = make_side_pane(@file_panel.widget, inner, @file_panel_width || PANEL_DEFAULT_WIDTH[:file_panel])
     set_editor_area(@file_panel_pane)
     @file_panel_shown = true
     @file_panel.refresh
@@ -1221,6 +1187,7 @@ class VMAgui
 
   def hide_file_panel
     return unless @file_panel_shown
+    @file_panel_width = @file_panel_pane.position
     inner = @file_panel_pane.end_child
     @file_panel_pane.set_start_child(nil)
     @file_panel_pane.set_end_child(nil)
@@ -1229,16 +1196,10 @@ class VMAgui
   end
 
   # The shown/hidden state is remembered across restarts (see
-  # restore_file_panel). Tests toggle the panel too; they must not clobber it.
+  # save_window_layout). Tests toggle the panel too; they must not clobber it.
   def toggle_file_panel
     @file_panel_shown ? hide_file_panel : show_file_panel
-    vma.marshal_save("file_panel_shown", @file_panel_shown) unless vma_test_mode?
-  end
-
-  # Called at startup once the first buffer exists.
-  def restore_file_panel
-    return if vma_test_mode?
-    show_file_panel if vma.marshal_load("file_panel_shown", false)
+    save_window_layout
   end
 
   def func_panel_init
@@ -1263,7 +1224,7 @@ class VMAgui
       inner = @windows[1][:overlay]
       @minibuf_vpane.set_start_child(nil)
     end
-    @func_panel_pane = make_side_pane(@func_panel.widget, inner, 160)
+    @func_panel_pane = make_side_pane(@func_panel.widget, inner, @func_panel_width || PANEL_DEFAULT_WIDTH[:func_panel])
     if @file_panel_shown
       @file_panel_pane.set_end_child(@func_panel_pane)
     else
@@ -1275,6 +1236,7 @@ class VMAgui
 
   def hide_func_panel
     return unless @func_panel_shown
+    @func_panel_width = @func_panel_pane.position
     inner = @func_panel_pane.end_child
     @func_panel_pane.set_start_child(nil)
     @func_panel_pane.set_end_child(nil)
@@ -1288,6 +1250,7 @@ class VMAgui
 
   def toggle_func_panel
     @func_panel_shown ? hide_func_panel : show_func_panel
+    save_window_layout
   end
 
   def keylog_panel_init
@@ -1312,10 +1275,12 @@ class VMAgui
     @vbox.attach(@keylog_pane, 0, 2, 2, 1)
     @keylog_shown = true
     @keylog_panel.set_active(true)
+    set_keylog_width(@keylog_width) if @keylog_width
   end
 
   def hide_keylog_panel
     return unless @keylog_shown
+    @keylog_width = keylog_width
     @keylog_panel.set_active(false)
     @keylog_pane.set_start_child(nil)
     @keylog_pane.set_end_child(nil)
@@ -1326,6 +1291,259 @@ class VMAgui
 
   def toggle_keylog_panel
     @keylog_shown ? hide_keylog_panel : show_keylog_panel
+    save_window_layout
+  end
+
+  # ── Window geometry and view layout, restored on startup ─────────────────
+  # doc/TODO.md: "Restore window geometry and view layout on startup".
+  # Saved by Editor#save_state (shutdown, restart) and when a column or panel
+  # is toggled, to get_data_path("window_layout"): one layout per screen
+  # resolution ("1920x1080@1" = logical monitor size @ scale factor), the
+  # LAYOUT_KEEP most recently used. With no layout for the current resolution
+  # the most recent one is fitted to the screen (fit_view_layout). GTK4 can't
+  # place windows on Wayland, so only the size and maximized state are kept.
+  # Test runs neither read nor write it; cnf.restore_layout = false turns it off.
+
+  LAYOUT_FILE = "window_layout"
+  LAYOUT_KEEP = 5
+  EDITOR_MIN_WIDTH = 300
+  WINDOW_MIN_SIZE = 600
+  DEFAULT_WINDOW_SIZE = [1000, 800]
+  PANEL_DEFAULT_WIDTH = { :file_panel => 180, :func_panel => 160, :keylog => 320 }
+  SIDE_PANELS = [:file_panel, :func_panel, :keylog]
+
+  def layout_enabled?
+    !vma_test_mode? && cnf.restore_layout? != false
+  end
+
+  # Monitor the window is on. Before the window is mapped that isn't known:
+  # then the first monitor (layout_recheck_monitor corrects a wrong guess).
+  def layout_monitor
+    d = Gdk::Display.default
+    surface = (@window.native&.surface rescue nil)
+    m = (d.get_monitor_at_surface(surface) rescue nil) if surface
+    m || (d.monitors.get_item(0) rescue nil)
+  end
+
+  def monitor_key(m)
+    return "unknown" if m.nil?
+    g = m.geometry
+    "#{g.width}x#{g.height}@#{m.scale_factor}"
+  end
+
+  def monitor_size(m)
+    return [100_000, 100_000] if m.nil?
+    g = m.geometry
+    [g.width, g.height]
+  end
+
+  def file_panel_width
+    @file_panel_shown ? @file_panel_pane.position : @file_panel_width
+  end
+
+  def func_panel_width
+    @func_panel_shown ? @func_panel_pane.position : @func_panel_width
+  end
+
+  def keylog_width
+    return @keylog_width unless @keylog_shown && @keylog_pane.width > 0
+    @keylog_pane.width - @keylog_pane.position
+  end
+
+  # The key log is on the right: its divider position depends on the total
+  # width, which is known only once the pane has been allocated.
+  def set_keylog_width(w)
+    tries = 0
+    GLib::Timeout.add(50) {
+      if !@keylog_shown
+        false
+      elsif @keylog_pane.width > 0
+        @keylog_pane.position = [@keylog_pane.width - w, EDITOR_MIN_WIDTH].max
+        false
+      else
+        (tries += 1) < 100
+      end
+    }
+  end
+
+  # Current geometry and layout as a Hash (see apply_view_layout). Widths are
+  # in pixels, plus as a fraction of the window width (:frac) for a screen of
+  # another size.
+  def window_layout
+    max = @window.maximized?
+    # While maximized, the default size is the size to unmaximize to
+    width, height = max ? [@window.default_width, @window.default_height] : [@window.width, @window.height]
+    win_w = @window.width
+    part = ->(shown, w) {
+      { :shown => !!shown, :width => w, :frac => (w && win_w > 0 ? w.to_f / win_w : nil) }
+    }
+    w2 = @two_column && @windows[2] && @windows[2][:sw].child
+    {
+      :width => width, :height => height, :maximized => max, :win_width => win_w,
+      :file_panel => part.(@file_panel_shown, file_panel_width),
+      :func_panel => part.(@func_panel_shown, func_panel_width),
+      :keylog => part.(@keylog_shown, keylog_width),
+      :two_column => part.(@two_column, @two_column ? @pane.position : @column_split),
+      :column2_file => (w2.respond_to?(:bufo) ? w2.bufo.fname : nil),
+      :minibuf_history_height => @minibuf_history_height,
+    }
+  end
+
+  def load_layouts
+    f = get_data_path(LAYOUT_FILE)
+    h = File.exist?(f) ? Marshal.load(File.binread(f)) : {}
+    h.class == Hash ? h : {}
+  rescue => ex
+    debug "load_layouts failed: #{ex}"
+    {}
+  end
+
+  # all with layout l stored under key, keeping the LAYOUT_KEEP most recent
+  def merge_layouts(all, key, l, now = Time.now.to_f)
+    all = all.merge(key => l.merge(:used => now))
+    all.sort_by { |_k, v| -v[:used].to_f }.first(LAYOUT_KEEP).to_h
+  end
+
+  def save_window_layout
+    return if !layout_enabled? || @window.nil?
+    all = merge_layouts(load_layouts, monitor_key(layout_monitor), window_layout)
+    File.binwrite(get_data_path(LAYOUT_FILE), Marshal.dump(all))
+  rescue => ex
+    debug "save_window_layout failed: #{ex}"
+  end
+
+  # Layout to start with on a key/mw x mh monitor: the one saved for this
+  # resolution, else the most recently used one fitted to this screen.
+  # Never nil: with nothing saved, the default window and no panels.
+  def pick_layout(all, key, mw, mh)
+    return fit_view_layout(all[key], mw, mh, true) if all[key]
+    recent = all.values.max_by { |v| v[:used].to_f }
+    if recent.nil? && vma.marshal_load("file_panel_shown", false)
+      recent = { :file_panel => { :shown => true } } # saved by older versions
+    end
+    fit_view_layout(recent || {}, mw, mh, recent.nil?)
+  end
+
+  # Fit saved layout l to a mw x mh monitor. exact = saved for this
+  # resolution: only clamp to the monitor. Otherwise (layout from another
+  # screen) limit the window to 90% of the monitor, don't maximize if the
+  # saved window was bigger than the screen, and scale the widths by their
+  # fraction of the window width. Side panels that would leave the editor
+  # narrower than EDITOR_MIN_WIDTH are hidden.
+  def fit_view_layout(saved, mw, mh, exact)
+    l = Marshal.load(Marshal.dump(saved || {}))
+    w, h = l[:width], l[:height]
+    if w.to_i <= 0 || h.to_i <= 0
+      # First start: the default size, leaving some room on a small screen
+      # (a window nearly as big as the screen gets maximized by e.g. GNOME)
+      w, h = DEFAULT_WINDOW_SIZE
+      exact = false
+    end
+    if exact
+      w, h = [w, mw].min, [h, mh].min
+    else
+      l[:maximized] = false if w > mw || h > mh
+      w, h = [w, (mw * 0.9).to_i].min, [h, (mh * 0.9).to_i].min
+    end
+    l[:width] = [w, [WINDOW_MIN_SIZE, mw].min].max
+    l[:height] = [h, [WINDOW_MIN_SIZE, mh].min].max
+    l[:maximized] = !!l[:maximized]
+
+    # Width the window will have. Maximized, that's the monitor minus panels
+    # and docks (e.g. GNOME's), which isn't known here: approximately mw.
+    eff = l[:maximized] ? mw : l[:width]
+    # Saved on this resolution: the pixel widths are right as they are
+    same = exact || eff == l[:win_width]
+    (SIDE_PANELS + [:two_column]).each { |k|
+      p = (l[k] ||= {})
+      p[:shown] = !!p[:shown]
+      p[:width] = (p[:frac] * eff).round if !same && p[:frac] && p[:width]
+    }
+    side = ->() {
+      SIDE_PANELS.sum { |k| l[k][:shown] ? (l[k][:width] || PANEL_DEFAULT_WIDTH[k]) : 0 }
+    }
+    [:keylog, :func_panel, :file_panel].each { |k|
+      break if eff - side.() >= EDITOR_MIN_WIDTH
+      l[k][:shown] = false
+    }
+    # Split of the two columns: inside the editor area
+    sp = l[:two_column][:width]
+    l[:two_column][:width] = nil if sp && sp >= eff - side.() - 100
+    l
+  end
+
+  # Before the window is first shown: pick the layout for this screen and
+  # size the window (GTK ignores a new default size once it is mapped).
+  # The columns and panels come later, in restore_view_layout.
+  def apply_startup_window_size
+    m = layout_monitor
+    mw, mh = monitor_size(m)
+    @startup_monitor_key = monitor_key(m)
+    l = layout_enabled? ? pick_layout(load_layouts, @startup_monitor_key, mw, mh) : fit_view_layout({}, mw, mh, true)
+    @startup_layout = l
+    @window.set_size_request([WINDOW_MIN_SIZE, mw].min, [WINDOW_MIN_SIZE, mh].min)
+    @window.set_default_size(l[:width], l[:height])
+    @window.maximize if l[:maximized]
+  end
+
+  # On the first map the real monitor is known. If it isn't the one guessed
+  # in apply_startup_window_size, use the layout for the real one.
+  def layout_recheck_monitor
+    return if @layout_rechecked || !layout_enabled?
+    @layout_rechecked = true
+    GLib::Timeout.add(300) {
+      m = layout_monitor
+      key = monitor_key(m)
+      if key != @startup_monitor_key
+        mw, mh = monitor_size(m)
+        l = pick_layout(load_layouts, key, mw, mh)
+        @startup_layout = l
+        l[:maximized] ? @window.maximize : @window.set_default_size(l[:width], l[:height])
+        apply_view_layout(l) if @view_layout_restored
+      end
+      false
+    }
+  end
+
+  # Called at startup once the first buffer exists: columns and panels.
+  def restore_view_layout
+    return if !layout_enabled? || @startup_layout.nil?
+    apply_view_layout(@startup_layout)
+    @view_layout_restored = true
+  end
+
+  # Show the columns and panels of layout l (from window_layout or
+  # fit_view_layout) with their widths. Columns go first: show_file_panel /
+  # show_func_panel wrap whatever is in the editor area.
+  def apply_view_layout(l)
+    got = ->(k) { l[k] || {} }
+    @column_split = got.(:two_column)[:width] || @column_split
+    @file_panel_width = got.(:file_panel)[:width] || @file_panel_width
+    @func_panel_width = got.(:func_panel)[:width] || @func_panel_width
+    @keylog_width = got.(:keylog)[:width] || @keylog_width
+    @minibuf_history_height = l[:minibuf_history_height] if l[:minibuf_history_height]
+
+    got.(:two_column)[:shown] ? set_two_column : set_one_column
+    got.(:func_panel)[:shown] ? show_func_panel : hide_func_panel
+    got.(:file_panel)[:shown] ? show_file_panel : hide_file_panel
+    got.(:keylog)[:shown] ? show_keylog_panel : hide_keylog_panel
+    # Already shown panels keep their old widths otherwise
+    @pane.set_position(@column_split) if @two_column && @column_split.to_i > 0
+    @file_panel_pane.set_position(@file_panel_width) if @file_panel_shown && @file_panel_width.to_i > 0
+    @func_panel_pane.set_position(@func_panel_width) if @func_panel_shown && @func_panel_width.to_i > 0
+    set_keylog_width(@keylog_width) if @keylog_shown && @keylog_width.to_i > 0
+    @column2_file = l[:column2_file]
+    restore_column2_buffer
+  end
+
+  # Put the file that was in the second column back there, once it is open
+  # (the session's files load after the layout; see restore_session_files).
+  def restore_column2_buffer
+    return if !@two_column || @column2_file.nil?
+    id = vma.buffers.get_buffer_by_filename(@column2_file)
+    return if id.nil? || id == vma.buf.id
+    set_buffer_to_window(id, 2)
+    @column2_file = nil
   end
 end
 end # module Vimamsa
