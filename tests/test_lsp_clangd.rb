@@ -7,8 +7,9 @@ require "tmpdir"
 #   cnf.lsp.server.clangd.languages = ["c", "cpp"]
 #
 # Uses a small C++ file in a temp dir (with compile_flags.txt, so clangd needs
-# no build setup). Skips if no `clangd` is on PATH; any other problem (server
-# fails to start, wrong answers) is a failure.
+# no build setup). Uses `clangd`, or else the newest working `clangd-NN` on
+# PATH (Ubuntu installs e.g. clangd-12 without the bare name). Skips if none
+# runs; any other problem (server fails to start, wrong answers) is a failure.
 #
 # Run explicitly:
 #   ruby exe/run_tests.rb lsp_clangd
@@ -27,19 +28,24 @@ class TestLspClangd < VmaTest
     }
   CPP
 
+  # First clangd binary on PATH that runs, or nil.
+  def self.clangd_bin
+    return @clangd_bin if defined?(@clangd_bin)
+    cands = ["clangd"] + 40.downto(9).map { |n| "clangd-#{n}" }
+    @clangd_bin = cands.find { |c| system("#{c} --version > /dev/null 2>&1") }
+  end
+
   def configure_clangd
     require "vimamsa/langservp"
     cnf.lsp.enabled = true
-    cnf.lsp.server.clangd = { name: "clangd", command: "clangd --offset-encoding=utf-8", type: "stdio" }
+    cnf.lsp.server.clangd = { name: "clangd", command: "#{self.class.clangd_bin} --offset-encoding=utf-8", type: "stdio" }
     cnf.lsp.server.clangd.languages = ["c", "cpp"]
   end
 
   # Opens the C++ file with the settings above, yields [buffer, lsp, path, dir].
   # One clangd process is shared by all tests of this class.
   def with_clangd
-    if `which clangd 2>/dev/null`.strip.empty?
-      skip "clangd not on PATH"
-    end
+    skip "clangd not on PATH" if self.class.clangd_bin.nil?
     configure_clangd
     @@reset ||= %w[c cpp].each { |l| LangSrv.class_variable_get(:@@languages).delete(l) }
     Dir.mktmpdir("vma_clangd") do |dir|
@@ -115,6 +121,22 @@ class TestLspClangd < VmaTest
       assert d, "no definition for `add` at #{line}:#{col} (line has non-ASCII text before it: " \
                 "character vs. byte offset mismatch?)"
       assert_eq loc("int add")[0] + 1, d[1]
+    end
+  end
+
+  # Edits reach clangd: textDocument/didChange is a notification, sent without
+  # an id. With an id clangd rejected it (method not found) and kept the text
+  # as opened, so after adding lines above, a lookup at the new position of
+  # `add(p` hit what used to be there instead.
+  def test_jump_to_definition_after_edit
+    with_clangd do |b, lsp, path|
+      retry_until { lsp.get_definition(path, *loc("add(p")) } # parsed
+      b.insert_txt_at("// one\n// two\n", 0)
+      drain_idle
+      line, col = loc("add(p")
+      d = retry_until { lsp.get_definition(path, line + 2, col) }
+      assert d, "no definition for `add` after the edit"
+      assert_eq loc("int add")[0] + 1 + 2, d[1], "clangd did not see the edit"
     end
   end
 

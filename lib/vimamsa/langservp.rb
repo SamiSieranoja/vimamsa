@@ -167,9 +167,11 @@ class LangSrv
         text_document: LSP::Interface::VersionedTextDocumentIdentifier.new(uri: fpuri, version: version),
         content_changes: changes,
       )
-      id = new_id
       pp a
-      @writer.write(id: id, params: a, method: "textDocument/didChange")
+      # A notification: no id. With an id it is a request, which clangd
+      # rejects (-32601 method not found) without applying the change, so
+      # its copy of the file goes stale and positions point at the wrong text.
+      @writer.write(params: a, method: "textDocument/didChange")
     end
   end
 
