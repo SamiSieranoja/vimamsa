@@ -391,8 +391,14 @@ class VSourceView < GtkSource::View
       @bufo.set_pos(i) if !i.nil?
       if n_press == 2
         #TODO: refactor to have one function for all line actions
-        if @bufo.module&.respond_to?(:select_line)
-          @bufo.module.select_line
+        # Same as Enter (Buffer#handle_line_action): the buffer's own line
+        # handler first. Ack's select_line takes the line number, so it is
+        # only reachable that way.
+        m = @bufo.module
+        if [Proc, Method].include?(@bufo.line_action_handler.class)
+          @bufo.line_action_handler.call(@bufo.lpos)
+        elsif m&.respond_to?(:select_line) && m.method(:select_line).arity == 0
+          m.select_line
         else
           @bufo.cur_nonwhitespace_word_action()
         end
