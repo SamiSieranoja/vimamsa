@@ -34,10 +34,17 @@ if [ ! -f "$MARKER" ] || [ "${FORCE_PROVISION:-}" = "1" ]; then
     libgtk-4-dev libgtksourceview-5-dev \
     libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
     libvte-2.91-gtk4-dev libssl-dev \
-    ack clang-format x11-xserver-utils
+    ack clang-format x11-xserver-utils vim
   sudo_do gem install bundler -v '~> 2.4'
 else
   echo ">> Guest already provisioned (marker $MARKER present) — skipping apt"
+fi
+
+# Real vim for TestTextObjects#test_cases_match_real_vim. Checked separately so
+# boxes provisioned before it was added to the list above get it too.
+if ! command -v vim >/dev/null; then
+  echo ">> Installing vim"
+  sudo_do env DEBIAN_FRONTEND=noninteractive apt-get install -y vim
 fi
 
 # Enable the uinput virtual keyboard so the E2E tests can type real key events.
