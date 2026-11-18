@@ -444,4 +444,7 @@ bindkey "C , i p", "generate_password_to_buf(15)"
 # default_keys.each { |key, value|
   # bindkey(key, value)
 # }
+
+# Vim text objects (diw, ci", ya(, vip, ...), see text_objects.rb
+bind_vim_text_objects
 end # module Vimamsa
