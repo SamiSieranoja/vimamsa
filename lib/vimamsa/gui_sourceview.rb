@@ -270,6 +270,13 @@ class VSourceView < GtkSource::View
     self.add_controller(@cnt_drag)
     @cnt_drag.signal_connect "drag-begin" do |gesture, x, y|
       debug "drag-begin", 2
+      @drag_start_x = x
+      @drag_start_y = y
+      # Pressed inside the selection: drag-end moves it (see "pressed")
+      if @move_sel
+        set_cursor_from_name("grabbing")
+        next
+      end
       i = coord_to_iter(x, y, true)
       pp i
       @range_start = i
@@ -279,6 +286,13 @@ class VSourceView < GtkSource::View
     end
 
     @cnt_drag.signal_connect "drag-update" do |gesture, offset_x, offset_y|
+      if @move_sel
+        t = drop_pos(@drag_start_x + offset_x, @drag_start_y + offset_y)
+        # Dropping inside (or right after) the selection would not move it
+        no_op = t.nil? || (t >= @move_sel.begin && t <= @move_sel.end + 1)
+        show_drop_marker(no_op ? nil : t)
+        next
+      end
       next unless @range_start
       cur_x = @drag_start_x + offset_x
       cur_y = @drag_start_y + offset_y
@@ -293,6 +307,25 @@ class VSourceView < GtkSource::View
 
     @cnt_drag.signal_connect "drag-end" do |gesture, offsetx, offsety|
       debug "drag-end", 2
+      if @move_sel
+        r = @move_sel
+        @move_sel = nil
+        set_cursor_from_name("text")
+        show_drop_marker(nil)
+        if offsetx.abs < 5 and offsety.abs < 5
+          # Just a click inside the selection: clear it like any other click
+          @bufo.end_visual_mode
+          i = coord_to_iter(@drag_start_x, @drag_start_y, true)
+          @bufo.set_pos(i) if !i.nil?
+        else
+          target = drop_pos(@drag_start_x + offsetx, @drag_start_y + offsety)
+          # Dropping ends the selection, whether or not the text moved
+          @bufo.end_visual_mode || @bufo.end_selection
+          @bufo.move_text(r, target)
+        end
+        handle_deltas
+        next
+      end
       if offsetx.abs < 5 and offsety.abs < 5
         debug "Not enough drag", 2
         buf.end_selection
@@ -329,15 +362,25 @@ class VSourceView < GtkSource::View
       debug "SourceView, GestureClick released x=#{x} y=#{y}"
       vma.gui.instance_variable_set(:@kbd_passthrough, false)
 
-      if buf.visual_mode?
-        buf.end_visual_mode
-      end
-
       xloc = (x - gutter_width).to_i
       yloc = (y + visible_rect.y).to_i
       debug "xloc=#{xloc} yloc=#{yloc}"
 
       i = coord_to_iter(xloc, yloc)
+
+      # Pressing inside the selection grabs it for a drag-and-drop move
+      # (cnf.mouse.drag_selection). The selection stays until drag-end.
+      @move_sel = nil
+      if cnf.mouse.drag_selection? and n_press == 1 and !i.nil? and
+         vma.gui.current_view == self and @bufo.visual_mode? and
+         @bufo.get_visual_mode_range.include?(i)
+        @move_sel = @bufo.get_visual_mode_range
+        next true
+      end
+
+      if buf.visual_mode?
+        buf.end_visual_mode
+      end
       # @range_start = i
 
       # This needs to happen after xloc calculation, otherwise xloc gets a wrong value (around 200 bigger)
@@ -359,6 +402,7 @@ class VSourceView < GtkSource::View
 
     click.signal_connect "released" do |gesture, n_press, x, y, z|
       debug "SourceView, GestureClick released x=#{x} y=#{y} button=#{gesture.button}"
+      next true if @move_sel # drag-end handles it
 
       xloc = (x - gutter_width).to_i
       yloc = (y + visible_rect.y).to_i
@@ -426,6 +470,46 @@ class VSourceView < GtkSource::View
       handle_deltas
       false
     })
+  end
+
+  # Insertion point (char boundary nearest to widget coords x, y) for dropping
+  # dragged text: past the middle of a char means after it.
+  def drop_pos(x, y)
+    bx = (x - gutter_width).to_i
+    by = (y + visible_rect.y).to_i
+    iter, trailing = get_iter_at_position(bx, by)
+    if iter.nil? # Not over text (e.g. right of a line's end): end of that line
+      ls = coord_to_iter(x, y, true)
+      return nil if ls.nil?
+      return bx > 0 ? (@bufo.index("\n", ls) || ls) : ls
+    end
+    # Not past a line's "\n": that would drop onto the start of the next line
+    return iter.offset if @bufo[iter.offset] == "\n"
+    return iter.offset + trailing.to_i
+  end
+
+  # Thin bar showing where dragged text would land; pos nil hides it.
+  attr_reader :drop_marker_pos
+  def show_drop_marker(pos)
+    @drop_marker_pos = pos
+    if pos.nil?
+      @drop_marker.visible = false if @drop_marker
+      return
+    end
+    rect = get_iter_location(buffer.get_iter_at(:offset => pos))
+    if @drop_marker.nil?
+      @drop_marker = Gtk::Box.new(:horizontal, 0)
+      @drop_marker.can_target = false # never steal the pointer from the view
+      prov = Gtk::CssProvider.new
+      bg = $confh[:mode][:command][:cursor][:background] rescue nil
+      prov.load(data: "box { background-color: #{bg || "#05c5a0"}; }")
+      @drop_marker.style_context.add_provider(prov, Gtk::StyleProvider::PRIORITY_APPLICATION)
+      add_overlay(@drop_marker, rect.x, rect.y)
+    else
+      move_overlay(@drop_marker, rect.x, rect.y)
+    end
+    @drop_marker.set_size_request(2, rect.height)
+    @drop_marker.visible = true
   end
 
   def coord_to_iter(xloc, yloc, transform_coord = false)

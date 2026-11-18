@@ -310,6 +310,25 @@ class Buffer < String
     end
   end
 
+  # Move the text in range (inclusive, like get_visual_mode_range) so that it
+  # starts at insertion point target of the current text, with the cursor at
+  # its new start. One undo step; the clipboard is left alone. Returns the
+  # moved text's new range, or nil when target is inside (or right after) the
+  # range, i.e. nothing would move.
+  def move_text(range, target)
+    s, e = range.begin, range.end
+    return nil if s > e or target.nil? or (target >= s and target <= e + 1)
+    txt = self[s..e]
+    new_undo_group
+    add_delta([s, DELETE, txt.size], true)
+    t = target > e ? target - txt.size : target
+    add_delta([t, INSERT, txt.size, txt], true)
+    new_undo_group
+    calculate_line_and_column_pos
+    set_pos(t)
+    return t..(t + txt.size - 1)
+  end
+
   def delete_range(startpos, endpos, x = nil)
     s = self[startpos..endpos]
     if startpos > endpos or s == ""

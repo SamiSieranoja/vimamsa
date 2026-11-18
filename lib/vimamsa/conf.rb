@@ -177,6 +177,10 @@ cnf.undo.group_threshold = 1.8 # seconds of inactivity before starting a new und
 
 cnf.paste.cursor_at_start = false
 
+# Drag selected text with the mouse to move it. Pressing inside the selection
+# then starts a move instead of a new selection.
+cnf.mouse.drag_selection = true
+
 cnf.auto_chmod_exec = true
 
 # Auto-format commands. %{file} is replaced with the (escaped) temp file path.

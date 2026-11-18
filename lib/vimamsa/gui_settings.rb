@@ -42,6 +42,7 @@ SETTINGS_DEFS = [
       { :key => [:experimental], :label => "Enable experimental features", :type => :bool },
       { :key => [:macro, :animation_delay], :label => "Macro animation delay (sec)", :type => :float, :min => 0.0, :max => 2.0, :step => 0.0001 },
       { :key => [:paste, :cursor_at_start], :label => "Leave cursor at start of pasted text", :type => :bool },
+      { :key => [:mouse, :drag_selection], :label => "Move selected text by dragging it with the mouse (off: pressing inside a selection starts a new one)", :type => :bool },
       { :key => [:file_format, :on_save],
         :label => "Saving files not in UTF-8 + LF (e.g. Latin-1, CRLF): ask / keep original format / convert to UTF-8 + LF",
         :type => :select, :options => ["ask", "keep", "convert"] },
