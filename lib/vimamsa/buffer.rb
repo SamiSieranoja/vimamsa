@@ -132,6 +132,13 @@ class Buffer < String
       r = @lsp.get_definition(fpuri, @lpos, @cpos)
       if !r.nil?
         jump_to_file(r[0], r[1])
+      else
+        line = get_current_line
+        w = line[0, @cpos + 1].to_s[/\w*\z/].to_s + line[@cpos + 1..].to_s[/\A\w*/].to_s
+        w = "" unless line[@cpos].to_s =~ /\w/
+        msg = w.empty? ? "No definition found" : "No definition found for `#{w}`"
+        hint = @lsp.definition_failure_hint(@fname)
+        message(hint ? "#{msg}: #{hint}" : msg)
       end
     end
   end

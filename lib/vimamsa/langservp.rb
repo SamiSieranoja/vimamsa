@@ -79,6 +79,9 @@ class LangSrv
     else
       return nil
     end
+    @name = lspconf[:name] || @lang
+    # file path => latest diagnostics the server published for it
+    @diagnostics = {}
     @writer = LSP::Transport::Io::Writer.new(@io)
     @reader = LSP::Transport::Io::Reader.new(@io)
     @id = 0
@@ -114,6 +117,11 @@ class LangSrv
 
     @lst = Thread.new {
       @reader.read do |r|
+        if r[:method] == "textDocument/publishDiagnostics"
+          path = uri_to_path(r.dig(:params, :uri)) rescue nil
+          @diagnostics[path] = r.dig(:params, :diagnostics) || [] if path
+          next
+        end
         @resp[r[:id]] = r
         cb = @pending_mutex.synchronize { @pending.delete(r[:id]) }
         # GTK is single-threaded; callbacks must run on the main loop
@@ -247,6 +255,7 @@ class LangSrv
     pp a
     @writer.write(id: id, params: a, method: "textDocument/definition")
     r = wait_for_response(id)
+    @definition_timed_out = r.nil?
     return nil if r.nil?
     pp r
 
@@ -265,8 +274,33 @@ class LangSrv
 
     return nil unless uri && line
 
-    fpath = URI.parse(uri).path
+    fpath = uri_to_path(uri)
     return [fpath, line + 1]
+  end
+
+  def uri_to_path(uri)
+    URI::DEFAULT_PARSER.unescape(URI.parse(uri).path)
+  end
+
+  # Errors the server reported for file fpath (LSP severity 1), sorted by line
+  def errors_for(fpath)
+    (@diagnostics[fpath] || []).select { |d| (d[:severity] || 1) == 1 }
+      .sort_by { |d| d.dig(:range, :start, :line).to_i }
+  end
+
+  # Why get_definition(fpath, ...) just came back empty, for the user: no
+  # answer at all, or the server's own errors for the file, which often name
+  # the real cause (e.g. "'foo.h' file not found": wrong include paths in
+  # compile_commands.json / compile_flags.txt). nil if there is nothing to add.
+  def definition_failure_hint(fpath)
+    return "no answer from #{@name} within 5 s" if @definition_timed_out
+    errs = errors_for(fpath)
+    return nil if errs.empty?
+    # A missing include usually causes the rest, so show that one first
+    e = errs.find { |d| d[:message].to_s =~ /file not found/i } || errs[0]
+    n = errs.size
+    "#{@name} reports #{n} error#{n == 1 ? "" : "s"} in #{File.basename(fpath)}, e.g. " \
+      "line #{e.dig(:range, :start, :line).to_i + 1}: #{e[:message].to_s.lines.first.to_s.strip}"
   end
 
   # Async textDocument/completion. Never blocks: the callback is invoked on
