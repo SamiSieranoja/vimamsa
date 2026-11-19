@@ -75,10 +75,6 @@ sudo gem install --local vimamsa-0.1.*.gem
 
 ```
 
-Older version for GTK3:
-
-    sudo gem install vimamsa -v 0.1.10
-
 ## Run
 ```
 vimamsa
@@ -190,10 +186,11 @@ Syntax:
 </tbody>
 </table>
 
-Bindings can be customized in ~/.vimamsa/custom.rb
+Bindings can be customized in ~/.config/vimamsa/custom.rb
 For example, to bind ctrl-n to action "create new file":  
 ```
 bindkey 'C ctrl-n',  'create_new_file()'
+
 ```
 
 custom.rb is loaded in two phases. The body of the file runs early, before
@@ -212,7 +209,10 @@ end
  - Cursor sometimes vanishes when dragging or resizing the window. At least some cases are fixed in new GTK4 versions ( >= 4.18, in Ubuntu Ubuntu 25.04). Workaround is to press ctrl key twice.
 
 ## Current limitations
- - UTF8 only
+ - Linux only
+ 
+Mainly tested with:
+ - UTF8, English or Finnish
  - Line endings with "\n"
 
 
