@@ -503,7 +503,7 @@ when the development machine moves to Ubuntu 26.04.
   Desktop Entry spec); gemspec `required_ruby_version >= 3.1` (3.1 untested; the VM
   runs 3.2). Tests: `tests/test_bundling.rb`. Code change 5 (the `ruby-lsp` binstub
   on PATH) belongs to AppRun, so it comes with `scripts/build_appimage.sh`.
-- **AppImage build script** (2026-11-19, uncommitted): `scripts/appimage/build.sh`
+- **AppImage build script** (2026-11-19, `bc43676`): `scripts/appimage/build.sh`
   (host, Docker) runs `scripts/appimage/build_in_container.sh` in the Ubuntu 24.04
   image from `scripts/appimage/Dockerfile`. Output:
   `build/appimage/Vimamsa-<version>-x86_64.AppImage`, **92 MB** (249 MB unpacked).
@@ -531,7 +531,7 @@ when the development machine moves to Ubuntu 26.04.
       full suite 390 passed, 1 failed (the known `TestDictation` failure), 6 skipped.
       The launcher becomes `Exec="<path to>/Vimamsa-x86_64.AppImage" %F`.
 
-- **Started programs get the user's environment** (2026-11-19, uncommitted): AppRun
+- **Started programs get the user's environment** (2026-11-19, `bc43676`): AppRun
   lists every variable it changes in `VMA_APPIMAGE_ENV` and keeps the old values in
   `VMA_HOST_<name>`. After startup, `restore_host_env` (`lib/vimamsa/appimage_env.rb`,
   called at the end of `Editor#start`) puts them back. GLib/GIO/GI keep what they read
@@ -544,6 +544,17 @@ when the development machine moves to Ubuntu 26.04.
   checks that no variable except PATH/APPDIR/APPIMAGE points into the image and
   that VTE, `playbin`, pixbuf loading and `ruby-lsp` still work afterwards.
 
+- **CI build and release** (2026-11-19, `1192898`): `.github/workflows/appimage.yml`. On
+  a `vX.Y.Z` tag (must match `version.rb`) it builds with `scripts/appimage/build.sh`,
+  runs `scripts/appimage/smoke_test.sh` (clean `ubuntu:24.04`: no GTK/Ruby, only the
+  libraries a desktop has), signs a build provenance attestation and attaches
+  `Vimamsa-x86_64.AppImage` + `.sha256` to the release. A fixed file name, so
+  README links to `releases/latest/download/Vimamsa-x86_64.AppImage`. Run by hand,
+  it only builds and tests (workflow artifact). appimagetool 1.9.1 and the type-2
+  runtime 20251108 are pinned by SHA-256. The smoke test found that the MIME
+  database must be bundled (gdk-pixbuf couldn't detect PNG without
+  shared-mime-info). Not yet run on GitHub: the first tag push is its first run.
+
 ## Follow-ups found while building
 
 - **GTK modules from the host**: `libgtk-4` still looks in the host's
@@ -554,5 +565,5 @@ when the development machine moves to Ubuntu 26.04.
 - **Gems are not pinned**: `gem install` resolves the newest matching versions
   (Ruby-GNOME 4.3.9 here). Use a lockfile for reproducible releases.
 - Not tested yet: another distro (Fedora/Arch), X11 session, non-US keyboard/IME,
-  HiDPI scaling. CI job (plan step 4) not started.
+  HiDPI scaling.
 
