@@ -2,7 +2,10 @@
 /.yardoc
 /_yardoc/
 /coverage/
-/doc/
 /pkg/
 /spec/reports/
 /tmp/
+/build/
+
+# Vimamsa editor autosave files (.<name>_vma_autosave)
+*_vma_autosave
