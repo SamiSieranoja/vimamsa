@@ -287,6 +287,46 @@ class TestKeyBindings < VmaTest
     unbindkey "fexp z z"
   end
 
+  # ── count inside a sequence (<num>) ──────────────────────────────────────
+
+  def test_count_inside_delete_word
+    vma.buf.set_content("one two three four\n")
+    vma.buf.set_pos(0)
+    keys "d 3 e"
+    assert_buf " four\n"
+    assert_mode :command
+  end
+
+  def test_count_inside_multiplies_outer_count
+    vma.buf.set_content("a b c d e f g h\n")
+    vma.buf.set_pos(0)
+    keys "2 d 3 e"
+    assert_buf " g h\n"
+  end
+
+  def test_count_inside_multi_digit
+    vma.buf.set_content((1..12).map(&:to_s).join(" ") + "\n")
+    vma.buf.set_pos(0)
+    keys "d 1 1 e"
+    assert_buf " 12\n"
+  end
+
+  def test_count_inside_aborted
+    vma.buf.set_content("one two three\n")
+    vma.buf.set_pos(0)
+    keys "d 2 esc"
+    keys "d e"
+    assert_buf " two three\n"   # no count left over from the aborted sequence
+  end
+
+  def test_count_inside_custom_binding
+    got = []
+    bindkey "C , x <num> y", "$test_num_y << 1"
+    $test_num_y = got
+    keys ", x 4 y"
+    assert_eq 4, got.size
+  end
+
   private
 
   # Collect the errors the key binding tree reports while running blk.
@@ -315,5 +355,6 @@ class TestKeyBindings < VmaTest
     vma.kbd.root.children.each { |mode| walk.call(mode, [mode.key_name]) }
     found
   end
+
 
 end

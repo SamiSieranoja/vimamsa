@@ -226,7 +226,7 @@ add_keys "core", {
   "C d O" => "buf.delete2(:to_line_end)",
   "C d $" => "buf.delete2(:to_line_end)",
   #    'C d e'=> 'buf.delete_to_next_word_end',
-  "C d <num> e" => "delete_next_word",
+  "C d <num> e" => "buf.delete2(:to_word_end)", # d 3 e: repeated by the count
   "C d ' <char>" => "buf.delete2(:to_mark,<char>)",
   "C d f <char>" => "buf.delete2(:to_char,<char>)",
   "C d F <char>" => "buf.delete2(:to_char_backward,<char>)",

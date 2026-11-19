@@ -313,6 +313,7 @@ class KeyBindingTree
     end
 
     @state_trail = [@mode_root_state]
+    @num_digits = nil
   end
 
   # Returns a list of key positions that are free (no action bound) under each
@@ -450,6 +451,8 @@ class KeyBindingTree
 
         badge_key = st.key_name
         badge_str = "#{trailpfx}#{mode_str}"
+      elsif st.key_name == "<num>" and @num_digits
+        trail_str << " #{@num_digits}"
       else
         trail_str << " #{st.to_s}"
       end
@@ -492,6 +495,34 @@ class KeyBindingTree
   end
 
   # Modifies state of key binding tree (move to new state) based on received event
+  # A count typed inside a key sequence, for bindings like "C d <num> e"
+  # (d 3 e = delete to the end of the third word). The digits go to
+  # @num_digits; when the next key matches, they become the repeat count,
+  # multiplied by a count typed before the sequence (2 d 3 e = 6), as in vim.
+  # Exact bindings win: "C d 0" is still matched before this is tried.
+  def match_num_key(c, event_type)
+    return false unless event_type == :key_press and c.match?(/\A[0-9]\z/)
+    if @num_digits and @match_state.all? { |s| s.key_name == "<num>" }
+      @num_digits << c
+    else
+      return false if c == "0"
+      nums = @match_state.flat_map { |s| s.children.select { |x| x.key_name == "<num>" } }
+      return false if nums.empty?
+      @match_state = nums
+      @state_trail << nums
+      @num_digits = c.dup
+    end
+    emit(:key_pending, get_state_trail_str[0])
+    show_state_trail
+    true
+  end
+
+  def finish_num_count
+    return if @num_digits.nil?
+    @next_command_count = (@next_command_count || 1) * @num_digits.to_i
+    @num_digits = nil
+  end
+
   # Checks child nodes of current state if they match received event
   # if yes, change state to child
   # if no, go back to root
@@ -509,6 +540,8 @@ class KeyBindingTree
     eval_s = nil
 
     new_state = match(c)
+    return true if new_state.nil? and match_num_key(c, event_type)
+    finish_num_count if new_state
     # #TODO:
     # new_state = match(translated_c)
     # if new_state == nil and translated_c.index("shift") == 0
@@ -565,6 +598,7 @@ class KeyBindingTree
         # Modifier keys are excluded: they arrive as separate press events and
         # must not break e.g. "2 0 ctrl-d".
         @next_command_count = nil
+        @num_digits = nil
       end
       if event_type == :key_press and c != "shift"
         # TODO:include other modifiers in addition to shift?
