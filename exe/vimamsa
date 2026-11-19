@@ -41,8 +41,10 @@ if File.exist?(listen_dir) and !ARGV[0].nil?
   exit(0) if !timeout
 end
 
-$LOAD_PATH.unshift(File.expand_path("lib"))
-$LOAD_PATH.unshift(File.expand_path("ext"))
+# Relative to this script, not the current directory: started from elsewhere
+# (or from an AppImage) a "./lib" there must not be picked up.
+$LOAD_PATH.unshift(File.join(scriptdir, "lib"))
+$LOAD_PATH.unshift(File.join(scriptdir, "ext"))
 
 require "vimamsa"
 include Vimamsa

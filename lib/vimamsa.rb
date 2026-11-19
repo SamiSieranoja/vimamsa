@@ -2,7 +2,6 @@ require "vimamsa/version"
 
 require "vmaext"
 
-$:.unshift File.expand_path(File.dirname(__FILE__)+"/../ext/stridx")
 require "stridx"
 
 require "vimamsa/rbvma"

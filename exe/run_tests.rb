@@ -20,8 +20,10 @@ selfpath = __FILE__
 selfpath = File.readlink(selfpath) if File.lstat(selfpath).symlink?
 scriptdir = File.expand_path(File.dirname(selfpath) + "/..")
 
-$LOAD_PATH.unshift(File.expand_path("lib"))
-$LOAD_PATH.unshift(File.expand_path("ext"))
+# Relative to this script, not the current directory: started from elsewhere
+# (or from an AppImage) a "./lib" there must not be picked up.
+$LOAD_PATH.unshift(File.join(scriptdir, "lib"))
+$LOAD_PATH.unshift(File.join(scriptdir, "ext"))
 begin
   gem_spec = Gem::Specification.find_by_name("vimamsa")
   $LOAD_PATH.unshift(File.join(gem_spec.gem_dir, "ext", "vmaext")) if gem_spec

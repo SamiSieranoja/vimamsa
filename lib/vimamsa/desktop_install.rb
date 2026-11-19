@@ -55,13 +55,26 @@ rescue => e
   debug "Desktop install failed: #{e.class}: #{e.message}"
 end
 
+# Exec= value for the launcher. From an AppImage ($APPIMAGE is the file's path,
+# set by the AppImage runtime) the launcher runs that file, so it works without
+# a vimamsa on PATH; if the file is moved, the next start rewrites the entry.
+# Otherwise the gem's binstub.
+def desktop_exec_command
+  appimage = ENV["APPIMAGE"]
+  return "vimamsa %F" if appimage.nil? || appimage.empty?
+  # Desktop Entry spec: inside quotes, backslash-escape " ` $ \; then the
+  # string-value escaping doubles every backslash again; % is written %%.
+  quoted = appimage.gsub(/["`$\\]/) { |c| "\\#{c}" }.gsub("\\") { "\\\\" }.gsub("%", "%%")
+  %{"#{quoted}" %F}
+end
+
 def desktop_entry_contents
   <<~DESKTOP
     [Desktop Entry]
     Type=Application
     Name=Vimamsa
     Comment=Vi/Vim-inspired GUI text editor
-    Exec=vimamsa %F
+    Exec=#{desktop_exec_command}
     Icon=vimamsa
     Terminal=false
     Categories=Utility;TextEditor;
