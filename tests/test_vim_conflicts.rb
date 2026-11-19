@@ -18,7 +18,7 @@ class TestVimConflicts < VmaTest
       File.write(DOC, report)
       return
     end
-    # doc/ is in .gitignore, so a fresh checkout has no report to compare with
+    # The report is tracked in git; skip only if it was deleted locally
     skip "#{DOC} missing (run with VMA_UPDATE_DOC=1)" unless File.exist?(DOC)
     assert File.read(DOC) == report,
            "doc/vimlike_vim_conflicts.md is out of date: rerun with VMA_UPDATE_DOC=1 and commit it"
