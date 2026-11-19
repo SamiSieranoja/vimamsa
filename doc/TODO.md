@@ -392,7 +392,7 @@ Comments / design decisions:
   That's about 25 keys in about 20 rows: `h j k l` is one row, `w b` one row, and
   the three `ctrl` tap directions one row.
   - `l` was bound to a Ruby string (`buf.move(FORWARD_CHAR)`), which the
-    action-symbol lookup can't find. Fixed 2026-11-19: `"VC l"` now uses the existing
+    action-symbol lookup can't find. Fixed 2026-11-19 (`374cca1`): `"VC l"` now uses the existing
     `:e_move_forward_char` in vimlike and vim. All the moving keys (`h j k l w b`) are
     named actions now.
 
