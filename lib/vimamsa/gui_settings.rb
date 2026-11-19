@@ -407,6 +407,35 @@ def style_fg_attr(sty, style_name, default_fg = nil)
   fg ? " foreground=\"#{fg}\"" : ""
 end
 
+# Markup styles used by markdown.lang (and rst, asciidoc, ...). def.lang gives
+# them no fallback, so a scheme that doesn't define them draws headings, code
+# and links as plain text. Each is
+#   name => [attributes, styles to take the foreground from (first one set)]
+MARKUP_OVERLAY_STYLES = {
+  "def:heading" => ['bold="true"', ["def:heading1", "def:keyword"]],
+  "def:strong-emphasis" => ['bold="true"', []],
+  "def:emphasis" => ['italic="true"', []],
+  "def:inline-code" => ["", ["def:string"]],
+  "def:preformatted-section" => ["", ["def:string"]],
+  "def:link-text" => ['underline="low"', ["def:hyperlink"]],
+  "def:link-destination" => ["", ["def:comment"]],
+  "def:link-symbol" => ["", ["def:comment"]],
+  "def:list-marker" => ['bold="true"', ["def:statement", "def:keyword"]],
+  "def:thematic-break" => ["", ["def:comment"]],
+}
+
+# <style> lines for the MARKUP_OVERLAY_STYLES the parent scheme lacks. Styles
+# the parent defines (all stock GtkSourceView schemes do) are left alone.
+def markup_overlay_styles(parent_sty)
+  MARKUP_OVERLAY_STYLES.filter_map { |name, (attrs, from)|
+    next if parent_sty&.get_style(name)
+    fg = from.lazy.map { |f| parent_sty&.get_style(f)&.foreground }.find { |c| c && !c.empty? }
+    fg = "#4FC3F7" if fg.nil? && name == "def:link-text"
+    a = [attrs, fg && "foreground=\"#{fg}\""].reject { |x| x.nil? || x.empty? }.join(" ")
+    "  <style name=\"#{name}\" #{a}/>"
+  }.join("\n    ")
+end
+
 # Generate a GtkSourceView style scheme that inherits from base_scheme_id
 # (optionally contrast-adjusted) and overlays Vimamsa-specific heading/
 # hyperlink styles on top. Written to styles/_vimamsa_overlay.xml.
@@ -439,6 +468,7 @@ def generate_vimamsa_overlay(base_scheme_id)
       <style name="def:heading5"  scale="1.1"   bold="true"#{style_fg_attr(parent_sty, "def:heading5")}/>
       <style name="def:heading6"  scale="1.0"   bold="true"#{style_fg_attr(parent_sty, "def:heading6")}/>
       <style name="def:bold"      bold="true"/>
+    #{markup_overlay_styles(parent_sty)}
     </style-scheme>
   XML
   FileUtils.mkdir_p(user_styles_dir)
