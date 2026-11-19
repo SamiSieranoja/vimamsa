@@ -1,0 +1,54 @@
+#!/bin/sh
+# Entry point of the Vimamsa AppImage. The AppImage runtime sets $APPDIR (the
+# mounted image) and $APPIMAGE (the .AppImage file). Everything the editor
+# loads comes from the image except the host's glibc, graphics drivers, fonts,
+# X11/Wayland client libraries and sound server (see build_in_container.sh).
+HERE="$(dirname "$(readlink -f "$0")")"
+export APPDIR="${APPDIR:-$HERE}"
+U="$APPDIR/usr"
+ARCH_LIB="$U/lib"
+
+# Everything changed below is listed in VMA_APPIMAGE_ENV, with the previous
+# value (if any) in VMA_HOST_<name>. After startup the editor puts those back
+# (restore_host_env, lib/vimamsa/appimage_env.rb), so programs it starts don't
+# inherit the bundle's settings.
+VMA_APPIMAGE_ENV=""
+for n in GEM_HOME GEM_PATH RUBYOPT RUBYLIB BUNDLE_GEMFILE GI_TYPELIB_PATH XDG_DATA_DIRS \
+         GSETTINGS_SCHEMA_DIR GIO_MODULE_DIR GST_PLUGIN_SYSTEM_PATH_1_0 \
+         GST_PLUGIN_SCANNER_1_0 GST_REGISTRY_1_0 GDK_PIXBUF_MODULE_FILE; do
+  if eval "[ -n \"\${$n+x}\" ]"; then eval "export VMA_HOST_$n=\"\$$n\""; fi
+  VMA_APPIMAGE_ENV="$VMA_APPIMAGE_ENV $n"
+done
+export VMA_APPIMAGE_ENV
+
+# The bundled Ruby and gems only: a user's GEM_HOME / RUBYOPT / RUBYLIB would
+# mix in gems compiled for another Ruby.
+unset GEM_HOME GEM_PATH RUBYOPT RUBYLIB BUNDLE_GEMFILE
+
+# Libraries are found through RUNPATH ($ORIGIN), not LD_LIBRARY_PATH, so
+# programs the editor starts (git, ack, a terminal) don't load bundled libs.
+export GI_TYPELIB_PATH="$ARCH_LIB/girepository-1.0"
+export XDG_DATA_DIRS="$U/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+export GSETTINGS_SCHEMA_DIR="$U/share/glib-2.0/schemas"
+export GIO_MODULE_DIR="$ARCH_LIB/gio/modules"
+export GST_PLUGIN_SYSTEM_PATH_1_0="$ARCH_LIB/gstreamer-1.0"
+export GST_PLUGIN_SCANNER_1_0="$ARCH_LIB/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner"
+cache="${XDG_CACHE_HOME:-$HOME/.cache}/vimamsa"
+mkdir -p "$cache" 2>/dev/null
+# Own registry: the host's lists the host's plugins
+export GST_REGISTRY_1_0="$cache/gst-registry-appimage.bin"
+
+# gdk-pixbuf's loaders.cache must hold absolute paths: fill in where the
+# image is mounted (it changes on every start).
+pixdir="$ARCH_LIB/gdk-pixbuf-2.0/2.10.0"
+if [ -f "$pixdir/loaders.cache.in" ]; then
+  pixcache="$cache/gdk-pixbuf-loaders.cache"
+  sed "s|@PIXBUF_LOADERS@|$pixdir/loaders|g" "$pixdir/loaders.cache.in" > "$pixcache" 2>/dev/null &&
+    export GDK_PIXBUF_MODULE_FILE="$pixcache"
+fi
+
+# ruby-lsp and rufo from the bundle (cnf.lsp.server command "ruby-lsp"),
+# without putting the bundled ruby itself first on PATH.
+export PATH="$U/lib/vimamsa/bin:$PATH"
+
+exec "$U/bin/ruby" "$U/bin/vimamsa" "$@"

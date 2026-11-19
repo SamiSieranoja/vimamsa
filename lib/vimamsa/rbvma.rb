@@ -38,6 +38,7 @@ require "vimamsa/key_binding_tree"
 require "vimamsa/key_bindings_report"
 
 require "vimamsa/desktop_install"
+require "vimamsa/appimage_env"
 
 # Graphical stuff:
 require "vimamsa/bundled_fonts"

@@ -53,4 +53,40 @@ class TestBundling < VmaTest
       assert_eq ["#{root}/ext", "#{root}/lib"], out.split("\n").last(2)
     }
   end
+
+  # ── restore_host_env (lib/vimamsa/appimage_env.rb) ──
+
+  def test_restore_host_env_puts_back_previous_values
+    saved = ENV.to_h
+    ENV["VMA_APPIMAGE_ENV"] = " VMA_T_SET VMA_T_UNSET"
+    ENV["VMA_HOST_VMA_T_SET"] = "host value"
+    ENV["VMA_T_SET"] = "bundle value"
+    ENV["VMA_T_UNSET"] = "bundle value"
+    restore_host_env
+    assert_eq "host value", ENV["VMA_T_SET"]
+    assert !ENV.key?("VMA_T_UNSET"), "a variable the host didn't have must be removed"
+    assert !ENV.key?("VMA_HOST_VMA_T_SET") && !ENV.key?("VMA_APPIMAGE_ENV")
+    out = IO.popen(["sh", "-c", "echo \"$VMA_T_SET|${VMA_T_UNSET-unset}\""], &:read)
+    assert_eq "host value|unset\n", out
+  ensure
+    ENV.replace(saved)
+  end
+
+  # Only from the AppImage (AppRun exports APPDIR)
+  def test_appimage_children_get_host_environment
+    appdir = ENV["APPDIR"]
+    skip "not running from the AppImage" if appdir.nil?
+    ok = %w[PATH APPDIR APPIMAGE ARGV0 OWD]
+    leaked = ENV.reject { |k, v| ok.include?(k) || !v.include?(appdir) }
+    assert leaked.empty?, "still pointing into the AppImage: #{leaked.keys.join(", ")}"
+    # What the restore must not break: things loaded on first use
+    require "vte4"
+    assert Vte::Terminal.new
+    assert Gst::ElementFactory.make("playbin"), "playbin (bundled GStreamer plugins)"
+    png = Dir.glob("#{appdir}/usr/share/icons/hicolor/**/*.png").first || "#{appdir}/vimamsa.png"
+    assert GdkPixbuf::Pixbuf.new(file: png)
+    # The bundled ruby-lsp still runs (its wrapper drops the user's GEM_HOME)
+    out = IO.popen(["ruby-lsp", "--version"], err: [:child, :out], &:read)
+    assert out =~ /\d+\.\d+/, "ruby-lsp --version: #{out}"
+  end
 end

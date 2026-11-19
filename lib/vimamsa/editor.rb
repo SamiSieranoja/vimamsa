@@ -299,6 +299,9 @@ class Editor
     @kbd.set_state_to_root
     @kbd.show_state_trail
 
+    # AppImage: from here on, started programs get the user's environment
+    restore_host_env
+
     if ARGV.include?("--test")
       test_files = ARGV.select { |a| a.end_with?(".rb") && File.file?(a) }
       run_as_idle proc {
