@@ -71,4 +71,31 @@ class TestKeylogPanel < VmaTest
       assert panel.entries.size <= cap, "#{panel.entries.size} entries exceeds cap #{cap}"
     end
   end
+
+  # Let GTK lay out the pane (set_keylog_width waits for an allocation)
+  def settle
+    t = Time.now
+    drain_idle
+    GLib::MainContext.default.iteration(false) while Time.now - t < 0.4
+  end
+
+  # First show uses the default width, and long entries (even without
+  # spaces) don't widen it
+  def test_width_fixed_on_first_show
+    gui = vma.gui
+    old = gui.instance_variable_get(:@keylog_width)
+    gui.instance_variable_set(:@keylog_width, nil)
+    with_panel do
+      settle
+      w = gui.keylog_width
+      assert (w - VMAgui::PANEL_DEFAULT_WIDTH[:keylog]).abs <= 2, "first width #{w}"
+      5.times { keys("e") }    # "Jump to the end of the next word"
+      keys("o esc")            # a long action string without spaces
+      keys("g g")
+      settle
+      assert_eq w, gui.keylog_width
+    end
+  ensure
+    gui.instance_variable_set(:@keylog_width, old)
+  end
 end

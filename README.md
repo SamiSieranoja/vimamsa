@@ -8,7 +8,7 @@ Vi/Vim -inspired experimental GUI-oriented text editor written with Ruby and GTK
 - [Install as a Ruby gem](#install-as-a-ruby-gem)
   * [Other install options](#other-install-options)
 - [Run](#run)
-- [Screenshots](#screenshots)
+- [Demo](#demo)
 - [Key bindings](#key-bindings)
 - [Current limitations](#current-limitations)
 
@@ -91,10 +91,15 @@ sudo apt install ack-grep clang-format
 
 For customization, edit ~/.vimamsa/custom.rb
 
-## Screenshots
+## Demo
 
-<a href="https://raw.githubusercontent.com/SamiSieranoja/vimamsa/refs/heads/master/img/screenshot1.png" target="_blank"><img src="https://raw.githubusercontent.com/SamiSieranoja/vimamsa/refs/heads/master/img/screenshot1.png" width="400"/></a>
-<a href="https://raw.githubusercontent.com/SamiSieranoja/vimamsa/refs/heads/master/img/screenshot2.png" target="_blank"><img src="https://raw.githubusercontent.com/SamiSieranoja/vimamsa/refs/heads/master/img/screenshot2.png" width="400"/></a>
+![Vimamsa demo: moving with hjkl and words, yy p, dd, undo/redo, Insert and Visual mode, easy jump, with the key log panel showing each key](img/demo.gif)
+
+Moving with `h j k l` and `w e b`, `y y p`, `d d`, undo `u` / redo `ctrl-r`,
+typing in Insert mode and back to Command mode with `ctrl` (press and release
+it alone), selecting in Visual mode, and easy jump (`s`: type a word's label to
+jump there). The key log panel on the right (View ▸ Toggle
+key log panel) shows each key and the action it ran.
 
 ## Key bindings
 

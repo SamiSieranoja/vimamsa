@@ -1275,7 +1275,9 @@ class VMAgui
     @vbox.attach(@keylog_pane, 0, 2, 2, 1)
     @keylog_shown = true
     @keylog_panel.set_active(true)
-    set_keylog_width(@keylog_width) if @keylog_width
+    # Always set a position: left unset, GtkPaned sizes the panel from the
+    # natural (unwrapped) width of its labels, so long entries widen it
+    set_keylog_width(@keylog_width || PANEL_DEFAULT_WIDTH[:keylog])
   end
 
   def hide_keylog_panel

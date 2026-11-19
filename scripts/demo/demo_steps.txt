@@ -1,0 +1,59 @@
+# Key presses for the README demo, run by scripts/demo/record_demo.rb.
+# Times are at --speed 1; the script divides them by its --speed.
+#   keys K K ...   press keys one at a time (editor key names: esc, enter,
+#                  space, ctrl (alone), ctrl-r, or xdotool keysyms), with the
+#                  current delay
+#   type TEXT      type TEXT character by character (Insert mode)
+#   wait SECONDS   pause
+#   delay SECONDS  time between keys from now on
+# The key log panel on the right shows each key and the action it ran.
+
+delay 0.45
+wait 1.5
+
+# hjkl: move down, right, up, left
+keys j j j l l l l
+keys k h
+wait 0.6
+
+# Words: forward, end, back
+keys w w e b
+wait 0.6
+
+# Jump to the end, yank a line and paste it, delete it, undo, redo
+keys G k
+wait 0.4
+keys y y p
+wait 0.8
+keys d d
+wait 0.6
+keys u
+wait 0.6
+keys ctrl-r
+wait 0.8
+
+# Insert mode: open a new line and type (the mode badge is top right), then
+# back to Command mode by pressing and releasing ctrl alone
+keys o
+delay 0.07
+type puts "Total: #{shapes.sum(&:area).round(1)}"
+delay 0.45
+wait 0.5
+keys ctrl
+wait 1.0
+
+# Visual mode: select two words and yank them
+keys 0 v e e
+wait 0.6
+keys y
+wait 0.8
+
+# Easy jump (s): every word start gets a label; type one to jump there
+keys s
+wait 1.6
+keys @JUMP_LABEL@
+wait 1.0
+
+# Back to the top
+keys g g
+wait 2.0

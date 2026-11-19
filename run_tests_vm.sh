@@ -86,6 +86,7 @@ tar czf "$TAR" -C "$REPO" \
   --exclude='*.log' \
   --exclude='claude-log.*' \
   --exclude='dot_git_old' \
+  --exclude='./build' \
   --exclude='2del_*' \
   --exclude='bug*.txt' \
   --exclude='*.mp3' --exclude='*.wav' \

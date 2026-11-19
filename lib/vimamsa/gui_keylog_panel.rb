@@ -164,6 +164,10 @@ class KeyLogPanel
     lbl.use_markup = true
     lbl.xalign = 0.0
     lbl.wrap = true
+    # Break inside long words too: an action like
+    # buf.jump(END_OF_LINE);buf.insert_txt("\n");... has no spaces, and its
+    # width would otherwise become the panel's minimum width
+    lbl.wrap_mode = :word_char
     lbl.margin_start = 8
     lbl.margin_end = 8
     lbl.margin_top = 3
