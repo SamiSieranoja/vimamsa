@@ -52,7 +52,7 @@ add_keys "intro", {
  "C , b" => :start_buf_manager,
   "C , M" => :bookmark_add,
   "C , '" => :bookmark_list,
-  "VC l" => "buf.move(FORWARD_CHAR)",
+  "VC l" => :e_move_forward_char,
   "VC , , s" => :search_actions,
   "C , n b" => :buf_new,
   "C y y" => :copy_cur_line,

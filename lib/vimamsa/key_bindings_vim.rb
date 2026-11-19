@@ -122,7 +122,7 @@ add_keys "vim motion", {
   "VCX right" => "buf.move(FORWARD_CHAR)",
   "VCX left" => "buf.move(BACKWARD_CHAR)",
   "VC h" => :e_move_backward_char,
-  "VC l" => "buf.move(FORWARD_CHAR)",
+  "VC l" => :e_move_forward_char,
   "VC j" => :forward_line,
   "VC k" => :backward_line,
   "C space" => "buf.move(FORWARD_CHAR)",
