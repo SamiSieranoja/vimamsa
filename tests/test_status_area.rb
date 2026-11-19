@@ -38,12 +38,13 @@ class TestStatusArea < VmaTest
     keys "esc"
   end
 
-  # ── Modified dot in subtitle ─────────────────────────────────────────────
+  # ── Modified marker in subtitle ──────────────────────────────────────────
 
-  def test_modified_dot_appears_on_edit
+  def test_modified_marker_appears_on_edit
     act 'buf.insert_txt("hello")'
     act "buf.refresh_title"
     drain_idle
-    assert vma.gui.subtitle.text.include?("●"), "subtitle should show modified dot after edit"
+    assert vma.gui.subtitle.text.start_with?("+ "), "subtitle should start with \"+ \" after edit"
+    assert !vma.gui.subtitle.label.include?("foreground"), "modified marker should use the theme color"
   end
 end

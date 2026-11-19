@@ -174,13 +174,14 @@ def gui_set_window_title(wtitle, subtitle = "", modified: false)
   wtitle = wtitle[0..150]
   $vmag.window.title = "Vimamsa - #{wtitle}"
   # Subtitle shows the file path: dim directory, bright basename,
-  # amber dot when there are unsaved changes.
+  # "+ " when there are unsaved changes (same marker as the window title;
+  # no fixed color, so it follows the theme).
   subtitle = subtitle.to_s
   dir = File.dirname(subtitle)
   dir = (dir == ".") ? "" : (dir == "/" ? "/" : "#{dir}/")
   base = File.basename(subtitle)
-  dot = modified ? "<span foreground='#fd971f' weight='bold'>● </span>" : ""
-  $vmag.subtitle.markup = "<span size='small'>#{dot}" \
+  mark = modified ? "<span weight='bold'>+ </span>" : ""
+  $vmag.subtitle.markup = "<span size='small'>#{mark}" \
     "<span alpha='55%'>#{CGI.escapeHTML(dir)}</span>" \
     "<span weight='bold' alpha='92%'>#{CGI.escapeHTML(base)}</span></span>"
   #  $vmag.window.titlebar.subtitle = subtitle #TODO:gtk4
