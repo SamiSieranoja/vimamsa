@@ -125,12 +125,15 @@ missing=$(find "$U/lib" "$U/bin" -type f \( -name '*.so*' -o -name gst-plugin-sc
 if [ -n "$missing" ]; then echo "!! unresolved libraries:"; echo "$missing"; exit 1; fi
 
 # ── 6. Data files ──
-step "Data: GtkSourceView, schemas, icons"
+step "Data: GtkSourceView, schemas, icons, MIME database"
 mkdir -p "$U/share/glib-2.0/schemas" "$U/share/icons"
 cp -r /usr/share/gtksourceview-5 "$U/share/"
 cp /usr/share/glib-2.0/schemas/*.xml "$U/share/glib-2.0/schemas/"
 glib-compile-schemas "$U/share/glib-2.0/schemas"
 cp -r /usr/share/icons/Adwaita /usr/share/icons/hicolor "$U/share/icons/"
+# MIME database: GIO's content type guessing, which gdk-pixbuf (image format
+# detection) and GtkSourceView (language detection) rely on
+cp -r /usr/share/mime "$U/share/"
 
 # ── 7. Launchers ──
 step "AppRun, desktop entry, icon"
@@ -165,14 +168,25 @@ xvfb-run -a sh -c 'exec env -i HOME=/tmp PATH=/usr/bin:/bin DISPLAY="$DISPLAY" X
   -e "%w[gtk4 gtksourceview5 vte4 gstreamer].each { |g| require g }; Gst.init; puts %q(gems load OK)"' "$APPDIR"
 
 step "Packing"
-tool=$CACHE/appimagetool-x86_64.AppImage
-if [ ! -x "$tool" ]; then
-  wget -q -O "$tool" https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
-  chmod +x "$tool"
-fi
+# Pinned versions, checked against their SHA-256 (not the moving "continuous"
+# builds): appimagetool and the static type-2 runtime it puts in front of the
+# image (no libfuse2 needed on the user's machine)
+fetch() { # url sha256 dest
+  if ! echo "$2  $3" | sha256sum -c --status 2>/dev/null; then
+    wget -q -O "$3" "$1"
+    echo "$2  $3" | sha256sum -c --quiet || { echo "!! checksum mismatch: $1"; exit 1; }
+  fi
+}
+tool=$CACHE/appimagetool-1.9.1-x86_64.AppImage
+runtime=$CACHE/type2-runtime-20251108-x86_64
+fetch https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage \
+  ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0 "$tool"
+fetch https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-x86_64 \
+  2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d "$runtime"
+chmod +x "$tool"
 out="$B/Vimamsa-$VERSION-x86_64.AppImage"
 # Pack to a temporary name and rename: the previous AppImage may be running
-ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "$tool" --no-appstream "$APPDIR" "$out.tmp"
+ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "$tool" --no-appstream --runtime-file "$runtime" "$APPDIR" "$out.tmp"
 mv -f "$out.tmp" "$out"
 ls -lh "$out"
 du -sh "$APPDIR"

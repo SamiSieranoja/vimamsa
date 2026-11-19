@@ -1,0 +1,93 @@
+# Builds the AppImage on GitHub's runners (scripts/appimage, doc/bundling_plan.md).
+# - Push a tag vX.Y.Z (matching lib/vimamsa/version.rb): build, test on a clean
+#   Ubuntu, sign a build provenance attestation and attach the AppImage to the
+#   GitHub release for that tag.
+# - Run it by hand (Actions ▸ AppImage ▸ Run workflow): build and test only;
+#   the AppImage is kept as a workflow artifact.
+name: AppImage
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write      # create the release and upload the file
+  id-token: write      # sign the attestation
+  attestations: write
+
+jobs:
+  appimage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the build clones this checkout; avoid a shallow source
+
+      - name: Check the tag matches the version
+        if: github.ref_type == 'tag'
+        run: |
+          v=$(ruby -Ilib -e 'require "vimamsa/version"; print Vimamsa::VERSION')
+          if [ "v$v" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME but lib/vimamsa/version.rb says $v"
+            exit 1
+          fi
+
+      # The compiled Ruby and the pinned appimagetool/runtime (all checked by
+      # the build script); gems and libraries are always built fresh
+      - uses: actions/cache@v4
+        with:
+          path: build/appimage/cache
+          key: appimage-cache-${{ hashFiles('scripts/appimage/Dockerfile', 'scripts/appimage/build_in_container.sh') }}
+
+      - name: Build
+        run: scripts/appimage/build.sh
+
+      - name: Test on a clean Ubuntu 24.04
+        run: scripts/appimage/smoke_test.sh build/appimage/Vimamsa-*-x86_64.AppImage
+
+      # One file name for every release, so the README can link to
+      # releases/latest/download/Vimamsa-x86_64.AppImage
+      - name: Name the file
+        run: |
+          mkdir -p dist
+          cp build/appimage/Vimamsa-*-x86_64.AppImage dist/Vimamsa-x86_64.AppImage
+          (cd dist && sha256sum Vimamsa-x86_64.AppImage > Vimamsa-x86_64.AppImage.sha256)
+
+      - name: Attest build provenance
+        if: github.ref_type == 'tag'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/Vimamsa-x86_64.AppImage
+
+      - name: Attach to the release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="Download \`Vimamsa-x86_64.AppImage\`, make it executable and run it:
+
+          \`\`\`
+          chmod +x Vimamsa-x86_64.AppImage
+          ./Vimamsa-x86_64.AppImage
+          \`\`\`
+
+          Needs x86_64 Linux with glibc 2.39 or newer (Ubuntu 24.04, Fedora 40, Debian 13 or newer).
+
+          Built by GitHub Actions from this tag. To check that the file came from this repository's workflow:
+          \`gh attestation verify Vimamsa-x86_64.AppImage --repo $GITHUB_REPOSITORY\`"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* --title "Vimamsa ${GITHUB_REF_NAME#v}" \
+              --notes "$notes" --generate-notes
+          fi
+
+      - name: Keep as a workflow artifact
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vimamsa-x86_64.AppImage
+          path: dist/
+          retention-days: 14

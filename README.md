@@ -4,8 +4,8 @@ Vi/Vim -inspired experimental GUI-oriented text editor written with Ruby and GTK
 
 <!-- toc -->
 
-- [Requirements](#requirements)
-- [Installation](#installation)
+- [Download (AppImage)](#download-appimage)
+- [Install as a Ruby gem](#install-as-a-ruby-gem)
   * [Other install options](#other-install-options)
 - [Run](#run)
 - [Screenshots](#screenshots)
@@ -14,13 +14,43 @@ Vi/Vim -inspired experimental GUI-oriented text editor written with Ruby and GTK
 
 <!-- tocstop -->
 
-## Requirements
- - Ruby 3.0+
+## Download (AppImage)
+
+The easiest way: one file, nothing to install (Ruby, GTK and everything else
+the editor needs are inside it).
+
+1. Download [Vimamsa-x86_64.AppImage](https://github.com/SamiSieranoja/vimamsa/releases/latest/download/Vimamsa-x86_64.AppImage)
+   (all versions: [Releases](https://github.com/SamiSieranoja/vimamsa/releases)).
+2. Make it executable and run it:
+   ```
+   chmod +x Vimamsa-x86_64.AppImage
+   ./Vimamsa-x86_64.AppImage [file]
+   ```
+   (or in the file manager: Properties ▸ "Allow executing file as program", then
+   double-click it).
+
+On the first start it adds Vimamsa to the application menu. If you move the
+file, start it once from the new place to update the menu entry. To update, download the new
+version over the old file.
+
+Requirements: x86_64 Linux with glibc 2.39 or newer: Ubuntu 24.04, Linux Mint 22,
+Fedora 40, Debian 13, Arch, openSUSE Tumbleweed or newer. On an older system it
+stops at start with `GLIBC_2.39 not found`; use the gem install below instead.
+If your home directory is mounted `noexec`, move the file to a place where programs
+can run.
+
+The AppImage is built by [GitHub Actions](.github/workflows/appimage.yml) from the
+tagged source. To check that a downloaded file came from this repository's build
+(needs the [GitHub CLI](https://cli.github.com/)):
+```
+gh attestation verify Vimamsa-x86_64.AppImage --repo SamiSieranoja/vimamsa
+```
+
+## Install as a Ruby gem
+
+Requirements:
+ - Ruby 3.1+
  - GTK 4
-
-
-## Installation
-
 
 On Ubuntu (22.04):
 ```
