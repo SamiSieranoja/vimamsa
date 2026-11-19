@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run ONLY the uinput E2E tests in the ub_blank VM, semi-interactively.
+# Run ONLY the uinput E2E tests in the test VM ($VM_NAME), semi-interactively.
 #
 # These tests type real key events through a virtual keyboard (uinput), which
 # land in whatever window currently has focus. Wayland won't let a window that
@@ -12,8 +12,9 @@
 # on the interactive focus wait.
 #
 # Usage:
-#   VM_PASS='<guest password>' ./run_e2e_vm.sh
-#   VM_PASS='<guest password>' ./run_e2e_vm.sh e2e_cmdline   # explicit filter
+# (VM_NAME, VM_USER and VM_PASS exported, as for run_tests_vm.sh)
+#   ./run_e2e_vm.sh
+#   ./run_e2e_vm.sh e2e_cmdline   # explicit filter
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"

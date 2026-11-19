@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the vimamsa test suite inside the `ub_blank` VirtualBox VM, on its real
+# Run the vimamsa test suite inside the VirtualBox VM named by $VM_NAME, on its real
 # logged-in desktop (so the GTK window actually appears in the VM).
 #
 # Reaches the guest via VBoxManage guestcontrol (Guest Additions) — no SSH or
@@ -7,30 +7,34 @@
 # provisions the guest on first run, builds the native extension, then runs
 # exe/run_tests.rb on DISPLAY :0. Exits with the suite's exit code (0 pass / 1 fail).
 #
-# Usage:
-#   VM_PASS='<guest password>' ./run_tests_vm.sh [test filter args...]
+# Usage (VM_NAME, VM_USER and VM_PASS exported, e.g. in ~/.bashrc):
+#   ./run_tests_vm.sh [test filter args...]
 # Examples:
-#   VM_PASS=secret ./run_tests_vm.sh              # full suite
-#   VM_PASS=secret ./run_tests_vm.sh undo         # tests/test_undo.rb only
-#   VM_PASS=secret FORCE_PROVISION=1 ./run_tests_vm.sh   # re-run apt provisioning
+#   ./run_tests_vm.sh                         # full suite
+#   ./run_tests_vm.sh undo                    # tests/test_undo.rb only
+#   FORCE_PROVISION=1 ./run_tests_vm.sh       # re-run apt provisioning
 #
 # Env:
+#   VM_NAME         (required) VirtualBox VM name
+#   VM_USER         (required) guest login username
 #   VM_PASS         (required) guest login/sudo password for user $VM_USER
-#   VM_NAME         VirtualBox VM name        (default: ub_blank)
-#   VM_USER         guest login username      (default: id)
 #   VM_DISPLAY      guest desktop X display   (default: :0)
 #   FORCE_PROVISION set to 1 to force guest re-provisioning
 set -euo pipefail
 
-VM_NAME="${VM_NAME:-ub_blank}"
-VM_USER="${VM_USER:-id}"
+VM_NAME="${VM_NAME:-}"
+VM_USER="${VM_USER:-}"
 VM_DISPLAY="${VM_DISPLAY:-:0}"
 GUEST_HOME="/home/${VM_USER}"
 
-if [ -z "${VM_PASS:-}" ]; then
-  echo "!! VM_PASS is not set. Provide the guest password for user '$VM_USER':" >&2
-  echo "   VM_PASS='<password>' $0 [test filter args...]" >&2
-  exit 3
+missing=()
+[ -n "$VM_NAME" ] || missing+=(VM_NAME)
+[ -n "$VM_USER" ] || missing+=(VM_USER)
+[ -n "${VM_PASS:-}" ] || missing+=(VM_PASS)
+if [ ${#missing[@]} -gt 0 ]; then
+  echo "!! Not set: ${missing[*]}. Export VM_NAME (VirtualBox VM), VM_USER (guest user)" >&2
+  echo "   and VM_PASS (guest password), e.g. in ~/.bashrc." >&2
+  exit 2
 fi
 
 REPO="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"

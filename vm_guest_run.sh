@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs INSIDE the ub_blank VM guest (copied in and executed by run_tests_vm.sh via
+# Runs INSIDE the test VM guest (copied in and executed by run_tests_vm.sh via
 # VBoxManage guestcontrol). Unpacks the synced working tree, provisions the box the
 # first time, builds the native extension, then runs the test suite on the real
 # desktop (DISPLAY :0) so the GTK window actually appears in the VM.
