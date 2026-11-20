@@ -316,8 +316,8 @@ add_keys "core", {
 
   # "C ." => "repeat_last_action", # TODO
   "VC ;" => "repeat_last_find",
-  # "CV Q" => :quit,
-  "CV ctrl-q" => :quit,
+  # "CV Q" => "app.quit",
+  "CV ctrl-q" => "app.quit",
   # "I ctrl!" => "vma.kbd.to_previous_mode",
   "C shift! s" => "buf.save",
   "I ctrl-s" => "buf.save",
@@ -365,7 +365,7 @@ add_keys "core", {
  "C , w" => :toggle_active_window,
  "C , , w" => :toggle_two_column,
  "C , ; a c" => :toggle_autocomplete,
- "C , R" => :restart_editor,
+ "C , R" => "app.restart",
 
  "VC s" => :easy_jump,
  "I alt-s" => :easy_jump,

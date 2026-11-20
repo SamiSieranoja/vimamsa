@@ -28,6 +28,13 @@ ACTION_ALIASES = {
   move_next_line: "move.line.next", forward_line: "move.line.next",
   move_prev_line: "move.line.prev", backward_line: "move.line.prev",
   grep_buffer: "grep.buf", invoke_grep_search: "grep.buf",
+  # app namespace (2026-11-20)
+  quit: "app.quit",
+  restart_editor: "app.restart",
+  show_settings: "app.settings",
+  reload_customrb: "app.customrb.reload",
+  edit_customrb: "app.customrb.edit",
+  install_demo_files: "app.demo",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

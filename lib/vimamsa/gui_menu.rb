@@ -31,8 +31,8 @@ module Vimamsa
       add_to_menu "File.List", { :label => "List open files", :action => :start_buf_manager }
       add_to_menu "File.Close", { :label => "Close file", :action => :close_current_buffer }
 
-      add_to_menu "File.Restart", { :label => "Restart (reload config and files)", :action => :restart_editor }
-      add_to_menu "File.Quit", { :label => "Quit", :action => :quit }
+      add_to_menu "File.Restart", { :label => "Restart (reload config and files)", :action => "app.restart" }
+      add_to_menu "File.Quit", { :label => "Quit", :action => "app.quit" }
 
       add_to_menu "Edit.Undo", { :label => "Undo edit", :action => "undo.last" }
       add_to_menu "Edit.Redo", { :label => "Redo edit", :action => "undo.redo" }
@@ -43,9 +43,9 @@ module Vimamsa
       # add_to_menu "Edit.StartCompletion", { :label => "StartCompletion", :action => :start_autocomplete }
       # add_to_menu "Edit.ShowCompletion", { :label => "ShowCompletion", :action => :show_autocomplete }
 
-      add_to_menu "Settings.Preferences", { :label => "Preferences...", :action => :show_settings }
-      add_to_menu "Settings.Customize", { :action => :edit_customrb }
-      add_to_menu "Settings.ReloadCustom", { :action => :reload_customrb }
+      add_to_menu "Settings.Preferences", { :label => "Preferences...", :action => "app.settings" }
+      add_to_menu "Settings.Customize", { :action => "app.customrb.edit" }
+      add_to_menu "Settings.ReloadCustom", { :action => "app.customrb.reload" }
 
       add_to_menu "Actions.SearchForActions", { :label => "Search for Actions", :action => :search_actions }
 
@@ -82,7 +82,7 @@ module Vimamsa
       add_to_menu "Actions.LspRestart", { :label => "Restart LSP server", :action => :lsp_restart }
       add_to_menu "Help.KeyBindings", { :label => "Show key bindings", :action => :show_key_bindings }
       add_to_menu "Help.VimConflicts", { :label => "Vim keys that differ in vimlike", :action => :show_vim_binding_conflicts }
-      add_to_menu "Help.InstallDemo", { :action => :install_demo_files }
+      add_to_menu "Help.InstallDemo", { :action => "app.demo" }
 
       #TODO: :auto_indent_buffer
 

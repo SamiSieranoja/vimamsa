@@ -22,7 +22,7 @@ reg_act(:lsp_restart, proc { require "vimamsa/langservp"; lsp_restart },
 
 reg_act(:eval_buf, proc { vma.buf.eval_whole_buf }, "Eval whole current buffer as ruby code (DANGEROUS)")
 
-reg_act(:show_settings, proc { show_settings_dialog }, "Show settings")
+reg_act("app.settings", proc { show_settings_dialog }, "Show settings")
 reg_act(:refresh_colors, proc { gui_reload_theme_and_colors }, "Reload theme color palettes + config and refresh the UI (no restart)")
 reg_act(:cut_selection, proc { buf.delete(SELECTION) }, "Cut selection to clipboard")
 
@@ -159,8 +159,8 @@ reg_act(:jump_next_word_start, proc { buf.jump_word(FORWARD, WORD_START) }, "Jum
 reg_act(:insert_mode, proc { vma.kbd.set_mode(:insert) }, "Switch to INSERT mode")
 reg_act(:prev_mode, proc { vma.kbd.to_previous_mode }, "Return to the previous mode")
 reg_act(:start_visual_mode, proc { buf.start_selection; vma.kbd.set_mode(:visual) }, "Enter VISUAL mode (for selections)")
-reg_act(:install_demo_files, proc { install_demo_files }, "Install and show Demo")
-reg_act(:reload_customrb, proc { reload_customrb }, "Reload custom.rb")
+reg_act("app.demo", proc { install_demo_files }, "Install and show Demo")
+reg_act("app.customrb.reload", proc { reload_customrb }, "Reload custom.rb")
 
 reg_act(:toggle_autocomplete, proc {
   cnf.autocomplete.enabled = !(cnf.autocomplete.enabled? != false)
@@ -168,7 +168,7 @@ reg_act(:toggle_autocomplete, proc {
   message("Autocomplete: #{cnf.autocomplete.enabled? ? "ON" : "OFF"}")
 }, "Toggle autocomplete on/off")
 
-reg_act(:restart_editor, proc { restart_editor }, "Restart: quit, reload config and reopen files")
+reg_act("app.restart", proc { restart_editor }, "Restart: quit, reload config and reopen files")
 
 reg_act :start_browse_mode, proc {
   vma.kbd.set_mode(:browse)
@@ -273,7 +273,7 @@ act_list = {
   :search_actions => { :proc => proc { vma.actions.gui_search },
                        :desc => "Search actions", :group => :search },
 
-  :edit_customrb => { :proc => proc { jump_to_file("~/.config/vimamsa/custom.rb") },
+  "app.customrb.edit" => { :proc => proc { jump_to_file("~/.config/vimamsa/custom.rb") },
                       :desc => "Customize (edit custom.rb)", :group => :search },
 
   :toggle_active_window => { :proc => proc { vma.gui.toggle_active_window },
@@ -285,7 +285,7 @@ act_list = {
   :content_search => { :proc => proc { FileContentSearch.start_gui },
                        :desc => "Search content of files", :group => :search },
 
-  :quit => { :proc => proc { _quit },
+  "app.quit" => { :proc => proc { _quit },
              :desc => "Quit", :group => :app },
 
   :run_tests => { :proc => proc { run_tests },

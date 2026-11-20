@@ -108,10 +108,10 @@ class CommandLine
     when "w"
       buf.save
     when "q"
-      exec_action(:quit)
+      exec_action("app.quit")
     when "wq"
       buf.save
-      exec_action(:quit)
+      exec_action("app.quit")
     when /\Ae\s+(\S.*)\z/
       open_new_file(File.expand_path(Regexp.last_match(1).strip))
     else
