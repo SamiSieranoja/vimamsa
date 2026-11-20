@@ -69,7 +69,7 @@ class TestCommandLine < VmaTest
   end
 
   def test_open_and_close
-    act :start_cmd_line
+    act "mode.cmdline"
     stack = vma.gui.instance_variable_get(:@minibuf_stack)
     assert_eq "cmdline", stack.visible_child_name, "command line shown"
     cl.close

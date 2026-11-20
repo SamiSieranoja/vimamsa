@@ -77,7 +77,7 @@ reg_act(:file_panel_prev_file, proc { vma.gui.file_panel_select_adjacent(-1) }, 
 reg_act(:file_panel_next_file, proc { vma.gui.file_panel_select_adjacent(1) }, "Switch to next file in file panel order")
 reg_act(:file_panel_easy_jump, proc { vma.gui.file_panel_easy_jump }, "Easy jump: pick a file in the file panel by label")
 reg_act(:show_message_history, proc { vma.gui.show_message_history }, "Show message history")
-reg_act(:start_cmd_line, proc { vma.gui.cmd_line.start }, "Open command line (:)")
+reg_act("mode.cmdline", proc { vma.gui.cmd_line.start }, "Open command line (:)")
 reg_act(:toggle_func_panel, proc { vma.gui.toggle_func_panel }, "Toggle LSP function panel")
 reg_act(:refresh_func_panel, proc { vma.gui.func_panel_refresh }, "Refresh LSP function panel")
 reg_act(:toggle_keylog_panel, proc { vma.gui.toggle_keylog_panel }, "Toggle key log panel")
@@ -108,7 +108,7 @@ reg_act(:set_line_style_italic, proc { buf.set_line_style(:italic) }, "Set style
 reg_act(:clear_line_styles, proc { buf.set_line_style(:clear) }, "Clear styles of current line")
 reg_act(:gui_select_buffer, proc { vma.kbd.set_mode("S"); gui_select_buffer }, "Select buffer")
 reg_act :open_file_dialog, "open_file_dialog", "Open file"
-reg_act :minibuffer_end, proc { minibuffer_end }
+reg_act "mode.minibuffer.end", proc { minibuffer_end }
 reg_act(:invoke_replace, "invoke_replace", "Invoke replace")
 reg_act(:diff_buffer, "diff_buffer", "")
 reg_act(:git_diff_buffer, proc { git_diff_buffer }, "Show git diff of current file")
@@ -156,9 +156,9 @@ reg_act(:jump_beginning_of_line, proc { buf.jump(BEGINNING_OF_LINE) }, "Move to 
 reg_act(:jump_next_word_end, proc { buf.jump_word(FORWARD, WORD_END) }, "Jump to the end of the next word")
 reg_act(:jump_prev_word_start, proc { buf.jump_word(BACKWARD, WORD_START) }, "Jump to the start of the previous word")
 reg_act(:jump_next_word_start, proc { buf.jump_word(FORWARD, WORD_START) }, "Jump to the start of the next word")
-reg_act(:insert_mode, proc { vma.kbd.set_mode(:insert) }, "Switch to INSERT mode")
-reg_act(:prev_mode, proc { vma.kbd.to_previous_mode }, "Return to the previous mode")
-reg_act(:start_visual_mode, proc { buf.start_selection; vma.kbd.set_mode(:visual) }, "Enter VISUAL mode (for selections)")
+reg_act("mode.insert", proc { vma.kbd.set_mode(:insert) }, "Switch to INSERT mode")
+reg_act("mode.prev", proc { vma.kbd.to_previous_mode }, "Return to the previous mode")
+reg_act("mode.visual", proc { buf.start_selection; vma.kbd.set_mode(:visual) }, "Enter VISUAL mode (for selections)")
 reg_act("app.demo", proc { install_demo_files }, "Install and show Demo")
 reg_act("app.customrb.reload", proc { reload_customrb }, "Reload custom.rb")
 
@@ -170,18 +170,18 @@ reg_act(:toggle_autocomplete, proc {
 
 reg_act("app.restart", proc { restart_editor }, "Restart: quit, reload config and reopen files")
 
-reg_act :start_browse_mode, proc {
+reg_act "mode.browse", proc {
   vma.kbd.set_mode(:browse)
   bufs.reset_navigation
 }, "Start browse mode"
 reg_act :kbd_dump_state, proc { vma.kbd.dump_state; pp ["vma.buf.mode_stack", vma.buf.mode_stack] }, "Dump keyboard tree state"
-reg_act :toggle_kbd_passthrough, proc {
+reg_act "mode.passthrough.toggle", proc {
   vma.gui.instance_variable_set(:@kbd_passthrough, !vma.gui.instance_variable_get(:@kbd_passthrough))
   state = vma.gui.instance_variable_get(:@kbd_passthrough) ? "ON" : "OFF"
   message("Keyboard passthrough: #{state}")
 }, "Toggle keyboard event passthrough (allow other widgets to receive key events)"
 
-reg_act :exit_browse_mode, proc {
+reg_act "mode.browse.exit", proc {
   bufs.add_current_buf_to_history
   # Load previously saved buffer specific mode stack
   buf.restore_kbd_mode

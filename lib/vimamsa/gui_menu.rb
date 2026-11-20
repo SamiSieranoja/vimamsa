@@ -66,7 +66,7 @@ module Vimamsa
       
 
       add_to_menu "Actions.debug.dumpkbd", { :label => "Dump kbd state", :action => :kbd_dump_state }
-      add_to_menu "Actions.debug.ToggleKbdPassthrough", { :label => "Toggle kbd event passthrough", :action => :toggle_kbd_passthrough }
+      add_to_menu "Actions.debug.ToggleKbdPassthrough", { :label => "Toggle kbd event passthrough", :action => "mode.passthrough.toggle" }
 
       add_to_menu "View.BufferManager", { :label => "Show open files", :action => :start_buf_manager }
       add_to_menu "View.Bookmarks", { :label => "Show bookmarks", :action => :bookmark_list }

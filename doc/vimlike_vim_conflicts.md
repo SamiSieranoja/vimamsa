@@ -28,8 +28,8 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | C | <code>s</code> | <code>:vim_substitute_char</code> | <code>EasyJump.start</code> | same keys, other action |
 | C | <code>space</code> | <code>buf.move(FORWARD_CHAR)</code> | <code>2 longer bindings</code> | vimlike uses these keys as a prefix |
 | C | <code>x</code> | <code>:vim_delete_char</code> | <code>buf.delete(CURRENT_CHAR_FORWARD)</code> | same keys, other action |
-| C | <code>z z</code> | <code>:center_on_current_line</code> | <code>z</code> <code>:start_browse_mode</code> | a shorter vimlike binding runs first |
-| I | <code>ctrl-c</code> | <code>vma.kbd.to_previous_mode</code> | <code>buf.copy_active_selection</code> | same keys, other action |
+| C | <code>z z</code> | <code>:center_on_current_line</code> | <code>z</code> <code>mode.browse</code> | a shorter vimlike binding runs first |
+| I | <code>ctrl-c</code> | <code>mode.prev</code> | <code>buf.copy_active_selection</code> | same keys, other action |
 | I | <code>ctrl-h</code> | <code>buf.selection_active? ? buf.delete(SELECTION) : buf.delet...</code> | <code>buf.view.autocp_manual_trigger</code> | same keys, other action |
 | I | <code>ctrl-j</code> | <code>buf.insert_new_line()</code> | <code>buf.view.hide_completions</code> | same keys, other action |
 | I | <code>ctrl-n</code> | <code>buf.view.autocp_manual_trigger</code> | <code>move.line.next</code> | same keys, other action |
@@ -76,14 +76,14 @@ its own is in the way.
 |---|---|---|
 | B | <code>;</code> | <code>jump.edit.prev</code> |
 | B | <code>c</code> | <code>bufs.close_current_buffer(true)</code> |
-| B | <code>ctrl!</code> | <code>:exit_browse_mode</code> |
+| B | <code>ctrl!</code> | <code>mode.browse.exit</code> |
 | B | <code>d</code> | <code>vma.gui.page_down</code> |
 | B | <code>e</code> | <code>vma.gui.page_up(multip: 0.25)</code> |
-| B | <code>enter</code> | <code>:exit_browse_mode</code> |
-| B | <code>esc</code> | <code>:exit_browse_mode</code> |
+| B | <code>enter</code> | <code>mode.browse.exit</code> |
+| B | <code>esc</code> | <code>mode.browse.exit</code> |
 | B | <code>h</code> | <code>bufs.history_switch(-1)</code> |
 | B | <code>i</code> | <code>buf.jump(START_OF_BUFFER)</code> |
-| B | <code>j</code> | <code>:exit_browse_mode</code> |
+| B | <code>j</code> | <code>mode.browse.exit</code> |
 | B | <code>l</code> | <code>bufs.history_switch(+1)</code> |
 | B | <code>m</code> | <code>vma.macro.run_last_macro</code> |
 | B | <code>n</code> | <code>vma.gui.file_panel_select_adjacent(1)</code> |
@@ -91,10 +91,10 @@ its own is in the way.
 | B | <code>p</code> | <code>vma.gui.file_panel_select_adjacent(-1)</code> |
 | B | <code>q</code> | <code>jump.edit.prev</code> |
 | B | <code>r</code> | <code>vma.gui.page_down(multip: 0.25)</code> |
-| B | <code>return</code> | <code>:exit_browse_mode</code> |
+| B | <code>return</code> | <code>mode.browse.exit</code> |
 | B | <code>s</code> | <code>vma.gui.page_up</code> |
 | B | <code>w</code> | <code>:jump_to_next_edit</code> |
-| B | <code>z</code> | <code>center_on_current_line();call_action(:exit_browse_mode)</code> |
+| B | <code>z</code> | <code>center_on_current_line();call_action('mode.browse.exit')</code> |
 | C | <code>$</code> | <code>buf.jump(END_OF_LINE)</code> |
 | C | <code>' &lt;char&gt;</code> | <code>buf.jump_to_mark(&lt;char&gt;)</code> |
 | C | <code>*</code> | <code>buf.jump_to_next_instance_of_word</code> |
@@ -102,7 +102,7 @@ its own is in the way.
 | C | <code>/[1-9]/</code> | <code>vma.kbd.set_next_command_count(&lt;char&gt;)</code> |
 | C | <code>0(vma.kbd.next_command_count!=nil)</code> | <code>vma.kbd.set_next_command_count(&lt;char&gt;)</code> |
 | C | <code>0(vma.kbd.next_command_count==nil)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> |
-| C | <code>:</code> | <code>vma.gui.cmd_line.start</code> |
+| C | <code>:</code> | <code>mode.cmdline</code> |
 | C | <code>;</code> | <code>repeat_last_find</code> |
 | C | <code>@ &lt;char&gt;</code> | <code>vma.macro.run_macro(&lt;char&gt;)</code> |
 | C | <code>A</code> | <code>buf.jump(END_OF_LINE);vma.kbd.set_mode(:insert)</code> |
@@ -153,7 +153,7 @@ its own is in the way.
 | C | <code>g ~ w</code> | <code>buf.transform_range(:to_next_word, :swapcase)</code> |
 | C | <code>g ~ ~</code> | <code>buf.transform_range(:line, :swapcase)</code> |
 | C | <code>h</code> | <code>move.char.prev</code> |
-| C | <code>i</code> | <code>vma.kbd.set_mode(:insert)</code> |
+| C | <code>i</code> | <code>mode.insert</code> |
 | C | <code>j</code> | <code>move.line.next</code> |
 | C | <code>k</code> | <code>move.line.prev</code> |
 | C | <code>l</code> | <code>move.char.next</code> |
@@ -172,7 +172,7 @@ its own is in the way.
 | C | <code>tab</code> | <code>bufs.switch_to_last_buf</code> |
 | C | <code>u</code> | <code>undo.last</code> |
 | C | <code>up</code> | <code>buf.move(BACKWARD_LINE)</code> |
-| C | <code>v</code> | <code>buf.start_selection; vma.kbd.set_mode(:visual)</code> |
+| C | <code>v</code> | <code>mode.visual</code> |
 | C | <code>w</code> | <code>buf.jump_word(FORWARD, WORD_START)</code> |
 | C | <code>y ' &lt;char&gt;</code> | <code>buf.copy(:to_mark,&lt;char&gt;)</code> |
 | C | <code>y 0</code> | <code>buf.copy(:to_line_start)</code> |
@@ -186,7 +186,7 @@ its own is in the way.
 | I | <code>ctrl-space</code> | <code>buf.view.autocp_manual_trigger</code> |
 | I | <code>down</code> | <code>insert_move(FORWARD_LINE)</code> |
 | I | <code>enter</code> | <code>buf.insert_new_line()</code> |
-| I | <code>esc</code> | <code>vma.kbd.to_previous_mode</code> |
+| I | <code>esc</code> | <code>mode.prev</code> |
 | I | <code>left</code> | <code>insert_move(BACKWARD_CHAR)</code> |
 | I | <code>pagedown</code> | <code>insert_move(:pagedown)</code> |
 | I | <code>pageup</code> | <code>insert_move(:pageup)</code> |

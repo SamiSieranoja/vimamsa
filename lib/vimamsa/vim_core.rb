@@ -115,7 +115,7 @@ VIM_BINDINGS = {
 
     "VC *" => "buf.jump_to_next_instance_of_word",
     "VC /" => :find_in_buffer,
-    "C :" => :start_cmd_line,
+    "C :" => "mode.cmdline",
     "C n" => :find_next,
     "C N" => "$search.jump_to_previous()",
 
@@ -137,7 +137,7 @@ VIM_BINDINGS = {
 #TODO: should replace all eval actions like "buf.move ... with actual registered actions.
   "vim edit" => {
     # Enter insert mode
-    "C i" => :insert_mode,
+    "C i" => "mode.insert",
     "C a" => "buf.move(FORWARD_CHAR);vma.kbd.set_mode(:insert)",
     "C A" => "buf.jump(END_OF_LINE);vma.kbd.set_mode(:insert)",
     "C I" => "buf.jump(FIRST_NON_WHITESPACE);vma.kbd.set_mode(:insert)",
@@ -199,7 +199,7 @@ VIM_BINDINGS = {
   },
 
   "vim visual" => {
-    "C v" => :start_visual_mode,
+    "C v" => "mode.visual",
     "V esc" => "buf.end_visual_mode",
     "V ctrl-c" => "buf.end_visual_mode",
     "V y" => "buf.copy_active_selection()",
@@ -218,8 +218,8 @@ VIM_BINDINGS = {
   },
 
   "vim insert" => {
-    "I esc" => :prev_mode,
-    "I ctrl-c" => :prev_mode, # vim: ctrl-c leaves insert mode
+    "I esc" => "mode.prev",
+    "I ctrl-c" => "mode.prev", # vim: ctrl-c leaves insert mode
     "I <char>" => "buf.insert_txt(<char>)",
     "I space" => 'buf.insert_txt(" ")',
     "I enter" => :insert_new_line,

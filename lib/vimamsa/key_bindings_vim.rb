@@ -69,13 +69,13 @@ add_keys "vim misc", {
   "C alt-l" => :file_panel_next_file,
   "C enter || C return" => [:line_action, proc { buf.handle_line_action() }, "Line action"],
 
-  # Browse mode keys (mode reachable only via the :start_browse_mode action)
+  # Browse mode keys (mode reachable only via the "mode.browse" action)
   "B h" => :history_switch_backwards,
   "B l" => :history_switch_forwards,
   "B p" => :file_panel_prev_file,
   "B n" => :file_panel_next_file,
-  "B z" => "center_on_current_line();call_action(:exit_browse_mode)",
-  "B enter || B return || B esc || B j || B ctrl!" => :exit_browse_mode,
+  "B z" => "center_on_current_line();call_action('mode.browse.exit')",
+  "B enter || B return || B esc || B j || B ctrl!" => "mode.browse.exit",
   "B s" => :page_up,
   "B d" => :page_down,
   "B r" => proc { vma.gui.page_down(multip: 0.25) },

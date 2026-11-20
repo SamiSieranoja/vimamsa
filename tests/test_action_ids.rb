@@ -140,8 +140,12 @@ class TestActionIds < VmaTest
     assert_buf "ab\n"
   end
 
+  # Ids registered only by another keymap, an optional module or a minor mode
+  # set up on first use; not loaded in the test setup
+  OPTIONAL_IDS = /\A(mode\.notepad|dictation|tts|ollama|terminal|calculator|color_highlight|fexp|bmgr|bmark|diffview)\./
+
   def test_every_alias_points_to_an_action
-    bad = ACTION_ALIASES.reject { |_old, n| vma.actions.include?(n) }
+    bad = ACTION_ALIASES.reject { |_old, n| vma.actions.include?(n) || n.match?(OPTIONAL_IDS) }
     assert bad.empty?, "aliases to unregistered actions: #{bad.inspect}"
   end
 end

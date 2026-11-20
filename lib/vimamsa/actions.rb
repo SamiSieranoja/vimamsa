@@ -35,6 +35,16 @@ ACTION_ALIASES = {
   reload_customrb: "app.customrb.reload",
   edit_customrb: "app.customrb.edit",
   install_demo_files: "app.demo",
+  # mode namespace (2026-11-20)
+  insert_mode: "mode.insert",
+  start_visual_mode: "mode.visual",
+  prev_mode: "mode.prev",
+  start_cmd_line: "mode.cmdline",
+  notepad_escape: "mode.notepad.escape",
+  start_browse_mode: "mode.browse",
+  exit_browse_mode: "mode.browse.exit",
+  toggle_kbd_passthrough: "mode.passthrough.toggle",
+  minibuffer_end: "mode.minibuffer.end",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

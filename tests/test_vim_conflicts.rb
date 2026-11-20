@@ -36,7 +36,7 @@ class TestVimConflicts < VmaTest
   def test_shorter_and_prefix_conflicts
     kbd = KeyBindingTree.new(actions: ActionList.new)
     kbd.add_mode("C", :command)
-    kbd.bindkey("C z", :start_browse_mode)
+    kbd.bindkey("C z", "mode.browse")
     kbd.bindkey("C , x", :foo)
     kbd.bindkey("C q <char>", :rec)
     st = ->(keys) { vim_binding_status(kbd, "C", keys.split, :vim_action) }

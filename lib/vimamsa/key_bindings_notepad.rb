@@ -9,14 +9,14 @@ module Vimamsa
   vma.kbd.__set_mode(:insert)
 
   # esc never leaves insert mode: clear selection, dismiss autocomplete popup
-  reg_act(:notepad_escape, proc {
+  reg_act("mode.notepad.escape", proc {
     buf.end_selection
     v = vma.buf.view
     v.hide_completions if v.respond_to?(:hide_completions)
   }, "Clear selection and dismiss popups")
 
-  # Replaces the "I esc" leaf of vimlike's "I esc || I ctrl!" => :prev_mode
-  bindkey "I esc", :notepad_escape
+  # Replaces the "I esc" leaf of vimlike's "I esc || I ctrl!" => "mode.prev"
+  bindkey "I esc", "mode.notepad.escape"
   # In vimlike, releasing bare ctrl in insert mode returns to command mode.
   # Harmless here (mode stack is [:insert], to_previous_mode won't pop) but
   # remove it so ctrl-release doesn't dispatch a pointless action.

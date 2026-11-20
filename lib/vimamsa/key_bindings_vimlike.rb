@@ -58,7 +58,7 @@ add_keys "intro", {
   "C y y" => :copy_cur_line,
   "C P" => :paste_before_cursor,
   "C p" => :paste_after_cursor,
-  "C v" => :start_visual_mode,
+  "C v" => "mode.visual",
   "C ctrl-r" => "undo.redo",
   "C u" => "undo.last",
   "VC O" => :jump_end_of_line,
@@ -75,12 +75,12 @@ add_keys "intro", {
   "V tab" => "buf.indent_selection",
   "V shift-tab" => "buf.unindent_selection",
   
-  "C ctrl!" => :insert_mode,
-  "C i" => :insert_mode,
+  "C ctrl!" => "mode.insert",
+  "C i" => "mode.insert",
   # Guarded esc must be defined before the unguarded one: on multiple
   # matches the first-registered state with an action wins
   # "I esc(vma.buf.view.autocp_active)" => "vma.buf.view.hide_completions",
-  "I esc || I ctrl!" => :prev_mode,
+  "I esc || I ctrl!" => "mode.prev",
   "IX alt-b" => :jump_prev_word_start,
   "IX alt-f" => :jump_next_word_start,
   "IX ctrl-e" => :jump_end_of_line,
@@ -182,8 +182,8 @@ add_keys "core", {
   #    'VC z z' => 'center_on_current_line',
   "VC *" => "buf.jump_to_next_instance_of_word",
 
-  "C , e" => :start_cmd_line,
-  "C :" => :start_cmd_line,
+  "C , e" => "mode.cmdline",
+  "C :" => "mode.cmdline",
 
   "VC /" => :find_in_buffer,
 
@@ -340,13 +340,13 @@ add_keys "core", {
  "C , , f" => :file_finder,
  "VC h" => "move.char.prev",
  "C , , ." => :backup_all_buffers,
- "C z " => :start_browse_mode,
+ "C z " => "mode.browse",
  "B h" => :history_switch_backwards,
  "B l" => :history_switch_forwards,
  "B p" => :file_panel_prev_file,
  "B n" => :file_panel_next_file,
- "B z" => "center_on_current_line();call_action(:exit_browse_mode)",
- "B enter || B return || B esc || B j || B ctrl!" => :exit_browse_mode,
+ "B z" => "center_on_current_line();call_action('mode.browse.exit')",
+ "B enter || B return || B esc || B j || B ctrl!" => "mode.browse.exit",
  "B s" => :page_up,
  "B d" => :page_down,
  "B r" => proc { vma.gui.page_down(multip: 0.25) },
