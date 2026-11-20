@@ -194,7 +194,7 @@ add_keys "core", {
   "C n" => "search.next",
   "C N" => "$search.jump_to_previous()",
 
-  "C C" => "grep.files.gui",
+  "C C" => "grep.files",
 
   "C , c s" => "bufs.close_scrap_buffers",
 
@@ -333,7 +333,7 @@ add_keys "core", {
   "I space" => 'buf.insert_txt(" ")',
 #  "I return" => 'buf.insert_new_line()',
 
- "C , a" => "grep.files",
+ "C , a" => "ack.search",
  "C d w" => :delete_to_next_word_start,
 
  "C d 0" => :delete_to_line_start,

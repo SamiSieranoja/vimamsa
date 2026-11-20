@@ -18,7 +18,7 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | Mode | Vim keys | Vim action | vimlike | Reason |
 |---|---|---|---|---|
 | C | <code>@ @</code> | <code>vma.macro.run_last_macro</code> | <code>@ &lt;char&gt;</code> <code>vma.macro.run_macro(&lt;char&gt;)</code> | a vimlike <char> binding takes the key |
-| C | <code>C</code> | <code>:vim_change_to_eol</code> | <code>grep.files.gui</code> | same keys, other action |
+| C | <code>C</code> | <code>:vim_change_to_eol</code> | <code>grep.files</code> | same keys, other action |
 | C | <code>O</code> | <code>:vim_open_line_above</code> | <code>move.line.end</code> | same keys, other action |
 | C | <code>X</code> | <code>:vim_delete_char_backward</code> | <code>buf.jump(END_OF_LINE);buf.insert_txt("\n");</code> | same keys, other action |
 | C | <code>^</code> | <code>buf.jump(FIRST_NON_WHITESPACE)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> | same keys, other action |

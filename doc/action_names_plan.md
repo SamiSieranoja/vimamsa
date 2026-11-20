@@ -117,7 +117,8 @@ binding to a named action gets its category from the namespace, with no manual
 | `move` | motion | cursor motion inside the buffer |
 | `jump` | search | non-local jumps: last edit, easy-jump, file under cursor |
 | `search` | search | search and replace in the buffer, action search |
-| `grep` | grep | grep, searching file contents |
+| `grep` | grep | grep, searching file contents (built-in) |
+| `ack` | grep | ack, the external search program |
 | `edit` | edit | delete, change, paste, join, indent, comment, increment, autocomplete |
 | `undo` | undo | undo, redo, repeat |
 | `case` | case | case transforms |
@@ -194,8 +195,8 @@ before it gets its final name.
 | `search_actions` | `search.actions` |
 | `grep_buffer`, `invoke_grep_search` | `grep.buf` |
 | `grep_refresh` | `grep.refresh` |
-| `ack_search` | `grep.files` |
-| `content_search` | `grep.files.gui` (check: may merge with `grep.files`) |
+| `content_search` | `grep.files` (built-in, no external program) |
+| `ack_search` | `ack.search` (own namespace: ack is an external program, to become a module) |
 
 ### edit, undo, case, sel
 
