@@ -399,8 +399,7 @@ in the Marshal backups.
     not action ids and keep their names.
   Found, not fixed: vimlike `C , , f` is bound to `:file_finder`, which has
   never been registered (since 2021); the finder is on `C , f` and `C , z`.
-- **Step 4: using the hierarchy** (2026-11-20, see git log for the commit
-  "feat: action namespaces in Search for Actions and command-line completion").
+- **Step 4: using the hierarchy** (2026-11-20, `2882944`).
   `Action#path` gives the segments; the 51 `:group` options are gone (nothing
   read them). `ActionList#complete(prefix)` lists the next level below a
   prefix (`"move."` => `move.buf.`, `move.char.`, ..., `move.random`).
