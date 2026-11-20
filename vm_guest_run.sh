@@ -24,6 +24,17 @@ mkdir -p "$DEST"
 tar xzf "$SRC_TGZ" -C "$DEST"
 cd "$DEST"
 
+# GNOME locks the screen after 5 min idle; a locked session draws no frames,
+# so layout/redraw-dependent tests fail. Keep the session awake and unlocked.
+if command -v gsettings >/dev/null 2>&1; then
+  export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+  gsettings set org.gnome.desktop.session idle-delay 0 2>/dev/null || true
+  gsettings set org.gnome.desktop.screensaver lock-enabled false 2>/dev/null || true
+  for s in $(loginctl list-sessions --no-legend 2>/dev/null | awk -v u="$(id -un)" '$3 == u {print $1}'); do
+    loginctl unlock-session "$s" 2>/dev/null || true
+  done
+fi
+
 # 2. Provision (idempotent). apt + bundler only on the first run (or when forced).
 if [ ! -f "$MARKER" ] || [ "${FORCE_PROVISION:-}" = "1" ]; then
   echo ">> Provisioning guest (apt packages + bundler) — this is slow the first time"

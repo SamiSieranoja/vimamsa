@@ -196,7 +196,7 @@ class TestDictation < VmaTest
     elapsed = Time.now - t0
 
     assert_eq false, res[:ok], "transcribe should fail when the model never loads"
-    assert res[:error].to_s.include?("not loaded"), "unexpected error: #{res[:error].inspect}"
+    assert res[:error].to_s.include?("no progress"), "unexpected error: #{res[:error].inspect}"
     assert elapsed < 10, "transcribe blocked #{elapsed.round(1)}s; should give up after the timeout"
   ensure
     cnf.dictation.startup_timeout = prev
