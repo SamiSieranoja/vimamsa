@@ -42,19 +42,19 @@ reg_act("jump.easy", proc { EasyJump.start }, "Easy jump")
 reg_act("view.cursor.show", proc { vma.gui.view.ensure_cursor_visible }, "Scroll to current cursor position")
 reg_act("view.cursor.refresh", proc { vma.buf.refresh_cursor }, "Refresh cursor")
 
-reg_act("debug.save", "savedebug", "Save debug info", { :group => :debug })
-reg_act("file.open", "open_file_dialog", "Open file", { :group => :file })
-reg_act("buf.backup.all", proc { backup_all_buffers }, "Backup all buffers", { :group => :file })
-reg_act("move.char.next", proc { buf.move(FORWARD_CHAR) }, "Move forward one character", { :group => [:move, :basic] })
-reg_act("move.char.prev", proc { buf.move(BACKWARD_CHAR) }, "Move backward one character", { :group => [:move, :basic] })
-reg_act("move.line.next", proc { buf.move(FORWARD_LINE) }, "Move one line forward", { :group => [:move, :basic] })
-reg_act("move.line.prev", proc { buf.move(BACKWARD_LINE) }, "Move one line backward", { :group => [:move, :basic] })
-# reg_act("buf.history.prev", proc{bufs.history_switch_backwards}, "", { :group => :file })
-reg_act("buf.history.prev", proc { bufs.history_switch(-1) }, "Prev buffer", { :group => :file })
-reg_act("buf.history.next", proc { bufs.history_switch(+1) }, "Next buffer", { :group => :file })
-reg_act("debug.buf.access", proc { bufs.print_by_access_time }, "Print buffers by access time", { :group => :file })
-reg_act("view.center", "center_on_current_line", "", { :group => :view })
-reg_act("macro.run.last", proc { vma.macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
+reg_act("debug.save", "savedebug", "Save debug info")
+reg_act("file.open", "open_file_dialog", "Open file")
+reg_act("buf.backup.all", proc { backup_all_buffers }, "Backup all buffers")
+reg_act("move.char.next", proc { buf.move(FORWARD_CHAR) }, "Move forward one character")
+reg_act("move.char.prev", proc { buf.move(BACKWARD_CHAR) }, "Move backward one character")
+reg_act("move.line.next", proc { buf.move(FORWARD_LINE) }, "Move one line forward")
+reg_act("move.line.prev", proc { buf.move(BACKWARD_LINE) }, "Move one line backward")
+# reg_act("buf.history.prev", proc{bufs.history_switch_backwards}, "")
+reg_act("buf.history.prev", proc { bufs.history_switch(-1) }, "Prev buffer")
+reg_act("buf.history.next", proc { bufs.history_switch(+1) }, "Next buffer")
+reg_act("debug.buf.access", proc { bufs.print_by_access_time }, "Print buffers by access time")
+reg_act("view.center", "center_on_current_line", "")
+reg_act("macro.run.last", proc { vma.macro.run_last_macro }, "Run last recorded or executed macro")
 reg_act("jump.edit.next", "jump_to_next_edit", "Jump to next edit pos")
 reg_act("jump.edit.prev", proc { buf.jump_to_last_edit }, "Jump to the last edit location")
 reg_act("move.random", proc { buf.jump_to_random_pos }, "")
@@ -83,7 +83,7 @@ reg_act("panel.keylog.toggle", proc { vma.gui.toggle_keylog_panel }, "Toggle key
 reg_act("file.diff.repo", proc { git_diff_w }, "Show git diff -w for whole repository")
 reg_act("lsp.functions", proc { lsp_print_functions }, "LSP print functions in current file")
 reg_act("edit.comment", proc { buf.comment_selection }, "Comment selection")
-reg_act("edit.delete.char", proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward", { :group => [:edit, :basic] })
+reg_act("edit.delete.char", proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward")
 reg_act("file.finder", proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
 reg_act("file.history", proc { vma.FileHistory.start_gui }, "Fuzzy file history finder")
 reg_act("search.replace", proc { gui_search_replace }, "Search and replace")
@@ -131,11 +131,11 @@ reg_act("jump.file", proc {
   else
     open_with_default_program(fn)
   end
-}, "Open file whose path is under the cursor", { :group => :file })
+}, "Open file whose path is under the cursor")
 reg_act "file.finder.reindex", proc { FileFinder.update_index }, "Update file index"
-reg_act "edit.delete.word.end", proc { buf.delete2(:to_word_end) }, "Delete to file end", { :group => [:edit, :basic] }
-reg_act "edit.delete.word.next", proc { buf.delete2(:to_next_word) }, "Delete to start of next word", { :group => [:edit, :basic] }
-reg_act "edit.delete.line.start", proc { buf.delete2(:to_line_start) }, "Delete to line start", { :group => [:edit, :basic] }
+reg_act "edit.delete.word.end", proc { buf.delete2(:to_word_end) }, "Delete to file end"
+reg_act "edit.delete.word.next", proc { buf.delete2(:to_next_word) }, "Delete to start of next word"
+reg_act "edit.delete.line.start", proc { buf.delete2(:to_line_start) }, "Delete to line start"
 
 reg_act("ack.search", proc { gui_ack }, "Search file contents with ack (external program)")
 
@@ -144,8 +144,8 @@ reg_act("edit.paste.before", proc { buf.paste(BEFORE) }, "Paste text before the 
 reg_act("edit.paste.after", proc { buf.paste(AFTER) }, "Paste text after the cursor")
 reg_act("edit.paste.over.after", proc { buf.paste_over(AFTER) }, "Paste over selection or after cursor")
 reg_act("edit.paste.over.before", proc { buf.paste_over(BEFORE) }, "Paste over selection or before cursor")
-reg_act("undo.redo", proc { buf.redo() }, "Redo the last undone action", { :group => :edit })
-reg_act("undo.last", proc { buf.undo() }, "Undo the last action", { :group => :edit })
+reg_act("undo.redo", proc { buf.redo() }, "Redo the last undone action")
+reg_act("undo.last", proc { buf.undo() }, "Undo the last action")
 reg_act("move.line.end", proc { buf.jump(END_OF_LINE) }, "Move to the end of the current line")
 reg_act("move.buf.end", proc { buf.jump(END_OF_BUFFER) }, "Move to the end of the buffer")
 reg_act("move.buf.start", proc { buf.jump(START_OF_BUFFER) }, "Move to the start of the buffer")
@@ -184,10 +184,10 @@ reg_act "mode.browse.exit", proc {
   buf.restore_kbd_mode
 }, "Exit browse mode"
 
-# reg_act "move.page.next", proc { page_down }, "Page down", :group => [:move, :basic]
-reg_act "move.page.next", proc { vma.gui.page_down }, "Page down", :group => [:move, :basic]
+# reg_act "move.page.next", proc { page_down }, "Page down"
+reg_act "move.page.next", proc { vma.gui.page_down }, "Page down"
 
-reg_act "move.page.prev", proc { vma.gui.page_up }, "Page up", :group => [:move, :basic]
+reg_act "move.page.prev", proc { vma.gui.page_up }, "Page up"
 reg_act("edit.indent.buf", proc { buf.auto_format }, "Auto format buffer")
 reg_act("term.line", proc { buf.execute_current_line_in_terminal }, "Execute current line in terminal")
 reg_act("term.line.autoclose", proc { buf.execute_current_line_in_terminal(true) }, "Execute current line in terminal. Close after execution.")
@@ -199,56 +199,56 @@ reg_act("audio.stop", proc { Audio.stop }, "Stop audio playback")
 act_list = {
   # File handling
   "buf.save" => { :proc => proc { buf.save },
-                 :desc => "Save buffer", :group => :file },
+                 :desc => "Save buffer" },
 
   "buf.save.as" => { :proc => proc { buf.save_as },
-                    :desc => "Save file as", :group => :file },
-  "buf.new" => { :proc => proc { create_new_file() }, :desc => "Create a new file", :group => :file },
+                    :desc => "Save file as" },
+  "buf.new" => { :proc => proc { create_new_file() }, :desc => "Create a new file" },
   "buf.revert" => { :proc => proc { buf.revert },
-                   :desc => "Reload file from disk", :group => :file },
-  "buf.backup" => { :proc => proc { buf.backup() }, :desc => "Backup current file", :group => :file },
+                   :desc => "Reload file from disk" },
+  "buf.backup" => { :proc => proc { buf.backup() }, :desc => "Backup current file" },
 
   "search.buf" => { :proc => proc { invoke_search },
-                       :desc => "Find", :group => :edit },
+                       :desc => "Find" },
 
   "case.sel.upper" => { :proc => proc { buf.transform_selection(:upcase) },
-                         :desc => "Transform text: upcase", :group => :edit },
+                         :desc => "Transform text: upcase" },
 
   "case.sel.lower" => { :proc => proc { buf.transform_selection(:downcase) },
-                           :desc => "Transform text: downcase", :group => :edit },
+                           :desc => "Transform text: downcase" },
 
   "case.sel.capitalize" => { :proc => proc { buf.transform_selection(:capitalize) },
-                             :desc => "Transform text: capitalize", :group => :edit },
+                             :desc => "Transform text: capitalize" },
 
   "case.sel.swap" => { :proc => proc { buf.transform_selection(:swapcase) },
-                           :desc => "Transform text: swapcase", :group => :edit },
+                           :desc => "Transform text: swapcase" },
 
   "sel.reverse" => { :proc => proc { buf.transform_selection(:reverse) },
-                          :desc => "Transform text: reverse", :group => :edit },
+                          :desc => "Transform text: reverse" },
 
   "sel.unindent" => { :proc => proc { buf.remove_indent_selection },
-                                :desc => "Remove indentation from selected lines (or current line)", :group => :edit },
+                                :desc => "Remove indentation from selected lines (or current line)" },
 
   "sel.unindent.common" => { :proc => proc { buf.remove_common_indent_selection },
-                                       :desc => "Remove indentation common to all selected lines (keeps relative indent)", :group => :edit },
+                                       :desc => "Remove indentation common to all selected lines (keeps relative indent)" },
 
   "case.word.upper" => { :proc => proc { buf.transform_range(:to_next_word, :upcase) },
-                    :desc => "Upcase to start of next word (vim gUw)", :group => :edit },
+                    :desc => "Upcase to start of next word (vim gUw)" },
 
   "case.word.lower" => { :proc => proc { buf.transform_range(:to_next_word, :downcase) },
-                      :desc => "Downcase to start of next word (vim guw)", :group => :edit },
+                      :desc => "Downcase to start of next word (vim guw)" },
 
   "case.word.swap" => { :proc => proc { buf.transform_range(:to_next_word, :swapcase) },
-                      :desc => "Swap case to start of next word (vim g~w)", :group => :edit },
+                      :desc => "Swap case to start of next word (vim g~w)" },
 
   "case.line.upper" => { :proc => proc { buf.transform_range(:line, :upcase) },
-                    :desc => "Upcase current line (vim gUU)", :group => :edit },
+                    :desc => "Upcase current line (vim gUU)" },
 
   "case.line.lower" => { :proc => proc { buf.transform_range(:line, :downcase) },
-                      :desc => "Downcase current line (vim guu)", :group => :edit },
+                      :desc => "Downcase current line (vim guu)" },
 
   "case.line.swap" => { :proc => proc { buf.transform_range(:line, :swapcase) },
-                      :desc => "Swap case of current line (vim g~~)", :group => :edit },
+                      :desc => "Swap case of current line (vim g~~)" },
 
   "case.char.toggle" => { :proc => proc {
     b = buf
@@ -257,31 +257,31 @@ act_list = {
       b.replace_with_char(c.swapcase) # does not advance the cursor
       b.move(FORWARD_CHAR)            # vim ~ advances, even on non-letters
     end
-  }, :desc => "Toggle case of char and advance (vim ~)", :group => :edit },
+  }, :desc => "Toggle case of char and advance (vim ~)" },
 
   "edit.word.increment" => { :proc => proc { buf.increment_current_word },
-                       :desc => "Increment word", :group => [:edit, :extra] },
+                       :desc => "Increment word" },
 
   # { :proc => proc {  },
-  # :desc => "", :group => : },
+  # :desc => "" },
 
   "search.actions" => { :proc => proc { vma.actions.gui_search },
-                       :desc => "Search actions", :group => :search },
+                       :desc => "Search actions" },
 
   "app.customrb.edit" => { :proc => proc { jump_to_file("~/.config/vimamsa/custom.rb") },
-                      :desc => "Customize (edit custom.rb)", :group => :search },
+                      :desc => "Customize (edit custom.rb)" },
 
   "view.columns.switch" => { :proc => proc { vma.gui.toggle_active_window },
-                             :desc => "Switch active column in two column mode", :group => :search },
+                             :desc => "Switch active column in two column mode" },
 
   "view.columns.toggle" => { :proc => proc { vma.gui.toggle_two_column },
-                          :desc => "Toggle two column mode", :group => :search },
+                          :desc => "Toggle two column mode" },
 
   "grep.files" => { :proc => proc { FileContentSearch.start_gui },
-                       :desc => "Search content of files", :group => :search },
+                       :desc => "Search content of files" },
 
   "app.quit" => { :proc => proc { _quit },
-             :desc => "Quit", :group => :app },
+             :desc => "Quit" },
 
   "debug.tests" => { :proc => proc { run_tests },
                   :desc => "Run tests" },

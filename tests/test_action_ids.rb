@@ -175,6 +175,55 @@ class TestActionIds < VmaTest
     assert dups.empty?, "same code and description: #{dups.inspect}"
   end
 
+  # ── Step 4: using the hierarchy ──
+
+  def test_path_replaces_group
+    assert_eq ["move", "word", "next"], vma.actions["move.word.next"].path
+    grouped = own_actions.select { |_k, a| a.opt&.key?(:group) }.map(&:first)
+    assert grouped.empty?, ":group still set on #{grouped.inspect}"
+  end
+
+  def test_complete
+    ns = vma.actions.complete("")
+    assert ns.include?("move.") && ns.include?("buf."), ns.inspect
+    m = vma.actions.complete("move.")
+    assert m.include?("move.word.") && m.include?("move.random"), m.inspect
+    assert m.all? { |c| c.start_with?("move.") }
+    b = vma.actions.complete("buf.")
+    assert b.include?("buf.save") && b.include?("buf.save."), "action and parent: #{b.inspect}"
+  end
+
+  def test_search_actions_namespace_filter
+    rows = vma.actions.search_actions_update_callback("move.")
+    assert rows.size > 5, rows.inspect
+    assert rows.all? { |_key, str| str.start_with?("move.") }, rows.inspect
+    assert rows.any? { |_key, str| str.start_with?("move.word.next  ") }, "no description shown"
+    rows = vma.actions.search_actions_update_callback("move.wordnext")
+    assert rows.all? { |_key, str| str.start_with?("move.") }, rows.inspect
+    assert rows[0][1].start_with?("move.word.next"), rows.inspect
+  end
+
+  def test_search_actions_finds_old_id
+    rows = vma.actions.search_actions_update_callback("close_current_buffer")
+    assert rows[0][1].start_with?("buf.close"), rows.inspect
+  end
+
+  def test_cmdline_tab_completion
+    cl = vma.gui.cmd_line
+    e = cl.entry
+    { "a.mov" => "a.move.", "a.move.wo" => "a.move.word.", "x = a.buf.sav" => "x = a.buf.save",
+      "a.buf.save" => "a.buf.save", "foo.mov" => "foo.mov" }.each { |typed, want|
+      e.text = typed
+      e.set_position(-1)
+      cl.complete_action_id
+      assert_eq want, e.text
+    }
+    e.text = "a.mo"
+    e.set_position(-1)
+    assert_eq ["mode.", "move."], cl.complete_action_id
+    e.text = ""
+  end
+
   def test_every_alias_points_to_an_action
     bad = ACTION_ALIASES.reject { |_old, n| vma.actions.include?(n) || n.match?(OPTIONAL_IDS) }
     assert bad.empty?, "aliases to unregistered actions: #{bad.inspect}"

@@ -14,6 +14,9 @@ module Vimamsa
 #   :42         jump to line 42
 #   :e PATH     open file
 #   :w  :q  :wq save / quit / save-and-quit
+#
+# Actions run with a.<id>!, e.g. :a.buf.save! — tab completes the id after
+# "a." one level at a time (namespaces, then the segments below them).
 class CommandLine
   attr_reader :history, :entry
 
@@ -57,6 +60,9 @@ class CommandLine
       when "Down"
         history_move(-1)
         true
+      when "Tab", "ISO_Left_Tab"
+        complete_action_id
+        true # keep focus in the entry
       else
         false
       end
@@ -117,6 +123,34 @@ class CommandLine
     else
       eval_ruby(line)
     end
+  end
+
+  # Complete the action id after "a." before the cursor: the only candidate,
+  # or the candidates' common prefix, with the candidates shown as a message.
+  # Returns the candidates.
+  def complete_action_id
+    pos = @entry.position
+    text = @entry.text
+    before = text[0, pos]
+    m = before.match(/(?<![\w.])a\.([a-z0-9_.]*)\z/)
+    return [] if m.nil?
+    prefix = m[1]
+    cands = vma.actions.complete(prefix[0, (prefix.rindex(".") || -1) + 1])
+    cands = cands.select { |c| c.start_with?(prefix) }
+    return cands if cands.empty?
+    common = cands.reduce { |x, y|
+      i = 0
+      i += 1 while i < x.size && i < y.size && x[i] == y[i]
+      x[0, i]
+    }
+    # one action that is also a parent ("buf.save", "buf.save."): stop at it
+    common = cands[0] if cands.size == 2 && cands[1] == cands[0] + "."
+    if common.size > prefix.size
+      @entry.text = before[0, before.size - prefix.size] + common + text[pos..]
+      @entry.set_position(pos + common.size - prefix.size)
+    end
+    message(cands.join("  ")) if cands.size > 1
+    cands
   end
 
   private

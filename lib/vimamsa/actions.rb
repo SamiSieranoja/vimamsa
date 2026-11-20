@@ -9,6 +9,12 @@ class Action
     @method = method
     @opt = opt
   end
+
+  # Segments of the id, general to specific: "move.word.next" =>
+  # ["move", "word", "next"]. An old symbol id is one segment.
+  def path
+    @id.to_s.split(".")
+  end
 end
 
 # Action ids are dotted paths, "move.word.next", from general to specific
@@ -377,6 +383,27 @@ class ActionList
     @actions.keys
   end
 
+  # Dotted action ids (no Ruby-code bindings, no old symbol ids)
+  def dotted_ids
+    @actions.keys.select { |k| k.class == String && k.match?(ACTION_ID_RE) && !@actions[k].opt&.[](:code) }
+  end
+
+  # The next level of ids below prefix, sorted: complete("move.") =>
+  # ["move.buf.", "move.char.", ..., "move.random"]. An entry ending in "."
+  # has more below it; one that is also an action itself appears both ways
+  # ("buf.save" and "buf.save."). complete("") lists the namespaces.
+  def complete(prefix)
+    out = []
+    dotted_ids.each { |id|
+      next if !id.start_with?(prefix)
+      rest = id[prefix.size..]
+      seg, more = rest.split(".", 2)
+      next if seg.nil? || seg.empty?
+      out << (more ? "#{prefix}#{seg}." : "#{prefix}#{seg}")
+    }
+    out.uniq.sort
+  end
+
   def call(id)
     id = resolve(id)
     @acth << id
@@ -407,15 +434,24 @@ class ActionList
 
   @item_list = []
 
+  # Rows for Search for Actions: [key, "id  description"]. A query that
+  # starts with a namespace and a dot ("move." or "move.wo") searches only that
+  # namespace, and "move." alone lists all of it. An old id finds the action
+  # it was renamed to.
   def search_actions_update_callback(search_str = "")
     return [] if search_str == ""
 
-    item_list2 = []
-    for act_id in @actions.keys
-      act = @actions[act_id]
-      item = {}
-      item[:key] = ""
+    old_ids = Hash.new { |h, k| h[k] = [] }
+    ACTION_ALIASES.each { |o, n| old_ids[n] << o.to_s }
 
+    ns = search_str[/\A[a-z_]+\./]
+    ns = nil if ns && !dotted_ids.any? { |id| id.start_with?(ns) }
+
+    item_list = []
+    for act_id in @actions.keys
+      next if ns && !act_id.to_s.start_with?(ns)
+      act = @actions[act_id]
+      item = { key: "" }
       for mode_str in ["C", "V"]
         c_kbd = vma.kbd.act_bindings[mode_str][act_id]
         if c_kbd.class == String
@@ -424,26 +460,20 @@ class ActionList
           break
         end
       end
-      # c_kbd = vma.kbd.act_bindings[mode_str][nfo[:action]]
       item[:action] = act_id
-      item[:str] = act_id.to_s
-      if @actions[act_id].method_name != ""
-        item[:str] = @actions[act_id].method_name
-      end
-      item_list2 << item
+      desc = act.method_name.to_s
+      item[:str] = desc.empty? || desc == act_id.to_s ? act_id.to_s : "#{act_id}  #{desc}"
+      item[:match] = ([item[:str]] + old_ids[act_id]).join(" ")
+      item_list << item
     end
 
-    item_list = item_list2
-
-    a = filter_items(item_list, 0, search_str)
-    debug a.inspect
-
-    r = a.collect { |x| [x[0][0], 0, x] }
-    debug r.inspect
-    @item_list = r
-
-    r = a.collect { |x| [x[0][:key], x[0][:str]] }
-    return r
+    if ns && search_str == ns
+      found = item_list.sort_by { |x| x[:action].to_s }.map { |x| [x] }
+    else
+      found = filter_items(item_list, 0, ns ? search_str[ns.size..] : search_str)
+    end
+    @item_list = found.collect { |x| [x[0][0], 0, x] }
+    return found.collect { |x| [x[0][:key], x[0][:str]] }
   end
 
   def search_actions_select_callback(search_str, idx)
@@ -465,7 +495,7 @@ class ActionList
         puts item.inspect
         exit!
       end
-      [item, srn_dst(search_str, item[:str])]
+      [item, srn_dst(search_str, item[:match] || item[:str])]
     end
     scores.sort_by! { |x| -x[1] }
     debug scores.inspect

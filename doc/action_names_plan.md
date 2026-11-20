@@ -1,7 +1,8 @@
 # Plan: consistent, hierarchical action names
 
-TODO: act next on step 4 of "Order": `Action#path`, drop `:group`, namespace
-filtering and command-line completion. Steps 1-3 are done (see DONE at the end).
+TODO: act next on step 5 of "Order": categories on the key bindings page from
+the namespace (step 2 of `doc/key_bindings_report_plan.md`). Steps 1-4 are done
+(see DONE at the end).
 
 ## Context
 
@@ -398,3 +399,15 @@ in the Marshal backups.
     not action ids and keep their names.
   Found, not fixed: vimlike `C , , f` is bound to `:file_finder`, which has
   never been registered (since 2021); the finder is on `C , f` and `C , z`.
+- **Step 4: using the hierarchy** (2026-11-20, see git log for the commit
+  "feat: action namespaces in Search for Actions and command-line completion").
+  `Action#path` gives the segments; the 51 `:group` options are gone (nothing
+  read them). `ActionList#complete(prefix)` lists the next level below a
+  prefix (`"move."` => `move.buf.`, `move.char.`, ..., `move.random`).
+  Search for Actions shows `id  description` and the key; a query starting
+  with `<namespace>.` searches only that namespace, `move.` alone lists all of
+  it, and an old id finds the renamed action (aliases are matched, not
+  shown). Command line: tab after `a.` completes one level at a time; with
+  several candidates it fills their common prefix and lists them as a message.
+  The tab key itself is tested only through `CommandLine#complete_action_id`,
+  not with a real key press.
