@@ -36,8 +36,8 @@ module Vimamsa
 
       add_to_menu "Edit.Undo", { :label => "Undo edit", :action => "undo.last" }
       add_to_menu "Edit.Redo", { :label => "Redo edit", :action => "undo.redo" }
-      add_to_menu "Edit.SearchReplace", { :label => "Search and replace", :action => :gui_search_replace }
-      add_to_menu "Edit.Find", { :label => "Find", :action => :find_in_buffer }
+      add_to_menu "Edit.SearchReplace", { :label => "Search and replace", :action => "search.replace" }
+      add_to_menu "Edit.Find", { :label => "Find", :action => "search.buf" }
       add_to_menu "Edit.ToggleAutocomplete", { :label => "Toggle autocomplete", :action => :toggle_autocomplete }
 
       # add_to_menu "Edit.StartCompletion", { :label => "StartCompletion", :action => :start_autocomplete }
@@ -47,7 +47,7 @@ module Vimamsa
       add_to_menu "Settings.Customize", { :action => "app.customrb.edit" }
       add_to_menu "Settings.ReloadCustom", { :action => "app.customrb.reload" }
 
-      add_to_menu "Actions.SearchForActions", { :label => "Search for Actions", :action => :search_actions }
+      add_to_menu "Actions.SearchForActions", { :label => "Search for Actions", :action => "search.actions" }
 
       add_to_menu "Actions.Grep", { :label => "Grep lines", :action => "grep.buf" }
 

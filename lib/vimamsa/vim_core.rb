@@ -114,9 +114,9 @@ VIM_BINDINGS = {
     "VC ;" => "repeat_last_find",
 
     "VC *" => "buf.jump_to_next_instance_of_word",
-    "VC /" => :find_in_buffer,
+    "VC /" => "search.buf",
     "C :" => "mode.cmdline",
-    "C n" => :find_next,
+    "C n" => "search.next",
     "C N" => "$search.jump_to_previous()",
 
     "VCI pagedown" => "move.page.next",

@@ -79,6 +79,12 @@ ACTION_ALIASES = {
   easy_jump: "jump.easy",
   open_file_under_cursor: "jump.file",
   line_action: "jump.line",
+  # search namespace (2026-11-20)
+  find_in_buffer: "search.buf",
+  find_next: "search.next",
+  gui_search_replace: "search.replace",
+  invoke_replace: "search.replace.cmd",
+  search_actions: "search.actions",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

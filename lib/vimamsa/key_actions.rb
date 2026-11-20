@@ -87,9 +87,9 @@ reg_act(:comment_selection, proc { buf.comment_selection }, "Comment selection")
 reg_act(:delete_char_forward, proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward", { :group => [:edit, :basic] })
 reg_act(:gui_file_finder, proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
 reg_act(:gui_file_history_finder, proc { vma.FileHistory.start_gui }, "Fuzzy file history finder")
-reg_act(:gui_search_replace, proc { gui_search_replace }, "Search and replace")
+reg_act("search.replace", proc { gui_search_replace }, "Search and replace")
 reg_act(:select_buffer_language, proc { gui_select_buffer_language }, "Select syntax highlighting language for current buffer")
-reg_act(:find_next, proc { $search.jump_to_next() }, "Find next")
+reg_act("search.next", proc { $search.jump_to_next() }, "Find next")
 
 reg_act(:set_style_bold, proc { buf.style_transform(:bold) }, "Set text weight to bold")
 reg_act(:set_style_link, proc { buf.style_transform(:link) }, "Set text as link")
@@ -109,7 +109,7 @@ reg_act(:clear_line_styles, proc { buf.set_line_style(:clear) }, "Clear styles o
 reg_act(:gui_select_buffer, proc { vma.kbd.set_mode("S"); gui_select_buffer }, "Select buffer")
 reg_act :open_file_dialog, "open_file_dialog", "Open file"
 reg_act "mode.minibuffer.end", proc { minibuffer_end }
-reg_act(:invoke_replace, "invoke_replace", "Invoke replace")
+reg_act("search.replace.cmd", "invoke_replace", "Invoke replace")
 reg_act(:diff_buffer, "diff_buffer", "")
 reg_act(:git_diff_buffer, proc { git_diff_buffer }, "Show git diff of current file")
 reg_act(:diff_buffer_jump_to_source, proc { diff_buffer_jump_to_source }, "Jump to corresponding line in source from diff buffer")
@@ -211,7 +211,7 @@ act_list = {
                    :desc => "Reload file from disk", :group => :file },
   :buf_backup => { :proc => proc { buf.backup() }, :desc => "Backup current file", :group => :file },
 
-  :find_in_buffer => { :proc => proc { invoke_search },
+  "search.buf" => { :proc => proc { invoke_search },
                        :desc => "Find", :group => :edit },
 
   :selection_upcase => { :proc => proc { buf.transform_selection(:upcase) },
@@ -268,7 +268,7 @@ act_list = {
   # { :proc => proc {  },
   # :desc => "", :group => : },
 
-  :search_actions => { :proc => proc { vma.actions.gui_search },
+  "search.actions" => { :proc => proc { vma.actions.gui_search },
                        :desc => "Search actions", :group => :search },
 
   "app.customrb.edit" => { :proc => proc { jump_to_file("~/.config/vimamsa/custom.rb") },

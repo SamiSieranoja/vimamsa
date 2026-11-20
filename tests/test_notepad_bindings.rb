@@ -47,8 +47,8 @@ class TestNotepadBindings < VmaTest
 
   def test_rebound_dispatch
     # Assert rebinds without invoking GUI dialogs / quit
-    assert_eq "ctrl-f", vma.kbd.act_bindings["I"][:find_in_buffer]
-    assert_eq "ctrl-h", vma.kbd.act_bindings["I"][:gui_search_replace]
+    assert_eq "ctrl-f", vma.kbd.act_bindings["I"]["search.buf"]
+    assert_eq "ctrl-h", vma.kbd.act_bindings["I"]["search.replace"]
     assert_eq "ctrl-q", vma.kbd.act_bindings["I"]["app.quit"]
     keys "ctrl-n" # safe to execute: creates a new buffer
     assert_eq :buf_new, vma.kbd.cur_action

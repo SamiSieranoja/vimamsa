@@ -98,7 +98,7 @@ its own is in the way.
 | C | <code>$</code> | <code>buf.jump(END_OF_LINE)</code> |
 | C | <code>' &lt;char&gt;</code> | <code>buf.jump_to_mark(&lt;char&gt;)</code> |
 | C | <code>*</code> | <code>buf.jump_to_next_instance_of_word</code> |
-| C | <code>/</code> | <code>invoke_search</code> |
+| C | <code>/</code> | <code>search.buf</code> |
 | C | <code>/[1-9]/</code> | <code>vma.kbd.set_next_command_count(&lt;char&gt;)</code> |
 | C | <code>0(vma.kbd.next_command_count!=nil)</code> | <code>vma.kbd.set_next_command_count(&lt;char&gt;)</code> |
 | C | <code>0(vma.kbd.next_command_count==nil)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> |
@@ -159,7 +159,7 @@ its own is in the way.
 | C | <code>l</code> | <code>move.char.next</code> |
 | C | <code>left</code> | <code>buf.move(BACKWARD_CHAR)</code> |
 | C | <code>m &lt;char&gt;</code> | <code>buf.mark_current_position(&lt;char&gt;)</code> |
-| C | <code>n</code> | <code>$search.jump_to_next()</code> |
+| C | <code>n</code> | <code>search.next</code> |
 | C | <code>o</code> | <code>buf.jump(END_OF_LINE);buf.insert_txt("\n");vma.kbd.set_mo...</code> |
 | C | <code>p</code> | <code>buf.paste(AFTER)</code> |
 | C | <code>pagedown</code> | <code>move.page.next</code> |
@@ -208,7 +208,7 @@ its own is in the way.
 | V | <code>$</code> | <code>buf.jump(END_OF_LINE)</code> |
 | V | <code>' &lt;char&gt;</code> | <code>buf.jump_to_mark(&lt;char&gt;)</code> |
 | V | <code>*</code> | <code>buf.jump_to_next_instance_of_word</code> |
-| V | <code>/</code> | <code>invoke_search</code> |
+| V | <code>/</code> | <code>search.buf</code> |
 | V | <code>/[1-9]/</code> | <code>vma.kbd.set_next_command_count(&lt;char&gt;)</code> |
 | V | <code>0(vma.kbd.next_command_count!=nil)</code> | <code>vma.kbd.set_next_command_count(&lt;char&gt;)</code> |
 | V | <code>0(vma.kbd.next_command_count==nil)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> |

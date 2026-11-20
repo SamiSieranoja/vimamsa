@@ -53,7 +53,7 @@ add_keys "intro", {
   "C , M" => :bookmark_add,
   "C , '" => :bookmark_list,
   "VC l" => "move.char.next",
-  "VC , , s" => :search_actions,
+  "VC , , s" => "search.actions",
   "C , n b" => :buf_new,
   "C y y" => :copy_cur_line,
   "C P" => :paste_before_cursor,
@@ -98,8 +98,8 @@ add_keys "intro", {
   "CI backspace" => :insert_backspace,
  "CI ctrl-o" => :open_file_dialog,
   "C g f" => "jump.file",
- "I ctrl-l" => :find_in_buffer,
- "I ctrl-g" => :find_next,
+ "I ctrl-l" => "search.buf",
+ "I ctrl-g" => "search.next",
   
   "I shift-up" => :insert_select_up,
   "I shift-down" => :insert_select_down, 
@@ -185,13 +185,13 @@ add_keys "core", {
   "C , e" => "mode.cmdline",
   "C :" => "mode.cmdline",
 
-  "VC /" => :find_in_buffer,
+  "VC /" => "search.buf",
 
   # READCHAR bindings
 
   "R <char>" => "readchar_new_char(<char>)",
 
-  "C n" => :find_next,
+  "C n" => "search.next",
   "C N" => "$search.jump_to_previous()",
 
   "C C" => :content_search,
@@ -361,7 +361,7 @@ add_keys "core", {
  "C , v" => :auto_indent_buffer,
  "C , , u" => :update_file_index,
  "C , s a" => :buf_save_as,
- "VC , r r" => :gui_search_replace,
+ "VC , r r" => "search.replace",
  "C , w" => :toggle_active_window,
  "C , , w" => :toggle_two_column,
  "C , ; a c" => :toggle_autocomplete,

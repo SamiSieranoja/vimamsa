@@ -25,8 +25,8 @@ module Vimamsa
   add_keys "notepad", {
     # Rebinds over conflicting vimlike insert-mode bindings
     # (bindkey on an existing chord overwrites the leaf)
-    "I ctrl-f" => :find_in_buffer,      # was move FORWARD_CHAR
-    "I ctrl-h" => :gui_search_replace,  # was autocp trigger (ctrl-space remains)
+    "I ctrl-f" => "search.buf",      # was move FORWARD_CHAR
+    "I ctrl-h" => "search.replace",  # was autocp trigger (ctrl-space remains)
     "I ctrl-n" => :buf_new,             # was move_next_line
     "I ctrl-a" => :select_all,          # was jump_beginning_of_line
     "I ctrl-q" => "app.quit",
