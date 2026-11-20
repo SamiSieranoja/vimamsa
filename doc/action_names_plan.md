@@ -341,7 +341,7 @@ in the Marshal backups.
 
 ## DONE
 
-- **Step 1: string ids, the `a` proxy, aliases** (2026-11-20, not yet committed).
+- **Step 1: string ids, the `a` proxy, aliases** (2026-11-20, `7115ff8`).
   `actions.rb`: `ACTION_ID_RE`, `ACTION_ALIASES`, `ActionRef` (BasicObject;
   `a.x.y` is a reference, `a.x.y!` runs it, an unknown id raises with a "did you
   mean"), and `ActionList#resolve`, which every lookup goes through: a reference
@@ -355,7 +355,7 @@ in the Marshal backups.
   Tests: `tests/test_action_ids.rb`.
   Left for step 3, when aliases exist in numbers: Search for Actions finding an
   action by its old id.
-- **Step 2: duplicates merged** (2026-11-20, not yet committed). Merged straight
+- **Step 2: duplicates merged** (2026-11-20, `8da8571`). Merged straight
   into their final ids, so step 3 doesn't rename them again: `undo.last`
   (`undo`, `edit_undo`), `undo.redo` (`redo`, `edit_redo`), `jump.edit.prev`
   (`jump_last_edit`, `jump_to_last_edit`), `move.char.prev`
