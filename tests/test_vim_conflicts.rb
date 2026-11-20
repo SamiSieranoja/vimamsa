@@ -79,8 +79,8 @@ class TestVimConflicts < VmaTest
     st = vim_binding_status(vma.kbd, "C", ["s"], :vim_substitute_char)
     assert_eq [:conflict, :same_keys], st.values_at(:status, :why)
     assert !vma.kbd.vim_added.include?(["C", ["s"]])
-    # Adding C ctrl-f (:page_down) doesn't change the key the menu shows
-    assert_eq "pagedown", vma.kbd.act_bindings["C"][:page_down]
+    # Adding C ctrl-f ("move.page.next") doesn't change the key the menu shows
+    assert_eq "pagedown", vma.kbd.act_bindings["C"]["move.page.next"]
   end
 
   def test_loading_schemes_leaves_editor_alone

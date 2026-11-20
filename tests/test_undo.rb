@@ -38,7 +38,7 @@ class TestUndo < VmaTest
 
   def test_undo_delete_char
     act 'buf.insert_txt("abcde")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     vma.buf.new_undo_group
     act :delete_char_forward
     act :delete_char_forward
@@ -52,7 +52,7 @@ class TestUndo < VmaTest
     act 'buf.insert_txt("first\n")'
     act 'buf.insert_txt("second")'
     vma.buf.new_undo_group
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act :delete_line
     vma.buf.new_undo_group
     assert_buf "second\n"

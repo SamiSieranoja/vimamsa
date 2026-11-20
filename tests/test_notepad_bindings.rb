@@ -32,7 +32,7 @@ class TestNotepadBindings < VmaTest
 
   def test_delete_forward
     act 'buf.insert_txt("abc")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     keys "delete"
     assert_buf "bc\n"
   end

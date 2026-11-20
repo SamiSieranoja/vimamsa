@@ -6,7 +6,7 @@ class TestBasicEditing < VmaTest
 
   def test_delete_char_forward
     act 'buf.insert_txt("abcde")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act :delete_char_forward
     act :delete_char_forward
     assert_buf "cde\n"
@@ -47,18 +47,18 @@ class TestBasicEditing < VmaTest
 
   def test_jump_start_end
     act 'buf.insert_txt("hello")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     assert_pos 0, 0
-    act :jump_to_end_of_buffer
+    act "move.buf.end"
     assert_pos 0, 5
   end
 
   def test_copy_paste
     #Note: Buffer contains a single "\n" by default
     act 'buf.insert_txt("hello\n")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act :copy_cur_line
-    act :jump_to_end_of_buffer
+    act "move.buf.end"
     act :paste_after_cursor
     assert_buf "hello\n\nhello\n"
   end
@@ -66,7 +66,7 @@ class TestBasicEditing < VmaTest
   def test_delete_line
     act 'buf.insert_txt("first\n")'
     act 'buf.insert_txt("second")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act :delete_line
     assert_buf "second\n"
   end
@@ -94,14 +94,14 @@ end
 class TestDeleteFindChar < VmaTest
   def test_df_char
     act 'buf.insert_txt("foo bar baz")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     keys "d f a"
     assert_buf "r baz\n"
   end
 
   def test_dF_char
     act 'buf.insert_txt("foo bar baz")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act "buf.set_pos(10)" # on the final 'z'
     keys "d F a"
     assert_buf "foo bar bz\n"
@@ -109,7 +109,7 @@ class TestDeleteFindChar < VmaTest
 
   def test_df_not_on_line_is_noop
     act 'buf.insert_txt("foo\nbar")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     keys "d f b"
     assert_buf "foo\nbar\n"
   end

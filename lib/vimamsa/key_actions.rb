@@ -58,7 +58,7 @@ reg_act(:center_on_current_line, "center_on_current_line", "", { :group => :view
 reg_act(:run_last_macro, proc { vma.macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
 reg_act(:jump_to_next_edit, "jump_to_next_edit", "Jump to next edit pos")
 reg_act("jump.edit.prev", proc { buf.jump_to_last_edit }, "Jump to the last edit location")
-reg_act(:jump_to_random, proc { buf.jump_to_random_pos }, "")
+reg_act("move.random", proc { buf.jump_to_random_pos }, "")
 reg_act(:insert_new_line, proc { buf.insert_new_line() }, "Insert new line")
 reg_act("help.keys", proc { show_key_bindings }, "Show key bindings")
 reg_act("help.keys.free", proc { show_free_key_bindings }, "Show available (unbound) key binding slots")
@@ -149,13 +149,13 @@ reg_act(:paste_over_after, proc { buf.paste_over(AFTER) }, "Paste over selection
 reg_act(:paste_over_before, proc { buf.paste_over(BEFORE) }, "Paste over selection or before cursor")
 reg_act("undo.redo", proc { buf.redo() }, "Redo the last undone action", { :group => :edit })
 reg_act("undo.last", proc { buf.undo() }, "Undo the last action", { :group => :edit })
-reg_act(:jump_end_of_line, proc { buf.jump(END_OF_LINE) }, "Move to the end of the current line")
-reg_act(:jump_end_of_buffer, proc { buf.jump(END_OF_BUFFER) }, "Move to the end of the buffer")
-reg_act(:jump_start_of_buffer, proc { buf.jump(START_OF_BUFFER) }, "Move to the start of the buffer")
-reg_act(:jump_beginning_of_line, proc { buf.jump(BEGINNING_OF_LINE) }, "Move to the beginning of the current line")
-reg_act(:jump_next_word_end, proc { buf.jump_word(FORWARD, WORD_END) }, "Jump to the end of the next word")
-reg_act(:jump_prev_word_start, proc { buf.jump_word(BACKWARD, WORD_START) }, "Jump to the start of the previous word")
-reg_act(:jump_next_word_start, proc { buf.jump_word(FORWARD, WORD_START) }, "Jump to the start of the next word")
+reg_act("move.line.end", proc { buf.jump(END_OF_LINE) }, "Move to the end of the current line")
+reg_act("move.buf.end", proc { buf.jump(END_OF_BUFFER) }, "Move to the end of the buffer")
+reg_act("move.buf.start", proc { buf.jump(START_OF_BUFFER) }, "Move to the start of the buffer")
+reg_act("move.line.start", proc { buf.jump(BEGINNING_OF_LINE) }, "Move to the beginning of the current line")
+reg_act("move.word.end", proc { buf.jump_word(FORWARD, WORD_END) }, "Jump to the end of the next word")
+reg_act("move.word.prev", proc { buf.jump_word(BACKWARD, WORD_START) }, "Jump to the start of the previous word")
+reg_act("move.word.next", proc { buf.jump_word(FORWARD, WORD_START) }, "Jump to the start of the next word")
 reg_act("mode.insert", proc { vma.kbd.set_mode(:insert) }, "Switch to INSERT mode")
 reg_act("mode.prev", proc { vma.kbd.to_previous_mode }, "Return to the previous mode")
 reg_act("mode.visual", proc { buf.start_selection; vma.kbd.set_mode(:visual) }, "Enter VISUAL mode (for selections)")
@@ -187,12 +187,10 @@ reg_act "mode.browse.exit", proc {
   buf.restore_kbd_mode
 }, "Exit browse mode"
 
-# reg_act :page_down, proc { page_down }, "Page down", :group => [:move, :basic]
-reg_act :page_down, proc { vma.gui.page_down }, "Page down", :group => [:move, :basic]
+# reg_act "move.page.next", proc { page_down }, "Page down", :group => [:move, :basic]
+reg_act "move.page.next", proc { vma.gui.page_down }, "Page down", :group => [:move, :basic]
 
-reg_act :page_up, proc { vma.gui.page_up }, "Page up", :group => [:move, :basic]
-reg_act :jump_to_start_of_buffer, proc { buf.jump(START_OF_BUFFER) }, "Jump to start of buffer"
-reg_act :jump_to_end_of_buffer, proc { buf.jump(END_OF_BUFFER) }, "Jump to end of buffer"
+reg_act "move.page.prev", proc { vma.gui.page_up }, "Page up", :group => [:move, :basic]
 reg_act(:auto_indent_buffer, proc { buf.auto_format }, "Auto format buffer")
 reg_act(:execute_current_line_in_terminal, proc { buf.execute_current_line_in_terminal }, "Execute current line in terminal")
 reg_act(:execute_current_line_in_terminal_autoclose, proc { buf.execute_current_line_in_terminal(true) }, "Execute current line in terminal. Close after execution.")

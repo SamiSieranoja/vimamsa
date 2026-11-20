@@ -59,7 +59,7 @@ class TestFlash < VmaTest
   def test_key_during_flash_runs_pending_delete_first
     act('buf.insert_txt("  sdf sdfsdf\n  sdf sdfsdf\n  sdf sdfsdf")')
     skip("no GUI view in this environment") unless buf.view
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
 
     had_test = ARGV.delete("--test")
     prev_dur = cnf.flash.duration!

@@ -90,14 +90,14 @@ VIM_BINDINGS = {
     "C space" => "buf.move(FORWARD_CHAR)",
     "C backspace" => "buf.move(BACKWARD_CHAR)",
 
-    "VC e" => :jump_next_word_end,
-    "VC b" => :jump_prev_word_start,
-    "VC w" => :jump_next_word_start,
+    "VC e" => "move.word.end",
+    "VC b" => "move.word.prev",
+    "VC w" => "move.word.next",
 
     # NOTE: "G(condition)" must be defined before "G"
     "VC G(vma.kbd.next_command_count!=nil)" => "buf.jump_to_line()",
-    "VC G" => :jump_end_of_buffer,
-    "VC g g" => :jump_start_of_buffer,
+    "VC G" => "move.buf.end",
+    "VC g g" => "move.buf.start",
     "VC g ;" => "jump.edit.prev",
 
     # Counts; "0" is BOL only when no count is pending
@@ -119,10 +119,10 @@ VIM_BINDINGS = {
     "C n" => :find_next,
     "C N" => "$search.jump_to_previous()",
 
-    "VCI pagedown" => :page_down,
-    "VCI pageup" => :page_up,
-    "C ctrl-f" => :page_down,
-    "C ctrl-b" => :page_up,
+    "VCI pagedown" => "move.page.next",
+    "VCI pageup" => "move.page.prev",
+    "C ctrl-f" => "move.page.next",
+    "C ctrl-b" => "move.page.prev",
     "C ctrl-d" => "buf.move(:forward_page)",  # approx: full page, vim: half
     "C ctrl-u" => "buf.move(:backward_page)", # approx: full page, vim: half
     "C ctrl-o" => "jump.edit.prev",         # approx of vim jumplist back

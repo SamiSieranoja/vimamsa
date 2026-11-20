@@ -18,7 +18,7 @@ class TestKeylogPanel < VmaTest
       keys("g g")
       e = panel.entries.last
       assert_eq :action, e[:kind]
-      assert_eq :jump_start_of_buffer, e[:action]
+      assert_eq "move.buf.start", e[:action]
       assert e[:chord].include?("g g"), "chord was #{e[:chord].inspect}"
       assert e[:chord].include?("[COMMAND]"), "chord was #{e[:chord].inspect}"
     end

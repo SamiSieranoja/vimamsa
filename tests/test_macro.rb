@@ -10,7 +10,7 @@ class TestMacro < VmaTest
   # Fill the buffer with +n+ copies of +line+, cursor at the start.
   def set_lines(line, n)
     act "buf.insert_txt(#{([line] * n).join("\n").inspect})"
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
   end
 
   def recorded(slot)

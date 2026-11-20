@@ -29,7 +29,7 @@ class TestAutoFormat < VmaTest
     set_lang("ruby")
     # Put cursor somewhere in the middle of the content
     act 'buf.set_content("x=1\ny=2\nz=3\n")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act "buf.auto_format"
     # Cursor should be within valid buffer bounds
     pos = vma.buf.pos
@@ -42,7 +42,7 @@ class TestAutoFormat < VmaTest
     set_lang("ruby")
     # Lots of extra whitespace that rufo will remove — content shrinks
     act 'buf.set_content("x   =   1\ny   =   2\n")'
-    act :jump_to_end_of_buffer
+    act "move.buf.end"
     act "buf.auto_format"
     pos = vma.buf.pos
     assert pos >= 0, "cursor pos #{pos} is negative after shrink"

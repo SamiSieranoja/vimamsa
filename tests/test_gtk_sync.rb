@@ -44,7 +44,7 @@ class TestGtkSync < VmaTest
 
   def test_delete_syncs_gtk
     act 'buf.insert_txt("abcde")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act :delete_char_forward
     act :delete_char_forward
     assert_buf "cde\n"
@@ -77,7 +77,7 @@ class TestGtkSync < VmaTest
   def test_delete_line_syncs_gtk
     act 'buf.insert_txt("first\n")'
     act 'buf.insert_txt("second")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act :delete_line
     assert_buf "second\n"
     assert_gtk_sync
@@ -101,7 +101,7 @@ class TestGtkSync < VmaTest
 
   def test_im_commit_mid_word
     act 'buf.insert_txt("ac")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act "buf.move(FORWARD_CHAR)"
     vma.kbd.set_mode(:insert)
     drain_idle

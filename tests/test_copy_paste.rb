@@ -24,9 +24,9 @@ class TestCopyPaste < VmaTest
 
   def test_copy_line_paste_after
     act 'buf.insert_txt("hello\n")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act :copy_cur_line
-    act :jump_to_end_of_buffer
+    act "move.buf.end"
     act :paste_after_cursor
     assert_buf "hello\n\nhello\n"
   end
@@ -34,7 +34,7 @@ class TestCopyPaste < VmaTest
   def test_copy_line_paste_before
     act 'buf.insert_txt("hello\n")'
     act 'buf.insert_txt("world")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act :copy_cur_line
     act "buf.move(FORWARD_LINE)"
     act :paste_before_cursor
@@ -43,9 +43,9 @@ class TestCopyPaste < VmaTest
 
   def test_copy_paste_twice
     act 'buf.insert_txt("abc")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act :copy_cur_line
-    act :jump_to_end_of_buffer
+    act "move.buf.end"
     act :paste_after_cursor
     act :paste_after_cursor
     assert_buf "abc\nabc\nabc\n"
@@ -53,7 +53,7 @@ class TestCopyPaste < VmaTest
 
   def test_cut_selection_paste
     act 'buf.insert_txt("hello world")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     # Select "hello" (5 chars)
     act "buf.start_selection"
     4.times { act "buf.move(FORWARD_CHAR)" }
@@ -66,7 +66,7 @@ class TestCopyPaste < VmaTest
 
   def test_copy_selection_paste
     act 'buf.insert_txt("foo bar")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act "buf.start_selection"
     2.times { act "buf.move(FORWARD_CHAR)" }
     act :copy_selection
@@ -84,14 +84,14 @@ class TestCopyPaste < VmaTest
 
   def test_copy_line_updates_clipboard
     act 'buf.insert_txt("myline")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act :copy_cur_line
     assert_eq "myline\n", vma.clipboard.get
   end
 
   def test_cut_selection_updates_clipboard
     act 'buf.insert_txt("hello")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act "buf.start_selection"
     2.times { act "buf.move(FORWARD_CHAR)" }
     act :cut_selection
@@ -100,9 +100,9 @@ class TestCopyPaste < VmaTest
 
   def test_paste_multiline
     act 'buf.insert_txt("line1\nline2\nline3")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act :copy_cur_line
-    act :jump_to_end_of_buffer
+    act "move.buf.end"
     act :paste_after_cursor
     assert_buf "line1\nline2\nline3\nline1\n"
   end
@@ -116,20 +116,20 @@ class TestCopyPaste < VmaTest
 
   def test_async_paste_inserts_at_captured_position
     act 'buf.insert_txt("line one\nline two\n")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     ipos = buf.pos                 # where the user pressed paste
     vma.clipboard << "X"
-    act :jump_to_end_of_buffer     # cursor moves away during the async read
+    act "move.buf.end"     # cursor moves away during the async read
     buf.paste_finish("X", AFTER, nil, ipos: ipos)
     assert_buf "lXine one\nline two\n\n"
   end
 
   def test_async_paste_line_mode_uses_captured_state
     act 'buf.insert_txt("AAA\nBBB\nCCC\n")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     act :copy_cur_line             # clipboard = "AAA\n", @paste_lines = true
     ipos = buf.pos
-    act :jump_to_end_of_buffer     # cursor moves to the last line
+    act "move.buf.end"     # cursor moves to the last line
     buf.paste_finish("AAA\n", AFTER, nil, ipos: ipos, paste_lines: true)
     assert_buf "AAA\nAAA\nBBB\nCCC\n\n"
   end
@@ -138,7 +138,7 @@ class TestCopyPaste < VmaTest
   # used, preserving prior behavior.
   def test_paste_finish_without_capture_uses_live_cursor
     act 'buf.insert_txt("line one\nline two\n")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     vma.clipboard << "X"
     buf.paste_finish("X", AFTER, nil)
     assert_buf "lXine one\nline two\n\n"
@@ -151,7 +151,7 @@ class TestCopyPaste < VmaTest
     act 'buf.insert_txt("AAA\nBBB\nCCC\n")'
     act "buf.set_pos(8)"                     # start of "CCC"
     act "buf.mark_current_position('a')"
-    act :jump_to_start_of_buffer             # cursor back on line 0
+    act "move.buf.start"             # cursor back on line 0
     act "buf.copy(:to_mark, 'a')"
     assert_eq "\nBBB\nC", vma.clipboard.get
     assert_buf "AAA\nBBB\nCCC\n\n"           # buffer unchanged by a copy

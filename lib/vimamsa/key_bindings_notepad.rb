@@ -37,7 +37,7 @@ module Vimamsa
     "I end" => "buf.end_selection; buf.jump(END_OF_LINE)",
     "I shift-home" => "buf.continue_selection; buf.jump(BEGINNING_OF_LINE)",
     "I shift-end" => "buf.continue_selection; buf.jump(END_OF_LINE)",
-    "I ctrl-home" => :jump_to_start_of_buffer,
-    "I ctrl-end" => :jump_to_end_of_buffer,
+    "I ctrl-home" => "move.buf.start",
+    "I ctrl-end" => "move.buf.end",
   }
 end # module Vimamsa

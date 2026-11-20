@@ -164,21 +164,21 @@ class TestVimBindings < VmaTest
 
   def test_backtick_jumps_to_mark
     act 'buf.insert_txt("one\ntwo\nthree\n")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     keys "j m a G ` a"
     assert_eq 1, vma.buf.lpos
   end
 
   def test_ctrl_a_increments
     act 'buf.insert_txt("a 41 b")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     keys "w ctrl-a"
     assert_buf "a 42 b\n"
   end
 
   def test_visual_case_ops
     act 'buf.insert_txt("abc def")'
-    act :jump_to_start_of_buffer
+    act "move.buf.start"
     keys "v e U"
     assert_buf "ABC def\n"
   end

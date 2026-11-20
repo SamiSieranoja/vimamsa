@@ -14,13 +14,13 @@ class TestRandomEdit < VmaTest
     "move.char.prev",
     "move.line.next",
     "move.line.prev",
-    :jump_to_start_of_buffer,
-    :jump_to_end_of_buffer,
-    :jump_end_of_line,
-    :jump_beginning_of_line,
-    :jump_next_word_end,
-    :jump_prev_word_start,
-    :jump_next_word_start,
+    "move.buf.start",
+    "move.buf.end",
+    "move.line.end",
+    "move.line.start",
+    "move.word.end",
+    "move.word.prev",
+    "move.word.next",
     :delete_char_forward,
     :insert_backspace,
     :delete_to_word_end,
@@ -32,8 +32,8 @@ class TestRandomEdit < VmaTest
     :paste_after_cursor,
     :paste_before_cursor,
     :insert_new_line,
-    :page_down,
-    :page_up,
+    "move.page.next",
+    "move.page.prev",
     :center_on_current_line,
     :gui_refresh_cursor,
   ].freeze
@@ -70,7 +70,7 @@ class TestRandomEdit < VmaTest
         when 8     then act_fast("vma.kbd.set_mode(:insert)")
         when 9     then act_fast("vma.kbd.set_mode(:command)")
         when 10    then act_fast("buf.start_selection; vma.kbd.set_mode(:visual)")
-        when 11    then act_fast(:jump_to_random)
+        when 11    then act_fast("move.random")
         end
       rescue => e
         errors << "iter #{iteration}: #{e.class}: #{e.message}"

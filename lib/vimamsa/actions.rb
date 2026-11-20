@@ -61,6 +61,19 @@ ACTION_ALIASES = {
   print_buffer_access_list: "debug.buf.access",
   run_tests: "debug.tests",
   kbd_dump_state: "debug.kbd",
+  # move namespace (2026-11-20)
+  jump_beginning_of_line: "move.line.start",
+  jump_end_of_line: "move.line.end",
+  jump_next_word_start: "move.word.next",
+  jump_prev_word_start: "move.word.prev",
+  jump_next_word_end: "move.word.end",
+  jump_start_of_buffer: "move.buf.start",
+  jump_to_start_of_buffer: "move.buf.start",
+  jump_end_of_buffer: "move.buf.end",
+  jump_to_end_of_buffer: "move.buf.end",
+  jump_to_random: "move.random",
+  page_down: "move.page.next",
+  page_up: "move.page.prev",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next
