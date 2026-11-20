@@ -26,10 +26,10 @@ class TestFilePanel < VmaTest
   end
 
   def with_panel_open
-    act :toggle_file_panel unless vma.gui.file_panel_shown?
+    act "panel.files.toggle" unless vma.gui.file_panel_shown?
     yield
   ensure
-    act :toggle_file_panel if vma.gui.file_panel_shown?
+    act "panel.files.toggle" if vma.gui.file_panel_shown?
   end
 
   def test_alt_h_l_move_in_panel_order

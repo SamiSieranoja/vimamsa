@@ -176,6 +176,14 @@ ACTION_ALIASES = {
   put_file_path_to_clipboard: "file.path.copy",
   put_file_ref_to_clipboard: "file.ref.copy",
   extract_file_links: "file.links",
+  # panel namespace (2026-11-20)
+  toggle_file_panel: "panel.files.toggle",
+  toggle_func_panel: "panel.funcs.toggle",
+  toggle_keylog_panel: "panel.keylog.toggle",
+  refresh_func_panel: "panel.funcs.refresh",
+  file_panel_next_file: "panel.files.next",
+  file_panel_prev_file: "panel.files.prev",
+  file_panel_easy_jump: "panel.files.jump",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

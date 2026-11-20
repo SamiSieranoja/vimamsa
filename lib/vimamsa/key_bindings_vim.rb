@@ -65,15 +65,15 @@ add_keys "vim misc", {
   # Kept deviations (documented in the header)
   "C tab" => "bufs.switch_to_last_buf",
   # prev/next file in file panel order (no-op while the panel is hidden)
-  "C alt-h" => :file_panel_prev_file,
-  "C alt-l" => :file_panel_next_file,
+  "C alt-h" => "panel.files.prev",
+  "C alt-l" => "panel.files.next",
   "C enter || C return" => ["jump.line", proc { buf.handle_line_action() }, "Line action"],
 
   # Browse mode keys (mode reachable only via the "mode.browse" action)
   "B h" => "buf.history.prev",
   "B l" => "buf.history.next",
-  "B p" => :file_panel_prev_file,
-  "B n" => :file_panel_next_file,
+  "B p" => "panel.files.prev",
+  "B n" => "panel.files.next",
   "B z" => "center_on_current_line();call_action('mode.browse.exit')",
   "B enter || B return || B esc || B j || B ctrl!" => "mode.browse.exit",
   "B s" => "move.page.prev",

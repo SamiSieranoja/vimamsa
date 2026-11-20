@@ -5,8 +5,8 @@ class TestFuncPanel < VmaTest
   def test_toggle_func_panel_no_lsp_does_not_raise
     prev = cnf.lsp.enabled?
     cnf.lsp.enabled = false
-    act :toggle_func_panel   # open
-    act :toggle_func_panel   # close
+    act "panel.funcs.toggle"   # open
+    act "panel.funcs.toggle"   # close
     assert true, "no exception raised"
   ensure
     cnf.lsp.enabled = prev

@@ -73,9 +73,9 @@ module Vimamsa
       add_to_menu "Edit.AddBookmark", { :label => "Add bookmark", :action => :bookmark_add }
       add_to_menu "View.SelectLanguage", { :label => "Set buffer language...", :action => "buf.language" }
       add_to_menu "View.TwoColumn", { :label => "Toggle two column mode", :action => :toggle_two_column }
-      add_to_menu "View.FilePanel", { :label => "Toggle file panel", :action => :toggle_file_panel }
-      add_to_menu "View.FuncPanel", { :label => "Toggle function panel (LSP)", :action => :toggle_func_panel }
-      add_to_menu "View.KeyLog", { :label => "Toggle key log panel", :action => :toggle_keylog_panel }
+      add_to_menu "View.FilePanel", { :label => "Toggle file panel", :action => "panel.files.toggle" }
+      add_to_menu "View.FuncPanel", { :label => "Toggle function panel (LSP)", :action => "panel.funcs.toggle" }
+      add_to_menu "View.KeyLog", { :label => "Toggle key log panel", :action => "panel.keylog.toggle" }
       add_to_menu "View.MsgHistory", { :label => "Message history", :action => "help.messages" }
 
       add_to_menu "Actions.EncryptFile", { :label => "Encrypt file", :action => "buf.encrypt" }

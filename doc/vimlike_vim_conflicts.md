@@ -89,9 +89,9 @@ its own is in the way.
 | B | <code>j</code> | <code>mode.browse.exit</code> |
 | B | <code>l</code> | <code>buf.history.next</code> |
 | B | <code>m</code> | <code>vma.macro.run_last_macro</code> |
-| B | <code>n</code> | <code>vma.gui.file_panel_select_adjacent(1)</code> |
+| B | <code>n</code> | <code>panel.files.next</code> |
 | B | <code>o</code> | <code>move.buf.end</code> |
-| B | <code>p</code> | <code>vma.gui.file_panel_select_adjacent(-1)</code> |
+| B | <code>p</code> | <code>panel.files.prev</code> |
 | B | <code>q</code> | <code>jump.edit.prev</code> |
 | B | <code>r</code> | <code>vma.gui.page_down(multip: 0.25)</code> |
 | B | <code>return</code> | <code>mode.browse.exit</code> |
@@ -119,8 +119,8 @@ its own is in the way.
 | C | <code>P</code> | <code>edit.paste.before</code> |
 | C | <code>R</code> | <code>vma.kbd.set_mode(:replace)</code> |
 | C | <code>a</code> | <code>buf.move(FORWARD_CHAR);vma.kbd.set_mode(:insert)</code> |
-| C | <code>alt-h</code> | <code>vma.gui.file_panel_select_adjacent(-1)</code> |
-| C | <code>alt-l</code> | <code>vma.gui.file_panel_select_adjacent(1)</code> |
+| C | <code>alt-h</code> | <code>panel.files.prev</code> |
+| C | <code>alt-l</code> | <code>panel.files.next</code> |
 | C | <code>b</code> | <code>move.word.prev</code> |
 | C | <code>c a &lt;char&gt;</code> | <code>buf.text_object_op(:change, &lt;char&gt;, :a)</code> |
 | C | <code>c i &lt;char&gt;</code> | <code>buf.text_object_op(:change, &lt;char&gt;, :i)</code> |

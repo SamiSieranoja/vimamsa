@@ -6,11 +6,11 @@ class TestKeylogPanel < VmaTest
   # Show the panel, run the block with a clean log, always hide again so
   # later tests (and other test files) start with logging off.
   def with_panel
-    act :toggle_keylog_panel
+    act "panel.keylog.toggle"
     panel.clear
     yield
   ensure
-    act :toggle_keylog_panel
+    act "panel.keylog.toggle"
   end
 
   def test_chord_and_action_logged
