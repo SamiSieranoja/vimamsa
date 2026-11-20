@@ -60,7 +60,7 @@ module Vimamsa
       add_to_menu "Actions.experimental.PrintBufferAccessList", { :label => "Print buffers by access time", :action => "debug.buf.access" }
       add_to_menu "Actions.experimental.EnableDebug", { :label => "Enable debug", :action => "debug.on" }
       add_to_menu "Actions.experimental.DisableDebug", { :label => "Disable debug", :action => "debug.off" }
-      add_to_menu "Actions.experimental.ShowImages", { :label => "Show images ⟦img:path⟧", :action => :show_images }
+      add_to_menu "Actions.experimental.ShowImages", { :label => "Show images ⟦img:path⟧", :action => "style.images" }
       
       add_to_menu "Actions.experimental.ShowImages", { :action => "debug.eval.sel" }
       

@@ -191,6 +191,21 @@ ACTION_ALIASES = {
   gui_ensure_cursor_visible: "view.cursor.show",
   gui_refresh_cursor: "view.cursor.refresh",
   refresh_colors: "view.colors.reload",
+  # style namespace (2026-11-20)
+  set_line_style_h1: "style.line.h1",
+  set_line_style_h2: "style.line.h2",
+  set_line_style_h3: "style.line.h3",
+  set_line_style_h4: "style.line.h4",
+  set_line_style_heading: "style.line.heading",
+  set_line_style_title: "style.line.title",
+  set_line_style_bold: "style.line.bold",
+  set_line_style_italic: "style.line.italic",
+  clear_line_styles: "style.line.clear",
+  set_style_bold: "style.bold",
+  set_style_italic: "style.italic",
+  set_style_link: "style.link",
+  clear_formats: "style.clear",
+  show_images: "style.images",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

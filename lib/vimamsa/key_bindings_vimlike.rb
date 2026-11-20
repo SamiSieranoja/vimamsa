@@ -388,19 +388,19 @@ add_keys "core", {
 }
 
 add_keys "hyperplaintext", {
-  "V , t b" => :set_style_bold,
-  "V , t l" => :set_style_link,
-  "V , t i" => :set_style_italic,
-  "V , t c" => :clear_formats,
-  "C , t h" => :set_line_style_heading,
-  "C , t 1" => :set_line_style_h1,
-  "C , t 2" => :set_line_style_h2,
-  "C , t 3" => :set_line_style_h3,
-  "C , t 4" => :set_line_style_h4,
-  "C , t b" => :set_line_style_bold,
-  "C , t t" => :set_line_style_title,
-  "C , t i" => :set_line_style_italic,
-  "C , t c" => :clear_line_styles,
+  "V , t b" => "style.bold",
+  "V , t l" => "style.link",
+  "V , t i" => "style.italic",
+  "V , t c" => "style.clear",
+  "C , t h" => "style.line.heading",
+  "C , t 1" => "style.line.h1",
+  "C , t 2" => "style.line.h2",
+  "C , t 3" => "style.line.h3",
+  "C , t 4" => "style.line.h4",
+  "C , t b" => "style.line.bold",
+  "C , t t" => "style.line.title",
+  "C , t i" => "style.line.italic",
+  "C , t c" => "style.line.clear",
 }
 
 bindkey ["VCB M", "B m"], :run_last_macro
