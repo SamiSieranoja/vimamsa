@@ -32,9 +32,9 @@ class TestBasicEditing < VmaTest
   def test_undo_redo
     act 'buf.insert_txt("hello")'
     assert_buf "hello\n"
-    act :undo
+    act "undo.last"
     assert_buf "\n"
-    act :redo
+    act "undo.redo"
     assert_buf "hello\n"
   end
 

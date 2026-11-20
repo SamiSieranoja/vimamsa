@@ -18,7 +18,17 @@ ACTION_ID_RE = /\A[a-z][a-z0-9_]*(\.[a-z0-9_]+)+\z/
 # Old id => new dotted id. ActionList, bindkey, unbindkey and macros resolve
 # these, so users' custom.rb and saved macros keep working. Keep each alias
 # for at least two releases.
-ACTION_ALIASES = {}
+ACTION_ALIASES = {
+  # Duplicates merged (2026-11-20)
+  undo: "undo.last", edit_undo: "undo.last",
+  redo: "undo.redo", edit_redo: "undo.redo",
+  jump_last_edit: "jump.edit.prev", jump_to_last_edit: "jump.edit.prev",
+  move_backward_char: "move.char.prev", e_move_backward_char: "move.char.prev",
+  e_move_forward_char: "move.char.next",
+  move_next_line: "move.line.next", forward_line: "move.line.next",
+  move_prev_line: "move.line.prev", backward_line: "move.line.prev",
+  grep_buffer: "grep.buf", invoke_grep_search: "grep.buf",
+}
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next
 # is the reference "move.word.next" (nothing runs), and a trailing "!" runs

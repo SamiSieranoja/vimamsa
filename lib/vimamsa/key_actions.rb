@@ -1,13 +1,5 @@
 
 module Vimamsa
-def e_move_forward_char
-  buf.move(FORWARD_CHAR)
-end
-
-def e_move_backward_char
-  buf.move(BACKWARD_CHAR)
-end
-
 def history_switch_backwards
   bufs.history_switch_backwards
 end
@@ -54,8 +46,10 @@ reg_act(:savedebug, "savedebug", "Save debug info", { :group => :debug })
 reg_act(:open_file_dialog, "open_file_dialog", "Open file", { :group => :file })
 reg_act(:create_new_file, "create_new_file", "Create new file", { :group => :file })
 reg_act(:backup_all_buffers, proc { backup_all_buffers }, "Backup all buffers", { :group => :file })
-reg_act(:e_move_forward_char, "e_move_forward_char", "Move forward one character", { :group => [:move, :basic] })
-reg_act(:e_move_backward_char, "e_move_backward_char", "Move backward one character", { :group => [:move, :basic] })
+reg_act("move.char.next", proc { buf.move(FORWARD_CHAR) }, "Move forward one character", { :group => [:move, :basic] })
+reg_act("move.char.prev", proc { buf.move(BACKWARD_CHAR) }, "Move backward one character", { :group => [:move, :basic] })
+reg_act("move.line.next", proc { buf.move(FORWARD_LINE) }, "Move one line forward", { :group => [:move, :basic] })
+reg_act("move.line.prev", proc { buf.move(BACKWARD_LINE) }, "Move one line backward", { :group => [:move, :basic] })
 # reg_act(:history_switch_backwards, proc{bufs.history_switch_backwards}, "", { :group => :file })
 reg_act(:history_switch_backwards, proc { bufs.history_switch(-1) }, "Prev buffer", { :group => :file })
 reg_act(:history_switch_forwards, proc { bufs.history_switch(+1) }, "Next buffer", { :group => :file })
@@ -63,7 +57,7 @@ reg_act(:print_buffer_access_list, proc { bufs.print_by_access_time }, "Print bu
 reg_act(:center_on_current_line, "center_on_current_line", "", { :group => :view })
 reg_act(:run_last_macro, proc { vma.macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
 reg_act(:jump_to_next_edit, "jump_to_next_edit", "Jump to next edit pos")
-reg_act(:jump_to_last_edit, proc { buf.jump_to_last_edit }, "Jump to last edit pos")
+reg_act("jump.edit.prev", proc { buf.jump_to_last_edit }, "Jump to the last edit location")
 reg_act(:jump_to_random, proc { buf.jump_to_random_pos }, "")
 reg_act(:insert_new_line, proc { buf.insert_new_line() }, "Insert new line")
 reg_act(:show_key_bindings, proc { show_key_bindings }, "Show key bindings")
@@ -119,8 +113,6 @@ reg_act(:invoke_replace, "invoke_replace", "Invoke replace")
 reg_act(:diff_buffer, "diff_buffer", "")
 reg_act(:git_diff_buffer, proc { git_diff_buffer }, "Show git diff of current file")
 reg_act(:diff_buffer_jump_to_source, proc { diff_buffer_jump_to_source }, "Jump to corresponding line in source from diff buffer")
-# reg_act(:invoke_grep_search, proc{invoke_grep_search}, "")
-reg_act(:invoke_grep_search, proc { gui_grep }, "Grep current buffer")
 reg_act(:ack_search, proc { gui_ack }, "") #invoke_ack_search
 reg_act(:extract_file_links, proc {
   links = buf.file_links
@@ -155,8 +147,8 @@ reg_act(:paste_before_cursor, proc { buf.paste(BEFORE) }, "Paste text before the
 reg_act(:paste_after_cursor, proc { buf.paste(AFTER) }, "Paste text after the cursor")
 reg_act(:paste_over_after, proc { buf.paste_over(AFTER) }, "Paste over selection or after cursor")
 reg_act(:paste_over_before, proc { buf.paste_over(BEFORE) }, "Paste over selection or before cursor")
-reg_act(:redo, proc { buf.redo() }, "Redo the last undone action")
-reg_act(:undo, proc { buf.undo() }, "Undo the last action")
+reg_act("undo.redo", proc { buf.redo() }, "Redo the last undone action", { :group => :edit })
+reg_act("undo.last", proc { buf.undo() }, "Undo the last action", { :group => :edit })
 reg_act(:jump_end_of_line, proc { buf.jump(END_OF_LINE) }, "Move to the end of the current line")
 reg_act(:jump_end_of_buffer, proc { buf.jump(END_OF_BUFFER) }, "Move to the end of the buffer")
 reg_act(:jump_start_of_buffer, proc { buf.jump(START_OF_BUFFER) }, "Move to the start of the buffer")
@@ -166,11 +158,7 @@ reg_act(:jump_prev_word_start, proc { buf.jump_word(BACKWARD, WORD_START) }, "Ju
 reg_act(:jump_next_word_start, proc { buf.jump_word(FORWARD, WORD_START) }, "Jump to the start of the next word")
 reg_act(:insert_mode, proc { vma.kbd.set_mode(:insert) }, "Switch to INSERT mode")
 reg_act(:prev_mode, proc { vma.kbd.to_previous_mode }, "Return to the previous mode")
-reg_act(:move_prev_line, proc { buf.move(BACKWARD_LINE) }, "Move the cursor to the previous line")
-reg_act(:move_next_line, proc { buf.move(FORWARD_LINE) }, "Move the cursor to the next line")
-reg_act(:move_backward_char, proc { buf.move(BACKWARD_CHAR) }, "Move one character backward")
 reg_act(:start_visual_mode, proc { buf.start_selection; vma.kbd.set_mode(:visual) }, "Enter VISUAL mode (for selections)")
-reg_act(:jump_last_edit, proc { buf.jump_to_last_edit }, "Jump to the last edit location")
 reg_act(:install_demo_files, proc { install_demo_files }, "Install and show Demo")
 reg_act(:reload_customrb, proc { reload_customrb }, "Reload custom.rb")
 
@@ -225,12 +213,6 @@ act_list = {
                    :desc => "Reload file from disk", :group => :file },
   :buf_backup => { :proc => proc { buf.backup() }, :desc => "Backup current file", :group => :file },
 
-  :edit_redo => { :proc => proc { buf.redo },
-                  :desc => "Redo edit", :group => :edit },
-
-  :edit_undo => { :proc => proc { buf.undo },
-                  :desc => "Undo edit", :group => :edit },
-
   :find_in_buffer => { :proc => proc { invoke_search },
                        :desc => "Find", :group => :edit },
 
@@ -281,12 +263,6 @@ act_list = {
       b.move(FORWARD_CHAR)            # vim ~ advances, even on non-letters
     end
   }, :desc => "Toggle case of char and advance (vim ~)", :group => :edit },
-
-  :forward_line => { :proc => proc { buf.move(FORWARD_LINE) },
-                     :desc => "Move one line forward", :group => [:move, :basic] },
-
-  :backward_line => { :proc => proc { buf.move(BACKWARD_LINE) },
-                      :desc => "Move one line backward", :group => [:move, :basic] },
 
   :increment_word => { :proc => proc { buf.increment_current_word },
                        :desc => "Increment word", :group => [:edit, :extra] },

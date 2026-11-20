@@ -34,8 +34,8 @@ module Vimamsa
       add_to_menu "File.Restart", { :label => "Restart (reload config and files)", :action => :restart_editor }
       add_to_menu "File.Quit", { :label => "Quit", :action => :quit }
 
-      add_to_menu "Edit.Undo", { :label => "Undo edit", :action => :edit_undo }
-      add_to_menu "Edit.Redo", { :label => "Redo edit", :action => :edit_redo }
+      add_to_menu "Edit.Undo", { :label => "Undo edit", :action => "undo.last" }
+      add_to_menu "Edit.Redo", { :label => "Redo edit", :action => "undo.redo" }
       add_to_menu "Edit.SearchReplace", { :label => "Search and replace", :action => :gui_search_replace }
       add_to_menu "Edit.Find", { :label => "Find", :action => :find_in_buffer }
       add_to_menu "Edit.ToggleAutocomplete", { :label => "Toggle autocomplete", :action => :toggle_autocomplete }
@@ -49,7 +49,7 @@ module Vimamsa
 
       add_to_menu "Actions.SearchForActions", { :label => "Search for Actions", :action => :search_actions }
 
-      add_to_menu "Actions.Grep", { :label => "Grep lines", :action => :invoke_grep_search }
+      add_to_menu "Actions.Grep", { :label => "Grep lines", :action => "grep.buf" }
 
       add_to_menu "Actions.FileHistoryFinder", { :label => "Search files in history", :action => :gui_file_history_finder }
 

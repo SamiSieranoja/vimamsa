@@ -70,14 +70,14 @@ class Grep
     vma.kbd.add_minor_mode("grep", :grep, :command)
 
     vma.kbd.add_minor_mode("bmgr", :buf_mgr, :command)
-    reg_act(:grep_buffer, proc { Grep.new.run }, "Grep current buffer")
+    reg_act("grep.buf", proc { Grep.new.run }, "Grep current buffer")
     reg_act(:grep_refresh, proc {
       if vma.buf.module.class == Grep
         vma.buf.module.refresh
       end
     }, "Refresh current Grep buffer")
 
-    bindkey "C , g", :grep_buffer
+    bindkey "C , g", "grep.buf"
     bindkey "grep ctrl-r", :grep_refresh
   end
 

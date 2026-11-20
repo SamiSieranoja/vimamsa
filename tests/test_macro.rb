@@ -132,6 +132,6 @@ class TestMacro < VmaTest
     keys "q b @ a j q"
     assert_buf "bc\nabc\nabc\n"
     assert_pos 2, 0
-    assert_eq [:forward_line], recorded("b")
+    assert_eq ["move.line.next"], recorded("b")
   end
 end

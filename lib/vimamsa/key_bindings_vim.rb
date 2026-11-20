@@ -83,8 +83,8 @@ add_keys "vim misc", {
   "B i" => :jump_to_start_of_buffer,
   "B o" => :jump_to_end_of_buffer,
   "B c" => :close_current_buffer,
-  "B ;" => :jump_last_edit,
-  "B q" => :jump_to_last_edit,
+  "B ;" => "jump.edit.prev",
+  "B q" => "jump.edit.prev",
   "B w" => :jump_to_next_edit,
   "B m" => :run_last_macro,
 }

@@ -4,35 +4,35 @@ class TestUndo < VmaTest
 
   def test_undo_restores_empty_buffer
     act 'buf.insert_txt("hello")'
-    act :undo
+    act "undo.last"
     assert_buf "\n"
   end
 
   def test_undo_on_empty_buffer_is_noop
-    act :undo
+    act "undo.last"
     assert_buf "\n"
   end
 
   def test_redo_after_undo
     act 'buf.insert_txt("hello")'
-    act :undo
-    act :redo
+    act "undo.last"
+    act "undo.redo"
     assert_buf "hello\n"
   end
 
   def test_redo_on_empty_stack_is_noop
-    act :undo
-    act :redo
+    act "undo.last"
+    act "undo.redo"
     assert_buf "\n"
   end
 
   def test_new_edit_clears_redo_stack
     act 'buf.insert_txt("hello")'
-    act :undo
+    act "undo.last"
     assert_buf "\n"
     act 'buf.insert_txt("world")'
     # redo stack was cleared — redo should be a no-op
-    act :redo
+    act "undo.redo"
     assert_buf "world\n"
   end
 
@@ -44,7 +44,7 @@ class TestUndo < VmaTest
     act :delete_char_forward
     vma.buf.new_undo_group
     assert_buf "cde\n"
-    act :undo
+    act "undo.last"
     assert_buf "abcde\n"
   end
 
@@ -56,7 +56,7 @@ class TestUndo < VmaTest
     act :delete_line
     vma.buf.new_undo_group
     assert_buf "second\n"
-    act :undo
+    act "undo.last"
     assert_buf "first\nsecond\n"
   end
 
@@ -66,13 +66,13 @@ class TestUndo < VmaTest
     act 'buf.insert_txt(" second")'
     assert_buf "first second\n"
 
-    act :undo
+    act "undo.last"
     assert_buf "first\n"
-    act :redo
+    act "undo.redo"
     assert_buf "first second\n"
-    act :undo
+    act "undo.last"
     assert_buf "first\n"
-    act :undo
+    act "undo.last"
     assert_buf "\n"
   end
 
@@ -87,11 +87,11 @@ class TestUndo < VmaTest
     vma.buf.new_undo_group
     assert_buf "aaabbbccc\n"
 
-    act :undo
+    act "undo.last"
     assert_buf "aaabbb\n"
-    act :undo
+    act "undo.last"
     assert_buf "aaa\n"
-    act :undo
+    act "undo.last"
     assert_buf "\n"
   end
 
@@ -103,9 +103,9 @@ class TestUndo < VmaTest
     keys "i space w o r l d esc"
     assert_buf "hello world\n"
 
-    act :undo
+    act "undo.last"
     assert_buf "hello\n"  # second insert session (" world") undone
-    act :undo
+    act "undo.last"
     assert_buf "\n"       # first insert session ("hello") undone
   end
 
@@ -121,7 +121,7 @@ class TestUndo < VmaTest
     drain_idle
     assert_buf "line1\nline2\nline3\n"
 
-    act :undo
+    act "undo.last"
     assert_buf "\n"
   end
 
@@ -133,9 +133,9 @@ class TestUndo < VmaTest
     drain_idle
     assert_buf "abcdef\n"
 
-    act :undo
+    act "undo.last"
     assert_buf "abc\n"
-    act :undo
+    act "undo.last"
     assert_buf "\n"
   end
 
@@ -147,9 +147,9 @@ class TestUndo < VmaTest
     drain_idle
     assert_buf "base appended\n"
 
-    act :undo
+    act "undo.last"
     assert_buf "base\n"
-    act :undo
+    act "undo.last"
     assert_buf "\n"
   end
 
@@ -165,9 +165,9 @@ class TestUndo < VmaTest
     drain_idle
     assert_buf "foofoo\n"
 
-    act :undo               # undo the macro run
+    act "undo.last"               # undo the macro run
     assert_buf "foo\n"
-    act :undo               # undo the recording-time insertion
+    act "undo.last"               # undo the recording-time insertion
     assert_buf "\n"
   end
 
@@ -176,9 +176,9 @@ class TestUndo < VmaTest
     drain_idle
     assert_buf "hello\n"
 
-    act :undo
+    act "undo.last"
     assert_buf "\n"
-    act :redo
+    act "undo.redo"
     assert_buf "hello\n"
   end
 
@@ -194,7 +194,7 @@ class TestUndo < VmaTest
     drain_idle
     assert_buf " world\n"
 
-    act :undo
+    act "undo.last"
     assert_buf "hello world\n"
   end
 

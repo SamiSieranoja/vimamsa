@@ -9,6 +9,8 @@ module Vimamsa
 # doc/vimlike_vim_conflicts.md.
 
 # ── composite actions for vim commands not covered by a single action ────────
+#TODO: file should be renamed to sort close to  key_actions.rb
+
 
 def reg_vim_actions
   # get_range(:to_line_end) inverts on an empty line / cursor-on-newline and
@@ -81,10 +83,10 @@ VIM_BINDINGS = {
     "VCX down" => "buf.move(FORWARD_LINE)",
     "VCX right" => "buf.move(FORWARD_CHAR)",
     "VCX left" => "buf.move(BACKWARD_CHAR)",
-    "VC h" => :e_move_backward_char,
-    "VC l" => :e_move_forward_char,
-    "VC j" => :forward_line,
-    "VC k" => :backward_line,
+    "VC h" => "move.char.prev",
+    "VC l" => "move.char.next",
+    "VC j" => "move.line.next",
+    "VC k" => "move.line.prev",
     "C space" => "buf.move(FORWARD_CHAR)",
     "C backspace" => "buf.move(BACKWARD_CHAR)",
 
@@ -96,7 +98,7 @@ VIM_BINDINGS = {
     "VC G(vma.kbd.next_command_count!=nil)" => "buf.jump_to_line()",
     "VC G" => :jump_end_of_buffer,
     "VC g g" => :jump_start_of_buffer,
-    "VC g ;" => :jump_last_edit,
+    "VC g ;" => "jump.edit.prev",
 
     # Counts; "0" is BOL only when no count is pending
     "VC /[1-9]/" => "vma.kbd.set_next_command_count(<char>)",
@@ -123,7 +125,7 @@ VIM_BINDINGS = {
     "C ctrl-b" => :page_up,
     "C ctrl-d" => "buf.move(:forward_page)",  # approx: full page, vim: half
     "C ctrl-u" => "buf.move(:backward_page)", # approx: full page, vim: half
-    "C ctrl-o" => :jump_to_last_edit,         # approx of vim jumplist back
+    "C ctrl-o" => "jump.edit.prev",         # approx of vim jumplist back
     "C z z" => :center_on_current_line,
 
     # Marks
@@ -132,6 +134,7 @@ VIM_BINDINGS = {
     "C ` <char>" => "buf.jump_to_mark(<char>)",
   },
 
+#TODO: should replace all eval actions like "buf.move ... with actual registered actions.
   "vim edit" => {
     # Enter insert mode
     "C i" => :insert_mode,
@@ -191,8 +194,8 @@ VIM_BINDINGS = {
     "C ." => :vim_repeat_last_action,
 
     # Undo / redo
-    "C u" => :undo,
-    "C ctrl-r" => :redo,
+    "C u" => "undo.last",
+    "C ctrl-r" => "undo.redo",
   },
 
   "vim visual" => {

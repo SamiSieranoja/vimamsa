@@ -53,7 +53,7 @@ class TestGtkSync < VmaTest
 
   def test_undo_syncs_gtk
     act 'buf.insert_txt("hello")'
-    act :undo
+    act "undo.last"
     assert_buf "\n"
     assert_gtk_sync
   end

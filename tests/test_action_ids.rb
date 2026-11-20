@@ -119,6 +119,27 @@ class TestActionIds < VmaTest
     cleanup
   end
 
+  # Step 2: duplicates merged into one action each; the old ids are aliases
+  def test_duplicates_merged
+    { "undo.last" => [:undo, :edit_undo], "undo.redo" => [:redo, :edit_redo],
+      "jump.edit.prev" => [:jump_last_edit, :jump_to_last_edit],
+      "move.char.prev" => [:move_backward_char, :e_move_backward_char],
+      "move.line.next" => [:move_next_line, :forward_line],
+      "move.line.prev" => [:move_prev_line, :backward_line],
+      "grep.buf" => [:grep_buffer, :invoke_grep_search] }.each { |id, olds|
+      assert vma.actions.ids.include?(id), "#{id} not registered"
+      olds.each { |o|
+        assert !vma.actions.ids.include?(o), "#{o} still registered on its own"
+        assert vma.actions[o].equal?(vma.actions[id]), "#{o} doesn't resolve to #{id}"
+      }
+    }
+    buf.set_content("ab\n")
+    buf.set_pos(0)
+    keys("x")         # vimlike x: delete char
+    act(:edit_undo)   # old menu id still works
+    assert_buf "ab\n"
+  end
+
   def test_every_alias_points_to_an_action
     bad = ACTION_ALIASES.reject { |_old, n| vma.actions.include?(n) }
     assert bad.empty?, "aliases to unregistered actions: #{bad.inspect}"

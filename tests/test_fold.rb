@@ -51,7 +51,7 @@ class TestFold < VmaTest
     seed(BLOCK)
     keys("enter")
     assert_buf COLLAPSED
-    act :undo
+    act "undo.last"
     assert_buf BLOCK
   end
 

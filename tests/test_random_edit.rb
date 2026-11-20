@@ -10,10 +10,10 @@ class TestRandomEdit < VmaTest
 
   # Safe actions: no file dialogs, no eval, no close/save operations.
   SAFE_ACTIONS = [
-    :e_move_forward_char,
-    :e_move_backward_char,
-    :move_next_line,
-    :move_prev_line,
+    "move.char.next",
+    "move.char.prev",
+    "move.line.next",
+    "move.line.prev",
     :jump_to_start_of_buffer,
     :jump_to_end_of_buffer,
     :jump_end_of_line,
@@ -26,8 +26,8 @@ class TestRandomEdit < VmaTest
     :delete_to_word_end,
     :delete_to_next_word_start,
     :delete_to_line_start,
-    :undo,
-    :redo,
+    "undo.last",
+    "undo.redo",
     :copy_cur_line,
     :paste_after_cursor,
     :paste_before_cursor,

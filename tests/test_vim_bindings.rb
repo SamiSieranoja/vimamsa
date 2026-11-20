@@ -159,7 +159,7 @@ class TestVimBindings < VmaTest
   end
 
   def test_ctrl_o_binding
-    assert_eq "ctrl-o", vma.kbd.act_bindings["C"][:jump_to_last_edit]
+    assert_eq "ctrl-o", vma.kbd.act_bindings["C"]["jump.edit.prev"]
   end
 
   def test_backtick_jumps_to_mark
