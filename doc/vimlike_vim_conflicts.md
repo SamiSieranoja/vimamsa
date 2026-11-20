@@ -25,7 +25,7 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | C | <code>backspace</code> | <code>buf.move(BACKWARD_CHAR)</code> | <code>buf.selection_active? ? buf.delete(SELECTION) : buf.delet...</code> | same keys, other action |
 | C | <code>ctrl-o</code> | <code>jump.edit.prev</code> | <code>:open_file_dialog</code> | same keys, other action |
 | C | <code>d $</code> | <code>:vim_delete_to_eol</code> | <code>buf.delete2(:to_line_end)</code> | same keys, other action |
-| C | <code>s</code> | <code>:vim_substitute_char</code> | <code>EasyJump.start</code> | same keys, other action |
+| C | <code>s</code> | <code>:vim_substitute_char</code> | <code>jump.easy</code> | same keys, other action |
 | C | <code>space</code> | <code>buf.move(FORWARD_CHAR)</code> | <code>2 longer bindings</code> | vimlike uses these keys as a prefix |
 | C | <code>x</code> | <code>:vim_delete_char</code> | <code>buf.delete(CURRENT_CHAR_FORWARD)</code> | same keys, other action |
 | C | <code>z z</code> | <code>:center_on_current_line</code> | <code>z</code> <code>mode.browse</code> | a shorter vimlike binding runs first |
@@ -36,7 +36,7 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | I | <code>ctrl-p</code> | <code>buf.view.autocp_manual_trigger</code> | <code>move.line.prev</code> | same keys, other action |
 | V | <code>^</code> | <code>buf.jump(FIRST_NON_WHITESPACE)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> | same keys, other action |
 | V | <code>ctrl-c</code> | <code>buf.end_visual_mode</code> | <code>buf.comment_selection</code> | same keys, other action |
-| V | <code>s</code> | <code>:vim_change_selection</code> | <code>EasyJump.start</code> | same keys, other action |
+| V | <code>s</code> | <code>:vim_change_selection</code> | <code>jump.easy</code> | same keys, other action |
 
 ## Added to vimlike
 
@@ -93,7 +93,7 @@ its own is in the way.
 | B | <code>r</code> | <code>vma.gui.page_down(multip: 0.25)</code> |
 | B | <code>return</code> | <code>mode.browse.exit</code> |
 | B | <code>s</code> | <code>move.page.prev</code> |
-| B | <code>w</code> | <code>:jump_to_next_edit</code> |
+| B | <code>w</code> | <code>jump.edit.next</code> |
 | B | <code>z</code> | <code>center_on_current_line();call_action('mode.browse.exit')</code> |
 | C | <code>$</code> | <code>buf.jump(END_OF_LINE)</code> |
 | C | <code>' &lt;char&gt;</code> | <code>buf.jump_to_mark(&lt;char&gt;)</code> |
@@ -135,7 +135,7 @@ its own is in the way.
 | C | <code>d w</code> | <code>buf.delete2(:to_next_word)</code> |
 | C | <code>down</code> | <code>buf.move(FORWARD_LINE)</code> |
 | C | <code>e</code> | <code>move.word.end</code> |
-| C | <code>enter</code> | <code>buf.handle_line_action()</code> |
+| C | <code>enter</code> | <code>jump.line</code> |
 | C | <code>f &lt;char&gt;</code> | <code>buf.jump_to_next_instance_of_char(&lt;char&gt;)</code> |
 | C | <code>f space</code> | <code>buf.jump_to_next_instance_of_char(' ')</code> |
 | C | <code>g ;</code> | <code>jump.edit.prev</code> |
@@ -167,7 +167,7 @@ its own is in the way.
 | C | <code>q &lt;char&gt;</code> | <code>vma.kbd.set_mode(:macro);vma.macro.start_recording(&lt;char&gt;)</code> |
 | C | <code>r &lt;char&gt;</code> | <code>buf.replace_with_char(&lt;char&gt;)</code> |
 | C | <code>r space</code> | <code>buf.replace_with_char(' ')</code> |
-| C | <code>return</code> | <code>buf.handle_line_action()</code> |
+| C | <code>return</code> | <code>jump.line</code> |
 | C | <code>right</code> | <code>buf.move(FORWARD_CHAR)</code> |
 | C | <code>tab</code> | <code>bufs.switch_to_last_buf</code> |
 | C | <code>u</code> | <code>undo.last</code> |

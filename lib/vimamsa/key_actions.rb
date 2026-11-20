@@ -38,7 +38,7 @@ reg_act("debug.off", proc { cnf.debug = false }, "Disable debug")
 
 reg_act("debug.eval.sel", proc { bindkey "V , e", "vma.buf.convert_selected_text(:eval)" }, "Enable key binding:\"[VISUAL] , e:\" Eval selected text")
 
-reg_act(:easy_jump, proc { EasyJump.start }, "Easy jump")
+reg_act("jump.easy", proc { EasyJump.start }, "Easy jump")
 reg_act(:gui_ensure_cursor_visible, proc { vma.gui.view.ensure_cursor_visible }, "Scroll to current cursor position")
 reg_act(:gui_refresh_cursor, proc { vma.buf.refresh_cursor }, "Refresh cursor")
 
@@ -56,7 +56,7 @@ reg_act(:history_switch_forwards, proc { bufs.history_switch(+1) }, "Next buffer
 reg_act("debug.buf.access", proc { bufs.print_by_access_time }, "Print buffers by access time", { :group => :file })
 reg_act(:center_on_current_line, "center_on_current_line", "", { :group => :view })
 reg_act(:run_last_macro, proc { vma.macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
-reg_act(:jump_to_next_edit, "jump_to_next_edit", "Jump to next edit pos")
+reg_act("jump.edit.next", "jump_to_next_edit", "Jump to next edit pos")
 reg_act("jump.edit.prev", proc { buf.jump_to_last_edit }, "Jump to the last edit location")
 reg_act("move.random", proc { buf.jump_to_random_pos }, "")
 reg_act(:insert_new_line, proc { buf.insert_new_line() }, "Insert new line")
@@ -124,7 +124,7 @@ reg_act(:extract_file_links, proc {
     message("#{links.size} file link(s)")
   end
 }, "Extract links to existing files from current file into a new buffer")
-reg_act(:open_file_under_cursor, proc {
+reg_act("jump.file", proc {
   # Like vim gf, and the "Open file" items of the right-click menu
   fn = buf.file_path_at(buf.pos)
   if fn.nil?

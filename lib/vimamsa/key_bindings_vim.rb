@@ -67,7 +67,7 @@ add_keys "vim misc", {
   # prev/next file in file panel order (no-op while the panel is hidden)
   "C alt-h" => :file_panel_prev_file,
   "C alt-l" => :file_panel_next_file,
-  "C enter || C return" => [:line_action, proc { buf.handle_line_action() }, "Line action"],
+  "C enter || C return" => ["jump.line", proc { buf.handle_line_action() }, "Line action"],
 
   # Browse mode keys (mode reachable only via the "mode.browse" action)
   "B h" => :history_switch_backwards,
@@ -85,7 +85,7 @@ add_keys "vim misc", {
   "B c" => :close_current_buffer,
   "B ;" => "jump.edit.prev",
   "B q" => "jump.edit.prev",
-  "B w" => :jump_to_next_edit,
+  "B w" => "jump.edit.next",
   "B m" => :run_last_macro,
 }
 

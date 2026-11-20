@@ -74,6 +74,11 @@ ACTION_ALIASES = {
   jump_to_random: "move.random",
   page_down: "move.page.next",
   page_up: "move.page.prev",
+  # jump namespace (2026-11-20)
+  jump_to_next_edit: "jump.edit.next",
+  easy_jump: "jump.easy",
+  open_file_under_cursor: "jump.file",
+  line_action: "jump.line",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

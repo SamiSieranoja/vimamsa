@@ -97,7 +97,7 @@ add_keys "intro", {
   "I ctrl-y" => "undo.redo",
   "CI backspace" => :insert_backspace,
  "CI ctrl-o" => :open_file_dialog,
-  "C g f" => :open_file_under_cursor,
+  "C g f" => "jump.file",
  "I ctrl-l" => :find_in_buffer,
  "I ctrl-g" => :find_next,
   
@@ -357,7 +357,7 @@ add_keys "core", {
  "B c" => :close_current_buffer,
  "B ;" => "jump.edit.prev",
  "B q" => "jump.edit.prev",
- "B w" => :jump_to_next_edit,
+ "B w" => "jump.edit.next",
  "C , v" => :auto_indent_buffer,
  "C , , u" => :update_file_index,
  "C , s a" => :buf_save_as,
@@ -367,8 +367,8 @@ add_keys "core", {
  "C , ; a c" => :toggle_autocomplete,
  "C , R" => "app.restart",
 
- "VC s" => :easy_jump,
- "I alt-s" => :easy_jump,
+ "VC s" => "jump.easy",
+ "I alt-s" => "jump.easy",
  "VC , m f" => [:find_macro_gui, proc { vma.macro.find_macro_gui }, "Find named macro"],
  "C , m n" => [:gui_name_macro, proc { vma.macro.gui_name_macro }, "Name last macro"],
  "C , j r" => "move.random",
@@ -382,7 +382,7 @@ add_keys "core", {
  "C , h" => :gui_file_history_finder,
  "C , z" => :gui_file_finder,
 
- "C enter || C return" => [:line_action, proc { buf.handle_line_action() }, "Line action"],
+ "C enter || C return" => ["jump.line", proc { buf.handle_line_action() }, "Line action"],
  "V d" => [:delete_selection, proc { buf.delete(SELECTION) }, ""],
  "V a d" => [:delete_append_selection, proc { buf.delete(SELECTION, :append) }, "Delete and append selection"]
 }
