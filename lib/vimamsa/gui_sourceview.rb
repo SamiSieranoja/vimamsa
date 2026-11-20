@@ -997,6 +997,8 @@ class VSourceView < GtkSource::View
         next unless @@context_link
         if is_url(@@context_link)
           open_url(@@context_link)
+        elsif m = @@context_link.match(/⟦help:(.*)⟧/)
+          vma.buf.handle_word([m[1], :help])
         else
           fn = hpt_check_cur_word(@@context_link)
           open_new_file(fn) if fn

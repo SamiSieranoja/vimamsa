@@ -58,6 +58,24 @@ class TestContextMenuFile < VmaTest
     end
   end
 
+  # ⟦help:keybindings⟧ opened from the context menu shows the key bindings,
+  # like opening it with the keyboard does
+  def test_help_link_opens_from_menu
+    with_menu("⟦help:keybindings⟧") do |_b, labels, _dir|
+      assert labels.include?("Open link"), labels.inspect
+      called = nil
+      orig = Vimamsa.instance_method(:call_action)
+      Vimamsa.send(:define_method, :call_action) { |id, *a| called = id }
+      begin
+        vma.gui.app.lookup_action("ctx_open_link").activate(nil)
+        drain_idle
+      ensure
+        Vimamsa.send(:define_method, :call_action, orig)
+      end
+      assert_eq :show_key_bindings, called
+    end
+  end
+
   def test_no_item_for_missing_file
     with_menu("missing.pdf") do |_b, labels, _dir|
       assert !labels.any? { |l| l.start_with?("Open file") }, labels.inspect
