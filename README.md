@@ -52,9 +52,11 @@ Requirements:
  - Ruby 3.1+
  - GTK 4
 
-On Ubuntu (22.04):
+On Ubuntu (24.04):
 ```
-sudo apt install ruby-dev build-essential
+sudo apt install ruby-dev build-essential pkg-config \
+  libgtk-4-dev libgtksourceview-5-dev libvte-2.91-gtk4-dev \
+  libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 sudo gem install vimamsa
 ```
 
