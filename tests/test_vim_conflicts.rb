@@ -92,7 +92,7 @@ class TestVimConflicts < VmaTest
       assert vma.kbd.equal?(kbd), "vma.kbd replaced"
       assert vma.actions.equal?(acts), "vma.actions replaced"
       assert_eq "#123456", cnf.mode.command.cursor.background!
-      assert vma.actions.include?(:show_key_bindings)
+      assert vma.actions.include?("help.keys")
     ensure
       cnf.mode.command.cursor.background = color
     end

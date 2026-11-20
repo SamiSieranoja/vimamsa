@@ -45,6 +45,11 @@ ACTION_ALIASES = {
   exit_browse_mode: "mode.browse.exit",
   toggle_kbd_passthrough: "mode.passthrough.toggle",
   minibuffer_end: "mode.minibuffer.end",
+  # help namespace (2026-11-20)
+  show_key_bindings: "help.keys",
+  show_free_key_bindings: "help.keys.free",
+  show_vim_binding_conflicts: "help.vim_conflicts",
+  show_message_history: "help.messages",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

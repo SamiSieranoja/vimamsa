@@ -72,7 +72,7 @@ class TestContextMenuFile < VmaTest
       ensure
         Vimamsa.send(:define_method, :call_action, orig)
       end
-      assert_eq :show_key_bindings, called
+      assert_eq "help.keys", called
     end
   end
 

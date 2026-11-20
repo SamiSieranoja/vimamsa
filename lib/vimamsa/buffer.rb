@@ -1429,7 +1429,7 @@ class Buffer < String
       open_new_file(word)
     elsif wtype == :help
       if word == "keybindings"
-        call_action(:show_key_bindings)
+        call_action("help.keys")
       end
     else
       #TODO

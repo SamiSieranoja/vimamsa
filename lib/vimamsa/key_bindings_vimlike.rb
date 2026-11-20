@@ -312,7 +312,7 @@ add_keys "core", {
   "C @ <char>" => "vma.macro.run_macro(<char>)",
   "C , m S" => 'vma.macro.save_macro("a")',
   "C , m s" => "vma.macro.save",
-  "C , m h" => :show_message_history,
+  "C , m h" => "help.messages",
 
   # "C ." => "repeat_last_action", # TODO
   "VC ;" => "repeat_last_find",
@@ -372,7 +372,7 @@ add_keys "core", {
  "VC , m f" => [:find_macro_gui, proc { vma.macro.find_macro_gui }, "Find named macro"],
  "C , m n" => [:gui_name_macro, proc { vma.macro.gui_name_macro }, "Name last macro"],
  "C , j r" => :jump_to_random,
- "C , ; s k" => :show_key_bindings, #TODO: better binding,
+ "C , ; s k" => "help.keys", #TODO: better binding,
  "C , , c b" => :put_file_path_to_clipboard, #TODO: better binding or remove?,
  "C , , e" => :encrypt_file, #TODO: better binding,
  "C , ; u" => :set_unencrypted, #TODO: better binding,
