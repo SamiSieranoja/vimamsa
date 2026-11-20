@@ -131,11 +131,17 @@ echo ">> Suite exit code (from guest): $sentinel"
 
 # VMA_UPDATE_DOC=1: tests that generate a tracked doc (test_vim_conflicts)
 # wrote it in the guest; copy it back into this working tree.
+# copyfrom doesn't truncate an existing file, so copy into an empty dir first.
 if [ "${VMA_UPDATE_DOC:-}" = "1" ]; then
+  DOCTMP="$(mktemp -d)"
   for f in doc/vimlike_vim_conflicts.md; do
     echo ">> Copying regenerated $f from guest"
-    "${GC[@]}" copyfrom "${CRED[@]}" --target-directory="${REPO}/doc/" "${GUEST_HOME}/vimamsa/$f" ||
+    if "${GC[@]}" copyfrom "${CRED[@]}" --target-directory="$DOCTMP/" "${GUEST_HOME}/vimamsa/$f"; then
+      mv -f "$DOCTMP/$(basename "$f")" "${REPO}/$f"
+    else
       echo "!! could not copy $f back" >&2
+    fi
   done
+  rm -rf "$DOCTMP"
 fi
 exit "$sentinel"
