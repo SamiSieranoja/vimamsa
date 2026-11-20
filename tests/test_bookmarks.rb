@@ -29,7 +29,7 @@ class TestBookmarks < VmaTest
   def add_at(path, lpos)
     jump_to_file(path, lpos + 1)
     assert_eq lpos, vma.buf.lpos
-    act(:bookmark_add)
+    act("mark.add")
     bm = vma.bookmarks.list.find { |b| b[:fname] == path && b[:lpos] == lpos }
     assert bm, "bookmark was not added at line #{lpos}"
     bm
@@ -172,7 +172,7 @@ class TestBookmarks < VmaTest
     b3[:created] = Time.now - 200
     b5[:created] = Time.now - 100
 
-    act(:bookmark_list)
+    act("mark.list")
     assert_mode :bmark
     list_id = vma.buf.id
     rows = vma.buf.to_s.lines.select { |l| l.include?(tilde_path(path)) }.collect(&:strip)
@@ -193,7 +193,7 @@ class TestBookmarks < VmaTest
     add_at(path, 1)
     bm = add_at(path, 6) # newest -> first row
 
-    act(:bookmark_list)
+    act("mark.list")
     act(:bmark_delete)
     assert !vma.bookmarks.list.include?(bm), "bookmark not deleted"
     assert_eq 1, vma.bookmarks.list.count { |b| b[:fname] == path }

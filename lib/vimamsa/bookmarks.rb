@@ -17,8 +17,8 @@ class Bookmarks
 
   def self.init()
     vma.kbd.add_minor_mode("bmark", :bmark, :command)
-    reg_act(:bookmark_add, proc { vma.bookmarks.add }, "Add bookmark at cursor (persistent, across files)")
-    reg_act(:bookmark_list, proc { BookmarkList.new.run; vma.kbd.set_mode(:bmark) }, "List bookmarks")
+    reg_act("mark.add", proc { vma.bookmarks.add }, "Add bookmark at cursor (persistent, across files)")
+    reg_act("mark.list", proc { BookmarkList.new.run; vma.kbd.set_mode(:bmark) }, "List bookmarks")
     reg_act(:bmark_select, proc { buf.module.select_line }, "")
     reg_act(:bmark_delete, proc { buf.module.delete_selected }, "")
 

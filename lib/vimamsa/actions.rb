@@ -206,6 +206,9 @@ ACTION_ALIASES = {
   set_style_link: "style.link",
   clear_formats: "style.clear",
   show_images: "style.images",
+  # mark namespace (2026-11-20)
+  bookmark_add: "mark.add",
+  bookmark_list: "mark.list",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

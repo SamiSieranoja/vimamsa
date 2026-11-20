@@ -69,8 +69,8 @@ module Vimamsa
       add_to_menu "Actions.debug.ToggleKbdPassthrough", { :label => "Toggle kbd event passthrough", :action => "mode.passthrough.toggle" }
 
       add_to_menu "View.BufferManager", { :label => "Show open files", :action => "buf.manager" }
-      add_to_menu "View.Bookmarks", { :label => "Show bookmarks", :action => :bookmark_list }
-      add_to_menu "Edit.AddBookmark", { :label => "Add bookmark", :action => :bookmark_add }
+      add_to_menu "View.Bookmarks", { :label => "Show bookmarks", :action => "mark.list" }
+      add_to_menu "Edit.AddBookmark", { :label => "Add bookmark", :action => "mark.add" }
       add_to_menu "View.SelectLanguage", { :label => "Set buffer language...", :action => "buf.language" }
       add_to_menu "View.TwoColumn", { :label => "Toggle two column mode", :action => "view.columns.toggle" }
       add_to_menu "View.FilePanel", { :label => "Toggle file panel", :action => "panel.files.toggle" }
