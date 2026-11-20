@@ -57,7 +57,7 @@ class TestCopyPaste < VmaTest
     # Select "hello" (5 chars)
     act "buf.start_selection"
     4.times { act "buf.move(FORWARD_CHAR)" }
-    act :cut_selection
+    act "sel.cut"
     assert_buf " world\n"
     act "buf.jump(END_OF_LINE)"
     act "edit.paste.after"
@@ -69,7 +69,7 @@ class TestCopyPaste < VmaTest
     act "move.buf.start"
     act "buf.start_selection"
     2.times { act "buf.move(FORWARD_CHAR)" }
-    act :copy_selection
+    act "sel.copy"
     # Original buffer unchanged
     assert_buf "foo bar\n"
     act "buf.jump(END_OF_LINE)"
@@ -94,7 +94,7 @@ class TestCopyPaste < VmaTest
     act "move.buf.start"
     act "buf.start_selection"
     2.times { act "buf.move(FORWARD_CHAR)" }
-    act :cut_selection
+    act "sel.cut"
     assert_eq "hel", vma.clipboard.get
   end
 

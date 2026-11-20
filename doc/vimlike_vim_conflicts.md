@@ -29,7 +29,7 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | C | <code>space</code> | <code>buf.move(FORWARD_CHAR)</code> | <code>2 longer bindings</code> | vimlike uses these keys as a prefix |
 | C | <code>x</code> | <code>edit.delete.char.inline</code> | <code>edit.delete.char</code> | same keys, other action |
 | C | <code>z z</code> | <code>:center_on_current_line</code> | <code>z</code> <code>mode.browse</code> | a shorter vimlike binding runs first |
-| I | <code>ctrl-c</code> | <code>mode.prev</code> | <code>buf.copy_active_selection</code> | same keys, other action |
+| I | <code>ctrl-c</code> | <code>mode.prev</code> | <code>sel.copy</code> | same keys, other action |
 | I | <code>ctrl-h</code> | <code>edit.backspace</code> | <code>edit.complete</code> | same keys, other action |
 | I | <code>ctrl-j</code> | <code>buf.insert_new_line()</code> | <code>buf.view.hide_completions</code> | same keys, other action |
 | I | <code>ctrl-n</code> | <code>edit.complete</code> | <code>move.line.next</code> | same keys, other action |
@@ -37,7 +37,7 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | V | <code>U</code> | <code>buf.transform_selection(:upcase)</code> | <code>case.sel.upper</code> | same keys, other action |
 | V | <code>^</code> | <code>buf.jump(FIRST_NON_WHITESPACE)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> | same keys, other action |
 | V | <code>ctrl-c</code> | <code>buf.end_visual_mode</code> | <code>edit.comment</code> | same keys, other action |
-| V | <code>s</code> | <code>:vim_change_selection</code> | <code>jump.easy</code> | same keys, other action |
+| V | <code>s</code> | <code>sel.change</code> | <code>jump.easy</code> | same keys, other action |
 | V | <code>u</code> | <code>buf.transform_selection(:downcase)</code> | <code>case.sel.lower</code> | same keys, other action |
 | V | <code>~</code> | <code>buf.transform_selection(:swapcase)</code> | <code>case.sel.swap</code> | same keys, other action |
 
@@ -66,7 +66,7 @@ its own is in the way.
 | C | <code>y w</code> | <code>buf.copy(:to_next_word)</code> |
 | V | <code>&lt;</code> | <code>buf.unindent_selection</code> |
 | V | <code>&gt;</code> | <code>buf.indent_selection</code> |
-| V | <code>c</code> | <code>:vim_change_selection</code> |
+| V | <code>c</code> | <code>sel.change</code> |
 
 ## Missing from vimlike
 
@@ -202,7 +202,7 @@ its own is in the way.
 | I | <code>shift-right</code> | <code>insert_select_move(FORWARD_CHAR)</code> |
 | I | <code>shift-tab</code> | <code>buf.unindent</code> |
 | I | <code>shift-tab(vma.buf.view.autocp_active)</code> | <code>buf.view.autocp_select_previous</code> |
-| I | <code>shift-up</code> | <code>insert_select_move(BACKWARD_LINE)</code> |
+| I | <code>shift-up</code> | <code>sel.line.prev</code> |
 | I | <code>space</code> | <code>buf.insert_txt(" ")</code> |
 | I | <code>tab</code> | <code>buf.insert_tab</code> |
 | I | <code>tab(vma.buf.view.autocp_active)</code> | <code>buf.view.autocp_select_next</code> |
@@ -220,10 +220,10 @@ its own is in the way.
 | V | <code>F space</code> | <code>buf.jump_to_next_instance_of_char(' ',BACKWARD)</code> |
 | V | <code>G</code> | <code>move.buf.end</code> |
 | V | <code>G(vma.kbd.next_command_count!=nil)</code> | <code>buf.jump_to_line()</code> |
-| V | <code>J</code> | <code>buf.convert_selected_text(:joinlines)</code> |
+| V | <code>J</code> | <code>sel.join</code> |
 | V | <code>a &lt;char&gt;</code> | <code>buf.text_object_op(:select, &lt;char&gt;, :a)</code> |
 | V | <code>b</code> | <code>move.word.prev</code> |
-| V | <code>d</code> | <code>buf.delete(SELECTION)</code> |
+| V | <code>d</code> | <code>sel.delete</code> |
 | V | <code>down</code> | <code>buf.move(FORWARD_LINE)</code> |
 | V | <code>e</code> | <code>move.word.end</code> |
 | V | <code>esc</code> | <code>buf.end_visual_mode</code> |

@@ -460,7 +460,9 @@ class Editor
   # Register converter
   def reg_conv(converter, converter_id)
     @converters[converter_id] = converter
-    reg_act(converter_id, proc { vma.buf.convert_selected_text(converter_id) }, "Converter #{converter_id}", { :scope => [:selection] })
+    id = "sel.convert.#{converter_id}"
+    ACTION_ALIASES[converter_id.to_sym] = id # the old action id was the converter id
+    reg_act(id, proc { vma.buf.convert_selected_text(converter_id) }, "Converter #{converter_id}", { :scope => [:selection] })
   end
 
   def apply_conv(converter_id, txt)

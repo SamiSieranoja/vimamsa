@@ -963,8 +963,8 @@ class VSourceView < GtkSource::View
   ]
 
   CONTEXT_MENU_ITEMS_SELECTION = [
-    ["Copy", :copy_selection],
-    ["Cut", :cut_selection],
+    ["Copy", "sel.copy"],
+    ["Cut", "sel.cut"],
   ]
 
   def init_context_menu

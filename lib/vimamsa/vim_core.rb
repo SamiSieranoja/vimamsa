@@ -61,7 +61,7 @@ def reg_vim_actions
     vma.kbd.set_mode(:insert)
   }, "Open line above (vim O)")
 
-  reg_act(:vim_change_selection, proc {
+  reg_act("sel.change", proc {
     buf.delete(SELECTION) # ends visual mode itself
     vma.kbd.set_mode(:insert)
   }, "Delete selection and enter insert mode (vim visual c/s)")
@@ -203,11 +203,11 @@ VIM_BINDINGS = {
     "V esc" => "buf.end_visual_mode",
     "V ctrl-c" => "buf.end_visual_mode",
     "V y" => "buf.copy_active_selection()",
-    "V d" => [:delete_selection, proc { buf.delete(SELECTION) }, ""],
+    "V d" => ["sel.delete", proc { buf.delete(SELECTION) }, ""],
     "V x" => "buf.delete(SELECTION)",
-    "V s" => :vim_change_selection,
-    "V c" => :vim_change_selection,
-    "V J" => :V_join_lines,
+    "V s" => "sel.change",
+    "V c" => "sel.change",
+    "V J" => "sel.join",
     "V u" => "buf.transform_selection(:downcase)",
     "V U" => "buf.transform_selection(:upcase)",
     "V ~" => "buf.transform_selection(:swapcase)",
@@ -238,7 +238,7 @@ VIM_BINDINGS = {
     "I tab" => "buf.insert_tab",
     "I shift-tab" => "buf.unindent",
 
-    "I shift-up" => :insert_select_up,
+    "I shift-up" => "sel.line.prev",
     "I shift-down" => "insert_select_move(FORWARD_LINE)",
     "I shift-left" => "insert_select_move(BACKWARD_CHAR)",
     "I shift-right" => "insert_select_move(FORWARD_CHAR)",

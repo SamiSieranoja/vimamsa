@@ -130,6 +130,20 @@ ACTION_ALIASES = {
   selection_swapcase: "case.sel.swap",
   selection_capitalize: "case.sel.capitalize",
   vim_toggle_case: "case.char.toggle",
+  # sel namespace (2026-11-20)
+  select_all: "sel.all",
+  insert_select_up: "sel.line.prev",
+  insert_select_down: "sel.line.next",
+  copy_selection: "sel.copy",
+  cut_selection: "sel.cut",
+  vim_change_selection: "sel.change",
+  selection_reverse: "sel.reverse",
+  selection_remove_indent: "sel.unindent",
+  selection_remove_common_indent: "sel.unindent.common",
+  V_join_lines: "sel.join",
+  V_to_latex_itemize: "sel.latex_itemize",
+  delete_selection: "sel.delete",
+  delete_append_selection: "sel.delete.append",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

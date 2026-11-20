@@ -90,8 +90,8 @@ add_keys "intro", {
   "IX ctrl-a" => "move.line.start",
   
   "CI ctrl-v" => "edit.paste.before",
-  "I ctrl-c" => :copy_selection, #TODO: in control mode also?
-  "CI ctrl-x" => :cut_selection,
+  "I ctrl-c" => "sel.copy", #TODO: in control mode also?
+  "CI ctrl-x" => "sel.cut",
   "CI ctrl-z" => "undo.last",
   "CI ctrl-w" => :close_current_buffer,
   "I ctrl-y" => "undo.redo",
@@ -101,8 +101,8 @@ add_keys "intro", {
  "I ctrl-l" => "search.buf",
  "I ctrl-g" => "search.next",
   
-  "I shift-up" => :insert_select_up,
-  "I shift-down" => :insert_select_down, 
+  "I shift-up" => "sel.line.prev",
+  "I shift-down" => "sel.line.next", 
 }
 
 add_keys "intro delete", {
@@ -116,7 +116,7 @@ add_keys "core", {
   # File handling
   "C ctrl-s" => :buf_save,
 
-  "V J" => :V_join_lines,
+  "V J" => "sel.join",
   # Buffer handling
   # "C B" => "bufs.switch",
   "C tab" => "bufs.switch_to_last_buf",
@@ -252,9 +252,9 @@ add_keys "core", {
   "V g u" => "case.sel.lower",
   "V g c" => "case.sel.capitalize",
   "V g s" => "case.sel.swap",
-  "V g r" => :selection_reverse,
-  "V g i" => :selection_remove_indent,
-  "V g I" => :selection_remove_common_indent,
+  "V g r" => "sel.reverse",
+  "V g i" => "sel.unindent",
+  "V g I" => "sel.unindent.common",
   "V U" => "case.sel.upper",
   "V u" => "case.sel.lower",
   "V ~" => "case.sel.swap",
@@ -265,10 +265,10 @@ add_keys "core", {
   "C g U U" => "case.line.upper",
   "C g u u" => "case.line.lower",
   "C g ~ ~" => "case.line.swap",
-  "V g w" => :remove_extra_spaces,
-  "C g w" => :remove_extra_spaces,
-  "C g i" => :selection_remove_indent,
-  "C g I" => :selection_remove_common_indent,
+  "V g w" => "sel.convert.remove_extra_spaces",
+  "C g w" => "sel.convert.remove_extra_spaces",
+  "C g i" => "sel.unindent",
+  "C g I" => "sel.unindent.common",
 
   "VC j" => "move.line.next",
   "VC k" => "move.line.prev",
@@ -383,8 +383,8 @@ add_keys "core", {
  "C , z" => :gui_file_finder,
 
  "C enter || C return" => ["jump.line", proc { buf.handle_line_action() }, "Line action"],
- "V d" => [:delete_selection, proc { buf.delete(SELECTION) }, ""],
- "V a d" => [:delete_append_selection, proc { buf.delete(SELECTION, :append) }, "Delete and append selection"]
+ "V d" => ["sel.delete", proc { buf.delete(SELECTION) }, ""],
+ "V a d" => ["sel.delete.append", proc { buf.delete(SELECTION, :append) }, "Delete and append selection"]
 }
 
 add_keys "hyperplaintext", {

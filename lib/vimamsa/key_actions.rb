@@ -24,15 +24,15 @@ reg_act("debug.eval.buf", proc { vma.buf.eval_whole_buf }, "Eval whole current b
 
 reg_act("app.settings", proc { show_settings_dialog }, "Show settings")
 reg_act(:refresh_colors, proc { gui_reload_theme_and_colors }, "Reload theme color palettes + config and refresh the UI (no restart)")
-reg_act(:cut_selection, proc { buf.delete(SELECTION) }, "Cut selection to clipboard")
+reg_act("sel.cut", proc { buf.delete(SELECTION) }, "Cut selection to clipboard")
 
 reg_act("edit.backspace", proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(BACKWARD_CHAR) }, "Delete backwards")
 reg_act("edit.delete.char_or_sel", proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(CURRENT_CHAR_FORWARD) }, "Delete forward (selection-aware)")
-reg_act(:select_all, proc { buf.select_all }, "Select all text")
-reg_act(:insert_select_up, proc { insert_select_move(BACKWARD_LINE) }, "Select texte upwards")
-reg_act(:insert_select_down, proc { insert_select_move(FORWARD_LINE) }, "Select text downwards")
+reg_act("sel.all", proc { buf.select_all }, "Select all text")
+reg_act("sel.line.prev", proc { insert_select_move(BACKWARD_LINE) }, "Select texte upwards")
+reg_act("sel.line.next", proc { insert_select_move(FORWARD_LINE) }, "Select text downwards")
 
-reg_act(:copy_selection, proc { buf.copy_active_selection }, "Copy selection to clipboard")
+reg_act("sel.copy", proc { buf.copy_active_selection }, "Copy selection to clipboard")
 reg_act("debug.on", proc { cnf.debug = true }, "Enable debug")
 reg_act("debug.off", proc { cnf.debug = false }, "Disable debug")
 
@@ -94,8 +94,8 @@ reg_act("search.next", proc { $search.jump_to_next() }, "Find next")
 reg_act(:set_style_bold, proc { buf.style_transform(:bold) }, "Set text weight to bold")
 reg_act(:set_style_link, proc { buf.style_transform(:link) }, "Set text as link")
 reg_act(:set_style_italic, proc { buf.style_transform(:italic) }, "Set text style to italic")
-reg_act(:V_join_lines, proc { vma.buf.convert_selected_text(:joinlines) }, "Join lines")
-reg_act(:V_to_latex_itemize, proc { vma.buf.convert_selected_text(:latex_itemize) }, "Convert selection to LaTeX itemize list")
+reg_act("sel.join", proc { vma.buf.convert_selected_text(:joinlines) }, "Join lines")
+reg_act("sel.latex_itemize", proc { vma.buf.convert_selected_text(:latex_itemize) }, "Convert selection to LaTeX itemize list")
 reg_act(:clear_formats, proc { buf.style_transform(:clear) }, "Clear style formats")
 reg_act(:set_line_style_heading, proc { buf.set_line_style(:heading) }, "Set style of current line as heading")
 reg_act(:set_line_style_h1, proc { buf.set_line_style(:h1) }, "Set cur line as Heading 1")
@@ -225,13 +225,13 @@ act_list = {
   "case.sel.swap" => { :proc => proc { buf.transform_selection(:swapcase) },
                            :desc => "Transform text: swapcase", :group => :edit },
 
-  :selection_reverse => { :proc => proc { buf.transform_selection(:reverse) },
+  "sel.reverse" => { :proc => proc { buf.transform_selection(:reverse) },
                           :desc => "Transform text: reverse", :group => :edit },
 
-  :selection_remove_indent => { :proc => proc { buf.remove_indent_selection },
+  "sel.unindent" => { :proc => proc { buf.remove_indent_selection },
                                 :desc => "Remove indentation from selected lines (or current line)", :group => :edit },
 
-  :selection_remove_common_indent => { :proc => proc { buf.remove_common_indent_selection },
+  "sel.unindent.common" => { :proc => proc { buf.remove_common_indent_selection },
                                        :desc => "Remove indentation common to all selected lines (keeps relative indent)", :group => :edit },
 
   "case.word.upper" => { :proc => proc { buf.transform_range(:to_next_word, :upcase) },
