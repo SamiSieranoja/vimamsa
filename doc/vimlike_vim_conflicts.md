@@ -28,7 +28,7 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | C | <code>s</code> | <code>edit.change.char</code> | <code>jump.easy</code> | same keys, other action |
 | C | <code>space</code> | <code>buf.move(FORWARD_CHAR)</code> | <code>2 longer bindings</code> | vimlike uses these keys as a prefix |
 | C | <code>x</code> | <code>edit.delete.char.inline</code> | <code>edit.delete.char</code> | same keys, other action |
-| C | <code>z z</code> | <code>:center_on_current_line</code> | <code>z</code> <code>mode.browse</code> | a shorter vimlike binding runs first |
+| C | <code>z z</code> | <code>view.center</code> | <code>z</code> <code>mode.browse</code> | a shorter vimlike binding runs first |
 | I | <code>ctrl-c</code> | <code>mode.prev</code> | <code>sel.copy</code> | same keys, other action |
 | I | <code>ctrl-h</code> | <code>edit.backspace</code> | <code>edit.complete</code> | same keys, other action |
 | I | <code>ctrl-j</code> | <code>buf.insert_new_line()</code> | <code>buf.view.hide_completions</code> | same keys, other action |

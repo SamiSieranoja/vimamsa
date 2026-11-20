@@ -155,7 +155,7 @@ class TestVimBindings < VmaTest
 
   def test_zz_dispatch
     keys "z z"
-    assert_eq :center_on_current_line, vma.kbd.cur_action
+    assert_eq "view.center", vma.kbd.cur_action
   end
 
   def test_ctrl_o_binding

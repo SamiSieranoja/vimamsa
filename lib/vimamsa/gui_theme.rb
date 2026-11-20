@@ -576,7 +576,7 @@ end
 
 # Re-read every color from cnf and reload the CSS providers in place, so
 # changing a cnf.theme.colors.* / cnf.theme.cyber.* value takes effect at
-# runtime without restarting. Bound to :refresh_colors (see key_actions.rb)
+# runtime without restarting. Bound to "view.colors.reload" (see key_actions.rb)
 # and called by the settings dialog on save.
 def gui_refresh_colors
   return unless $vmag
@@ -590,7 +590,7 @@ end
 # Re-`load` this source file, then refresh. Unlike gui_refresh_colors (which
 # only re-reads cnf), this also picks up edits to the THEME_COLOR_DEFAULTS /
 # CYBER_COLOR_DEFAULTS palette constants in the source — so tweaking the
-# default colors and hitting :refresh_colors applies them without a restart.
+# default colors and hitting "view.colors.reload" applies them without a restart.
 # Warnings from redefining the palette constants are silenced during the load.
 def gui_reload_theme_and_colors
   begin

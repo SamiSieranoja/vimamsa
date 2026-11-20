@@ -362,8 +362,8 @@ add_keys "core", {
  "C , , u" => "file.finder.reindex",
  "C , s a" => "buf.save.as",
  "VC , r r" => "search.replace",
- "C , w" => :toggle_active_window,
- "C , , w" => :toggle_two_column,
+ "C , w" => "view.columns.switch",
+ "C , , w" => "view.columns.toggle",
  "C , ; a c" => "edit.complete.toggle",
  "C , R" => "app.restart",
 

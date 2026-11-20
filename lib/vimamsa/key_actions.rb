@@ -23,7 +23,7 @@ reg_act(:lsp_restart, proc { require "vimamsa/langservp"; lsp_restart },
 reg_act("debug.eval.buf", proc { vma.buf.eval_whole_buf }, "Eval whole current buffer as ruby code (DANGEROUS)")
 
 reg_act("app.settings", proc { show_settings_dialog }, "Show settings")
-reg_act(:refresh_colors, proc { gui_reload_theme_and_colors }, "Reload theme color palettes + config and refresh the UI (no restart)")
+reg_act("view.colors.reload", proc { gui_reload_theme_and_colors }, "Reload theme color palettes + config and refresh the UI (no restart)")
 reg_act("sel.cut", proc { buf.delete(SELECTION) }, "Cut selection to clipboard")
 
 reg_act("edit.backspace", proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(BACKWARD_CHAR) }, "Delete backwards")
@@ -39,8 +39,8 @@ reg_act("debug.off", proc { cnf.debug = false }, "Disable debug")
 reg_act("debug.eval.sel", proc { bindkey "V , e", "vma.buf.convert_selected_text(:eval)" }, "Enable key binding:\"[VISUAL] , e:\" Eval selected text")
 
 reg_act("jump.easy", proc { EasyJump.start }, "Easy jump")
-reg_act(:gui_ensure_cursor_visible, proc { vma.gui.view.ensure_cursor_visible }, "Scroll to current cursor position")
-reg_act(:gui_refresh_cursor, proc { vma.buf.refresh_cursor }, "Refresh cursor")
+reg_act("view.cursor.show", proc { vma.gui.view.ensure_cursor_visible }, "Scroll to current cursor position")
+reg_act("view.cursor.refresh", proc { vma.buf.refresh_cursor }, "Refresh cursor")
 
 reg_act("debug.save", "savedebug", "Save debug info", { :group => :debug })
 reg_act("file.open", "open_file_dialog", "Open file", { :group => :file })
@@ -53,7 +53,7 @@ reg_act("move.line.prev", proc { buf.move(BACKWARD_LINE) }, "Move one line backw
 reg_act("buf.history.prev", proc { bufs.history_switch(-1) }, "Prev buffer", { :group => :file })
 reg_act("buf.history.next", proc { bufs.history_switch(+1) }, "Next buffer", { :group => :file })
 reg_act("debug.buf.access", proc { bufs.print_by_access_time }, "Print buffers by access time", { :group => :file })
-reg_act(:center_on_current_line, "center_on_current_line", "", { :group => :view })
+reg_act("view.center", "center_on_current_line", "", { :group => :view })
 reg_act(:run_last_macro, proc { vma.macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
 reg_act("jump.edit.next", "jump_to_next_edit", "Jump to next edit pos")
 reg_act("jump.edit.prev", proc { buf.jump_to_last_edit }, "Jump to the last edit location")
@@ -271,10 +271,10 @@ act_list = {
   "app.customrb.edit" => { :proc => proc { jump_to_file("~/.config/vimamsa/custom.rb") },
                       :desc => "Customize (edit custom.rb)", :group => :search },
 
-  :toggle_active_window => { :proc => proc { vma.gui.toggle_active_window },
+  "view.columns.switch" => { :proc => proc { vma.gui.toggle_active_window },
                              :desc => "Switch active column in two column mode", :group => :search },
 
-  :toggle_two_column => { :proc => proc { vma.gui.toggle_two_column },
+  "view.columns.toggle" => { :proc => proc { vma.gui.toggle_two_column },
                           :desc => "Toggle two column mode", :group => :search },
 
   "grep.files" => { :proc => proc { FileContentSearch.start_gui },

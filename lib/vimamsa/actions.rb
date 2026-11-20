@@ -184,6 +184,13 @@ ACTION_ALIASES = {
   file_panel_next_file: "panel.files.next",
   file_panel_prev_file: "panel.files.prev",
   file_panel_easy_jump: "panel.files.jump",
+  # view namespace (2026-11-20)
+  toggle_two_column: "view.columns.toggle",
+  toggle_active_window: "view.columns.switch",
+  center_on_current_line: "view.center",
+  gui_ensure_cursor_visible: "view.cursor.show",
+  gui_refresh_cursor: "view.cursor.refresh",
+  refresh_colors: "view.colors.reload",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

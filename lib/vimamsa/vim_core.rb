@@ -126,7 +126,7 @@ VIM_BINDINGS = {
     "C ctrl-d" => "buf.move(:forward_page)",  # approx: full page, vim: half
     "C ctrl-u" => "buf.move(:backward_page)", # approx: full page, vim: half
     "C ctrl-o" => "jump.edit.prev",         # approx of vim jumplist back
-    "C z z" => :center_on_current_line,
+    "C z z" => "view.center",
 
     # Marks
     "CV m <char>" => "buf.mark_current_position(<char>)",

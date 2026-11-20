@@ -34,8 +34,8 @@ class TestRandomEdit < VmaTest
     "edit.newline",
     "move.page.next",
     "move.page.prev",
-    :center_on_current_line,
-    :gui_refresh_cursor,
+    "view.center",
+    "view.cursor.refresh",
   ].freeze
 
   RANDOM_TEXTS = [
