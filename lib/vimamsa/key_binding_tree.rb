@@ -686,11 +686,20 @@ class KeyBindingTree
 
     a = action
     if action.class == Array
-      label = a[0]
+      label = @actions.resolve(a[0])
       a = label
       proc = action[1]
       msg = action[2]
       @actions.register(label, Action.new(label, msg, proc))
+    elsif ActionRef === a
+      # a.move.word.next: the action must exist (catches typos)
+      if !@actions.include?(a)
+        error("bindkey: unknown action #{a.to_s}#{@actions.did_you_mean(a.to_s)} for #{key.inspect}. Binding skipped.")
+        return
+      end
+      a = @actions.resolve(a)
+    elsif a.class == Symbol
+      a = @actions.resolve(a) # old id => new id (ACTION_ALIASES)
     end
     key.each { |k| _bindkey(k, a, keywords: keywords) }
   end
@@ -760,7 +769,9 @@ class KeyBindingTree
     # $action_list << { :action => action, :key => key }
     if !@actions.include?(action)
       if action.class == String
-        @actions.register(action, Action.new(action, action, proc { eval(action) }))
+        # Ruby code, run by exec_action (code: true keeps it apart from
+        # dotted action ids, which are strings too)
+        @actions.register(action, Action.new(action, action, proc { eval(action) }, { code: true }))
       end
     end
 
@@ -928,10 +939,15 @@ end
 def exec_action(action)
   vma.kbd.last_action = vma.kbd.cur_action
   vma.kbd.cur_action = action
+  action = action.to_s if ActionRef === action
   if action.class == Symbol
     return call_action(action)
   elsif action.class == Proc
     return action.call
+  elsif action.class == String && (r = vma.actions[action]) && !r.opt&.[](:code)
+    # A dotted action id ("move.word.next"). Registered actions win over
+    # running the string as Ruby, even where the id is valid Ruby too.
+    return call_action(action)
   elsif action.class == String && vma.actions.include?(action.to_sym)
     # Symbols serialised through JSON become plain strings; dispatch them as actions.
     return call_action(action.to_sym)

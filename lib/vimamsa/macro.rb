@@ -39,6 +39,10 @@ class Macro
 
     @recorded_macros = vma.marshal_load("macros", {})
     @named_macros = load_named_macros
+    # Old action ids (ACTION_ALIASES) => new ids; the recorded ones are saved
+    # at shutdown, the named ones now
+    convert_action_aliases(@recorded_macros)
+    save_named_macros if convert_action_aliases(@named_macros)
     vma.hook.register(:shutdown, self.method("save"))
   end
 
@@ -68,6 +72,21 @@ class Macro
   rescue => e
     error("Failed to load named macros: #{e}")
     {}
+  end
+
+  # Replace old action ids in macros ({name => [action, ...]}) with their new
+  # dotted ids. Returns true if anything changed.
+  def convert_action_aliases(macros)
+    changed = false
+    macros.each_value { |acts|
+      next if acts.class != Array
+      acts.map! { |x|
+        n = (x.class == Symbol || x.class == String) ? ACTION_ALIASES[x.to_sym] : nil
+        changed = true if n
+        n || x
+      }
+    }
+    changed
   end
 
   def save()

@@ -11,11 +11,67 @@ class Action
   end
 end
 
+# Action ids are dotted paths, "move.word.next", from general to specific
+# (doc/action_names_plan.md). Older ids are symbols (:close_current_buffer).
+ACTION_ID_RE = /\A[a-z][a-z0-9_]*(\.[a-z0-9_]+)+\z/
+
+# Old id => new dotted id. ActionList, bindkey, unbindkey and macros resolve
+# these, so users' custom.rb and saved macros keep working. Keep each alias
+# for at least two releases.
+ACTION_ALIASES = {}
+
+# A reference to an action by its dotted id, built by chaining: a.move.word.next
+# is the reference "move.word.next" (nothing runs), and a trailing "!" runs
+# it: a.buf.save!. Based on BasicObject, so ids like a.class or a.send work.
+# Use a.… only in custom.rb and on the command line: in lib/, a local
+# variable named "a" hides the method, so lib/ code uses the string form.
+class ActionRef < BasicObject
+  def initialize(path)
+    @path = path
+  end
+
+  def to_s
+    @path.join(".")
+  end
+
+  alias to_str to_s
+
+  def inspect
+    "a." + to_s
+  end
+
+  def respond_to?(name, _priv = false)
+    [:to_s, :to_str, :inspect].include?(name)
+  end
+
+  def method_missing(name, *args)
+    s = name.to_s
+    # Conversion hooks Ruby probes for (to_ary, to_hash, ...) and predicates
+    # aren't path segments
+    ::Kernel.raise ::NoMethodError, "undefined method '#{s}' for #{inspect}" if s.start_with?("to_") || s.end_with?("?", "=")
+    if s.end_with?("!")
+      id = (@path + [s.chomp("!")]).join(".")
+      if !$vma.actions.include?(id)
+        ::Kernel.raise ::NameError, "Unknown action #{id}#{$vma.actions.did_you_mean(id)}"
+      end
+      return $vma.actions.call(id)
+    end
+    ActionRef.new(@path + [s])
+  end
+end
+
+# Root of the action references: a.move.word.next, a.buf.save!
+def a
+  ActionRef.new([])
+end
+
 def unreg_act(id)
   vma.actions.unregister(id)
 end
 
+# id: a dotted id string ("buf.save"), an a.… reference, or an old symbol
 def reg_act(id, callfunc, name = "", opt = {})
+  id = id.to_s if ActionRef === id
   if callfunc.class == Proc
     a = Action.new(id, name, callfunc, opt)
   else
@@ -45,23 +101,51 @@ class ActionList
     @actions = {}
   end
 
+  # The registry key for id: an a.… reference becomes its string, and an old
+  # id listed in ACTION_ALIASES becomes its new id (noted once per old id).
+  def resolve(id)
+    id = id.to_s if ActionRef === id
+    if (id.class == Symbol || id.class == String) && (new_id = ACTION_ALIASES[id.to_sym])
+      @aliases_noted ||= {}
+      if !@aliases_noted[id.to_sym]
+        @aliases_noted[id.to_sym] = true
+        message("action :#{id} is now #{new_id}")
+      end
+      return new_id
+    end
+    id
+  end
+
+  # " (did you mean x.y?)" for an unknown id, or ""
+  def did_you_mean(id)
+    ids = @actions.keys.select { |k| k.class == String && k.match?(ACTION_ID_RE) } +
+          @actions.keys.select { |k| k.class == Symbol }.map(&:to_s)
+    c = DidYouMean::SpellChecker.new(dictionary: ids).correct(id.to_s).first
+    c ? " (did you mean #{c}?)" : ""
+  end
+
   def register(id, obj)
-    @actions[id] = obj
+    @actions[resolve(id)] = obj
   end
 
   def unregister(id)
-    @actions.delete(id)
+    @actions.delete(resolve(id))
   end
 
   def include?(act)
-    return @actions.has_key?(act)
+    return @actions.has_key?(resolve(act))
   end
 
   def [](id)
-    @actions[id]
+    @actions[resolve(id)]
+  end
+
+  def ids
+    @actions.keys
   end
 
   def call(id)
+    id = resolve(id)
     @acth << id
     a = @actions[id]
     if a
@@ -136,12 +220,8 @@ class ActionList
     debug "Selected:" + acc.to_s
     gui_select_window_close(0)
 
-    if acc.class == String
-      eval(acc)
-    elsif acc.class == Symbol
-      debug "Symbol"
-      call(acc)
-    end
+    # Dotted ids, old symbol ids and Ruby-code bindings alike
+    exec_action(acc)
   end
 
   def filter_items(item_list, item_key, search_str)
