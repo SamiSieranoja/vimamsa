@@ -44,15 +44,14 @@ reg_act(:gui_refresh_cursor, proc { vma.buf.refresh_cursor }, "Refresh cursor")
 
 reg_act("debug.save", "savedebug", "Save debug info", { :group => :debug })
 reg_act(:open_file_dialog, "open_file_dialog", "Open file", { :group => :file })
-reg_act(:create_new_file, "create_new_file", "Create new file", { :group => :file })
-reg_act(:backup_all_buffers, proc { backup_all_buffers }, "Backup all buffers", { :group => :file })
+reg_act("buf.backup.all", proc { backup_all_buffers }, "Backup all buffers", { :group => :file })
 reg_act("move.char.next", proc { buf.move(FORWARD_CHAR) }, "Move forward one character", { :group => [:move, :basic] })
 reg_act("move.char.prev", proc { buf.move(BACKWARD_CHAR) }, "Move backward one character", { :group => [:move, :basic] })
 reg_act("move.line.next", proc { buf.move(FORWARD_LINE) }, "Move one line forward", { :group => [:move, :basic] })
 reg_act("move.line.prev", proc { buf.move(BACKWARD_LINE) }, "Move one line backward", { :group => [:move, :basic] })
-# reg_act(:history_switch_backwards, proc{bufs.history_switch_backwards}, "", { :group => :file })
-reg_act(:history_switch_backwards, proc { bufs.history_switch(-1) }, "Prev buffer", { :group => :file })
-reg_act(:history_switch_forwards, proc { bufs.history_switch(+1) }, "Next buffer", { :group => :file })
+# reg_act("buf.history.prev", proc{bufs.history_switch_backwards}, "", { :group => :file })
+reg_act("buf.history.prev", proc { bufs.history_switch(-1) }, "Prev buffer", { :group => :file })
+reg_act("buf.history.next", proc { bufs.history_switch(+1) }, "Next buffer", { :group => :file })
 reg_act("debug.buf.access", proc { bufs.print_by_access_time }, "Print buffers by access time", { :group => :file })
 reg_act(:center_on_current_line, "center_on_current_line", "", { :group => :view })
 reg_act(:run_last_macro, proc { vma.macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
@@ -66,12 +65,12 @@ reg_act("help.vim_conflicts", proc { show_vim_binding_conflicts }, "Show which v
 reg_act(:put_file_path_to_clipboard, proc { buf.put_file_path_to_clipboard }, "Put file path of current file to clipboard")
 reg_act(:put_file_ref_to_clipboard, proc { buf.put_file_ref_to_clipboard }, "Put file ref of current file to clipboard")
 
-# reg_act(:encrypt_file, proc{buf.set_encrypted},"Set current file to encrypt on save")
-reg_act(:encrypt_file, proc { encrypt_cur_buffer }, "Set current file to encrypt on save")
-reg_act(:set_unencrypted, proc { buf.set_unencrypted }, "Set current file to save unencrypted")
+# reg_act("buf.encrypt", proc{buf.set_encrypted},"Set current file to encrypt on save")
+reg_act("buf.encrypt", proc { encrypt_cur_buffer }, "Set current file to encrypt on save")
+reg_act("buf.encrypt.off", proc { buf.set_unencrypted }, "Set current file to save unencrypted")
 reg_act(:set_executable, proc { buf.set_executable }, "Set current file permissions to executable")
-# reg_act(:close_all_buffers, proc { bufs.close_all_buffers() }, "Close all buffers")
-reg_act(:close_current_buffer, proc { bufs.close_current_buffer(true) }, "Close current buffer")
+# reg_act("buf.close.all", proc { bufs.close_all_buffers() }, "Close all buffers")
+reg_act("buf.close", proc { bufs.close_current_buffer(true) }, "Close current buffer")
 reg_act(:toggle_file_panel, proc { vma.gui.toggle_file_panel }, "Toggle file panel")
 reg_act(:file_panel_prev_file, proc { vma.gui.file_panel_select_adjacent(-1) }, "Switch to previous file in file panel order")
 reg_act(:file_panel_next_file, proc { vma.gui.file_panel_select_adjacent(1) }, "Switch to next file in file panel order")
@@ -88,7 +87,7 @@ reg_act("edit.delete.char", proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete c
 reg_act(:gui_file_finder, proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
 reg_act(:gui_file_history_finder, proc { vma.FileHistory.start_gui }, "Fuzzy file history finder")
 reg_act("search.replace", proc { gui_search_replace }, "Search and replace")
-reg_act(:select_buffer_language, proc { gui_select_buffer_language }, "Select syntax highlighting language for current buffer")
+reg_act("buf.language", proc { gui_select_buffer_language }, "Select syntax highlighting language for current buffer")
 reg_act("search.next", proc { $search.jump_to_next() }, "Find next")
 
 reg_act(:set_style_bold, proc { buf.style_transform(:bold) }, "Set text weight to bold")
@@ -106,13 +105,13 @@ reg_act(:set_line_style_bold, proc { buf.set_line_style(:bold) }, "Set style of 
 reg_act(:set_line_style_title, proc { buf.set_line_style(:title) }, "Set style of current line as title")
 reg_act(:set_line_style_italic, proc { buf.set_line_style(:italic) }, "Set style of current line as italic")
 reg_act(:clear_line_styles, proc { buf.set_line_style(:clear) }, "Clear styles of current line")
-reg_act(:gui_select_buffer, proc { vma.kbd.set_mode("S"); gui_select_buffer }, "Select buffer")
+reg_act("buf.switcher", proc { vma.kbd.set_mode("S"); gui_select_buffer }, "Select buffer")
 reg_act :open_file_dialog, "open_file_dialog", "Open file"
 reg_act "mode.minibuffer.end", proc { minibuffer_end }
 reg_act("search.replace.cmd", "invoke_replace", "Invoke replace")
-reg_act(:diff_buffer, "diff_buffer", "")
-reg_act(:git_diff_buffer, proc { git_diff_buffer }, "Show git diff of current file")
-reg_act(:diff_buffer_jump_to_source, proc { diff_buffer_jump_to_source }, "Jump to corresponding line in source from diff buffer")
+reg_act("buf.diff", "diff_buffer", "")
+reg_act("buf.diff.git", proc { git_diff_buffer }, "Show git diff of current file")
+reg_act("diffview.source", proc { diff_buffer_jump_to_source }, "Jump to corresponding line in source from diff buffer")
 reg_act(:extract_file_links, proc {
   links = buf.file_links
   if links.empty?
@@ -200,15 +199,15 @@ reg_act(:audio_stop, proc { Audio.stop }, "Stop audio playback")
 
 act_list = {
   # File handling
-  :buf_save => { :proc => proc { buf.save },
+  "buf.save" => { :proc => proc { buf.save },
                  :desc => "Save buffer", :group => :file },
 
-  :buf_save_as => { :proc => proc { buf.save_as },
+  "buf.save.as" => { :proc => proc { buf.save_as },
                     :desc => "Save file as", :group => :file },
-  :buf_new => { :proc => proc { create_new_file() }, :desc => "Create a new file", :group => :file },
-  :buf_revert => { :proc => proc { buf.revert },
+  "buf.new" => { :proc => proc { create_new_file() }, :desc => "Create a new file", :group => :file },
+  "buf.revert" => { :proc => proc { buf.revert },
                    :desc => "Reload file from disk", :group => :file },
-  :buf_backup => { :proc => proc { buf.backup() }, :desc => "Backup current file", :group => :file },
+  "buf.backup" => { :proc => proc { buf.backup() }, :desc => "Backup current file", :group => :file },
 
   "search.buf" => { :proc => proc { invoke_search },
                        :desc => "Find", :group => :edit },

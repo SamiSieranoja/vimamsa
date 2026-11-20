@@ -144,6 +144,25 @@ ACTION_ALIASES = {
   V_to_latex_itemize: "sel.latex_itemize",
   delete_selection: "sel.delete",
   delete_append_selection: "sel.delete.append",
+  # buf namespace (2026-11-20)
+  buf_save: "buf.save",
+  buf_save_as: "buf.save.as",
+  buf_revert: "buf.revert",
+  buf_backup: "buf.backup",
+  backup_all_buffers: "buf.backup.all",
+  buf_new: "buf.new",
+  create_new_file: "buf.new",
+  close_current_buffer: "buf.close",
+  gui_select_buffer: "buf.switcher",
+  start_buf_manager: "buf.manager",
+  history_switch_backwards: "buf.history.prev",
+  history_switch_forwards: "buf.history.next",
+  select_buffer_language: "buf.language",
+  encrypt_file: "buf.encrypt",
+  set_unencrypted: "buf.encrypt.off",
+  git_diff_buffer: "buf.diff.git",
+  diff_buffer: "buf.diff",
+  diff_buffer_jump_to_source: "diffview.source",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

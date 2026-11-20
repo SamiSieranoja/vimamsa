@@ -199,7 +199,7 @@ class TestBookmarks < VmaTest
     assert_eq 1, vma.bookmarks.list.count { |b| b[:fname] == path }
     rows = vma.buf.to_s.lines.select { |l| l.include?(tilde_path(path)) }
     assert_eq 1, rows.size
-    act(:close_current_buffer)
+    act("buf.close")
   ensure
     cleanup(f)
   end

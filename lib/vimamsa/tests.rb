@@ -89,13 +89,13 @@ class EditorTests
 
   def test_create_close_buf
     ['buf.insert_txt("abcdef")',
-     [:buf_new,"\n"],
+     ["buf.new","\n"],
      'buf.insert_txt("a")',
      'buf.insert_txt("b")',
      'buf.insert_txt("c")',
      'buf.insert_txt("d")',
      ['buf.insert_txt("e")',"abcde\n"],
-     [:close_current_buffer, "abcdef\n"]]
+     ["buf.close", "abcdef\n"]]
   end
 end
 

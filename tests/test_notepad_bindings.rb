@@ -51,7 +51,7 @@ class TestNotepadBindings < VmaTest
     assert_eq "ctrl-h", vma.kbd.act_bindings["I"]["search.replace"]
     assert_eq "ctrl-q", vma.kbd.act_bindings["I"]["app.quit"]
     keys "ctrl-n" # safe to execute: creates a new buffer
-    assert_eq :buf_new, vma.kbd.cur_action
+    assert_eq "buf.new", vma.kbd.cur_action
     assert_mode :insert
   end
 

@@ -24,7 +24,7 @@ class Bookmarks
 
     bindkey "bmark enter", :bmark_select
     bindkey "bmark d", :bmark_delete
-    bindkey "bmark x", :close_current_buffer
+    bindkey "bmark x", "buf.close"
   end
 
   def initialize()

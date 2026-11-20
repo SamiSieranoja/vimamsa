@@ -27,7 +27,7 @@ module Vimamsa
     # (bindkey on an existing chord overwrites the leaf)
     "I ctrl-f" => "search.buf",      # was move FORWARD_CHAR
     "I ctrl-h" => "search.replace",  # was autocp trigger (ctrl-space remains)
-    "I ctrl-n" => :buf_new,             # was move_next_line
+    "I ctrl-n" => "buf.new",             # was move_next_line
     "I ctrl-a" => "sel.all",          # was jump_beginning_of_line
     "I ctrl-q" => "app.quit",
     "I ctrl-shift-z || I ctrl-shift-Z" => "undo.redo", # shift+z may arrive uppercase

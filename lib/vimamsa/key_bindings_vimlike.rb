@@ -49,12 +49,12 @@ add_keys "intro", {
   "VCX down" => "buf.move(FORWARD_LINE)",
   "VCX right" => "buf.move(FORWARD_CHAR)",
   "VCX left" => "buf.move(BACKWARD_CHAR)",
- "C , b" => :start_buf_manager,
+ "C , b" => "buf.manager",
   "C , M" => :bookmark_add,
   "C , '" => :bookmark_list,
   "VC l" => "move.char.next",
   "VC , , s" => "search.actions",
-  "C , n b" => :buf_new,
+  "C , n b" => "buf.new",
   "C y y" => "edit.line.copy",
   "C P" => "edit.paste.before",
   "C p" => "edit.paste.after",
@@ -93,7 +93,7 @@ add_keys "intro", {
   "I ctrl-c" => "sel.copy", #TODO: in control mode also?
   "CI ctrl-x" => "sel.cut",
   "CI ctrl-z" => "undo.last",
-  "CI ctrl-w" => :close_current_buffer,
+  "CI ctrl-w" => "buf.close",
   "I ctrl-y" => "undo.redo",
   "CI backspace" => "edit.backspace",
  "CI ctrl-o" => :open_file_dialog,
@@ -114,7 +114,7 @@ add_keys "intro delete", {
 add_keys "core", {
 
   # File handling
-  "C ctrl-s" => :buf_save,
+  "C ctrl-s" => "buf.save",
 
   "V J" => "sel.join",
   # Buffer handling
@@ -126,7 +126,7 @@ add_keys "core", {
   # label the file panel rows, jump to a file by typing its label
   "C g s" => :file_panel_easy_jump,
   #    'C , s'=> 'gui_select_buffer',
-  "C , r v b" => :buf_revert,
+  "C , r v b" => "buf.revert",
   "C , c b" => "bufs.close_current_buffer",
   # "C , , ." => "backup_all_buffers()",
 
@@ -339,10 +339,10 @@ add_keys "core", {
  "C d 0" => "edit.delete.line.start",
  "C , , f" => :file_finder,
  "VC h" => "move.char.prev",
- "C , , ." => :backup_all_buffers,
+ "C , , ." => "buf.backup.all",
  "C z " => "mode.browse",
- "B h" => :history_switch_backwards,
- "B l" => :history_switch_forwards,
+ "B h" => "buf.history.prev",
+ "B l" => "buf.history.next",
  "B p" => :file_panel_prev_file,
  "B n" => :file_panel_next_file,
  "B z" => "center_on_current_line();call_action('mode.browse.exit')",
@@ -354,13 +354,13 @@ add_keys "core", {
 
  "B i" => "move.buf.start",
  "B o" => "move.buf.end",
- "B c" => :close_current_buffer,
+ "B c" => "buf.close",
  "B ;" => "jump.edit.prev",
  "B q" => "jump.edit.prev",
  "B w" => "jump.edit.next",
  "C , v" => "edit.indent.buf",
  "C , , u" => :update_file_index,
- "C , s a" => :buf_save_as,
+ "C , s a" => "buf.save.as",
  "VC , r r" => "search.replace",
  "C , w" => :toggle_active_window,
  "C , , w" => :toggle_two_column,
@@ -374,9 +374,9 @@ add_keys "core", {
  "C , j r" => "move.random",
  "C , ; s k" => "help.keys", #TODO: better binding,
  "C , , c b" => :put_file_path_to_clipboard, #TODO: better binding or remove?,
- "C , , e" => :encrypt_file, #TODO: better binding,
- "C , ; u" => :set_unencrypted, #TODO: better binding,
- "C , c b" => :close_current_buffer,
+ "C , , e" => "buf.encrypt", #TODO: better binding,
+ "C , ; u" => "buf.encrypt.off", #TODO: better binding,
+ "C , c b" => "buf.close",
  "V ctrl-c" => "edit.comment",
  "C , f" => :gui_file_finder,
  "C , h" => :gui_file_history_finder,
@@ -425,7 +425,7 @@ add_keys "experimental", {
   # Debug
   "C , d r p" => 'require "pry"; binding.pry', #TODO
 #bindkey 'C , g', proc{invoke_grep_search}
-# bindkey "C , d", :diff_buffer
+# bindkey "C , d", "buf.diff"
  "C , , d" => "debug.save",
  "C , m a" => "vma.kbd.set_mode(:audio)",
  "audio s" => :audio_stop,

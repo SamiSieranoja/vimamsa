@@ -14,11 +14,11 @@ class BufferManager
     reg_act(:bmgr_select, proc { buf.module.select_line }, "")
     reg_act(:bmgr_close, proc { buf.module.close_selected }, "")
 
-    reg_act(:start_buf_manager, proc { BufferManager.new.run; vma.kbd.set_mode(:bmgr) }, "Buffer manager")
+    reg_act("buf.manager", proc { BufferManager.new.run; vma.kbd.set_mode(:bmgr) }, "Buffer manager")
 
     bindkey "bmgr enter", :bmgr_select
     bindkey "bmgr c", :bmgr_close
-    bindkey "bmgr x", :close_current_buffer
+    bindkey "bmgr x", "buf.close"
   end
 
   def initialize()

@@ -22,14 +22,14 @@ module Vimamsa
 
     def add_menu_items()
       add_to_menu "File.Example", { :label => "<span foreground='#888888'>Action, [mode] key binding</span>", :action => nil }
-      add_to_menu "File.Save", { :label => "Save", :action => :buf_save }
-      add_to_menu "File.Save as", { :label => "Save As...", :action => :buf_save_as }
+      add_to_menu "File.Save", { :label => "Save", :action => "buf.save" }
+      add_to_menu "File.Save as", { :label => "Save As...", :action => "buf.save.as" }
       add_to_menu "File.Open", { :label => "Open", :action => :open_file_dialog }
 
-      add_to_menu "File.New", { :label => "New file", :action => :buf_new }
-      add_to_menu "File.Revert", { :label => "Reload file from disk", :action => :buf_revert }
-      add_to_menu "File.List", { :label => "List open files", :action => :start_buf_manager }
-      add_to_menu "File.Close", { :label => "Close file", :action => :close_current_buffer }
+      add_to_menu "File.New", { :label => "New file", :action => "buf.new" }
+      add_to_menu "File.Revert", { :label => "Reload file from disk", :action => "buf.revert" }
+      add_to_menu "File.List", { :label => "List open files", :action => "buf.manager" }
+      add_to_menu "File.Close", { :label => "Close file", :action => "buf.close" }
 
       add_to_menu "File.Restart", { :label => "Restart (reload config and files)", :action => "app.restart" }
       add_to_menu "File.Quit", { :label => "Quit", :action => "app.quit" }
@@ -53,8 +53,8 @@ module Vimamsa
 
       add_to_menu "Actions.FileHistoryFinder", { :label => "Search files in history", :action => :gui_file_history_finder }
 
-      add_to_menu "Actions.experimental.Diff", { :label => "Show Diff of\nunsaved changes", :action => :diff_buffer }
-      add_to_menu "Actions.experimental.GitDiff", { :label => "Show git diff", :action => :git_diff_buffer }
+      add_to_menu "Actions.experimental.Diff", { :label => "Show Diff of\nunsaved changes", :action => "buf.diff" }
+      add_to_menu "Actions.experimental.GitDiff", { :label => "Show git diff", :action => "buf.diff.git" }
       add_to_menu "Actions.experimental.GitDiffW", { :label => "Show git diff -w (repo)", :action => :git_diff_w }
 
       add_to_menu "Actions.experimental.PrintBufferAccessList", { :label => "Print buffers by access time", :action => "debug.buf.access" }
@@ -68,17 +68,17 @@ module Vimamsa
       add_to_menu "Actions.debug.dumpkbd", { :label => "Dump kbd state", :action => "debug.kbd" }
       add_to_menu "Actions.debug.ToggleKbdPassthrough", { :label => "Toggle kbd event passthrough", :action => "mode.passthrough.toggle" }
 
-      add_to_menu "View.BufferManager", { :label => "Show open files", :action => :start_buf_manager }
+      add_to_menu "View.BufferManager", { :label => "Show open files", :action => "buf.manager" }
       add_to_menu "View.Bookmarks", { :label => "Show bookmarks", :action => :bookmark_list }
       add_to_menu "Edit.AddBookmark", { :label => "Add bookmark", :action => :bookmark_add }
-      add_to_menu "View.SelectLanguage", { :label => "Set buffer language...", :action => :select_buffer_language }
+      add_to_menu "View.SelectLanguage", { :label => "Set buffer language...", :action => "buf.language" }
       add_to_menu "View.TwoColumn", { :label => "Toggle two column mode", :action => :toggle_two_column }
       add_to_menu "View.FilePanel", { :label => "Toggle file panel", :action => :toggle_file_panel }
       add_to_menu "View.FuncPanel", { :label => "Toggle function panel (LSP)", :action => :toggle_func_panel }
       add_to_menu "View.KeyLog", { :label => "Toggle key log panel", :action => :toggle_keylog_panel }
       add_to_menu "View.MsgHistory", { :label => "Message history", :action => "help.messages" }
 
-      add_to_menu "Actions.EncryptFile", { :label => "Encrypt file", :action => :encrypt_file }
+      add_to_menu "Actions.EncryptFile", { :label => "Encrypt file", :action => "buf.encrypt" }
       add_to_menu "Actions.LspRestart", { :label => "Restart LSP server", :action => :lsp_restart }
       add_to_menu "Help.KeyBindings", { :label => "Show key bindings", :action => "help.keys" }
       add_to_menu "Help.VimConflicts", { :label => "Vim keys that differ in vimlike", :action => "help.vim_conflicts" }

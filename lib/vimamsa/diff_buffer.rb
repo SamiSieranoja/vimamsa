@@ -85,7 +85,7 @@ def diff_buffer_init()
   return if @diff_buffer_init_done
   @diff_buffer_init_done = true
   vma.kbd.add_minor_mode("diffview", :diffview, :command)
-  bindkey "diffview enter", :diff_buffer_jump_to_source
+  bindkey "diffview enter", "diffview.source"
 end
 
 def diff_buffer()

@@ -959,7 +959,7 @@ class VSourceView < GtkSource::View
 
   CONTEXT_MENU_ITEMS = [
     ["Paste", "edit.paste.after"],
-    ["Previous buffer", :history_switch_backwards],
+    ["Previous buffer", "buf.history.prev"],
   ]
 
   CONTEXT_MENU_ITEMS_SELECTION = [

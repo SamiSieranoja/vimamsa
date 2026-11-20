@@ -70,8 +70,8 @@ add_keys "vim misc", {
   "C enter || C return" => ["jump.line", proc { buf.handle_line_action() }, "Line action"],
 
   # Browse mode keys (mode reachable only via the "mode.browse" action)
-  "B h" => :history_switch_backwards,
-  "B l" => :history_switch_forwards,
+  "B h" => "buf.history.prev",
+  "B l" => "buf.history.next",
   "B p" => :file_panel_prev_file,
   "B n" => :file_panel_next_file,
   "B z" => "center_on_current_line();call_action('mode.browse.exit')",
@@ -82,7 +82,7 @@ add_keys "vim misc", {
   "B e" => proc { vma.gui.page_up(multip: 0.25) },
   "B i" => "move.buf.start",
   "B o" => "move.buf.end",
-  "B c" => :close_current_buffer,
+  "B c" => "buf.close",
   "B ;" => "jump.edit.prev",
   "B q" => "jump.edit.prev",
   "B w" => "jump.edit.next",

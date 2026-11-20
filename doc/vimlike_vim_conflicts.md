@@ -78,16 +78,16 @@ its own is in the way.
 | Mode | Keys | Action |
 |---|---|---|
 | B | <code>;</code> | <code>jump.edit.prev</code> |
-| B | <code>c</code> | <code>bufs.close_current_buffer(true)</code> |
+| B | <code>c</code> | <code>buf.close</code> |
 | B | <code>ctrl!</code> | <code>mode.browse.exit</code> |
 | B | <code>d</code> | <code>move.page.next</code> |
 | B | <code>e</code> | <code>vma.gui.page_up(multip: 0.25)</code> |
 | B | <code>enter</code> | <code>mode.browse.exit</code> |
 | B | <code>esc</code> | <code>mode.browse.exit</code> |
-| B | <code>h</code> | <code>bufs.history_switch(-1)</code> |
+| B | <code>h</code> | <code>buf.history.prev</code> |
 | B | <code>i</code> | <code>move.buf.start</code> |
 | B | <code>j</code> | <code>mode.browse.exit</code> |
-| B | <code>l</code> | <code>bufs.history_switch(+1)</code> |
+| B | <code>l</code> | <code>buf.history.next</code> |
 | B | <code>m</code> | <code>vma.macro.run_last_macro</code> |
 | B | <code>n</code> | <code>vma.gui.file_panel_select_adjacent(1)</code> |
 | B | <code>o</code> | <code>move.buf.end</code> |
