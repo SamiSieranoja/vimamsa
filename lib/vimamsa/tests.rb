@@ -3,7 +3,7 @@ require "digest"
 module Vimamsa
 
 def run_tests()
-  # DelayExecutioner.exec(id: :run_tests, wait: 0.7, callable: proc { run_tests_0 })
+  # DelayExecutioner.exec(id: "debug.tests", wait: 0.7, callable: proc { run_tests_0 })
 
   # Reload class
   # if Object.constants.include?(:EditorTests)

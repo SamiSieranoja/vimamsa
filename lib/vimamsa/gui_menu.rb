@@ -57,15 +57,15 @@ module Vimamsa
       add_to_menu "Actions.experimental.GitDiff", { :label => "Show git diff", :action => :git_diff_buffer }
       add_to_menu "Actions.experimental.GitDiffW", { :label => "Show git diff -w (repo)", :action => :git_diff_w }
 
-      add_to_menu "Actions.experimental.PrintBufferAccessList", { :label => "Print buffers by access time", :action => :print_buffer_access_list }
-      add_to_menu "Actions.experimental.EnableDebug", { :label => "Enable debug", :action => :enable_debug }
-      add_to_menu "Actions.experimental.DisableDebug", { :label => "Disable debug", :action => :disable_debug }
+      add_to_menu "Actions.experimental.PrintBufferAccessList", { :label => "Print buffers by access time", :action => "debug.buf.access" }
+      add_to_menu "Actions.experimental.EnableDebug", { :label => "Enable debug", :action => "debug.on" }
+      add_to_menu "Actions.experimental.DisableDebug", { :label => "Disable debug", :action => "debug.off" }
       add_to_menu "Actions.experimental.ShowImages", { :label => "Show images ⟦img:path⟧", :action => :show_images }
       
-      add_to_menu "Actions.experimental.ShowImages", { :action => :experimental_eval }
+      add_to_menu "Actions.experimental.ShowImages", { :action => "debug.eval.sel" }
       
 
-      add_to_menu "Actions.debug.dumpkbd", { :label => "Dump kbd state", :action => :kbd_dump_state }
+      add_to_menu "Actions.debug.dumpkbd", { :label => "Dump kbd state", :action => "debug.kbd" }
       add_to_menu "Actions.debug.ToggleKbdPassthrough", { :label => "Toggle kbd event passthrough", :action => "mode.passthrough.toggle" }
 
       add_to_menu "View.BufferManager", { :label => "Show open files", :action => :start_buf_manager }

@@ -415,7 +415,7 @@ add_keys "experimental", {
   # "CV , R" => "restart_application", #TODO: does not work
   "I ctrl-h" => :autocp_manual_trigger,
   "I ctrl-space" => :autocp_manual_trigger,
-  "C , d m" => :kbd_dump_state,
+  "C , d m" => "debug.kbd",
   "C , ; ." => :increment_word,
   "C , d d" => "debug_dump_deltas",
   "C , d c" => "debug_dump_clipboard",
@@ -426,7 +426,7 @@ add_keys "experimental", {
   "C , d r p" => 'require "pry"; binding.pry', #TODO
 #bindkey 'C , g', proc{invoke_grep_search}
 # bindkey "C , d", :diff_buffer
- "C , , d" => :savedebug,
+ "C , , d" => "debug.save",
  "C , m a" => "vma.kbd.set_mode(:audio)",
  "audio s" => :audio_stop,
 }

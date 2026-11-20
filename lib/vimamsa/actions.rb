@@ -50,6 +50,17 @@ ACTION_ALIASES = {
   show_free_key_bindings: "help.keys.free",
   show_vim_binding_conflicts: "help.vim_conflicts",
   show_message_history: "help.messages",
+  # debug namespace (2026-11-20)
+  enable_debug: "debug.on",
+  disable_debug: "debug.off",
+  savedebug: "debug.save",
+  eval_buf: "debug.eval.buf",
+  experimental_eval: "debug.eval.sel",
+  command_to_buf: "debug.command",
+  debug_buf_hex: "debug.buf.sha256",
+  print_buffer_access_list: "debug.buf.access",
+  run_tests: "debug.tests",
+  kbd_dump_state: "debug.kbd",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

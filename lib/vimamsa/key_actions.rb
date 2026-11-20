@@ -13,14 +13,14 @@ def jump_to_next_edit
 end
 
 
-reg_act(:command_to_buf, proc { command_to_buf }, "Execute command, output to buffer")
+reg_act("debug.command", proc { command_to_buf }, "Execute command, output to buffer")
 
 reg_act(:lsp_debug, proc { vma.buf.lsp_get_def }, "LSP get definition")
 reg_act(:lsp_jump_to_definition, proc { vma.buf.lsp_jump_to_def }, "LSP jump to definition")
 reg_act(:lsp_restart, proc { require "vimamsa/langservp"; lsp_restart },
         "LSP: restart the language server of the current file (e.g. after adding compile_flags.txt)")
 
-reg_act(:eval_buf, proc { vma.buf.eval_whole_buf }, "Eval whole current buffer as ruby code (DANGEROUS)")
+reg_act("debug.eval.buf", proc { vma.buf.eval_whole_buf }, "Eval whole current buffer as ruby code (DANGEROUS)")
 
 reg_act("app.settings", proc { show_settings_dialog }, "Show settings")
 reg_act(:refresh_colors, proc { gui_reload_theme_and_colors }, "Reload theme color palettes + config and refresh the UI (no restart)")
@@ -33,16 +33,16 @@ reg_act(:insert_select_up, proc { insert_select_move(BACKWARD_LINE) }, "Select t
 reg_act(:insert_select_down, proc { insert_select_move(FORWARD_LINE) }, "Select text downwards")
 
 reg_act(:copy_selection, proc { buf.copy_active_selection }, "Copy selection to clipboard")
-reg_act(:enable_debug, proc { cnf.debug = true }, "Enable debug")
-reg_act(:disable_debug, proc { cnf.debug = false }, "Disable debug")
+reg_act("debug.on", proc { cnf.debug = true }, "Enable debug")
+reg_act("debug.off", proc { cnf.debug = false }, "Disable debug")
 
-reg_act(:experimental_eval, proc { bindkey "V , e", "vma.buf.convert_selected_text(:eval)" }, "Enable key binding:\"[VISUAL] , e:\" Eval selected text")
+reg_act("debug.eval.sel", proc { bindkey "V , e", "vma.buf.convert_selected_text(:eval)" }, "Enable key binding:\"[VISUAL] , e:\" Eval selected text")
 
 reg_act(:easy_jump, proc { EasyJump.start }, "Easy jump")
 reg_act(:gui_ensure_cursor_visible, proc { vma.gui.view.ensure_cursor_visible }, "Scroll to current cursor position")
 reg_act(:gui_refresh_cursor, proc { vma.buf.refresh_cursor }, "Refresh cursor")
 
-reg_act(:savedebug, "savedebug", "Save debug info", { :group => :debug })
+reg_act("debug.save", "savedebug", "Save debug info", { :group => :debug })
 reg_act(:open_file_dialog, "open_file_dialog", "Open file", { :group => :file })
 reg_act(:create_new_file, "create_new_file", "Create new file", { :group => :file })
 reg_act(:backup_all_buffers, proc { backup_all_buffers }, "Backup all buffers", { :group => :file })
@@ -53,7 +53,7 @@ reg_act("move.line.prev", proc { buf.move(BACKWARD_LINE) }, "Move one line backw
 # reg_act(:history_switch_backwards, proc{bufs.history_switch_backwards}, "", { :group => :file })
 reg_act(:history_switch_backwards, proc { bufs.history_switch(-1) }, "Prev buffer", { :group => :file })
 reg_act(:history_switch_forwards, proc { bufs.history_switch(+1) }, "Next buffer", { :group => :file })
-reg_act(:print_buffer_access_list, proc { bufs.print_by_access_time }, "Print buffers by access time", { :group => :file })
+reg_act("debug.buf.access", proc { bufs.print_by_access_time }, "Print buffers by access time", { :group => :file })
 reg_act(:center_on_current_line, "center_on_current_line", "", { :group => :view })
 reg_act(:run_last_macro, proc { vma.macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
 reg_act(:jump_to_next_edit, "jump_to_next_edit", "Jump to next edit pos")
@@ -174,7 +174,7 @@ reg_act "mode.browse", proc {
   vma.kbd.set_mode(:browse)
   bufs.reset_navigation
 }, "Start browse mode"
-reg_act :kbd_dump_state, proc { vma.kbd.dump_state; pp ["vma.buf.mode_stack", vma.buf.mode_stack] }, "Dump keyboard tree state"
+reg_act "debug.kbd", proc { vma.kbd.dump_state; pp ["vma.buf.mode_stack", vma.buf.mode_stack] }, "Dump keyboard tree state"
 reg_act "mode.passthrough.toggle", proc {
   vma.gui.instance_variable_set(:@kbd_passthrough, !vma.gui.instance_variable_get(:@kbd_passthrough))
   state = vma.gui.instance_variable_get(:@kbd_passthrough) ? "ON" : "OFF"
@@ -288,10 +288,10 @@ act_list = {
   "app.quit" => { :proc => proc { _quit },
              :desc => "Quit", :group => :app },
 
-  :run_tests => { :proc => proc { run_tests },
+  "debug.tests" => { :proc => proc { run_tests },
                   :desc => "Run tests" },
 
-  :debug_buf_hex => { :proc => proc { puts "SHA256: " + (Digest::SHA2.hexdigest vma.buf.to_s) },
+  "debug.buf.sha256" => { :proc => proc { puts "SHA256: " + (Digest::SHA2.hexdigest vma.buf.to_s) },
                       :desc => "Output SHA256 hex digest of curent buffer" },
 
   :autocp_manual_trigger => { :proc => proc { vma.buf.view.autocp_manual_trigger },
