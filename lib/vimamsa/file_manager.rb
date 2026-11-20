@@ -30,7 +30,7 @@ class FileManager
   end
 
   def self.init()
-    reg_act(:start_file_selector, proc { FileManager.new.run; vma.kbd.set_mode(:file_exp) }, "File selector")
+    reg_act("file.explorer", proc { FileManager.new.run; vma.kbd.set_mode(:file_exp) }, "File selector")
 
     reg_act(:fexp_chdir_parent, proc { FileManager.chdir_parent }, "File selector")
     reg_act(:fexp_select, proc { buf.module.select_line }, "")
@@ -38,8 +38,8 @@ class FileManager
     reg_act(:fexp_sort_mtime, proc { FileManager.with_cur { |fm| fm.sort_mtime } }, "Sort based on time")
     reg_act(:fexp_sort_fname, proc { FileManager.with_cur { |fm| fm.sort_fname } }, "Sort based on file name")
 
-    bindkey "C , j f", :start_file_selector
-    bindkey "C , f", :start_file_selector
+    bindkey "C , j f", "file.explorer"
+    bindkey "C , f", "file.explorer"
 
     # bindkey "C o", :delete_state
 

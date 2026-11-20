@@ -10,7 +10,7 @@ class FileHistory
     vma.hook.register(:change_buffer, self.method("update"))
     vma.hook.register(:shutdown, self.method("save"))
 
-    reg_act(:fhist_remove_nonexisting, proc { remove_nonexisting }, "Cleanup history, remove non-existing files")
+    reg_act("file.history.prune", proc { remove_nonexisting }, "Cleanup history, remove non-existing files")
 
     @history = vma.marshal_load("file_history", {})
     $search_list = []

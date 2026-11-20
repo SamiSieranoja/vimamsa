@@ -819,9 +819,9 @@ class KeyBindingTree
   def mode_bind_key(mode_id, keydef, action, keywords: [])
     # debug "mode_bind_key #{mode_id.inspect}, #{keydef.inspect}, #{action.inspect}", 2
     # Example:
-    # bindkey "C , f", :gui_file_finder
+    # bindkey "C , f", "file.finder"
     # mode_id = "C", keydef = ", f"
-    # and action = :gui_file_finder
+    # and action = "file.finder"
 
     # Bind only to a mode that exists. Without this check the binding would
     # silently end up in the current default mode (see set_state), e.g. a

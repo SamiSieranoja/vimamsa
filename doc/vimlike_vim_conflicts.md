@@ -23,7 +23,7 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | C | <code>X</code> | <code>edit.delete.char.prev</code> | <code>buf.jump(END_OF_LINE);buf.insert_txt("\n");</code> | same keys, other action |
 | C | <code>^</code> | <code>buf.jump(FIRST_NON_WHITESPACE)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> | same keys, other action |
 | C | <code>backspace</code> | <code>buf.move(BACKWARD_CHAR)</code> | <code>edit.backspace</code> | same keys, other action |
-| C | <code>ctrl-o</code> | <code>jump.edit.prev</code> | <code>:open_file_dialog</code> | same keys, other action |
+| C | <code>ctrl-o</code> | <code>jump.edit.prev</code> | <code>file.open</code> | same keys, other action |
 | C | <code>d $</code> | <code>edit.delete.eol</code> | <code>buf.delete2(:to_line_end)</code> | same keys, other action |
 | C | <code>s</code> | <code>edit.change.char</code> | <code>jump.easy</code> | same keys, other action |
 | C | <code>space</code> | <code>buf.move(FORWARD_CHAR)</code> | <code>2 longer bindings</code> | vimlike uses these keys as a prefix |

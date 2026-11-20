@@ -43,7 +43,7 @@ reg_act(:gui_ensure_cursor_visible, proc { vma.gui.view.ensure_cursor_visible },
 reg_act(:gui_refresh_cursor, proc { vma.buf.refresh_cursor }, "Refresh cursor")
 
 reg_act("debug.save", "savedebug", "Save debug info", { :group => :debug })
-reg_act(:open_file_dialog, "open_file_dialog", "Open file", { :group => :file })
+reg_act("file.open", "open_file_dialog", "Open file", { :group => :file })
 reg_act("buf.backup.all", proc { backup_all_buffers }, "Backup all buffers", { :group => :file })
 reg_act("move.char.next", proc { buf.move(FORWARD_CHAR) }, "Move forward one character", { :group => [:move, :basic] })
 reg_act("move.char.prev", proc { buf.move(BACKWARD_CHAR) }, "Move backward one character", { :group => [:move, :basic] })
@@ -62,13 +62,13 @@ reg_act("edit.newline", proc { buf.insert_new_line() }, "Insert new line")
 reg_act("help.keys", proc { show_key_bindings }, "Show key bindings")
 reg_act("help.keys.free", proc { show_free_key_bindings }, "Show available (unbound) key binding slots")
 reg_act("help.vim_conflicts", proc { show_vim_binding_conflicts }, "Show which vim key bindings conflict with the vimlike keymap")
-reg_act(:put_file_path_to_clipboard, proc { buf.put_file_path_to_clipboard }, "Put file path of current file to clipboard")
-reg_act(:put_file_ref_to_clipboard, proc { buf.put_file_ref_to_clipboard }, "Put file ref of current file to clipboard")
+reg_act("file.path.copy", proc { buf.put_file_path_to_clipboard }, "Put file path of current file to clipboard")
+reg_act("file.ref.copy", proc { buf.put_file_ref_to_clipboard }, "Put file ref of current file to clipboard")
 
 # reg_act("buf.encrypt", proc{buf.set_encrypted},"Set current file to encrypt on save")
 reg_act("buf.encrypt", proc { encrypt_cur_buffer }, "Set current file to encrypt on save")
 reg_act("buf.encrypt.off", proc { buf.set_unencrypted }, "Set current file to save unencrypted")
-reg_act(:set_executable, proc { buf.set_executable }, "Set current file permissions to executable")
+reg_act("file.executable", proc { buf.set_executable }, "Set current file permissions to executable")
 # reg_act("buf.close.all", proc { bufs.close_all_buffers() }, "Close all buffers")
 reg_act("buf.close", proc { bufs.close_current_buffer(true) }, "Close current buffer")
 reg_act(:toggle_file_panel, proc { vma.gui.toggle_file_panel }, "Toggle file panel")
@@ -80,12 +80,12 @@ reg_act("mode.cmdline", proc { vma.gui.cmd_line.start }, "Open command line (:)"
 reg_act(:toggle_func_panel, proc { vma.gui.toggle_func_panel }, "Toggle LSP function panel")
 reg_act(:refresh_func_panel, proc { vma.gui.func_panel_refresh }, "Refresh LSP function panel")
 reg_act(:toggle_keylog_panel, proc { vma.gui.toggle_keylog_panel }, "Toggle key log panel")
-reg_act(:git_diff_w, proc { git_diff_w }, "Show git diff -w for whole repository")
+reg_act("file.diff.repo", proc { git_diff_w }, "Show git diff -w for whole repository")
 reg_act(:lsp_print_functions, proc { lsp_print_functions }, "LSP print functions in current file")
 reg_act("edit.comment", proc { buf.comment_selection }, "Comment selection")
 reg_act("edit.delete.char", proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward", { :group => [:edit, :basic] })
-reg_act(:gui_file_finder, proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
-reg_act(:gui_file_history_finder, proc { vma.FileHistory.start_gui }, "Fuzzy file history finder")
+reg_act("file.finder", proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
+reg_act("file.history", proc { vma.FileHistory.start_gui }, "Fuzzy file history finder")
 reg_act("search.replace", proc { gui_search_replace }, "Search and replace")
 reg_act("buf.language", proc { gui_select_buffer_language }, "Select syntax highlighting language for current buffer")
 reg_act("search.next", proc { $search.jump_to_next() }, "Find next")
@@ -106,13 +106,12 @@ reg_act(:set_line_style_title, proc { buf.set_line_style(:title) }, "Set style o
 reg_act(:set_line_style_italic, proc { buf.set_line_style(:italic) }, "Set style of current line as italic")
 reg_act(:clear_line_styles, proc { buf.set_line_style(:clear) }, "Clear styles of current line")
 reg_act("buf.switcher", proc { vma.kbd.set_mode("S"); gui_select_buffer }, "Select buffer")
-reg_act :open_file_dialog, "open_file_dialog", "Open file"
 reg_act "mode.minibuffer.end", proc { minibuffer_end }
 reg_act("search.replace.cmd", "invoke_replace", "Invoke replace")
 reg_act("buf.diff", "diff_buffer", "")
 reg_act("buf.diff.git", proc { git_diff_buffer }, "Show git diff of current file")
 reg_act("diffview.source", proc { diff_buffer_jump_to_source }, "Jump to corresponding line in source from diff buffer")
-reg_act(:extract_file_links, proc {
+reg_act("file.links", proc {
   links = buf.file_links
   if links.empty?
     message("No links to existing files")
@@ -133,7 +132,7 @@ reg_act("jump.file", proc {
     open_with_default_program(fn)
   end
 }, "Open file whose path is under the cursor", { :group => :file })
-reg_act :update_file_index, proc { FileFinder.update_index }, "Update file index"
+reg_act "file.finder.reindex", proc { FileFinder.update_index }, "Update file index"
 reg_act "edit.delete.word.end", proc { buf.delete2(:to_word_end) }, "Delete to file end", { :group => [:edit, :basic] }
 reg_act "edit.delete.word.next", proc { buf.delete2(:to_next_word) }, "Delete to start of next word", { :group => [:edit, :basic] }
 reg_act "edit.delete.line.start", proc { buf.delete2(:to_line_start) }, "Delete to line start", { :group => [:edit, :basic] }
@@ -193,7 +192,7 @@ reg_act("edit.indent.buf", proc { buf.auto_format }, "Auto format buffer")
 reg_act(:execute_current_line_in_terminal, proc { buf.execute_current_line_in_terminal }, "Execute current line in terminal")
 reg_act(:execute_current_line_in_terminal_autoclose, proc { buf.execute_current_line_in_terminal(true) }, "Execute current line in terminal. Close after execution.")
 reg_act(:show_images, proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")
-reg_act(:delete_current_file, proc { bufs.delete_current_buffer() }, "Delete current file")
+reg_act("file.delete", proc { bufs.delete_current_buffer() }, "Delete current file")
 
 reg_act(:audio_stop, proc { Audio.stop }, "Stop audio playback")
 

@@ -1,6 +1,6 @@
 require "tmpdir"
 
-# :extract_file_links lists the existing files named in the current file in a
+# "file.links" lists the existing files named in the current file in a
 # new buffer, one absolute path per line.
 class TestExtractFileLinks < VmaTest
   def with_dir
@@ -31,7 +31,7 @@ class TestExtractFileLinks < VmaTest
              "abs #{dir}/sub/b.txt plain words only\n"
       b = open_with(dir, text)
       begin
-        act :extract_file_links
+        act "file.links"
         assert_eq "#{dir}/a.pdf\n#{dir}/sub/b.txt\n#{dir}/notes.txt\n#{dir}/img.png\n", vma.buf.to_s
         assert vma.buf.fname.nil?, "result should be an unsaved buffer"
         vma.buffers.close_buffer(vma.buf.id)
@@ -45,7 +45,7 @@ class TestExtractFileLinks < VmaTest
     with_dir do |dir|
       b = open_with(dir, "nothing here, missing.pdf\n")
       begin
-        act :extract_file_links
+        act "file.links"
         assert_eq b.id, vma.buf.id
       ensure
         vma.buffers.close_buffer(b.id)

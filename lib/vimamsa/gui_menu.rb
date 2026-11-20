@@ -24,7 +24,7 @@ module Vimamsa
       add_to_menu "File.Example", { :label => "<span foreground='#888888'>Action, [mode] key binding</span>", :action => nil }
       add_to_menu "File.Save", { :label => "Save", :action => "buf.save" }
       add_to_menu "File.Save as", { :label => "Save As...", :action => "buf.save.as" }
-      add_to_menu "File.Open", { :label => "Open", :action => :open_file_dialog }
+      add_to_menu "File.Open", { :label => "Open", :action => "file.open" }
 
       add_to_menu "File.New", { :label => "New file", :action => "buf.new" }
       add_to_menu "File.Revert", { :label => "Reload file from disk", :action => "buf.revert" }
@@ -51,11 +51,11 @@ module Vimamsa
 
       add_to_menu "Actions.Grep", { :label => "Grep lines", :action => "grep.buf" }
 
-      add_to_menu "Actions.FileHistoryFinder", { :label => "Search files in history", :action => :gui_file_history_finder }
+      add_to_menu "Actions.FileHistoryFinder", { :label => "Search files in history", :action => "file.history" }
 
       add_to_menu "Actions.experimental.Diff", { :label => "Show Diff of\nunsaved changes", :action => "buf.diff" }
       add_to_menu "Actions.experimental.GitDiff", { :label => "Show git diff", :action => "buf.diff.git" }
-      add_to_menu "Actions.experimental.GitDiffW", { :label => "Show git diff -w (repo)", :action => :git_diff_w }
+      add_to_menu "Actions.experimental.GitDiffW", { :label => "Show git diff -w (repo)", :action => "file.diff.repo" }
 
       add_to_menu "Actions.experimental.PrintBufferAccessList", { :label => "Print buffers by access time", :action => "debug.buf.access" }
       add_to_menu "Actions.experimental.EnableDebug", { :label => "Enable debug", :action => "debug.on" }

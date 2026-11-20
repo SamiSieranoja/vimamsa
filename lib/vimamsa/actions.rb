@@ -163,6 +163,19 @@ ACTION_ALIASES = {
   git_diff_buffer: "buf.diff.git",
   diff_buffer: "buf.diff",
   diff_buffer_jump_to_source: "diffview.source",
+  # file namespace (2026-11-20)
+  git_diff_w: "file.diff.repo",
+  open_file_dialog: "file.open",
+  gui_file_finder: "file.finder",
+  start_file_selector: "file.explorer",
+  update_file_index: "file.finder.reindex",
+  gui_file_history_finder: "file.history",
+  fhist_remove_nonexisting: "file.history.prune",
+  delete_current_file: "file.delete",
+  set_executable: "file.executable",
+  put_file_path_to_clipboard: "file.path.copy",
+  put_file_ref_to_clipboard: "file.ref.copy",
+  extract_file_links: "file.links",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next
