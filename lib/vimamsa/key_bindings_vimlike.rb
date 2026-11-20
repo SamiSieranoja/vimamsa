@@ -44,43 +44,20 @@ def insert_move(op)
   _insert_move(op)
 end
 
-add_keys "intro", {
+add_keys "intro cat:motion", {
   "VCX up" => "buf.move(BACKWARD_LINE)",
   "VCX down" => "buf.move(FORWARD_LINE)",
   "VCX right" => "buf.move(FORWARD_CHAR)",
   "VCX left" => "buf.move(BACKWARD_CHAR)",
- "C , b" => "buf.manager",
-  "C , M" => "mark.add",
-  "C , '" => "mark.list",
   "VC l" => "move.char.next",
-  "VC , , s" => "search.actions",
-  "C , n b" => "buf.new",
-  "C y y" => "edit.line.copy",
-  "C P" => "edit.paste.before",
-  "C p" => "edit.paste.after",
-  "C v" => "mode.visual",
-  "C ctrl-r" => "undo.redo",
-  "C u" => "undo.last",
   "VC O" => "move.line.end",
   # NOTE: "G(condition)" need to be defined before "G"
   "VC G(vma.kbd.next_command_count!=nil)" => "buf.jump_to_line()",
   "VC G" => "move.buf.end",
-  "VC g ;" => "jump.edit.prev",
   "VC g g" => "move.buf.start",
   "VC e" => "move.word.end",
   "VC b" => "move.word.prev",
   "VC w" => "move.word.next",
-  "V esc" => "buf.end_visual_mode",
-  "V ctrl!" => "buf.end_visual_mode",
-  "V tab" => "buf.indent_selection",
-  "V shift-tab" => "buf.unindent_selection",
-  
-  "C ctrl!" => "mode.insert",
-  "C i" => "mode.insert",
-  # Guarded esc must be defined before the unguarded one: on multiple
-  # matches the first-registered state with an action wins
-  # "I esc(vma.buf.view.autocp_active)" => "vma.buf.view.hide_completions",
-  "I esc || I ctrl!" => "mode.prev",
   "IX alt-b" => "move.word.prev",
   "IX alt-f" => "move.word.next",
   "IX ctrl-e" => "move.line.end",
@@ -88,21 +65,65 @@ add_keys "intro", {
   "IX ctrl-n" => "move.line.next",
   "IX ctrl-b" => "move.char.prev",
   "IX ctrl-a" => "move.line.start",
-  
+}
+
+add_keys "intro cat:search", {
+  "VC , , s" => "search.actions",
+  "VC g ;" => "jump.edit.prev",
+  "C g f" => "jump.file",
+  "I ctrl-l" => "search.buf",
+  "I ctrl-g" => "search.next",
+}
+
+add_keys "intro cat:insert", {
+  "C ctrl!" => "mode.insert",
+  "C i" => "mode.insert",
+  # Guarded esc must be defined before the unguarded one: on multiple
+  # matches the first-registered state with an action wins
+  # "I esc(vma.buf.view.autocp_active)" => "vma.buf.view.hide_completions",
+  "I esc || I ctrl!" => "mode.prev",
+}
+
+add_keys "intro cat:edit", {
+  "C y y" => "edit.line.copy",
+  "C P" => "edit.paste.before",
+  "C p" => "edit.paste.after",
   "CI ctrl-v" => "edit.paste.before",
+  "CI backspace" => "edit.backspace",
+}
+
+add_keys "intro cat:visual", {
+  "C v" => "mode.visual",
+  "V esc" => "buf.end_visual_mode",
+  "V ctrl!" => "buf.end_visual_mode",
+  "V tab" => "buf.indent_selection",
+  "V shift-tab" => "buf.unindent_selection",
   "I ctrl-c" => "sel.copy", #TODO: in control mode also?
   "CI ctrl-x" => "sel.cut",
-  "CI ctrl-z" => "undo.last",
-  "CI ctrl-w" => "buf.close",
-  "I ctrl-y" => "undo.redo",
-  "CI backspace" => "edit.backspace",
- "CI ctrl-o" => "file.open",
-  "C g f" => "jump.file",
- "I ctrl-l" => "search.buf",
- "I ctrl-g" => "search.next",
-  
   "I shift-up" => "sel.line.prev",
-  "I shift-down" => "sel.line.next", 
+  "I shift-down" => "sel.line.next",
+}
+
+add_keys "intro cat:undo", {
+  "C ctrl-r" => "undo.redo",
+  "C u" => "undo.last",
+  "CI ctrl-z" => "undo.last",
+  "I ctrl-y" => "undo.redo",
+}
+
+add_keys "intro cat:marks", {
+  "C , M" => "mark.add",
+  "C , '" => "mark.list",
+}
+
+add_keys "intro cat:file", {
+  "CI ctrl-o" => "file.open",
+}
+
+add_keys "intro cat:buffer", {
+  "C , b" => "buf.manager",
+  "C , n b" => "buf.new",
+  "CI ctrl-w" => "buf.close",
 }
 
 add_keys "intro delete", {
@@ -111,67 +132,15 @@ add_keys "intro delete", {
 }
 
 
-add_keys "core", {
-
-  # File handling
-  "C ctrl-s" => "buf.save",
-
-  "V J" => "sel.join",
-  # Buffer handling
-  # "C B" => "bufs.switch",
-  "C tab" => "bufs.switch_to_last_buf",
-  # prev/next file in file panel order (no-op while the panel is hidden)
-  "C alt-h" => "panel.files.prev",
-  "C alt-l" => "panel.files.next",
-  # label the file panel rows, jump to a file by typing its label
-  "C g s" => "panel.files.jump",
-  #    'C , s'=> 'gui_select_buffer',
-  "C , r v b" => "buf.revert",
-  "C , c b" => "bufs.close_current_buffer",
-  # "C , , ." => "backup_all_buffers()",
-
-  # MOVING
-
+add_keys "core cat:motion", {
   "VCI pagedown" => "move.page.next",
   "VCI pageup" => "move.page.prev",
-
-  # "I down(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
-  "I tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
-  # "I up(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
-  "I shift-tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
-  "I shift!(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select",
-
-  # Typing a character. Reached both from a key press and from an input method
-  # commit (AltGr, dead keys, compose — those produce no key press at all, see
-  # VSourceView#register_buffer_signals), so insertion lives here rather than in
-  # the GUI layer.
-  "I <char>" => "buf.insert_txt(<char>)",
-
-  "I tab" => "buf.insert_tab",
-  "I shift-tab" => "buf.unindent",
-
-  "I enter" => "edit.newline",
-
-
-  "I shift-left" => "insert_select_move(BACKWARD_CHAR)",
-  "I shift-right" => "insert_select_move(FORWARD_CHAR)",
-  "I shift-down" => "insert_select_move(FORWARD_LINE)",
-  "I shift-pagedown" => "insert_select_move(:pagedown)",
-  "I shift-pageup" => "insert_select_move(:pageup)",
-
   "I left" => "insert_move(BACKWARD_CHAR)",
   "I right" => "insert_move(FORWARD_CHAR)",
   "I down" => "insert_move(FORWARD_LINE)",
   "I up" => "insert_move(BACKWARD_LINE)",
   "I pagedown" => "insert_move(:pagedown)",
   "I pageup" => "insert_move(:pageup)",
-
-  #    'C '=> 'buf.jump_word(BACKWARD,END)',#TODO
-  "VC f <char>" => "buf.jump_to_next_instance_of_char(<char>)",
-  "VC F <char>" => "buf.jump_to_next_instance_of_char(<char>,BACKWARD)",
-  "VC f space" => "buf.jump_to_next_instance_of_char(' ')",
-  "VC F space" => "buf.jump_to_next_instance_of_char(' ',BACKWARD)",
-
   "VC /[1-9]/" => "vma.kbd.set_next_command_count(<char>)",
   #    'VC number=/[0-9]/+ g'=> 'jump_to_line(<number>)',
   #    'VC X=/[0-9]/+ * Y=/[0-9]/+ '=> 'x_times_y(<X>,<Y>)',
@@ -179,40 +148,71 @@ add_keys "core", {
   "VC 0(vma.kbd.next_command_count==nil)" => "buf.jump(BEGINNING_OF_LINE)",
   # 'C 0'=> 'buf.jump(BEGINNING_OF_LINE)',
   "VC ^" => "buf.jump(BEGINNING_OF_LINE)",
+  "VC $" => "buf.jump(END_OF_LINE)",
+  "C ^" => "buf.jump(BEGINNING_OF_LINE)",
+  "VC j" => "move.line.next",
+  "VC k" => "move.line.prev",
+  # Insert and Replace modes: Moving
+  "IX ctrl-f" => "buf.move(FORWARD_CHAR)",
+  "VC h" => "move.char.prev",
+  "B s" => "move.page.prev",
+  "B d" => "move.page.next",
+  "B i" => "move.buf.start",
+  "B o" => "move.buf.end",
+  "C , j r" => "move.random",
+}
+
+add_keys "core cat:search", {
+  #    'C '=> 'buf.jump_word(BACKWARD,END)',#TODO
+  "VC f <char>" => "buf.jump_to_next_instance_of_char(<char>)",
+  "VC F <char>" => "buf.jump_to_next_instance_of_char(<char>,BACKWARD)",
+  "VC f space" => "buf.jump_to_next_instance_of_char(' ')",
+  "VC F space" => "buf.jump_to_next_instance_of_char(' ',BACKWARD)",
   #    'VC z z' => 'center_on_current_line',
   "VC *" => "buf.jump_to_next_instance_of_word",
-
-  "C , e" => "mode.cmdline",
-  "C :" => "mode.cmdline",
-
   "VC /" => "search.buf",
-
-  # READCHAR bindings
-
-  "R <char>" => "readchar_new_char(<char>)",
-
   "C n" => "search.next",
   "C N" => "$search.jump_to_previous()",
+  # "C ." => "repeat_last_action", # TODO
+  "VC ;" => "repeat_last_find",
+  "B ;" => "jump.edit.prev",
+  "B q" => "jump.edit.prev",
+  "B w" => "jump.edit.next",
+  "VC , r r" => "search.replace",
+  "VC s" => "jump.easy",
+  "I alt-s" => "jump.easy",
+  "C enter || C return" => ["jump.line", proc { buf.handle_line_action() }, "Line action"],
+}
 
-  "C C" => "grep.files",
-
-  "C , c s" => "bufs.close_scrap_buffers",
-
-  "VC $" => "buf.jump(END_OF_LINE)",
-
+add_keys "core cat:insert", {
+  # "I down(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
+  "I tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
+  # "I up(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
+  "I shift-tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
+  "I shift!(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select",
+  # Typing a character. Reached both from a key press and from an input method
+  # commit (AltGr, dead keys, compose — those produce no key press at all, see
+  # VSourceView#register_buffer_signals), so insertion lives here rather than in
+  # the GUI layer.
+  "I <char>" => "buf.insert_txt(<char>)",
+  "I tab" => "buf.insert_tab",
+  "I shift-tab" => "buf.unindent",
   "C o" => 'buf.jump(END_OF_LINE);buf.insert_txt("\n");vma.kbd.set_mode(:insert)',
   "C X" => 'buf.jump(END_OF_LINE);buf.insert_txt("\n");',
   "C A" => "buf.jump(END_OF_LINE);vma.kbd.set_mode(:insert)",
   "C I" => "buf.jump(FIRST_NON_WHITESPACE);vma.kbd.set_mode(:insert)",
   "C a" => "buf.move(FORWARD_CHAR);vma.kbd.set_mode(:insert)",
-  "C J" => "buf.join_lines()",
-
-  "C ^" => "buf.jump(BEGINNING_OF_LINE)",
-  # "C /[1-9]/" => "vma.kbd.set_next_command_count(<char>)",
-
   # Command mode only:
   "C space <char>" => "buf.insert_txt(<char>)",
   "C space space" => "buf.insert_txt(' ')",
+  "I <char>" => "buf.insert_txt(<char>)",
+  "I ctrl-j" => "vma.buf.view.hide_completions",
+  "I space" => 'buf.insert_txt(" ")',
+}
+
+add_keys "core cat:edit", {
+  "I enter" => "edit.newline",
+  "C J" => "buf.join_lines()",
   "C y O" => "buf.copy(:to_line_end)",
   "C y 0" => "buf.copy(:to_line_start)",
   "C y e" => "buf.copy(:to_word_end)", # TODO
@@ -234,27 +234,26 @@ add_keys "core", {
   "C d F space" => "buf.delete2(:to_char_backward,' ')",
   "C r <char>" => "buf.replace_with_char(<char>)", # TODO
   "C r space" => "buf.replace_with_char(' ')", # TODO
-  "C , l b" => "load_buffer_list",
-  "C , l l" => "save_buffer_list",
   "C , r <char>" => "vma.set_register(<char>)", # TODO
   "C , p <char>" => "buf.paste(BEFORE,<char>)", # TODO
+  # Switch to another mode
+  "C R" => "vma.kbd.set_mode(:replace)",
+  # Replace mode
+  "X esc || X ctrl!" => "vma.kbd.to_previous_mode",
+  # "X p" => "edit.paste.over.after", #TODO
+  "X ctrl-v" => "edit.paste.over.before",
+  "X <char>" => "buf.replace_with_char(<char>);buf.move(FORWARD_CHAR)",
+  "I ctrl-d" => "buf.delete2(:to_word_end)",
+  "C d w" => "edit.delete.word.next",
+  "C d 0" => "edit.delete.line.start",
+  "C , ; a c" => "edit.complete.toggle",
+}
 
-  "C ctrl-c" => "buf.comment_line()",
-  "C ctrl-x" => "buf.comment_line(:uncomment)",
-
-  # 'C 0($next_command_count==nil)'=> 'jump_to_beginning_of_line',
-
-  # Visual mode only:
-
-  "V y" => "buf.copy_active_selection()",
-  "V a y" => "buf.copy_active_selection(:append)",
+add_keys "core cat:case", {
   "V g U" => "case.sel.upper",
   "V g u" => "case.sel.lower",
   "V g c" => "case.sel.capitalize",
   "V g s" => "case.sel.swap",
-  "V g r" => "sel.reverse",
-  "V g i" => "sel.unindent",
-  "V g I" => "sel.unindent.common",
   "V U" => "case.sel.upper",
   "V u" => "case.sel.lower",
   "V ~" => "case.sel.swap",
@@ -265,126 +264,130 @@ add_keys "core", {
   "C g U U" => "case.line.upper",
   "C g u u" => "case.line.lower",
   "C g ~ ~" => "case.line.swap",
+}
+
+add_keys "core cat:visual", {
+  "V J" => "sel.join",
+  "I shift-left" => "insert_select_move(BACKWARD_CHAR)",
+  "I shift-right" => "insert_select_move(FORWARD_CHAR)",
+  "I shift-down" => "insert_select_move(FORWARD_LINE)",
+  "I shift-pagedown" => "insert_select_move(:pagedown)",
+  "I shift-pageup" => "insert_select_move(:pageup)",
+  "V y" => "buf.copy_active_selection()",
+  "V a y" => "buf.copy_active_selection(:append)",
+  "V g r" => "sel.reverse",
+  "V g i" => "sel.unindent",
+  "V g I" => "sel.unindent.common",
   "V g w" => "sel.convert.remove_extra_spaces",
   "C g w" => "sel.convert.remove_extra_spaces",
   "C g i" => "sel.unindent",
   "C g I" => "sel.unindent.common",
-
-  "VC j" => "move.line.next",
-  "VC k" => "move.line.prev",
-
   "V x" => "buf.delete(SELECTION)",
-  # "V ctrl-c" => "buf.comment_selection",
-  "V ctrl-x" => "buf.comment_selection(:uncomment)",
+  "V d" => ["sel.delete", proc { buf.delete(SELECTION) }, ""],
+  "V a d" => ["sel.delete.append", proc { buf.delete(SELECTION, :append) }, "Delete and append selection"],
+}
 
-
+add_keys "core cat:marks", {
   # Marks
   "CV m <char>" => "buf.mark_current_position(<char>)",
   'CV \' <char>' => "buf.jump_to_mark(<char>)",
-  # "CV ''" =>'jump_to_mark(NEXT_MARK)', #TODO
+}
 
-  # Switch to another mode
-  "C R" => "vma.kbd.set_mode(:replace)",
-
-  # Replace mode
-  "X esc || X ctrl!" => "vma.kbd.to_previous_mode",
-  # "X p" => "edit.paste.over.after", #TODO
-  "X ctrl-v" => "edit.paste.over.before",
-  "X <char>" => "buf.replace_with_char(<char>);buf.move(FORWARD_CHAR)",
-
-  # Macros
-  # (experimental, may not work correctly)
-  # "C q a" => 'vma.macro.start_recording("a")',
-  
+add_keys "core cat:macro", {
   "macro q" => "vma.kbd.to_previous_mode; vma.macro.end_recording",
-  # "macro q z" => "vma.kbd.to_previous_mode; vma.macro.end_recording",
-  
   # "VC q(vma.macro.is_recording==true)" => "vma.macro.end_recording", # TODO: does not work
   # "VC o(vma.macro.is_recording==true)" => "vma.macro.end_recording", # TODO: does not work
   # "VC q q(vma.macro.is_recording==true)" => "vma.macro.end_recording",
   "VC q <char>" => "vma.kbd.set_mode(:macro);vma.macro.start_recording(<char>)",
-  # 'C q'=> 'vma.macro.end_recording', #TODO
-  
-  # "C q v" => "vma.kbd.to_previous_mode; vma.macro.end_recording", #TODO
-  
   # 'C v'=> 'vma.macro.end_recording',
   # "C M" => 'vma.macro.run_last_macro',
   "C @ <char>" => "vma.macro.run_macro(<char>)",
   "C , m S" => 'vma.macro.save_macro("a")',
   "C , m s" => "vma.macro.save",
-  "C , m h" => "help.messages",
+  "VC , m f" => ["macro.find", proc { vma.macro.find_macro_gui }, "Find named macro"],
+  "C , m n" => ["macro.name", proc { vma.macro.gui_name_macro }, "Name last macro"],
+}
 
-  # "C ." => "repeat_last_action", # TODO
-  "VC ;" => "repeat_last_find",
-  # "CV Q" => "app.quit",
-  "CV ctrl-q" => "app.quit",
+add_keys "core cat:file", {
+  "C , , f" => :file_finder,
+  "C , , u" => "file.finder.reindex",
+  "C , , c b" => "file.path.copy", #TODO: better binding or remove?,
+  "C , f" => "file.finder",
+  "C , h" => "file.history",
+  "C , z" => "file.finder",
+}
+
+add_keys "core cat:buffer", {
+  # File handling
+  "C ctrl-s" => "buf.save",
+  # Buffer handling
+  # "C B" => "bufs.switch",
+  "C tab" => "bufs.switch_to_last_buf",
+  #    'C , s'=> 'gui_select_buffer',
+  "C , r v b" => "buf.revert",
+  "C , c b" => "bufs.close_current_buffer",
+  "C , c s" => "bufs.close_scrap_buffers",
+  "C , l b" => "load_buffer_list",
+  "C , l l" => "save_buffer_list",
   # "I ctrl!" => "vma.kbd.to_previous_mode",
   "C shift! s" => "buf.save",
   "I ctrl-s" => "buf.save",
-  "I <char>" => "buf.insert_txt(<char>)",
+  "C , , ." => "buf.backup.all",
+  "C z " => "mode.browse",
+  "B h" => "buf.history.prev",
+  "B l" => "buf.history.next",
+  "B z" => "center_on_current_line();call_action('mode.browse.exit')",
+  "B enter || B return || B esc || B j || B ctrl!" => "mode.browse.exit",
+  "B r" => proc { vma.gui.page_down(multip: 0.25) },
+  "B e" => proc { vma.gui.page_up(multip: 0.25) },
+  "B c" => "buf.close",
+  "C , s a" => "buf.save.as",
+  "C , , e" => "buf.encrypt", #TODO: better binding,
+  "C , ; u" => "buf.encrypt.off", #TODO: better binding,
+  "C , c b" => "buf.close",
+}
 
-  "I ctrl-d" => "buf.delete2(:to_word_end)",
+add_keys "core cat:view", {
+  # prev/next file in file panel order (no-op while the panel is hidden)
+  "C alt-h" => "panel.files.prev",
+  "C alt-l" => "panel.files.next",
+  # label the file panel rows, jump to a file by typing its label
+  "C g s" => "panel.files.jump",
+  "B p" => "panel.files.prev",
+  "B n" => "panel.files.next",
+  "C , w" => "view.columns.switch",
+  "C , , w" => "view.columns.toggle",
+}
 
-  # Insert and Replace modes: Moving
-  "IX ctrl-f" => "buf.move(FORWARD_CHAR)",
+add_keys "core cat:grep", {
+  "C C" => "grep.files",
+  "C , a" => "ack.search",
+}
 
-  "I ctrl-j" => "vma.buf.view.hide_completions",
+add_keys "core cat:code", {
+  "C ctrl-c" => "buf.comment_line()",
+  "C ctrl-x" => "buf.comment_line(:uncomment)",
+  # "V ctrl-c" => "buf.comment_selection",
+  "V ctrl-x" => "buf.comment_selection(:uncomment)",
+  "C , v" => "edit.indent.buf",
+  "V ctrl-c" => "edit.comment",
+}
 
-  "I space" => 'buf.insert_txt(" ")',
-#  "I return" => 'buf.insert_new_line()',
+add_keys "core cat:app", {
+  "C , e" => "mode.cmdline",
+  "C :" => "mode.cmdline",
+  # "CV Q" => "app.quit",
+  "CV ctrl-q" => "app.quit",
+  "C , R" => "app.restart",
+}
 
- "C , a" => "ack.search",
- "C d w" => "edit.delete.word.next",
+add_keys "core cat:help", {
+  "C , m h" => "help.messages",
+  "C , ; s k" => "help.keys", #TODO: better binding,
+}
 
- "C d 0" => "edit.delete.line.start",
- "C , , f" => :file_finder,
- "VC h" => "move.char.prev",
- "C , , ." => "buf.backup.all",
- "C z " => "mode.browse",
- "B h" => "buf.history.prev",
- "B l" => "buf.history.next",
- "B p" => "panel.files.prev",
- "B n" => "panel.files.next",
- "B z" => "center_on_current_line();call_action('mode.browse.exit')",
- "B enter || B return || B esc || B j || B ctrl!" => "mode.browse.exit",
- "B s" => "move.page.prev",
- "B d" => "move.page.next",
- "B r" => proc { vma.gui.page_down(multip: 0.25) },
- "B e" => proc { vma.gui.page_up(multip: 0.25) },
-
- "B i" => "move.buf.start",
- "B o" => "move.buf.end",
- "B c" => "buf.close",
- "B ;" => "jump.edit.prev",
- "B q" => "jump.edit.prev",
- "B w" => "jump.edit.next",
- "C , v" => "edit.indent.buf",
- "C , , u" => "file.finder.reindex",
- "C , s a" => "buf.save.as",
- "VC , r r" => "search.replace",
- "C , w" => "view.columns.switch",
- "C , , w" => "view.columns.toggle",
- "C , ; a c" => "edit.complete.toggle",
- "C , R" => "app.restart",
-
- "VC s" => "jump.easy",
- "I alt-s" => "jump.easy",
- "VC , m f" => ["macro.find", proc { vma.macro.find_macro_gui }, "Find named macro"],
- "C , m n" => ["macro.name", proc { vma.macro.gui_name_macro }, "Name last macro"],
- "C , j r" => "move.random",
- "C , ; s k" => "help.keys", #TODO: better binding,
- "C , , c b" => "file.path.copy", #TODO: better binding or remove?,
- "C , , e" => "buf.encrypt", #TODO: better binding,
- "C , ; u" => "buf.encrypt.off", #TODO: better binding,
- "C , c b" => "buf.close",
- "V ctrl-c" => "edit.comment",
- "C , f" => "file.finder",
- "C , h" => "file.history",
- "C , z" => "file.finder",
-
- "C enter || C return" => ["jump.line", proc { buf.handle_line_action() }, "Line action"],
- "V d" => ["sel.delete", proc { buf.delete(SELECTION) }, ""],
- "V a d" => ["sel.delete.append", proc { buf.delete(SELECTION, :append) }, "Delete and append selection"]
+add_keys "core cat:internal", {
+  "R <char>" => "readchar_new_char(<char>)",
 }
 
 add_keys "hyperplaintext", {
@@ -439,7 +442,7 @@ bindkey "audio space", "audio.stop"
 bindkey "audio q || audio esc", "vma.kbd.to_previous_mode"
 
 
-bindkey "C , i p", "generate_password_to_buf(15)"
+bindkey "C , i p", "generate_password_to_buf(15)", keywords: "cat:edit"
 
 # default_keys.each { |key, value|
   # bindkey(key, value)

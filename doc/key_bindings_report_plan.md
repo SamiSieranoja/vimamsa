@@ -1,5 +1,8 @@
 # Plan: better organized "Show key bindings" page
 
+TODO: act next on step 3 of "Implementation order" (the new layout). Steps 1-2
+are done (see DONE at the end).
+
 ## Context
 
 Help ▸ Show key bindings (`show_key_bindings`, `lib/vimamsa/key_bindings_report.rb:18`)
@@ -166,3 +169,28 @@ One ordered list in `key_bindings_report.rb` (or a small `key_categories.rb`):
    in parallel; until then the column shows the raw action.
 
 Run the full suite in the VM after each step.
+
+## DONE
+
+- **Steps 1-2: binding records and categories** (2026-11-21, commit "feat: key
+  bindings page grouped by category"). `KeyBindingTree#bindings` returns
+  `{ mode:, keys:, action:, keywords:, desc: }` records in definition order,
+  including actions on nodes that also have longer bindings; `get_by_keywords`
+  is built on it. `desc` now also covers dotted action ids (since the renames
+  the page showed raw ids) and shows procs as `proc (file.rb:line)`.
+  Categories (`KEY_CATEGORIES` in `key_bindings_report.rb`, the table above
+  plus `app`, `help`, `custom` and `internal`): `key_binding_category` takes a
+  minor mode, then the namespace of a named action
+  (`doc/action_names_plan.md`), then a `cat:<id>` keyword, the
+  `module:<name>` / `custom` context, the major mode (`B`, `X`, `R`), and the
+  older section words (`vim motion`, `experimental`, ...). The context comes
+  from `KeyBindingTree#with_keywords`, wrapped around module inits (startup
+  and Settings) and the three places `custom.rb` runs. vimlike's `intro` and
+  `core` blocks are split into `cat:` groups (same bindings, same order within
+  each group, checked by script); the vim table gets `vim marks` and an
+  insert section. The page lists Basics (`intro`, as before), then the
+  categories in order; "Others" is gone. `tests/test_key_categories.rb`: every
+  binding of vimlike, vim and notepad has a category.
+  Left for later: Basics still uses the `intro` keyword (`BASIC_ACTIONS` is
+  step 3); the conflict report still uses its own traversal
+  (`kbd_leaf_bindings`).

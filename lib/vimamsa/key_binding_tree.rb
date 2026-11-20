@@ -49,6 +49,8 @@ class KeyBindingTree
   attr_reader :mode_root_state, :state_trail, :act_bindings, :default_mode_stack, :actions
   # [mode, keys] of the shared vim bindings bound by bind_vim_bindings (vim_core.rb)
   attr_accessor :vim_added
+  # Keywords added to every binding made inside with_keywords
+  attr_reader :extra_keywords
 
   # This class is host-agnostic: it never touches the editor or GUI directly.
   # The host injects collaborators (actions registry, action_handler, logger,
@@ -63,6 +65,7 @@ class KeyBindingTree
   #   :action_handled(trail, action)    - key handling for an action completed
   def initialize(actions: nil)
     @actions = actions
+    @extra_keywords = []
     @listeners = {}
     @action_handler = nil
     @logger = nil
@@ -373,55 +376,54 @@ class KeyBindingTree
     }.join("\n")
   end
 
-  def get_by_keywords(modes: [], keywords: [])
-    s = ""
-    stack = [[@root, ""]]
-    lines = []
+  # Run the block with kws added to the keywords of every binding it makes,
+  # e.g. with_keywords(["module:tts"]) { tts_init }
+  def with_keywords(kws)
+    old = @extra_keywords
+    @extra_keywords = old + kws
+    yield
+  ensure
+    @extra_keywords = old
+  end
 
-    # Traverse the tree (class State objects) using a stack
-    while stack.any?
-      t, p = *stack.pop # t = current state, p = current path
-      if t.children.any?
-        t.children.reverse.each { |c|
-
-          # Restrict by modes if specified
-          if c.level == 1 and !modes.empty?
-            next if !modes.include?(c.key_name)
-          end
-
-          if c.eval_rule.size > 0
-            new_p = "#{p} #{c.key_name}(#{c.eval_rule})"
-          else
-            if c.level == 1
-              new_p = "#{p} [#{c.key_name}]"
-            else
-              new_p = "#{p} #{c.key_name}"
-            end
-          end
-          stack << [c, new_p]
-        }
-        # stack.concat[t.children]
-
-      else
-        method_desc = t.action
-        if t.action.class == Symbol
-          if @actions&.include?(t.action)
-            a = @actions[t.action].method_name
-            if !a.nil? and !a.empty?
-              method_desc = a
-            end
-          end
+  # Every binding as a record, in definition order:
+  #   { mode: "C", keys: ["d", "i", "<char>"], action:, keywords: [...], desc: }
+  # A key with a condition is "name(rule)", as in the binding syntax. desc is
+  # the action's description, or the action itself (Ruby code, an unknown id).
+  def bindings
+    out = []
+    walk = lambda { |st, mode, path|
+      st.children.each { |c|
+        p = path + [c.eval_rule.empty? ? c.key_name : "#{c.key_name}(#{c.eval_rule})"]
+        if !c.action.nil?
+          out << { mode: mode, keys: p, action: c.action, keywords: c.keywords || [], desc: action_desc(c.action) }
         end
+        walk.(c, mode, p) if c.children.any?
+      }
+    }
+    @root.children.each { |m| walk.(m, m.key_name, []) }
+    out
+  end
 
-        if (keywords - t.keywords).empty? # All keywords are present
-          kw = ""
-          # kw = ", [#{t.keywords.join(",")}]" if !t.keywords.empty?
-          lines << p + " : #{method_desc}#{kw}"
-        end
-      end
+  # Description of a bound action, or the action as text
+  def action_desc(action)
+    if action.class == Proc
+      f, l = action.source_location
+      return "proc (#{File.basename(f.to_s)}:#{l})"
     end
-    s = lines.sort.join("\n")
-    return s
+    a = (@actions[action] rescue nil) if action.class == Symbol || action.class == String
+    if a && !a.opt&.[](:code) && !a.method_name.to_s.empty? && a.method_name.to_s != action.to_s
+      return a.method_name.to_s
+    end
+    action.to_s
+  end
+
+  # Lines "[C] keys : description" of the bindings in modes (all if empty)
+  # that have all of keywords, sorted
+  def get_by_keywords(modes: [], keywords: [])
+    bindings.select { |b|
+      (modes.empty? || modes.include?(b[:mode])) && (keywords - b[:keywords]).empty?
+    }.map { |b| " [#{b[:mode]}] #{b[:keys].join(" ")} : #{b[:desc]}" }.sort.join("\n")
   end
 
   def to_s()
@@ -683,6 +685,7 @@ class KeyBindingTree
       # "X esc || X ctrl!" => "vma.kbd.to_previous_mode",
       key = key.split("||")
     end
+    keywords = keywords + @extra_keywords
 
     a = action
     if action.class == Array

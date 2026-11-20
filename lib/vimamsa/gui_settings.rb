@@ -278,7 +278,7 @@ class SettingsDialog
         next unless File.exist?(main_file)
         load main_file
         init_fn = "#{mod_name}_init"
-        send(init_fn) if respond_to?(init_fn, true)
+        vma.kbd.with_keywords(["module:#{mod_name}"]) { send(init_fn) } if respond_to?(init_fn, true)
       elsif was_enabled && !now_enabled
         # Toggled off: call <name>_disable to unregister actions and bindings.
         disable_fn = "#{mod_name}_disable"

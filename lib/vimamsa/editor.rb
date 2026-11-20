@@ -209,7 +209,8 @@ class Editor
     # they register goes in phase 2 (hook_custom_after_init, called at the end of
     # start; see call_custom_after_init).
     custom_script = read_file("", custom_fn)
-    eval(custom_script) if custom_script
+    # bindings made by custom.rb get the keyword "custom" (key bindings page)
+    vma.kbd.with_keywords(["custom"]) { eval(custom_script) } if custom_script
 
     Grep.init
     FileManager.init
@@ -237,7 +238,8 @@ class Editor
           load main_file
           # Call <name>_init if the module defines it.
           init_fn = "#{mod_name}_init"
-          send(init_fn) if respond_to?(init_fn, true)
+          # bindings made by the module get the keyword module:<name>
+          vma.kbd.with_keywords(["module:#{mod_name}"]) { send(init_fn) } if respond_to?(init_fn, true)
         end
       end
     end
@@ -861,7 +863,7 @@ end
 def reload_customrb
   custom_fn = get_dot_path("custom.rb")
   custom_script = read_file("", custom_fn)
-  eval(custom_script) if custom_script
+  vma.kbd.with_keywords(["custom"]) { eval(custom_script) } if custom_script
   call_custom_after_init # everything is loaded already: run phase 2 right away
   gui_refresh_colors   # apply any cnf.theme.colors/cyber overrides live
   message("Reloaded #{custom_fn}")
@@ -877,7 +879,7 @@ end
 def call_custom_after_init
   return if !respond_to?(:hook_custom_after_init, true)
   begin
-    send(:hook_custom_after_init)
+    vma.kbd.with_keywords(["custom"]) { send(:hook_custom_after_init) }
   rescue Exception => e
     warn e.inspect
     warn e.backtrace

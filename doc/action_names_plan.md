@@ -1,8 +1,8 @@
 # Plan: consistent, hierarchical action names
 
-TODO: act next on step 5 of "Order": categories on the key bindings page from
-the namespace (step 2 of `doc/key_bindings_report_plan.md`). Steps 1-4 are done
-(see DONE at the end).
+TODO: act next on step 6 of "Order": name the Ruby-string bindings, as part of
+the "Descriptive names for key bindings" item in `doc/TODO.md`. Steps 1-5 are
+done (see DONE at the end).
 
 ## Context
 
@@ -410,3 +410,7 @@ in the Marshal backups.
   several candidates it fills their common prefix and lists them as a message.
   The tab key itself is tested only through `CommandLine#complete_action_id`,
   not with a real key press.
+- **Step 5: categories from the namespace** (2026-11-21, with steps 1-2 of
+  `doc/key_bindings_report_plan.md`, see its DONE entry). `ACTION_NS_CATEGORY`
+  maps a namespace (or a longer prefix such as `mode.visual`) to a category of
+  the key bindings page; only Ruby-string bindings need a `cat:` tag.

@@ -61,7 +61,7 @@ bind_vim_bindings
 
 # ── vim keymap's own bindings (not Vim behavior) ─────────────────────────────
 
-add_keys "vim misc", {
+add_keys "vim misc cat:buffer", {
   # Kept deviations (documented in the header)
   "C tab" => "bufs.switch_to_last_buf",
   # prev/next file in file panel order (no-op while the panel is hidden)

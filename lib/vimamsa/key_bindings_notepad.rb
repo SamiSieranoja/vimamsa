@@ -32,12 +32,14 @@ module Vimamsa
     "I ctrl-q" => "app.quit",
     "I ctrl-shift-z || I ctrl-shift-Z" => "undo.redo", # shift+z may arrive uppercase
     "I delete" => "edit.delete.char_or_sel",
+    "I ctrl-home" => "move.buf.start",
+    "I ctrl-end" => "move.buf.end",
+  }
 
+  add_keys "notepad cat:motion", {
     "I home" => "buf.end_selection; buf.jump(BEGINNING_OF_LINE)",
     "I end" => "buf.end_selection; buf.jump(END_OF_LINE)",
     "I shift-home" => "buf.continue_selection; buf.jump(BEGINNING_OF_LINE)",
     "I shift-end" => "buf.continue_selection; buf.jump(END_OF_LINE)",
-    "I ctrl-home" => "move.buf.start",
-    "I ctrl-end" => "move.buf.end",
   }
 end # module Vimamsa

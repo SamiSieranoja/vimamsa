@@ -127,23 +127,26 @@ VIM_BINDINGS = {
     "C ctrl-u" => "buf.move(:backward_page)", # approx: full page, vim: half
     "C ctrl-o" => "jump.edit.prev",         # approx of vim jumplist back
     "C z z" => "view.center",
+  },
 
-    # Marks
+  "vim marks cat:marks" => {
     "CV m <char>" => "buf.mark_current_position(<char>)",
     'CV \' <char>' => "buf.jump_to_mark(<char>)",
     "C ` <char>" => "buf.jump_to_mark(<char>)",
   },
 
-#TODO: should replace all eval actions like "buf.move ... with actual registered actions.
-  "vim edit" => {
-    # Enter insert mode
+  # Enter insert mode
+  "vim edit cat:insert" => {
     "C i" => "mode.insert",
     "C a" => "buf.move(FORWARD_CHAR);vma.kbd.set_mode(:insert)",
     "C A" => "buf.jump(END_OF_LINE);vma.kbd.set_mode(:insert)",
     "C I" => "buf.jump(FIRST_NON_WHITESPACE);vma.kbd.set_mode(:insert)",
     "C o" => 'buf.jump(END_OF_LINE);buf.insert_txt("\n");vma.kbd.set_mode(:insert)',
     "C O" => "edit.line.above",
+  },
 
+#TODO: should replace all eval actions like "buf.move ... with actual registered actions.
+  "vim edit" => {
     # Delete
     "C x" => "edit.delete.char.inline",
     "C X" => "edit.delete.char.prev",

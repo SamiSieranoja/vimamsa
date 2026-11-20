@@ -15,55 +15,124 @@ def show_free_key_bindings()
   gui_set_file_lang(b.id, "hyperplaintext")
 end
 
+# Categories of the key bindings page, in page order: [id, heading]
+# (doc/key_bindings_report_plan.md). Modules and minor modes get their own
+# "module:<name>" / "mode:<id>" categories after these.
+KEY_CATEGORIES = [
+  ["motion", "Moving the cursor"],
+  ["search", "Searching and jumping"],
+  ["insert", "Entering insert mode and typing"],
+  ["edit", "Delete, change, copy, paste"],
+  ["textobj", "Text objects"],
+  ["case", "Case and text transforms"],
+  ["visual", "Visual mode and selections"],
+  ["undo", "Undo, redo, repeat"],
+  ["marks", "Marks and bookmarks"],
+  ["macro", "Macros"],
+  ["file", "Files"],
+  ["buffer", "Buffers and windows"],
+  ["view", "Panels and view"],
+  ["grep", "Search across files"],
+  ["code", "Code (LSP, comments, run line)"],
+  ["hpt", "Hyper plaintext"],
+  ["app", "Application"],
+  ["help", "Help"],
+  ["custom", "Your bindings (custom.rb)"],
+  ["debug", "Debug / experimental"],
+  ["internal", "Internal (argument input)"],
+]
+
+# Action namespace => category. A longer prefix wins ("mode.visual").
+ACTION_NS_CATEGORY = {
+  "app" => "app", "mode" => "insert", "mode.visual" => "visual", "mode.cmdline" => "app",
+  "mode.browse" => "buffer", "mode.passthrough" => "debug", "mode.minibuffer" => "debug",
+  "help" => "help", "debug" => "debug", "move" => "motion", "jump" => "search",
+  "search" => "search", "grep" => "grep", "ack" => "grep", "edit" => "edit",
+  "edit.comment" => "code", "edit.indent" => "code", "undo" => "undo", "case" => "case",
+  "sel" => "visual", "buf" => "buffer", "file" => "file", "panel" => "view", "view" => "view",
+  "style" => "hpt", "macro" => "macro", "mark" => "marks", "lsp" => "code", "term" => "code",
+  "custom" => "custom",
+}
+
+# Bindings in these major modes, when nothing else decides
+KEY_MODE_CATEGORY = { "B" => "buffer", "X" => "edit", "R" => "internal" }
+
+# Words of older section keywords (add_keys "vim motion", ...)
+KEY_WORD_CATEGORY = {
+  "motion" => "motion", "edit" => "edit", "visual" => "visual", "insert" => "insert",
+  "replace" => "edit", "macros" => "macro", "text" => "textobj",
+  "hyperplaintext" => "hpt", "experimental" => "debug",
+}
+
+# The category id of a binding record (KeyBindingTree#bindings), or nil.
+# kbd: the tree it came from (for its actions and modes).
+def key_binding_category(b, kbd = vma.kbd)
+  mode = b[:mode]
+  return "mode:#{mode}" if mode.match?(/\A\p{Ll}/) # minor mode
+  a = b[:action]
+  id = a.to_s
+  if (a.class == String || a.class == Symbol) && id.match?(ACTION_ID_RE)
+    named = [vma.actions, kbd.actions].compact.any? { |acts|
+      x = acts[id]
+      x && !x.opt&.[](:code)
+    }
+    if named
+      segs = id.split(".")
+      segs.size.downto(1) { |n|
+        c = ACTION_NS_CATEGORY[segs[0, n].join(".")]
+        return c if c
+      }
+      return "module:#{segs[0]}" if File.directory?(File.join(__dir__, "../../modules", segs[0]))
+      return "mode:#{segs[0]}"
+    end
+  end
+  kws = b[:keywords]
+  kws.each { |k| return k.sub("cat:", "") if k.start_with?("cat:") }
+  kws.each { |k| return k if k.start_with?("module:") }
+  return "custom" if kws.include?("custom")
+  return KEY_MODE_CATEGORY[mode] if KEY_MODE_CATEGORY[mode]
+  kws.each { |k| return KEY_WORD_CATEGORY[k] if KEY_WORD_CATEGORY[k] }
+  nil
+end
+
+def key_category_heading(cat)
+  return "Uncategorized" if cat.nil?
+  h = KEY_CATEGORIES.find { |id, _| id == cat }
+  return h[1] if h
+  return "Module: #{cat.sub("module:", "")}" if cat.start_with?("module:")
+  return "Minor mode: #{cat.sub("mode:", "")}" if cat.start_with?("mode:")
+  "Uncategorized"
+end
+
+# Bindings grouped by category, in page order: [[category, [records]], ...].
+# Bindings with no category come last, under nil.
+def key_bindings_by_category(kbd = vma.kbd)
+  by = kbd.bindings.group_by { |b| key_binding_category(b, kbd) }
+  order = KEY_CATEGORIES.map(&:first)
+  rank = ->(c) {
+    c.nil? ? [3, ""] : order.include?(c) ? [0, order.index(c)] : c.start_with?("module:") ? [1, c] : [2, c]
+  }
+  by.sort_by { |c, _| rank.(c) }
+end
+
 def show_key_bindings()
   kbd_s = "❙Key bindings❙\n"
   kbd_s << "\n⦁[Mode] <keys> : <action>⦁\n"
-  done = []
 
-  kbd_s << "[B]=Browse, [C]=Command, [I]=Insert, [V]=Visual\n"
+  kbd_s << "[B]=Browse, [C]=Command, [I]=Insert, [V]=Visual, [X]=Replace\n"
   kbd_s << "<key>!: Press <key> once, release before pressing any other keys\n"
   kbd_s << "===============================================\n"
-  kbd_s << "◼ Basic\n"
-  kbd_s << "◼◼ Command mode\n"
+  kbd_s << "◼ Basics\n"
+  [["C", "Command mode"], ["I", "Insert mode"], ["V", "Visual mode"]].each { |m, title|
+    kbd_s << "◼◼ #{title}\n"
+    kbd_s << vma.kbd.get_by_keywords(modes: [m], keywords: ["intro"]) << "\n\n"
+  }
 
-  x = vma.kbd.get_by_keywords(modes: ["C"], keywords: ["intro"])
-  done.concat(x.lines); kbd_s << x
-
-  kbd_s << "\n"
-  kbd_s << "◼◼ Insert mode\n"
-  x = vma.kbd.get_by_keywords(modes: ["I"], keywords: ["intro"])
-  done.concat(x.lines); kbd_s << x
-  kbd_s << "\n"
-  kbd_s << "◼◼ Visual mode\n"
-  x = vma.kbd.get_by_keywords(modes: ["V"], keywords: ["intro"])
-  done.concat(x.lines); kbd_s << x
-  kbd_s << "\n"
-
-  kbd_s << "◼ Hyper Plaintext\n"
-  x = vma.kbd.get_by_keywords(modes: ["C"], keywords: ["hyperplaintext"])
-  x2 = vma.kbd.get_by_keywords(modes: ["V"], keywords: ["hyperplaintext"])
-  done.concat(x.lines); kbd_s << x << "\n" << x2
-  kbd_s << "\n"
-
-  kbd_s << "◼ Core\n"
-  x = vma.kbd.get_by_keywords(modes: [], keywords: ["core"])
-  x << vma.kbd.get_by_keywords(modes: ["X"], keywords: ["intro"])
-
-  done.concat(x.lines); kbd_s << x
-  kbd_s << "\n"
-
-  kbd_s << "◼ Debug / Experimental\n"
-  x = vma.kbd.get_by_keywords(modes: [], keywords: ["experimental"])
-  done.concat(x.lines); kbd_s << x
-  kbd_s << "\n"
-
-  kbd_s << "◼ Others\n"
-  # x = vma.kbd.get_by_keywords(modes: [], keywords:["experimental"])
-  # x = vma.kbd.to_s
-  x = vma.kbd.get_by_keywords(modes: [], keywords: [])
-  done << x.lines - done
-  kbd_s << (x.lines - done).join
-  kbd_s << "\n"
+  key_bindings_by_category.each { |cat, bs|
+    kbd_s << "◼ #{key_category_heading(cat)}\n"
+    kbd_s << bs.map { |b| " [#{b[:mode]}] #{b[:keys].join(" ")} : #{b[:desc]}" }.sort.join("\n")
+    kbd_s << "\n\n"
+  }
 
   kbd_s << "===============================================\n"
   b = create_new_buffer(kbd_s, "key-bindings")
@@ -72,12 +141,13 @@ end
 
 # ── Vim keymap vs vimlike keymap ─────────────────────────────────────────────
 
-# Build a separate KeyBindingTree from a keymap scheme file ("vim", "vimlike")
+# Build a separate KeyBindingTree from a keymap scheme file ("vim", "vimlike"),
+# or several loaded in order (["vimlike", "notepad"]: notepad builds on vimlike)
 # without changing the running editor. A scheme file binds into vma.kbd,
 # registers actions in vma.actions, defines helper methods and sets the
 # cnf.mode cursor colors; all of these are swapped out or restored here.
 def load_scheme_kbd(scheme)
-  file = File.join(__dir__, "key_bindings_#{scheme}.rb")
+  files = Array(scheme).map { |x| File.join(__dir__, "key_bindings_#{x}.rb") }
   ed = vma
   saved_kbd, saved_actions = ed.kbd, ed.actions
   names = Vimamsa.instance_methods(false) + Vimamsa.private_instance_methods(false)
@@ -90,7 +160,7 @@ def load_scheme_kbd(scheme)
   begin
     ed.kbd = kbd
     ed.instance_variable_set(:@actions, acts)
-    load file
+    files.each { |f| load f }
   ensure
     ed.kbd = saved_kbd
     ed.instance_variable_set(:@actions, saved_actions)
