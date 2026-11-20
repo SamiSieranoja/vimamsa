@@ -144,6 +144,37 @@ class TestActionIds < VmaTest
   # set up on first use; not loaded in the test setup
   OPTIONAL_IDS = /\A(mode\.notepad|dictation|tts|ollama|terminal|calculator|color_highlight|fexp|bmgr|bmark|diffview)\./
 
+  NAMESPACES = %w[app mode move jump search grep ack edit undo case sel buf file
+                  panel view style macro mark lsp term help debug custom]
+
+  # Registered actions other than Ruby-code bindings and the user's custom.rb
+  # (eval'd, so its procs come from "(eval)")
+  def own_actions
+    vma.actions.ids.map { |k| [k, vma.actions[k]] }.reject { |_k, a|
+      a.opt&.[](:code) || (a.method.respond_to?(:source_location) && a.method.source_location.to_a[0].to_s.start_with?("(eval"))
+    }
+  end
+
+  def test_ids_are_dotted_with_known_namespace
+    known = NAMESPACES + Dir[File.expand_path("../modules/*", __dir__)].map { |d| File.basename(d) } +
+            vma.kbd.root.children.map(&:key_name) +
+            %w[diffview] # minor mode created on first use
+    bad = own_actions.map(&:first).reject { |k|
+      k.class == String && k.match?(ACTION_ID_RE) && known.include?(k.split(".")[0])
+    }
+    assert bad.empty?, "ids not of the form <namespace>.x.y: #{bad.inspect}"
+  end
+
+  # Catches duplicates like undo / edit_undo
+  def test_no_duplicate_actions
+    by = own_actions.group_by { |_k, a|
+      m = a.method
+      [m.respond_to?(:source_location) ? m.source_location : m.inspect, a.method_name]
+    }
+    dups = by.values.select { |v| v.size > 1 }.map { |v| v.map(&:first) }
+    assert dups.empty?, "same code and description: #{dups.inspect}"
+  end
+
   def test_every_alias_points_to_an_action
     bad = ACTION_ALIASES.reject { |_old, n| vma.actions.include?(n) || n.match?(OPTIONAL_IDS) }
     assert bad.empty?, "aliases to unregistered actions: #{bad.inspect}"

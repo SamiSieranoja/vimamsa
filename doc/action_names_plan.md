@@ -1,7 +1,7 @@
 # Plan: consistent, hierarchical action names
 
-TODO: act next on step 3 of "Order": rename one namespace per commit. Steps 1
-and 2 are done (see DONE at the end).
+TODO: act next on step 4 of "Order": `Action#path`, drop `:group`, namespace
+filtering and command-line completion. Steps 1-3 are done (see DONE at the end).
 
 ## Context
 
@@ -134,6 +134,7 @@ binding to a named action gets its category from the namespace, with no manual
 | `term` | code | running lines in a terminal |
 | `help` | help | key bindings, conflicts, messages |
 | `debug` | debug | debug, eval, tests |
+| `custom` | custom | the user's own actions in `custom.rb` |
 | `<module>` | `module:<name>` | module actions |
 | `<minor mode>` | `mode:<id>` | minor-mode actions |
 
@@ -368,3 +369,32 @@ in the Marshal backups.
   removed `gui_grep` and failed; it now runs `grep.buf`. Every reference in
   the three schemes, `vim_core.rb`, `gui_menu.rb`, `search_replace.rb`,
   `tests.rb` and the tests uses the new ids.
+- **Step 3: renames, one namespace per commit** (2026-11-20, `30eff08`..`e236da3`,
+  and `53fb148` for ack, plus the commit that adds this entry). Every action
+  registered by lib/ and modules/ now has a dotted id; the old ids are aliases
+  in `ACTION_ALIASES`. Converters register `sel.convert.<id>` (with the
+  converter id as alias, in `reg_conv`). `custom_example.rb` uses a new
+  `custom` namespace for the user's own actions. New tests: every id is
+  `<namespace>.x.y` with a known namespace, module or minor mode, and no two
+  actions share code and description (actions from `custom.rb` are skipped).
+  Decisions that differ from the tables above:
+  - `ack_search` is `ack.search`: ack is an external program and is to become
+    its own module. `content_search` (the built-in `FileContentSearch`) is
+    `grep.files`.
+  - `delete_char_forward` (`edit.delete.char`) and `vim_delete_char`
+    (`edit.delete.char.inline`) are not merged: on an empty line vimlike's `x`
+    joins lines and vim's does nothing.
+  - `start_file_selector` opens the file explorer, so it is `file.explorer`,
+    not `file.finder`. `update_file_index` is `file.finder.reindex`.
+  - `insert_new_line` (Enter) is `edit.newline`, not `edit.line.below`.
+  - Not in the tables: `line_action` → `jump.line`, `page_down`/`page_up` →
+    `move.page.next`/`.prev`, browse mode → `mode.browse`/`mode.browse.exit`,
+    `delete_line` → `edit.delete.line`, `delete_selection` → `sel.delete`,
+    `kbd_dump_state` → `debug.kbd`, macro finder/naming → `macro.find`/`macro.name`.
+  - More duplicates merged: `jump_to_start_of_buffer`/`jump_start_of_buffer`
+    (`move.buf.start`), the `end` pair, `buf_new`/`create_new_file` (`buf.new`);
+    duplicate registrations of `ack_search` and `open_file_dialog` removed.
+  - Hook names that equal an action id (`$hook.call(:insert_new_line)`) are
+    not action ids and keep their names.
+  Found, not fixed: vimlike `C , , f` is bound to `:file_finder`, which has
+  never been registered (since 2021); the finder is on `C , f` and `C , z`.

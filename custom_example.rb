@@ -11,6 +11,14 @@
 # Execute in new gnome-terminal tab
 # bindkey "C , , t", "term.line"
 
+# Actions have dotted ids, from general to specific: "move.word.next",
+# "buf.save", "sel.copy" (Search for Actions, [C] , , s, lists them). Bind one
+# by its id, or with the a.… form, which reports a typo when the binding is made:
+# bindkey "C , w", a.move.word.next
+# Run one from here or from the command line (:) with a trailing "!":
+# a.buf.save!
+# Your own actions: use the "custom." namespace, as below.
+
 # setcnf :tab_width, 4
 
 # Open this file every time the program starts
@@ -43,7 +51,7 @@ def collect_c_header()
   buf.insert_txt(s)
 end
 
-reg_act(:collect_c_header, proc { collect_c_header }, "Collect function definitions for c header file")
+reg_act("custom.c_header", proc { collect_c_header }, "Collect function definitions for c header file")
 
 # Extract all numbers from txt selection
 c = Converter.new(lambda { |x| x.scan(/([\+\-]?\d+(\.\d+)?)/).collect { |x| x[0] }.join(" ") }, :lambda, :getnums)
@@ -60,7 +68,7 @@ Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, tur
 end
 
 # Find with action search ([C] , , s) 
-reg_act(:insert_lorem_ipsum, proc { insert_lorem_ipsum }, "Insert lorem ipsum")
+reg_act("custom.lorem_ipsum", proc { insert_lorem_ipsum }, "Insert lorem ipsum")
 
 def open_mtg(urlpref = nil)
   require "uri"
@@ -77,8 +85,8 @@ def open_mtg(urlpref = nil)
   open_url(url)
 end
 
-# reg_act(:open_mtg, proc { open_mtg }, "open mtg card info")
-# bindkey "VC , , m", :open_mtg
+# reg_act("custom.mtg", proc { open_mtg }, "open mtg card info")
+# bindkey "VC , , m", "custom.mtg"
 # Try on this line:
 # Restless Cottage
 
@@ -123,6 +131,6 @@ end
 # file selector, "grep") do not exist yet at that point: bindings for those go
 # here, in a function that is called after everything has been loaded.
 # def hook_custom_after_init
-#   bindkey "fexp , x", :my_file_action
+#   bindkey "fexp , x", "custom.my_file_action"
 # end
 
