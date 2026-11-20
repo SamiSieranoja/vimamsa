@@ -31,7 +31,7 @@ module Vimamsa
     "I ctrl-a" => :select_all,          # was jump_beginning_of_line
     "I ctrl-q" => "app.quit",
     "I ctrl-shift-z || I ctrl-shift-Z" => "undo.redo", # shift+z may arrive uppercase
-    "I delete" => :insert_delete,
+    "I delete" => "edit.delete.char_or_sel",
 
     "I home" => "buf.end_selection; buf.jump(BEGINNING_OF_LINE)",
     "I end" => "buf.end_selection; buf.jump(END_OF_LINE)",

@@ -147,7 +147,7 @@ class TestAutocomplete < VmaTest
     keys("i z e")
     keys("esc")          # dismiss, stay in insert
     assert !view.autocp_active
-    act :autocp_manual_trigger
+    act "edit.complete"
     assert view.autocp_active, "ctrl-space action should reopen the popup"
   ensure
     teardown_seed

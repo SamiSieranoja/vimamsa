@@ -26,8 +26,8 @@ reg_act("app.settings", proc { show_settings_dialog }, "Show settings")
 reg_act(:refresh_colors, proc { gui_reload_theme_and_colors }, "Reload theme color palettes + config and refresh the UI (no restart)")
 reg_act(:cut_selection, proc { buf.delete(SELECTION) }, "Cut selection to clipboard")
 
-reg_act(:insert_backspace, proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(BACKWARD_CHAR) }, "Delete backwards")
-reg_act(:insert_delete, proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(CURRENT_CHAR_FORWARD) }, "Delete forward (selection-aware)")
+reg_act("edit.backspace", proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(BACKWARD_CHAR) }, "Delete backwards")
+reg_act("edit.delete.char_or_sel", proc { buf.selection_active? ? buf.delete(SELECTION) : buf.delete(CURRENT_CHAR_FORWARD) }, "Delete forward (selection-aware)")
 reg_act(:select_all, proc { buf.select_all }, "Select all text")
 reg_act(:insert_select_up, proc { insert_select_move(BACKWARD_LINE) }, "Select texte upwards")
 reg_act(:insert_select_down, proc { insert_select_move(FORWARD_LINE) }, "Select text downwards")
@@ -59,7 +59,7 @@ reg_act(:run_last_macro, proc { vma.macro.run_last_macro }, "Run last recorded o
 reg_act("jump.edit.next", "jump_to_next_edit", "Jump to next edit pos")
 reg_act("jump.edit.prev", proc { buf.jump_to_last_edit }, "Jump to the last edit location")
 reg_act("move.random", proc { buf.jump_to_random_pos }, "")
-reg_act(:insert_new_line, proc { buf.insert_new_line() }, "Insert new line")
+reg_act("edit.newline", proc { buf.insert_new_line() }, "Insert new line")
 reg_act("help.keys", proc { show_key_bindings }, "Show key bindings")
 reg_act("help.keys.free", proc { show_free_key_bindings }, "Show available (unbound) key binding slots")
 reg_act("help.vim_conflicts", proc { show_vim_binding_conflicts }, "Show which vim key bindings conflict with the vimlike keymap")
@@ -83,8 +83,8 @@ reg_act(:refresh_func_panel, proc { vma.gui.func_panel_refresh }, "Refresh LSP f
 reg_act(:toggle_keylog_panel, proc { vma.gui.toggle_keylog_panel }, "Toggle key log panel")
 reg_act(:git_diff_w, proc { git_diff_w }, "Show git diff -w for whole repository")
 reg_act(:lsp_print_functions, proc { lsp_print_functions }, "LSP print functions in current file")
-reg_act(:comment_selection, proc { buf.comment_selection }, "Comment selection")
-reg_act(:delete_char_forward, proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward", { :group => [:edit, :basic] })
+reg_act("edit.comment", proc { buf.comment_selection }, "Comment selection")
+reg_act("edit.delete.char", proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward", { :group => [:edit, :basic] })
 reg_act(:gui_file_finder, proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
 reg_act(:gui_file_history_finder, proc { vma.FileHistory.start_gui }, "Fuzzy file history finder")
 reg_act("search.replace", proc { gui_search_replace }, "Search and replace")
@@ -135,17 +135,17 @@ reg_act("jump.file", proc {
   end
 }, "Open file whose path is under the cursor", { :group => :file })
 reg_act :update_file_index, proc { FileFinder.update_index }, "Update file index"
-reg_act :delete_to_word_end, proc { buf.delete2(:to_word_end) }, "Delete to file end", { :group => [:edit, :basic] }
-reg_act :delete_to_next_word_start, proc { buf.delete2(:to_next_word) }, "Delete to start of next word", { :group => [:edit, :basic] }
-reg_act :delete_to_line_start, proc { buf.delete2(:to_line_start) }, "Delete to line start", { :group => [:edit, :basic] }
+reg_act "edit.delete.word.end", proc { buf.delete2(:to_word_end) }, "Delete to file end", { :group => [:edit, :basic] }
+reg_act "edit.delete.word.next", proc { buf.delete2(:to_next_word) }, "Delete to start of next word", { :group => [:edit, :basic] }
+reg_act "edit.delete.line.start", proc { buf.delete2(:to_line_start) }, "Delete to line start", { :group => [:edit, :basic] }
 
 reg_act("ack.search", proc { gui_ack }, "Search file contents with ack (external program)")
 
-reg_act(:copy_cur_line, proc { buf.copy_line }, "Copy the current line")
-reg_act(:paste_before_cursor, proc { buf.paste(BEFORE) }, "Paste text before the cursor")
-reg_act(:paste_after_cursor, proc { buf.paste(AFTER) }, "Paste text after the cursor")
-reg_act(:paste_over_after, proc { buf.paste_over(AFTER) }, "Paste over selection or after cursor")
-reg_act(:paste_over_before, proc { buf.paste_over(BEFORE) }, "Paste over selection or before cursor")
+reg_act("edit.line.copy", proc { buf.copy_line }, "Copy the current line")
+reg_act("edit.paste.before", proc { buf.paste(BEFORE) }, "Paste text before the cursor")
+reg_act("edit.paste.after", proc { buf.paste(AFTER) }, "Paste text after the cursor")
+reg_act("edit.paste.over.after", proc { buf.paste_over(AFTER) }, "Paste over selection or after cursor")
+reg_act("edit.paste.over.before", proc { buf.paste_over(BEFORE) }, "Paste over selection or before cursor")
 reg_act("undo.redo", proc { buf.redo() }, "Redo the last undone action", { :group => :edit })
 reg_act("undo.last", proc { buf.undo() }, "Undo the last action", { :group => :edit })
 reg_act("move.line.end", proc { buf.jump(END_OF_LINE) }, "Move to the end of the current line")
@@ -161,7 +161,7 @@ reg_act("mode.visual", proc { buf.start_selection; vma.kbd.set_mode(:visual) }, 
 reg_act("app.demo", proc { install_demo_files }, "Install and show Demo")
 reg_act("app.customrb.reload", proc { reload_customrb }, "Reload custom.rb")
 
-reg_act(:toggle_autocomplete, proc {
+reg_act("edit.complete.toggle", proc {
   cnf.autocomplete.enabled = !(cnf.autocomplete.enabled? != false)
   vma.buf&.view&.hide_completions unless cnf.autocomplete.enabled?
   message("Autocomplete: #{cnf.autocomplete.enabled? ? "ON" : "OFF"}")
@@ -190,7 +190,7 @@ reg_act "mode.browse.exit", proc {
 reg_act "move.page.next", proc { vma.gui.page_down }, "Page down", :group => [:move, :basic]
 
 reg_act "move.page.prev", proc { vma.gui.page_up }, "Page up", :group => [:move, :basic]
-reg_act(:auto_indent_buffer, proc { buf.auto_format }, "Auto format buffer")
+reg_act("edit.indent.buf", proc { buf.auto_format }, "Auto format buffer")
 reg_act(:execute_current_line_in_terminal, proc { buf.execute_current_line_in_terminal }, "Execute current line in terminal")
 reg_act(:execute_current_line_in_terminal_autoclose, proc { buf.execute_current_line_in_terminal(true) }, "Execute current line in terminal. Close after execution.")
 reg_act(:show_images, proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")
@@ -261,7 +261,7 @@ act_list = {
     end
   }, :desc => "Toggle case of char and advance (vim ~)", :group => :edit },
 
-  :increment_word => { :proc => proc { buf.increment_current_word },
+  "edit.word.increment" => { :proc => proc { buf.increment_current_word },
                        :desc => "Increment word", :group => [:edit, :extra] },
 
   # { :proc => proc {  },
@@ -291,7 +291,7 @@ act_list = {
   "debug.buf.sha256" => { :proc => proc { puts "SHA256: " + (Digest::SHA2.hexdigest vma.buf.to_s) },
                       :desc => "Output SHA256 hex digest of curent buffer" },
 
-  :autocp_manual_trigger => { :proc => proc { vma.buf.view.autocp_manual_trigger },
+  "edit.complete" => { :proc => proc { vma.buf.view.autocp_manual_trigger },
                               :desc => "Trigger autocomplete" },
 
 }

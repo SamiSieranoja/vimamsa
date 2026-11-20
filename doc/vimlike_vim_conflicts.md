@@ -18,24 +18,24 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | Mode | Vim keys | Vim action | vimlike | Reason |
 |---|---|---|---|---|
 | C | <code>@ @</code> | <code>vma.macro.run_last_macro</code> | <code>@ &lt;char&gt;</code> <code>vma.macro.run_macro(&lt;char&gt;)</code> | a vimlike <char> binding takes the key |
-| C | <code>C</code> | <code>:vim_change_to_eol</code> | <code>grep.files</code> | same keys, other action |
-| C | <code>O</code> | <code>:vim_open_line_above</code> | <code>move.line.end</code> | same keys, other action |
-| C | <code>X</code> | <code>:vim_delete_char_backward</code> | <code>buf.jump(END_OF_LINE);buf.insert_txt("\n");</code> | same keys, other action |
+| C | <code>C</code> | <code>edit.change.eol</code> | <code>grep.files</code> | same keys, other action |
+| C | <code>O</code> | <code>edit.line.above</code> | <code>move.line.end</code> | same keys, other action |
+| C | <code>X</code> | <code>edit.delete.char.prev</code> | <code>buf.jump(END_OF_LINE);buf.insert_txt("\n");</code> | same keys, other action |
 | C | <code>^</code> | <code>buf.jump(FIRST_NON_WHITESPACE)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> | same keys, other action |
-| C | <code>backspace</code> | <code>buf.move(BACKWARD_CHAR)</code> | <code>buf.selection_active? ? buf.delete(SELECTION) : buf.delet...</code> | same keys, other action |
+| C | <code>backspace</code> | <code>buf.move(BACKWARD_CHAR)</code> | <code>edit.backspace</code> | same keys, other action |
 | C | <code>ctrl-o</code> | <code>jump.edit.prev</code> | <code>:open_file_dialog</code> | same keys, other action |
-| C | <code>d $</code> | <code>:vim_delete_to_eol</code> | <code>buf.delete2(:to_line_end)</code> | same keys, other action |
-| C | <code>s</code> | <code>:vim_substitute_char</code> | <code>jump.easy</code> | same keys, other action |
+| C | <code>d $</code> | <code>edit.delete.eol</code> | <code>buf.delete2(:to_line_end)</code> | same keys, other action |
+| C | <code>s</code> | <code>edit.change.char</code> | <code>jump.easy</code> | same keys, other action |
 | C | <code>space</code> | <code>buf.move(FORWARD_CHAR)</code> | <code>2 longer bindings</code> | vimlike uses these keys as a prefix |
-| C | <code>x</code> | <code>:vim_delete_char</code> | <code>buf.delete(CURRENT_CHAR_FORWARD)</code> | same keys, other action |
+| C | <code>x</code> | <code>edit.delete.char.inline</code> | <code>edit.delete.char</code> | same keys, other action |
 | C | <code>z z</code> | <code>:center_on_current_line</code> | <code>z</code> <code>mode.browse</code> | a shorter vimlike binding runs first |
 | I | <code>ctrl-c</code> | <code>mode.prev</code> | <code>buf.copy_active_selection</code> | same keys, other action |
-| I | <code>ctrl-h</code> | <code>buf.selection_active? ? buf.delete(SELECTION) : buf.delet...</code> | <code>buf.view.autocp_manual_trigger</code> | same keys, other action |
+| I | <code>ctrl-h</code> | <code>edit.backspace</code> | <code>edit.complete</code> | same keys, other action |
 | I | <code>ctrl-j</code> | <code>buf.insert_new_line()</code> | <code>buf.view.hide_completions</code> | same keys, other action |
-| I | <code>ctrl-n</code> | <code>buf.view.autocp_manual_trigger</code> | <code>move.line.next</code> | same keys, other action |
-| I | <code>ctrl-p</code> | <code>buf.view.autocp_manual_trigger</code> | <code>move.line.prev</code> | same keys, other action |
+| I | <code>ctrl-n</code> | <code>edit.complete</code> | <code>move.line.next</code> | same keys, other action |
+| I | <code>ctrl-p</code> | <code>edit.complete</code> | <code>move.line.prev</code> | same keys, other action |
 | V | <code>^</code> | <code>buf.jump(FIRST_NON_WHITESPACE)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> | same keys, other action |
-| V | <code>ctrl-c</code> | <code>buf.end_visual_mode</code> | <code>buf.comment_selection</code> | same keys, other action |
+| V | <code>ctrl-c</code> | <code>buf.end_visual_mode</code> | <code>edit.comment</code> | same keys, other action |
 | V | <code>s</code> | <code>:vim_change_selection</code> | <code>jump.easy</code> | same keys, other action |
 
 ## Added to vimlike
@@ -46,14 +46,14 @@ its own is in the way.
 | Mode | Vim keys | Vim action |
 |---|---|---|
 | C | <code>.</code> | <code>repeat_last_action()</code> |
-| C | <code>D</code> | <code>:vim_delete_to_eol</code> |
-| C | <code>S</code> | <code>:vim_change_line</code> |
-| C | <code>Y</code> | <code>buf.copy_line</code> |
+| C | <code>D</code> | <code>edit.delete.eol</code> |
+| C | <code>S</code> | <code>edit.change.line</code> |
+| C | <code>Y</code> | <code>edit.line.copy</code> |
 | C | <code>` &lt;char&gt;</code> | <code>buf.jump_to_mark(&lt;char&gt;)</code> |
-| C | <code>c $</code> | <code>:vim_change_to_eol</code> |
-| C | <code>c c</code> | <code>:vim_change_line</code> |
-| C | <code>c e</code> | <code>:vim_change_word</code> |
-| C | <code>c w</code> | <code>:vim_change_word</code> |
+| C | <code>c $</code> | <code>edit.change.eol</code> |
+| C | <code>c c</code> | <code>edit.change.line</code> |
+| C | <code>c e</code> | <code>edit.change.word</code> |
+| C | <code>c w</code> | <code>edit.change.word</code> |
 | C | <code>ctrl-a</code> | <code>buf.increment_current_word</code> |
 | C | <code>ctrl-b</code> | <code>move.page.prev</code> |
 | C | <code>ctrl-d</code> | <code>buf.move(:forward_page)</code> |
@@ -113,7 +113,7 @@ its own is in the way.
 | C | <code>I</code> | <code>buf.jump(FIRST_NON_WHITESPACE);vma.kbd.set_mode(:insert)</code> |
 | C | <code>J</code> | <code>buf.join_lines()</code> |
 | C | <code>N</code> | <code>$search.jump_to_previous()</code> |
-| C | <code>P</code> | <code>buf.paste(BEFORE)</code> |
+| C | <code>P</code> | <code>edit.paste.before</code> |
 | C | <code>R</code> | <code>vma.kbd.set_mode(:replace)</code> |
 | C | <code>a</code> | <code>buf.move(FORWARD_CHAR);vma.kbd.set_mode(:insert)</code> |
 | C | <code>alt-h</code> | <code>vma.gui.file_panel_select_adjacent(-1)</code> |
@@ -123,16 +123,16 @@ its own is in the way.
 | C | <code>c i &lt;char&gt;</code> | <code>buf.text_object_op(:change, &lt;char&gt;, :i)</code> |
 | C | <code>ctrl-r</code> | <code>undo.redo</code> |
 | C | <code>d ' &lt;char&gt;</code> | <code>buf.delete2(:to_mark,&lt;char&gt;)</code> |
-| C | <code>d 0</code> | <code>buf.delete2(:to_line_start)</code> |
+| C | <code>d 0</code> | <code>edit.delete.line.start</code> |
 | C | <code>d F &lt;char&gt;</code> | <code>buf.delete2(:to_char_backward,&lt;char&gt;)</code> |
 | C | <code>d F space</code> | <code>buf.delete2(:to_char_backward,' ')</code> |
 | C | <code>d a &lt;char&gt;</code> | <code>buf.text_object_op(:delete, &lt;char&gt;, :a)</code> |
-| C | <code>d d</code> | <code>buf.delete_line</code> |
+| C | <code>d d</code> | <code>edit.delete.line</code> |
 | C | <code>d e</code> | <code>buf.delete2(:to_word_end)</code> |
 | C | <code>d f &lt;char&gt;</code> | <code>buf.delete2(:to_char,&lt;char&gt;)</code> |
 | C | <code>d f space</code> | <code>buf.delete2(:to_char,' ')</code> |
 | C | <code>d i &lt;char&gt;</code> | <code>buf.text_object_op(:delete, &lt;char&gt;, :i)</code> |
-| C | <code>d w</code> | <code>buf.delete2(:to_next_word)</code> |
+| C | <code>d w</code> | <code>edit.delete.word.next</code> |
 | C | <code>down</code> | <code>buf.move(FORWARD_LINE)</code> |
 | C | <code>e</code> | <code>move.word.end</code> |
 | C | <code>enter</code> | <code>jump.line</code> |
@@ -161,7 +161,7 @@ its own is in the way.
 | C | <code>m &lt;char&gt;</code> | <code>buf.mark_current_position(&lt;char&gt;)</code> |
 | C | <code>n</code> | <code>search.next</code> |
 | C | <code>o</code> | <code>buf.jump(END_OF_LINE);buf.insert_txt("\n");vma.kbd.set_mo...</code> |
-| C | <code>p</code> | <code>buf.paste(AFTER)</code> |
+| C | <code>p</code> | <code>edit.paste.after</code> |
 | C | <code>pagedown</code> | <code>move.page.next</code> |
 | C | <code>pageup</code> | <code>move.page.prev</code> |
 | C | <code>q &lt;char&gt;</code> | <code>vma.kbd.set_mode(:macro);vma.macro.start_recording(&lt;char&gt;)</code> |
@@ -179,13 +179,13 @@ its own is in the way.
 | C | <code>y a &lt;char&gt;</code> | <code>buf.text_object_op(:yank, &lt;char&gt;, :a)</code> |
 | C | <code>y e</code> | <code>buf.copy(:to_word_end)</code> |
 | C | <code>y i &lt;char&gt;</code> | <code>buf.text_object_op(:yank, &lt;char&gt;, :i)</code> |
-| C | <code>y y</code> | <code>buf.copy_line</code> |
+| C | <code>y y</code> | <code>edit.line.copy</code> |
 | C | <code>~</code> | <code>:vim_toggle_case</code> |
 | I | <code>&lt;char&gt;</code> | <code>buf.insert_txt(&lt;char&gt;)</code> |
-| I | <code>backspace</code> | <code>buf.selection_active? ? buf.delete(SELECTION) : buf.delet...</code> |
-| I | <code>ctrl-space</code> | <code>buf.view.autocp_manual_trigger</code> |
+| I | <code>backspace</code> | <code>edit.backspace</code> |
+| I | <code>ctrl-space</code> | <code>edit.complete</code> |
 | I | <code>down</code> | <code>insert_move(FORWARD_LINE)</code> |
-| I | <code>enter</code> | <code>buf.insert_new_line()</code> |
+| I | <code>enter</code> | <code>edit.newline</code> |
 | I | <code>esc</code> | <code>mode.prev</code> |
 | I | <code>left</code> | <code>insert_move(BACKWARD_CHAR)</code> |
 | I | <code>pagedown</code> | <code>insert_move(:pagedown)</code> |

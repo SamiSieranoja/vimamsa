@@ -7,8 +7,8 @@ class TestBasicEditing < VmaTest
   def test_delete_char_forward
     act 'buf.insert_txt("abcde")'
     act "move.buf.start"
-    act :delete_char_forward
-    act :delete_char_forward
+    act "edit.delete.char"
+    act "edit.delete.char"
     assert_buf "cde\n"
   end
 
@@ -57,9 +57,9 @@ class TestBasicEditing < VmaTest
     #Note: Buffer contains a single "\n" by default
     act 'buf.insert_txt("hello\n")'
     act "move.buf.start"
-    act :copy_cur_line
+    act "edit.line.copy"
     act "move.buf.end"
-    act :paste_after_cursor
+    act "edit.paste.after"
     assert_buf "hello\n\nhello\n"
   end
 
@@ -67,7 +67,7 @@ class TestBasicEditing < VmaTest
     act 'buf.insert_txt("first\n")'
     act 'buf.insert_txt("second")'
     act "move.buf.start"
-    act :delete_line
+    act "edit.delete.line"
     assert_buf "second\n"
   end
 end

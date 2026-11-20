@@ -107,10 +107,10 @@ class TestActionIds < VmaTest
   def test_macros_convert_old_ids
     setup_counter
     ACTION_ALIASES[:test_ids_old] = "test.ids.run"
-    m = { "x" => [:test_ids_old, "test_ids_old", "buf.move(FORWARD_CHAR)"], "y" => [:paste_after_cursor] }
+    m = { "x" => [:test_ids_old, "test_ids_old", "buf.move(FORWARD_CHAR)"], "y" => ["move.word.next"] }
     assert vma.macro.convert_action_aliases(m)
     assert_eq ["test.ids.run", "test.ids.run", "buf.move(FORWARD_CHAR)"], m["x"]
-    assert_eq [:paste_after_cursor], m["y"]
+    assert_eq ["move.word.next"], m["y"]
     assert !vma.macro.convert_action_aliases(m), "second pass changed something"
     # A macro still holding an old id runs
     vma.macro.run_actions([:test_ids_old, "test.ids.run"])

@@ -25,9 +25,9 @@ class TestCopyPaste < VmaTest
   def test_copy_line_paste_after
     act 'buf.insert_txt("hello\n")'
     act "move.buf.start"
-    act :copy_cur_line
+    act "edit.line.copy"
     act "move.buf.end"
-    act :paste_after_cursor
+    act "edit.paste.after"
     assert_buf "hello\n\nhello\n"
   end
 
@@ -35,19 +35,19 @@ class TestCopyPaste < VmaTest
     act 'buf.insert_txt("hello\n")'
     act 'buf.insert_txt("world")'
     act "move.buf.start"
-    act :copy_cur_line
+    act "edit.line.copy"
     act "buf.move(FORWARD_LINE)"
-    act :paste_before_cursor
+    act "edit.paste.before"
     assert_buf "hello\nhello\nworld\n"
   end
 
   def test_copy_paste_twice
     act 'buf.insert_txt("abc")'
     act "move.buf.start"
-    act :copy_cur_line
+    act "edit.line.copy"
     act "move.buf.end"
-    act :paste_after_cursor
-    act :paste_after_cursor
+    act "edit.paste.after"
+    act "edit.paste.after"
     assert_buf "abc\nabc\nabc\n"
   end
 
@@ -60,7 +60,7 @@ class TestCopyPaste < VmaTest
     act :cut_selection
     assert_buf " world\n"
     act "buf.jump(END_OF_LINE)"
-    act :paste_after_cursor
+    act "edit.paste.after"
     assert_buf " worldhello\n"
   end
 
@@ -73,7 +73,7 @@ class TestCopyPaste < VmaTest
     # Original buffer unchanged
     assert_buf "foo bar\n"
     act "buf.jump(END_OF_LINE)"
-    act :paste_after_cursor
+    act "edit.paste.after"
     assert_buf "foo barfoo\n"
   end
 
@@ -85,7 +85,7 @@ class TestCopyPaste < VmaTest
   def test_copy_line_updates_clipboard
     act 'buf.insert_txt("myline")'
     act "move.buf.start"
-    act :copy_cur_line
+    act "edit.line.copy"
     assert_eq "myline\n", vma.clipboard.get
   end
 
@@ -101,9 +101,9 @@ class TestCopyPaste < VmaTest
   def test_paste_multiline
     act 'buf.insert_txt("line1\nline2\nline3")'
     act "move.buf.start"
-    act :copy_cur_line
+    act "edit.line.copy"
     act "move.buf.end"
-    act :paste_after_cursor
+    act "edit.paste.after"
     assert_buf "line1\nline2\nline3\nline1\n"
   end
 
@@ -127,7 +127,7 @@ class TestCopyPaste < VmaTest
   def test_async_paste_line_mode_uses_captured_state
     act 'buf.insert_txt("AAA\nBBB\nCCC\n")'
     act "move.buf.start"
-    act :copy_cur_line             # clipboard = "AAA\n", @paste_lines = true
+    act "edit.line.copy"             # clipboard = "AAA\n", @paste_lines = true
     ipos = buf.pos
     act "move.buf.end"     # cursor moves to the last line
     buf.paste_finish("AAA\n", AFTER, nil, ipos: ipos, paste_lines: true)

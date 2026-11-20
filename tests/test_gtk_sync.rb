@@ -45,8 +45,8 @@ class TestGtkSync < VmaTest
   def test_delete_syncs_gtk
     act 'buf.insert_txt("abcde")'
     act "move.buf.start"
-    act :delete_char_forward
-    act :delete_char_forward
+    act "edit.delete.char"
+    act "edit.delete.char"
     assert_buf "cde\n"
     assert_gtk_sync
   end
@@ -78,7 +78,7 @@ class TestGtkSync < VmaTest
     act 'buf.insert_txt("first\n")'
     act 'buf.insert_txt("second")'
     act "move.buf.start"
-    act :delete_line
+    act "edit.delete.line"
     assert_buf "second\n"
     assert_gtk_sync
   end

@@ -55,9 +55,9 @@ add_keys "intro", {
   "VC l" => "move.char.next",
   "VC , , s" => "search.actions",
   "C , n b" => :buf_new,
-  "C y y" => :copy_cur_line,
-  "C P" => :paste_before_cursor,
-  "C p" => :paste_after_cursor,
+  "C y y" => "edit.line.copy",
+  "C P" => "edit.paste.before",
+  "C p" => "edit.paste.after",
   "C v" => "mode.visual",
   "C ctrl-r" => "undo.redo",
   "C u" => "undo.last",
@@ -89,13 +89,13 @@ add_keys "intro", {
   "IX ctrl-b" => "move.char.prev",
   "IX ctrl-a" => "move.line.start",
   
-  "CI ctrl-v" => :paste_before_cursor,
+  "CI ctrl-v" => "edit.paste.before",
   "I ctrl-c" => :copy_selection, #TODO: in control mode also?
   "CI ctrl-x" => :cut_selection,
   "CI ctrl-z" => "undo.last",
   "CI ctrl-w" => :close_current_buffer,
   "I ctrl-y" => "undo.redo",
-  "CI backspace" => :insert_backspace,
+  "CI backspace" => "edit.backspace",
  "CI ctrl-o" => :open_file_dialog,
   "C g f" => "jump.file",
  "I ctrl-l" => "search.buf",
@@ -106,8 +106,8 @@ add_keys "intro", {
 }
 
 add_keys "intro delete", {
-  "C x" => :delete_char_forward,
-  "C d d" => [:delete_line, proc { buf.delete_line }, "Delete current line"]
+  "C x" => "edit.delete.char",
+  "C d d" => ["edit.delete.line", proc { buf.delete_line }, "Delete current line"]
 }
 
 
@@ -150,7 +150,7 @@ add_keys "core", {
   "I tab" => "buf.insert_tab",
   "I shift-tab" => "buf.unindent",
 
-  "I enter" => :insert_new_line,
+  "I enter" => "edit.newline",
 
 
   "I shift-left" => "insert_select_move(BACKWARD_CHAR)",
@@ -288,8 +288,8 @@ add_keys "core", {
 
   # Replace mode
   "X esc || X ctrl!" => "vma.kbd.to_previous_mode",
-  # "X p" => :paste_over_after, #TODO
-  "X ctrl-v" => :paste_over_before,
+  # "X p" => "edit.paste.over.after", #TODO
+  "X ctrl-v" => "edit.paste.over.before",
   "X <char>" => "buf.replace_with_char(<char>);buf.move(FORWARD_CHAR)",
 
   # Macros
@@ -334,9 +334,9 @@ add_keys "core", {
 #  "I return" => 'buf.insert_new_line()',
 
  "C , a" => "ack.search",
- "C d w" => :delete_to_next_word_start,
+ "C d w" => "edit.delete.word.next",
 
- "C d 0" => :delete_to_line_start,
+ "C d 0" => "edit.delete.line.start",
  "C , , f" => :file_finder,
  "VC h" => "move.char.prev",
  "C , , ." => :backup_all_buffers,
@@ -358,13 +358,13 @@ add_keys "core", {
  "B ;" => "jump.edit.prev",
  "B q" => "jump.edit.prev",
  "B w" => "jump.edit.next",
- "C , v" => :auto_indent_buffer,
+ "C , v" => "edit.indent.buf",
  "C , , u" => :update_file_index,
  "C , s a" => :buf_save_as,
  "VC , r r" => "search.replace",
  "C , w" => :toggle_active_window,
  "C , , w" => :toggle_two_column,
- "C , ; a c" => :toggle_autocomplete,
+ "C , ; a c" => "edit.complete.toggle",
  "C , R" => "app.restart",
 
  "VC s" => "jump.easy",
@@ -377,7 +377,7 @@ add_keys "core", {
  "C , , e" => :encrypt_file, #TODO: better binding,
  "C , ; u" => :set_unencrypted, #TODO: better binding,
  "C , c b" => :close_current_buffer,
- "V ctrl-c" => :comment_selection,
+ "V ctrl-c" => "edit.comment",
  "C , f" => :gui_file_finder,
  "C , h" => :gui_file_history_finder,
  "C , z" => :gui_file_finder,
@@ -413,10 +413,10 @@ add_keys "experimental", {
 
   "C , t r" => "run_tests()",
   # "CV , R" => "restart_application", #TODO: does not work
-  "I ctrl-h" => :autocp_manual_trigger,
-  "I ctrl-space" => :autocp_manual_trigger,
+  "I ctrl-h" => "edit.complete",
+  "I ctrl-space" => "edit.complete",
   "C , d m" => "debug.kbd",
-  "C , ; ." => :increment_word,
+  "C , ; ." => "edit.word.increment",
   "C , d d" => "debug_dump_deltas",
   "C , d c" => "debug_dump_clipboard",
   "C , d b" => "debug_print_buffer",

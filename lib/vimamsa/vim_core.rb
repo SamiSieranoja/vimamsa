@@ -15,43 +15,43 @@ module Vimamsa
 def reg_vim_actions
   # get_range(:to_line_end) inverts on an empty line / cursor-on-newline and
   # would delete the previous newline (buffer.rb get_range) => guard.
-  reg_act(:vim_delete_to_eol, proc {
+  reg_act("edit.delete.eol", proc {
     b = buf
     b.delete2(:to_line_end) if b.pos < b.line_ends[b.lpos]
   }, "Delete to end of line (vim D)")
 
-  reg_act(:vim_change_to_eol, proc {
+  reg_act("edit.change.eol", proc {
     b = buf
     b.delete2(:to_line_end) if b.pos < b.line_ends[b.lpos]
     vma.kbd.set_mode(:insert)
   }, "Change to end of line (vim C / c$)")
 
-  reg_act(:vim_change_line, proc {
+  reg_act("edit.change.line", proc {
     b = buf
     b.jump(BEGINNING_OF_LINE)
     b.delete2(:to_line_end) if b.pos < b.line_ends[b.lpos]
     vma.kbd.set_mode(:insert)
   }, "Change whole line, keep newline (vim cc/S)")
 
-  reg_act(:vim_change_word, proc {
+  reg_act("edit.change.word", proc {
     buf.delete2(:to_word_end) # vim cw ~= ce semantics; close enough
     vma.kbd.set_mode(:insert)
   }, "Change word (vim cw/ce)")
 
-  reg_act(:vim_substitute_char, proc {
+  reg_act("edit.change.char", proc {
     buf.delete(CURRENT_CHAR_FORWARD) if buf.current_char != "\n"
     vma.kbd.set_mode(:insert)
   }, "Substitute char (vim s)")
 
-  reg_act(:vim_delete_char, proc {
+  reg_act("edit.delete.char.inline", proc {
     buf.delete(CURRENT_CHAR_FORWARD) if buf.current_char != "\n"
   }, "Delete char under cursor; no-op on empty line (vim x)")
 
-  reg_act(:vim_delete_char_backward, proc {
+  reg_act("edit.delete.char.prev", proc {
     buf.delete(BACKWARD_CHAR) if buf.cpos > 0
   }, "Delete char before cursor; no-op at col 0 (vim X)")
 
-  reg_act(:vim_open_line_above, proc {
+  reg_act("edit.line.above", proc {
     b = buf
     b.jump(BEGINNING_OF_LINE)
     # insert_txt_at neither auto-indents nor moves the cursor: @pos ends up on
@@ -142,42 +142,42 @@ VIM_BINDINGS = {
     "C A" => "buf.jump(END_OF_LINE);vma.kbd.set_mode(:insert)",
     "C I" => "buf.jump(FIRST_NON_WHITESPACE);vma.kbd.set_mode(:insert)",
     "C o" => 'buf.jump(END_OF_LINE);buf.insert_txt("\n");vma.kbd.set_mode(:insert)',
-    "C O" => :vim_open_line_above,
+    "C O" => "edit.line.above",
 
     # Delete
-    "C x" => :vim_delete_char,
-    "C X" => :vim_delete_char_backward,
-    "C d d" => [:delete_line, proc { buf.delete_line }, "Delete current line"],
+    "C x" => "edit.delete.char.inline",
+    "C X" => "edit.delete.char.prev",
+    "C d d" => ["edit.delete.line", proc { buf.delete_line }, "Delete current line"],
     "C d e" => "buf.delete2(:to_word_end)",
-    "C d w" => :delete_to_next_word_start,
-    "C d $" => :vim_delete_to_eol,
-    "C d 0" => :delete_to_line_start,
+    "C d w" => "edit.delete.word.next",
+    "C d $" => "edit.delete.eol",
+    "C d 0" => "edit.delete.line.start",
     "C d ' <char>" => "buf.delete2(:to_mark,<char>)",
     "C d f <char>" => "buf.delete2(:to_char,<char>)",
     "C d F <char>" => "buf.delete2(:to_char_backward,<char>)",
     "C d f space" => "buf.delete2(:to_char,' ')",
     "C d F space" => "buf.delete2(:to_char_backward,' ')",
-    "C D" => :vim_delete_to_eol,
+    "C D" => "edit.delete.eol",
 
     # Change / substitute
-    "C c c" => :vim_change_line,
-    "C c w" => :vim_change_word,
-    "C c e" => :vim_change_word,
-    "C c $" => :vim_change_to_eol,
-    "C C" => :vim_change_to_eol,
-    "C S" => :vim_change_line,
-    "C s" => :vim_substitute_char,
+    "C c c" => "edit.change.line",
+    "C c w" => "edit.change.word",
+    "C c e" => "edit.change.word",
+    "C c $" => "edit.change.eol",
+    "C C" => "edit.change.eol",
+    "C S" => "edit.change.line",
+    "C s" => "edit.change.char",
 
     # Yank / paste
-    "C y y" => :copy_cur_line,
-    "C Y" => :copy_cur_line,
+    "C y y" => "edit.line.copy",
+    "C Y" => "edit.line.copy",
     "C y w" => "buf.copy(:to_next_word)",
     "C y e" => "buf.copy(:to_word_end)",
     "C y $" => "buf.copy(:to_line_end)",
     "C y 0" => "buf.copy(:to_line_start)",
     "C y ' <char>" => "buf.copy(:to_mark,<char>)",
-    "C p" => :paste_after_cursor,
-    "C P" => :paste_before_cursor,
+    "C p" => "edit.paste.after",
+    "C P" => "edit.paste.before",
 
     # Misc edits
     "C r <char>" => "buf.replace_with_char(<char>)",
@@ -222,18 +222,18 @@ VIM_BINDINGS = {
     "I ctrl-c" => "mode.prev", # vim: ctrl-c leaves insert mode
     "I <char>" => "buf.insert_txt(<char>)",
     "I space" => 'buf.insert_txt(" ")',
-    "I enter" => :insert_new_line,
-    "I backspace" => :insert_backspace,
-    "I ctrl-h" => :insert_backspace,          # vim i_ctrl-h = backspace
+    "I enter" => "edit.newline",
+    "I backspace" => "edit.backspace",
+    "I ctrl-h" => "edit.backspace",          # vim i_ctrl-h = backspace
     "I ctrl-j" => "buf.insert_new_line()",    # vim i_ctrl-j = new line
 
     # Completion (vim i_ctrl-n / i_ctrl-p; popup guards first)
     "I tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
     "I shift-tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
     "I shift!(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select",
-    "I ctrl-n" => :autocp_manual_trigger,
-    "I ctrl-p" => :autocp_manual_trigger,
-    "I ctrl-space" => :autocp_manual_trigger,
+    "I ctrl-n" => "edit.complete",
+    "I ctrl-p" => "edit.complete",
+    "I ctrl-space" => "edit.complete",
 
     "I tab" => "buf.insert_tab",
     "I shift-tab" => "buf.unindent",

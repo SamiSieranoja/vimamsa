@@ -958,7 +958,7 @@ class VSourceView < GtkSource::View
   end #end draw_cursor
 
   CONTEXT_MENU_ITEMS = [
-    ["Paste", :paste_after_cursor],
+    ["Paste", "edit.paste.after"],
     ["Previous buffer", :history_switch_backwards],
   ]
 

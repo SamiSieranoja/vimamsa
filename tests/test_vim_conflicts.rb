@@ -76,7 +76,7 @@ class TestVimConflicts < VmaTest
 
   # Conflicting vim bindings are not loaded: vimlike's own action stays
   def test_vimlike_keeps_its_own_bindings
-    st = vim_binding_status(vma.kbd, "C", ["s"], :vim_substitute_char)
+    st = vim_binding_status(vma.kbd, "C", ["s"], "edit.change.char")
     assert_eq [:conflict, :same_keys], st.values_at(:status, :why)
     assert !vma.kbd.vim_added.include?(["C", ["s"]])
     # Adding C ctrl-f ("move.page.next") doesn't change the key the menu shows
