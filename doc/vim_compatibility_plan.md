@@ -356,7 +356,7 @@ Each step regenerates `doc/vimlike_vim_conflicts.md` and updates
   `e464117`): `tests/test_text_objects.rb` holds 57 cases with vim's results
   and re-checks them against `vim -Nu NONE -es` when vim is installed. The
   test VM now installs vim, so the check runs there.
-- **Shared `VIM_BINDINGS` table** (2026-11-20, not yet committed):
+- **Shared `VIM_BINDINGS` table** (2026-11-20, `f1535c7`):
   `lib/vimamsa/vim_core.rb` holds the vim composite actions
   (`reg_vim_actions`) and the table, moved out of `key_bindings_vim.rb`, which
   now binds all of it with `bind_vim_bindings` and keeps only its modes and
