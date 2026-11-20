@@ -184,12 +184,46 @@ class Buffer < String
       debug "Guessed LANG: #{lang.id}"
       @lang = lang.id
     end
+    # No extension to go by (e.g. a script named "build"): the #! line
+    @lang ||= shebang_language
     debug @lang.inspect
 
     if @lang
       gui_set_file_lang(@id, @lang)
     end
     return @lang
+  end
+
+  # Interpreter in a "#!" line → GtkSourceView language id
+  SHEBANG_LANGS = {
+    /\Aruby/ => "ruby", /\Apython/ => "python3", /\A(ba|da|z|k|mk)?sh\z/ => "sh",
+    /\Aperl/ => "perl", /\A(node|nodejs|deno|bun)\z/ => "js", /\Alua/ => "lua",
+    /\Aphp/ => "php", /\Afish\z/ => "fish", /\A(tclsh|wish)/ => "tcl",
+    /\A[gmn]?awk\z/ => "awk", /\ARscript\z/ => "r", /\Ajulia\z/ => "julia",
+    /\Amake\z/ => "makefile",
+  }
+
+  # Language from the first line, e.g. "#!/usr/bin/env ruby" or
+  # "#!/bin/bash -e". Reads the file when the buffer has no text yet
+  # (detection runs before the content is set).
+  def shebang_language
+    first = self.empty? ? nil : self[0, 200]
+    if first.nil? && @fname && File.file?(@fname) && File.readable?(@fname)
+      first = File.open(@fname, "rb") { |f| f.read(200) }.to_s.force_encoding("UTF-8").scrub
+    end
+    line = first.to_s.lines.first.to_s
+    return nil unless line.start_with?("#!")
+    words = line[2..].strip.split
+    cmd = File.basename(words.shift.to_s)
+    if cmd == "env" # skip env's options and VAR=value: "env -S ruby -w"
+      words.shift while words[0] && (words[0].start_with?("-") || words[0].include?("="))
+      cmd = File.basename(words.shift.to_s)
+    end
+    SHEBANG_LANGS.each { |re, lang| return lang if cmd.match?(re) }
+    nil
+  rescue StandardError => e
+    debug "shebang_language: #{e}"
+    nil
   end
 
   def set_language(lang_id)
