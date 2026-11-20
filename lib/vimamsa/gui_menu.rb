@@ -79,7 +79,7 @@ module Vimamsa
       add_to_menu "View.MsgHistory", { :label => "Message history", :action => "help.messages" }
 
       add_to_menu "Actions.EncryptFile", { :label => "Encrypt file", :action => "buf.encrypt" }
-      add_to_menu "Actions.LspRestart", { :label => "Restart LSP server", :action => :lsp_restart }
+      add_to_menu "Actions.LspRestart", { :label => "Restart LSP server", :action => "lsp.restart" }
       add_to_menu "Help.KeyBindings", { :label => "Show key bindings", :action => "help.keys" }
       add_to_menu "Help.VimConflicts", { :label => "Vim keys that differ in vimlike", :action => "help.vim_conflicts" }
       add_to_menu "Help.InstallDemo", { :action => "app.demo" }

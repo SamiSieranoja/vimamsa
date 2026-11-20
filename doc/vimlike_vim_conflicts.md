@@ -17,7 +17,7 @@ Bindings that modules and `custom.rb` add at startup are not included.
 
 | Mode | Vim keys | Vim action | vimlike | Reason |
 |---|---|---|---|---|
-| C | <code>@ @</code> | <code>vma.macro.run_last_macro</code> | <code>@ &lt;char&gt;</code> <code>vma.macro.run_macro(&lt;char&gt;)</code> | a vimlike <char> binding takes the key |
+| C | <code>@ @</code> | <code>macro.run.last</code> | <code>@ &lt;char&gt;</code> <code>vma.macro.run_macro(&lt;char&gt;)</code> | a vimlike <char> binding takes the key |
 | C | <code>C</code> | <code>edit.change.eol</code> | <code>grep.files</code> | same keys, other action |
 | C | <code>O</code> | <code>edit.line.above</code> | <code>move.line.end</code> | same keys, other action |
 | C | <code>X</code> | <code>edit.delete.char.prev</code> | <code>buf.jump(END_OF_LINE);buf.insert_txt("\n");</code> | same keys, other action |
@@ -88,7 +88,7 @@ its own is in the way.
 | B | <code>i</code> | <code>move.buf.start</code> |
 | B | <code>j</code> | <code>mode.browse.exit</code> |
 | B | <code>l</code> | <code>buf.history.next</code> |
-| B | <code>m</code> | <code>vma.macro.run_last_macro</code> |
+| B | <code>m</code> | <code>macro.run.last</code> |
 | B | <code>n</code> | <code>panel.files.next</code> |
 | B | <code>o</code> | <code>move.buf.end</code> |
 | B | <code>p</code> | <code>panel.files.prev</code> |

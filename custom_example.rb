@@ -9,7 +9,7 @@
 # syntax: bindkey "mode key1 key2 ..."
 
 # Execute in new gnome-terminal tab
-# bindkey "C , , t", :execute_current_line_in_terminal
+# bindkey "C , , t", "term.line"
 
 # setcnf :tab_width, 4
 

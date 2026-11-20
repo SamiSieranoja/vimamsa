@@ -230,7 +230,7 @@ class TestLspClangd < VmaTest
 
   # The pnnfast.c case: a header in another dir, no compile flags -> clangd
   # drops declarations using its types, so definition lookup finds nothing.
-  # After adding compile_flags.txt, :lsp_restart (new clangd, buffers
+  # After adding compile_flags.txt, "lsp.restart" (new clangd, buffers
   # reattached) makes it work, and the old clangd process exits.
   def test_restart_picks_up_compile_flags
     with_clangd do |_b, _lsp, _path, dir|
@@ -255,7 +255,7 @@ class TestLspClangd < VmaTest
 
         File.write(File.join(dir, "compile_flags.txt"), "-Iinc\n")
         old_pid = old.pid
-        act :lsp_restart
+        act "lsp.restart"
         assert cb.lsp && !cb.lsp.equal?(old), "buffer not reattached to a new server"
         d = retry_until { cb.lsp.get_definition(cpath, *call) }
         assert d, "no definition after restart"

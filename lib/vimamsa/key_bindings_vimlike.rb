@@ -369,8 +369,8 @@ add_keys "core", {
 
  "VC s" => "jump.easy",
  "I alt-s" => "jump.easy",
- "VC , m f" => [:find_macro_gui, proc { vma.macro.find_macro_gui }, "Find named macro"],
- "C , m n" => [:gui_name_macro, proc { vma.macro.gui_name_macro }, "Name last macro"],
+ "VC , m f" => ["macro.find", proc { vma.macro.find_macro_gui }, "Find named macro"],
+ "C , m n" => ["macro.name", proc { vma.macro.gui_name_macro }, "Name last macro"],
  "C , j r" => "move.random",
  "C , ; s k" => "help.keys", #TODO: better binding,
  "C , , c b" => "file.path.copy", #TODO: better binding or remove?,
@@ -403,12 +403,12 @@ add_keys "hyperplaintext", {
   "C , t c" => "style.line.clear",
 }
 
-bindkey ["VCB M", "B m"], :run_last_macro
+bindkey ["VCB M", "B m"], "macro.run.last"
 
 add_keys "experimental", {
- "C ` k" => :lsp_debug,
- "C ` j" => :lsp_jump_to_definition,
- "C ` r" => :lsp_restart,
+ "C ` k" => "lsp.debug",
+ "C ` j" => "lsp.definition",
+ "C ` r" => "lsp.restart",
  "C , u s" => :audio_stop,
 
   "C , t r" => "run_tests()",

@@ -209,6 +209,16 @@ ACTION_ALIASES = {
   # mark namespace (2026-11-20)
   bookmark_add: "mark.add",
   bookmark_list: "mark.list",
+  # term_lsp_macro namespace (2026-11-20)
+  execute_current_line_in_terminal: "term.line",
+  execute_current_line_in_terminal_autoclose: "term.line.autoclose",
+  lsp_jump_to_definition: "lsp.definition",
+  lsp_print_functions: "lsp.functions",
+  lsp_restart: "lsp.restart",
+  lsp_debug: "lsp.debug",
+  run_last_macro: "macro.run.last",
+  find_macro_gui: "macro.find",
+  gui_name_macro: "macro.name",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

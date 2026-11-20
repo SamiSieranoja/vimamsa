@@ -985,7 +985,7 @@ class VSourceView < GtkSource::View
       act = Gio::SimpleAction.new("ctx_lsp_jump_to_definition")
       vma.gui.app.add_action(act)
       act.signal_connect("activate") do
-        call_action(:lsp_jump_to_definition)
+        call_action("lsp.definition")
         after_action
       end
     end

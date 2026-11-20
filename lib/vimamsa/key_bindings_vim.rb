@@ -86,7 +86,7 @@ add_keys "vim misc", {
   "B ;" => "jump.edit.prev",
   "B q" => "jump.edit.prev",
   "B w" => "jump.edit.next",
-  "B m" => :run_last_macro,
+  "B m" => "macro.run.last",
 }
 
 # Audio minor mode (used by the audio module; unreachable without it)

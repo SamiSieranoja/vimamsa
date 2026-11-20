@@ -264,7 +264,7 @@ VIM_BINDINGS = {
     # q<char> records, q stops, @<char> runs, @@ repeats
     "VC q <char>" => "vma.kbd.set_mode(:macro);vma.macro.start_recording(<char>)",
     "macro q" => "vma.kbd.to_previous_mode; vma.macro.end_recording",
-    "C @ @" => :run_last_macro,
+    "C @ @" => "macro.run.last",
     "C @ <char>" => "vma.macro.run_macro(<char>)",
 
     # READCHAR mode (argument input for f/F, r, m, ', q, @)

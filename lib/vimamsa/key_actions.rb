@@ -15,9 +15,9 @@ end
 
 reg_act("debug.command", proc { command_to_buf }, "Execute command, output to buffer")
 
-reg_act(:lsp_debug, proc { vma.buf.lsp_get_def }, "LSP get definition")
-reg_act(:lsp_jump_to_definition, proc { vma.buf.lsp_jump_to_def }, "LSP jump to definition")
-reg_act(:lsp_restart, proc { require "vimamsa/langservp"; lsp_restart },
+reg_act("lsp.debug", proc { vma.buf.lsp_get_def }, "LSP get definition")
+reg_act("lsp.definition", proc { vma.buf.lsp_jump_to_def }, "LSP jump to definition")
+reg_act("lsp.restart", proc { require "vimamsa/langservp"; lsp_restart },
         "LSP: restart the language server of the current file (e.g. after adding compile_flags.txt)")
 
 reg_act("debug.eval.buf", proc { vma.buf.eval_whole_buf }, "Eval whole current buffer as ruby code (DANGEROUS)")
@@ -54,7 +54,7 @@ reg_act("buf.history.prev", proc { bufs.history_switch(-1) }, "Prev buffer", { :
 reg_act("buf.history.next", proc { bufs.history_switch(+1) }, "Next buffer", { :group => :file })
 reg_act("debug.buf.access", proc { bufs.print_by_access_time }, "Print buffers by access time", { :group => :file })
 reg_act("view.center", "center_on_current_line", "", { :group => :view })
-reg_act(:run_last_macro, proc { vma.macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
+reg_act("macro.run.last", proc { vma.macro.run_last_macro }, "Run last recorded or executed macro", { :group => :macro })
 reg_act("jump.edit.next", "jump_to_next_edit", "Jump to next edit pos")
 reg_act("jump.edit.prev", proc { buf.jump_to_last_edit }, "Jump to the last edit location")
 reg_act("move.random", proc { buf.jump_to_random_pos }, "")
@@ -81,7 +81,7 @@ reg_act("panel.funcs.toggle", proc { vma.gui.toggle_func_panel }, "Toggle LSP fu
 reg_act("panel.funcs.refresh", proc { vma.gui.func_panel_refresh }, "Refresh LSP function panel")
 reg_act("panel.keylog.toggle", proc { vma.gui.toggle_keylog_panel }, "Toggle key log panel")
 reg_act("file.diff.repo", proc { git_diff_w }, "Show git diff -w for whole repository")
-reg_act(:lsp_print_functions, proc { lsp_print_functions }, "LSP print functions in current file")
+reg_act("lsp.functions", proc { lsp_print_functions }, "LSP print functions in current file")
 reg_act("edit.comment", proc { buf.comment_selection }, "Comment selection")
 reg_act("edit.delete.char", proc { buf.delete(CURRENT_CHAR_FORWARD) }, "Delete char forward", { :group => [:edit, :basic] })
 reg_act("file.finder", proc { vma.FileFinder.start_gui }, "Fuzzy file finder")
@@ -189,8 +189,8 @@ reg_act "move.page.next", proc { vma.gui.page_down }, "Page down", :group => [:m
 
 reg_act "move.page.prev", proc { vma.gui.page_up }, "Page up", :group => [:move, :basic]
 reg_act("edit.indent.buf", proc { buf.auto_format }, "Auto format buffer")
-reg_act(:execute_current_line_in_terminal, proc { buf.execute_current_line_in_terminal }, "Execute current line in terminal")
-reg_act(:execute_current_line_in_terminal_autoclose, proc { buf.execute_current_line_in_terminal(true) }, "Execute current line in terminal. Close after execution.")
+reg_act("term.line", proc { buf.execute_current_line_in_terminal }, "Execute current line in terminal")
+reg_act("term.line.autoclose", proc { buf.execute_current_line_in_terminal(true) }, "Execute current line in terminal. Close after execution.")
 reg_act("style.images", proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")
 reg_act("file.delete", proc { bufs.delete_current_buffer() }, "Delete current file")
 
