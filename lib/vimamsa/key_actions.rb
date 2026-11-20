@@ -113,7 +113,6 @@ reg_act("search.replace.cmd", "invoke_replace", "Invoke replace")
 reg_act(:diff_buffer, "diff_buffer", "")
 reg_act(:git_diff_buffer, proc { git_diff_buffer }, "Show git diff of current file")
 reg_act(:diff_buffer_jump_to_source, proc { diff_buffer_jump_to_source }, "Jump to corresponding line in source from diff buffer")
-reg_act(:ack_search, proc { gui_ack }, "") #invoke_ack_search
 reg_act(:extract_file_links, proc {
   links = buf.file_links
   if links.empty?
@@ -140,7 +139,7 @@ reg_act :delete_to_word_end, proc { buf.delete2(:to_word_end) }, "Delete to file
 reg_act :delete_to_next_word_start, proc { buf.delete2(:to_next_word) }, "Delete to start of next word", { :group => [:edit, :basic] }
 reg_act :delete_to_line_start, proc { buf.delete2(:to_line_start) }, "Delete to line start", { :group => [:edit, :basic] }
 
-reg_act(:ack_search, proc { gui_ack }, "Ack")
+reg_act("grep.files", proc { gui_ack }, "Ack")
 
 reg_act(:copy_cur_line, proc { buf.copy_line }, "Copy the current line")
 reg_act(:paste_before_cursor, proc { buf.paste(BEFORE) }, "Paste text before the cursor")
@@ -280,7 +279,7 @@ act_list = {
   :toggle_two_column => { :proc => proc { vma.gui.toggle_two_column },
                           :desc => "Toggle two column mode", :group => :search },
 
-  :content_search => { :proc => proc { FileContentSearch.start_gui },
+  "grep.files.gui" => { :proc => proc { FileContentSearch.start_gui },
                        :desc => "Search content of files", :group => :search },
 
   "app.quit" => { :proc => proc { _quit },

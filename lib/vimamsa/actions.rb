@@ -85,6 +85,10 @@ ACTION_ALIASES = {
   gui_search_replace: "search.replace",
   invoke_replace: "search.replace.cmd",
   search_actions: "search.actions",
+  # grep namespace (2026-11-20)
+  grep_refresh: "grep.refresh",
+  ack_search: "grep.files",
+  content_search: "grep.files.gui",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

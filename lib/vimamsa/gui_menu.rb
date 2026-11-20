@@ -86,7 +86,7 @@ module Vimamsa
 
       #TODO: :auto_indent_buffer
 
-      # add_to_menu "Actions.Ack", { :label => "source code search (Ack)", :action => :ack_search }
+      # add_to_menu "Actions.Ack", { :label => "source code search (Ack)", :action => "grep.files" }
 
     end
 
