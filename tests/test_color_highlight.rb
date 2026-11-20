@@ -68,9 +68,9 @@ class TestColorHighlight < VmaTest
   def test_toggle_action
     prev = cnf.modules.color_highlight.enabled?
     cnf.modules.color_highlight.enabled = true
-    act :toggle_highlight_colors
+    act "color_highlight.toggle"
     assert_eq false, cnf.modules.color_highlight.enabled?
-    act :toggle_highlight_colors
+    act "color_highlight.toggle"
     assert_eq true, cnf.modules.color_highlight.enabled?
   ensure
     cnf.modules.color_highlight.enabled = prev

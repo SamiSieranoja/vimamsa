@@ -101,19 +101,19 @@ def tts_stop
 end
 
 def tts_init
-  reg_act(:tts_speak_selection, proc { tts_speak_selection }, "Speak selected text")
-  reg_act(:tts_stop, proc { tts_stop }, "Stop speaking")
-  add_keys "tts", { "V , s" => :tts_speak_selection, "C , q" => :tts_stop }
-  vma.gui.menu.add_module_action(:tts_speak_selection, "Speak Selection")
-  vma.gui.menu.add_module_action(:tts_stop, "Stop Speaking")
+  reg_act("tts.speak_selection", proc { tts_speak_selection }, "Speak selected text")
+  reg_act("tts.stop", proc { tts_stop }, "Stop speaking")
+  add_keys "tts", { "V , s" => "tts.speak_selection", "C , q" => "tts.stop" }
+  vma.gui.menu.add_module_action("tts.speak_selection", "Speak Selection")
+  vma.gui.menu.add_module_action("tts.stop", "Stop Speaking")
 end
 
 def tts_disable
   $vma_tts&.stop
-  unreg_act(:tts_speak_selection)
-  unreg_act(:tts_stop)
+  unreg_act("tts.speak_selection")
+  unreg_act("tts.stop")
   unbindkey "V , s"
   unbindkey "C , q"
-  vma.gui.menu.remove_module_action(:tts_speak_selection)
-  vma.gui.menu.remove_module_action(:tts_stop)
+  vma.gui.menu.remove_module_action("tts.speak_selection")
+  vma.gui.menu.remove_module_action("tts.stop")
 end

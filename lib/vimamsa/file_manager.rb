@@ -32,11 +32,11 @@ class FileManager
   def self.init()
     reg_act("file.explorer", proc { FileManager.new.run; vma.kbd.set_mode(:file_exp) }, "File selector")
 
-    reg_act(:fexp_chdir_parent, proc { FileManager.chdir_parent }, "File selector")
-    reg_act(:fexp_select, proc { buf.module.select_line }, "")
+    reg_act("fexp.chdir_parent", proc { FileManager.chdir_parent }, "File selector")
+    reg_act("fexp.select", proc { buf.module.select_line }, "")
 
-    reg_act(:fexp_sort_mtime, proc { FileManager.with_cur { |fm| fm.sort_mtime } }, "Sort based on time")
-    reg_act(:fexp_sort_fname, proc { FileManager.with_cur { |fm| fm.sort_fname } }, "Sort based on file name")
+    reg_act("fexp.sort_mtime", proc { FileManager.with_cur { |fm| fm.sort_mtime } }, "Sort based on time")
+    reg_act("fexp.sort_fname", proc { FileManager.with_cur { |fm| fm.sort_fname } }, "Sort based on file name")
 
     bindkey "C , j f", "file.explorer"
     bindkey "C , f", "file.explorer"
@@ -45,27 +45,27 @@ class FileManager
 
     vma.kbd.add_minor_mode("fexp", :file_exp, :command)
 
-    bindkey "fexp o m", :fexp_sort_mtime
-    bindkey "fexp o f", :fexp_sort_fname
+    bindkey "fexp o m", "fexp.sort_mtime"
+    bindkey "fexp o f", "fexp.sort_fname"
 
     # These are not yet safe to use
     if cnf.fexp.experimental?
-      reg_act(:fexp_cut_file, proc { FileManager.with_cur { |fm| fm.cut_file } }, "Cut file (to paste elsewhere)")
-      reg_act(:fexp_copy_file, proc { FileManager.with_cur { |fm| fm.copy_file } }, "Copy file (to paste elsewhere)")
-      reg_act(:fexp_delete_file, proc { FileManager.with_cur { |fm| fm.delete_file } }, "Delete current file")
-      reg_act(:fexp_paste_files, proc { FileManager.with_cur { |fm| fm.paste_files } }, "Move previously cut files here")
+      reg_act("fexp.cut_file", proc { FileManager.with_cur { |fm| fm.cut_file } }, "Cut file (to paste elsewhere)")
+      reg_act("fexp.copy_file", proc { FileManager.with_cur { |fm| fm.copy_file } }, "Copy file (to paste elsewhere)")
+      reg_act("fexp.delete_file", proc { FileManager.with_cur { |fm| fm.delete_file } }, "Delete current file")
+      reg_act("fexp.paste_files", proc { FileManager.with_cur { |fm| fm.paste_files } }, "Move previously cut files here")
 
-      bindkey "fexp d d", :fexp_cut_file
-      bindkey "fexp y y", :fexp_copy_file
-      bindkey "fexp d D", :fexp_delete_file
-      bindkey "fexp p p", :fexp_paste_files
+      bindkey "fexp d d", "fexp.cut_file"
+      bindkey "fexp y y", "fexp.copy_file"
+      bindkey "fexp d D", "fexp.delete_file"
+      bindkey "fexp p p", "fexp.paste_files"
     end
 
-    # bindkey "fexp l", [:fexp_right, proc { debug "==fexp_right==" }, ""]
-    bindkey "fexp h", :fexp_chdir_parent
-    bindkey "fexp esc", [:fexp_quit, proc { FileManager.with_cur { |fm| fm.quit } }, ""]
-    bindkey "fexp enter", :fexp_select
-    bindkey "fexp l", :fexp_select
+    # bindkey "fexp l", ["fexp.right", proc { debug "==fexp_right==" }, ""]
+    bindkey "fexp h", "fexp.chdir_parent"
+    bindkey "fexp esc", ["fexp.quit", proc { FileManager.with_cur { |fm| fm.quit } }, ""]
+    bindkey "fexp enter", "fexp.select"
+    bindkey "fexp l", "fexp.select"
 
     @sort_by = :name
   end

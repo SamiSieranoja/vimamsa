@@ -5,7 +5,7 @@ class TestDictation < VmaTest
   end
 
   def ensure_disabled
-    dictation_disable if vma.actions.include?(:dictation_toggle)
+    dictation_disable if vma.actions.include?("dictation.toggle")
   end
 
   # --- _info ---
@@ -23,8 +23,8 @@ class TestDictation < VmaTest
     ensure_disabled
     load_dictation
     dictation_init
-    assert vma.actions.include?(:dictation_toggle),        "action not registered after init"
-    assert vma.gui.menu.module_action?(:dictation_enter_mode), "menu item missing after init"
+    assert vma.actions.include?("dictation.toggle"),        "action not registered after init"
+    assert vma.gui.menu.module_action?("dictation.enter_mode"), "menu item missing after init"
   ensure
     dictation_disable
   end
@@ -34,7 +34,7 @@ class TestDictation < VmaTest
     ensure_disabled
     load_dictation
     dictation_init
-    hint = vma.gui.menu.kbd_hint(:dictation_enter_mode)
+    hint = vma.gui.menu.kbd_hint("dictation.enter_mode")
     assert hint.include?("[C]</span> , k"), "no , k hint: #{hint.inspect}"
   ensure
     dictation_disable
@@ -45,8 +45,8 @@ class TestDictation < VmaTest
     load_dictation
     dictation_init
     dictation_disable
-    assert !vma.actions.include?(:dictation_toggle),       "action still registered after disable"
-    assert !vma.gui.menu.module_action?(:dictation_enter_mode), "menu item still present after disable"
+    assert !vma.actions.include?("dictation.toggle"),       "action still registered after disable"
+    assert !vma.gui.menu.module_action?("dictation.enter_mode"), "menu item still present after disable"
   end
 
   def test_init_disable_cycle
@@ -54,9 +54,9 @@ class TestDictation < VmaTest
     load_dictation
     3.times do |i|
       dictation_init
-      assert vma.actions.include?(:dictation_toggle),       "action missing after init (cycle #{i})"
+      assert vma.actions.include?("dictation.toggle"),       "action missing after init (cycle #{i})"
       dictation_disable
-      assert !vma.actions.include?(:dictation_toggle),      "action present after disable (cycle #{i})"
+      assert !vma.actions.include?("dictation.toggle"),      "action present after disable (cycle #{i})"
     end
   end
 
@@ -232,18 +232,18 @@ class TestDictation < VmaTest
     ensure_disabled
     load_dictation
     dictation_init
-    [:dictation_enter_mode, :dictation_toggle_stay,
-     :dictation_newline, :dictation_exit_mode].each do |a|
+    ["dictation.enter_mode", "dictation.toggle_stay",
+     "dictation.newline", "dictation.exit_mode"].each do |a|
       assert vma.actions.include?(a), "#{a} not registered after init"
     end
     dictation_disable
-    [:dictation_enter_mode, :dictation_toggle_stay,
-     :dictation_newline, :dictation_exit_mode].each do |a|
+    ["dictation.enter_mode", "dictation.toggle_stay",
+     "dictation.newline", "dictation.exit_mode"].each do |a|
       assert !vma.actions.include?(a), "#{a} still registered after disable"
     end
   end
 
-  # The menu item runs :dictation_enter_mode; clicked while already in the
+  # The menu item runs "dictation.enter_mode"; clicked while already in the
   # mode it leaves the mode instead (session not active: no recorder starts).
   def test_enter_mode_action_exits_when_in_mode
     ensure_disabled
@@ -251,7 +251,7 @@ class TestDictation < VmaTest
     dictation_init
     vma.kbd.set_mode(:dictation)
     assert_eq :dictation, vma.kbd.get_mode
-    act(:dictation_enter_mode)
+    act("dictation.enter_mode")
     assert_eq :command, vma.kbd.get_mode, "menu toggle did not leave dictation mode"
   ensure
     vma.kbd.set_mode(:command)
@@ -286,7 +286,7 @@ class TestDictation < VmaTest
     act("buf.insert_txt_at('abc', 0)")  # fresh buffer "\n" -> "abc\n"
     act("buf.set_pos(3)")               # end of "abc", before the trailing "\n"
     assert !dictation_session.active?, "precondition: no active dictation"
-    act(:dictation_newline)
+    act("dictation.newline")
     assert_buf "abc\n\n", "Enter should insert a newline when not dictating"
   ensure
     dictation_disable

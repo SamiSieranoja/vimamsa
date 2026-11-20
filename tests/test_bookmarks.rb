@@ -178,7 +178,7 @@ class TestBookmarks < VmaTest
     rows = vma.buf.to_s.lines.select { |l| l.include?(tilde_path(path)) }.collect(&:strip)
     assert_eq ["line 5", "line 3", "line 1"], rows.collect { |r| r.split("  ").last }
 
-    act(:bmark_select) # cursor starts on the first (newest) row
+    act("bmark.select") # cursor starts on the first (newest) row
     assert_eq path, vma.buf.fname
     assert_eq 4, vma.buf.lpos
     assert vma.buffers.get_buffer_by_id(list_id).nil?, "list buffer should be closed"
@@ -194,7 +194,7 @@ class TestBookmarks < VmaTest
     bm = add_at(path, 6) # newest -> first row
 
     act("mark.list")
-    act(:bmark_delete)
+    act("bmark.delete")
     assert !vma.bookmarks.list.include?(bm), "bookmark not deleted"
     assert_eq 1, vma.bookmarks.list.count { |b| b[:fname] == path }
     rows = vma.buf.to_s.lines.select { |l| l.include?(tilde_path(path)) }

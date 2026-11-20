@@ -19,11 +19,11 @@ class Bookmarks
     vma.kbd.add_minor_mode("bmark", :bmark, :command)
     reg_act("mark.add", proc { vma.bookmarks.add }, "Add bookmark at cursor (persistent, across files)")
     reg_act("mark.list", proc { BookmarkList.new.run; vma.kbd.set_mode(:bmark) }, "List bookmarks")
-    reg_act(:bmark_select, proc { buf.module.select_line }, "")
-    reg_act(:bmark_delete, proc { buf.module.delete_selected }, "")
+    reg_act("bmark.select", proc { buf.module.select_line }, "")
+    reg_act("bmark.delete", proc { buf.module.delete_selected }, "")
 
-    bindkey "bmark enter", :bmark_select
-    bindkey "bmark d", :bmark_delete
+    bindkey "bmark enter", "bmark.select"
+    bindkey "bmark d", "bmark.delete"
     bindkey "bmark x", "buf.close"
   end
 

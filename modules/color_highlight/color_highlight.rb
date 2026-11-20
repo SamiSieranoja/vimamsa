@@ -87,13 +87,13 @@ def color_highlight_on_text_changed(_view = nil)
 end
 
 def color_highlight_init
-  reg_act(:toggle_highlight_colors, proc {
+  reg_act("color_highlight.toggle", proc {
     en = cnf.modules.color_highlight.enabled? == false
     cnf.modules.color_highlight.enabled = en
     color_highlight_rehighlight_all
     message("Color code highlighting: #{en ? "ON" : "OFF"}")
   }, "Toggle hex color code highlighting on/off")
-  add_keys "color_highlight", { "C , ; h c" => :toggle_highlight_colors }
+  add_keys "color_highlight", { "C , ; h c" => "color_highlight.toggle" }
 
   # Register the view hooks once. The guard survives module reloads (a global
   # set only here persists across `load`), so a no_restart re-enable never
@@ -109,7 +109,7 @@ end
 
 def color_highlight_disable
   unbindkey "C , ; h c"
-  unreg_act(:toggle_highlight_colors)
+  unreg_act("color_highlight.toggle")
   # cnf.modules.color_highlight.enabled is already false here, so this wipes the
   # swatches. The registered hooks stay but no-op via that gate.
   color_highlight_rehighlight_all

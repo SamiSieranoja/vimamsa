@@ -30,7 +30,7 @@ class TestCustomTwoPhase < VmaTest
       end
 
       def test_phase1_settings_reached_module_init
-        assert_eq ["fexp d d"], paths_of(:fexp_cut_file),
+        assert_eq ["fexp d d"], paths_of("fexp.cut_file"),
           "cnf.fexp.experimental from the body of custom.rb should reach FileManager.init"
       end
 

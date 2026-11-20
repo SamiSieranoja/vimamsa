@@ -409,7 +409,7 @@ add_keys "experimental", {
  "C ` k" => "lsp.debug",
  "C ` j" => "lsp.definition",
  "C ` r" => "lsp.restart",
- "C , u s" => :audio_stop,
+ "C , u s" => "audio.stop",
 
   "C , t r" => "run_tests()",
   # "CV , R" => "restart_application", #TODO: does not work
@@ -428,14 +428,14 @@ add_keys "experimental", {
 # bindkey "C , d", "buf.diff"
  "C , , d" => "debug.save",
  "C , m a" => "vma.kbd.set_mode(:audio)",
- "audio s" => :audio_stop,
+ "audio s" => "audio.stop",
 }
 
 
-bindkey "audio f || audio right", [:audio_forward, proc { Audio.seek_forward }, "Seek forward in audio stream"]
-bindkey "audio left", [:audio_backward, proc { Audio.seek_forward(-5.0) }, "Seek backward in audio stream"]
+bindkey "audio f || audio right", ["audio.forward", proc { Audio.seek_forward }, "Seek forward in audio stream"]
+bindkey "audio left", ["audio.backward", proc { Audio.seek_forward(-5.0) }, "Seek backward in audio stream"]
 
-bindkey "audio space", :audio_stop
+bindkey "audio space", "audio.stop"
 bindkey "audio q || audio esc", "vma.kbd.to_previous_mode"
 
 

@@ -129,12 +129,12 @@ end
 
 def terminal_init
   require "vte4"
-  reg_act(:insert_terminal, proc { insert_terminal_in_buffer }, "Insert embedded terminal at cursor")
-  # add_keys "terminal", { "C , t" => :insert_terminal }
-  vma.gui.menu.add_module_action(:insert_terminal, "Insert Terminal")
+  reg_act("terminal.insert", proc { insert_terminal_in_buffer }, "Insert embedded terminal at cursor")
+  # add_keys "terminal", { "C , t" => "terminal.insert" }
+  vma.gui.menu.add_module_action("terminal.insert", "Insert Terminal")
 end
 
 def terminal_disable
-  unreg_act(:insert_terminal)
-  vma.gui.menu.remove_module_action(:insert_terminal)
+  unreg_act("terminal.insert")
+  vma.gui.menu.remove_module_action("terminal.insert")
 end

@@ -87,21 +87,21 @@ rescue => e
 end
 
 def ollama_init
-  reg_act(:ollama_improve_selection,
+  reg_act("ollama.improve_selection",
           proc { ollama_improve_selection },
           "Ollama: improve selected text")
-  reg_act(:ollama_improve_selection_multi,
+  reg_act("ollama.improve_selection_multi",
           proc { ollama_improve_selection_multi },
           "Ollama: generate N improved variants below paragraph")
 
-  bindings = { "V , o i" => :ollama_improve_selection }
+  bindings = { "V , o i" => "ollama.improve_selection" }
   (1..9).each { |n| bindings["V , o #{n} i"] = "ollama_improve_selection_multi(#{n})" }
   add_keys "ollama", bindings
 end
 
 def ollama_disable
-  unreg_act(:ollama_improve_selection)
-  unreg_act(:ollama_improve_selection_multi)
+  unreg_act("ollama.improve_selection")
+  unreg_act("ollama.improve_selection_multi")
   unbindkey "V , o i"
   (1..9).each { |n| unbindkey "V , o #{n} i" }
 end

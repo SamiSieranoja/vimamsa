@@ -5,7 +5,7 @@ class TestTts < VmaTest
   end
 
   def ensure_disabled
-    tts_disable if vma.actions.include?(:tts_speak_selection)
+    tts_disable if vma.actions.include?("tts.speak_selection")
   end
 
   # --- _info ---
@@ -23,10 +23,10 @@ class TestTts < VmaTest
     ensure_disabled
     load_tts
     tts_init
-    assert vma.actions.include?(:tts_speak_selection),       "speak action not registered"
-    assert vma.actions.include?(:tts_stop),                  "stop action not registered"
-    assert vma.gui.menu.module_action?(:tts_speak_selection), "speak menu item missing"
-    assert vma.gui.menu.module_action?(:tts_stop),           "stop menu item missing"
+    assert vma.actions.include?("tts.speak_selection"),       "speak action not registered"
+    assert vma.actions.include?("tts.stop"),                  "stop action not registered"
+    assert vma.gui.menu.module_action?("tts.speak_selection"), "speak menu item missing"
+    assert vma.gui.menu.module_action?("tts.stop"),           "stop menu item missing"
   ensure
     tts_disable
   end
@@ -36,9 +36,9 @@ class TestTts < VmaTest
     load_tts
     tts_init
     tts_disable
-    assert !vma.actions.include?(:tts_speak_selection),       "speak action still registered"
-    assert !vma.actions.include?(:tts_stop),                  "stop action still registered"
-    assert !vma.gui.menu.module_action?(:tts_speak_selection), "speak menu still present"
+    assert !vma.actions.include?("tts.speak_selection"),       "speak action still registered"
+    assert !vma.actions.include?("tts.stop"),                  "stop action still registered"
+    assert !vma.gui.menu.module_action?("tts.speak_selection"), "speak menu still present"
   end
 
   def test_init_disable_cycle
@@ -46,9 +46,9 @@ class TestTts < VmaTest
     load_tts
     3.times do |i|
       tts_init
-      assert vma.actions.include?(:tts_speak_selection), "speak missing after init (cycle #{i})"
+      assert vma.actions.include?("tts.speak_selection"), "speak missing after init (cycle #{i})"
       tts_disable
-      assert !vma.actions.include?(:tts_speak_selection), "speak present after disable (cycle #{i})"
+      assert !vma.actions.include?("tts.speak_selection"), "speak present after disable (cycle #{i})"
     end
   end
 

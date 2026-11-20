@@ -255,9 +255,9 @@ its own is in the way.
 | X | <code>right</code> | <code>buf.move(FORWARD_CHAR)</code> |
 | X | <code>up</code> | <code>buf.move(BACKWARD_LINE)</code> |
 | audio | <code>esc</code> | <code>vma.kbd.to_previous_mode</code> |
-| audio | <code>f</code> | <code>Audio.seek_forward</code> |
-| audio | <code>left</code> | <code>Audio.seek_forward(-5.0)</code> |
+| audio | <code>f</code> | <code>audio.forward</code> |
+| audio | <code>left</code> | <code>audio.backward</code> |
 | audio | <code>q</code> | <code>vma.kbd.to_previous_mode</code> |
-| audio | <code>right</code> | <code>Audio.seek_forward</code> |
-| audio | <code>space</code> | <code>Audio.stop</code> |
+| audio | <code>right</code> | <code>audio.forward</code> |
+| audio | <code>space</code> | <code>audio.stop</code> |
 | macro | <code>q</code> | <code>vma.kbd.to_previous_mode; vma.macro.end_recording</code> |

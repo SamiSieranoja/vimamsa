@@ -3,7 +3,7 @@
 # Enable this module in Preferences → Modules → "Scientific Calculator".
 #
 # Usage (once enabled):
-#   :insert_calculator action  — inserts the widget at the cursor position
+#   "calculator.insert" action  — inserts the widget at the cursor position
 #
 # The widget occupies a single U+FFFC (object replacement) character in the
 # Ruby buffer, keeping GTK/Ruby buffer offsets aligned.
@@ -308,11 +308,11 @@ def insert_calculator_in_buffer
 end
 
 def calculator_init
-  reg_act(:insert_calculator, proc { insert_calculator_in_buffer }, "Insert scientific calculator widget at cursor")
-  vma.gui.menu.add_module_action(:insert_calculator, "Insert Calculator")
+  reg_act("calculator.insert", proc { insert_calculator_in_buffer }, "Insert scientific calculator widget at cursor")
+  vma.gui.menu.add_module_action("calculator.insert", "Insert Calculator")
 end
 
 def calculator_disable
-  unreg_act(:insert_calculator)
-  vma.gui.menu.remove_module_action(:insert_calculator)
+  unreg_act("calculator.insert")
+  vma.gui.menu.remove_module_action("calculator.insert")
 end

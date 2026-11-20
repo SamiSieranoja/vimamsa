@@ -194,7 +194,7 @@ reg_act("term.line.autoclose", proc { buf.execute_current_line_in_terminal(true)
 reg_act("style.images", proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")
 reg_act("file.delete", proc { bufs.delete_current_buffer() }, "Delete current file")
 
-reg_act(:audio_stop, proc { Audio.stop }, "Stop audio playback")
+reg_act("audio.stop", proc { Audio.stop }, "Stop audio playback")
 
 act_list = {
   # File handling

@@ -90,9 +90,9 @@ add_keys "vim misc", {
 }
 
 # Audio minor mode (used by the audio module; unreachable without it)
-bindkey "audio f || audio right", [:audio_forward, proc { Audio.seek_forward }, "Seek forward in audio stream"]
-bindkey "audio left", [:audio_backward, proc { Audio.seek_forward(-5.0) }, "Seek backward in audio stream"]
-bindkey "audio space", :audio_stop
+bindkey "audio f || audio right", ["audio.forward", proc { Audio.seek_forward }, "Seek forward in audio stream"]
+bindkey "audio left", ["audio.backward", proc { Audio.seek_forward(-5.0) }, "Seek backward in audio stream"]
+bindkey "audio space", "audio.stop"
 bindkey "audio q || audio esc", "vma.kbd.to_previous_mode"
 
 # Text objects (diw, ci", ya(, vip, ...), see text_objects.rb

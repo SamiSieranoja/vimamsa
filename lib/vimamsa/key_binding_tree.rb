@@ -788,7 +788,7 @@ class KeyBindingTree
       modes = modetmp.split("") if modetmp.match(/^\p{Lu}+$/) # Uppercase
 
       # If all of first word is down case, like in:
-      # bindkey "audio space", :audio_stop
+      # bindkey "audio space", "audio.stop"
       # interpret as whole word representing a mode.
       modes = [modetmp] if modetmp.match(/^\p{Ll}+$/) # Lowercase
       keydef = m[2]

@@ -996,38 +996,38 @@ end
 def dictation_init
   $vma_dict_prompts = vma_dict_load_prompts
   vma_dict_restore_model
-  reg_act(:dictation_select_model, proc { vma_dictation_model_dialog },
+  reg_act("dictation.select_model", proc { vma_dictation_model_dialog },
           "Voice dictation: choose speech model")
-  reg_act(:dictation_toggle, proc { dictation_toggle },
+  reg_act("dictation.toggle", proc { dictation_toggle },
           "Voice dictation: start/stop (fast, last prompt)")
-  reg_act(:dictation_toggle_dialog, proc { dictation_toggle_dialog },
+  reg_act("dictation.toggle_dialog", proc { dictation_toggle_dialog },
           "Voice dictation: start/stop (choose prompt)")
-  reg_act(:dictation_release_vram, proc { dictation_release_vram },
+  reg_act("dictation.release_vram", proc { dictation_release_vram },
           "Voice dictation: unload model to free VRAM")
-  reg_act(:dictation_enter_mode, proc { dictation_enter_mode },
+  reg_act("dictation.enter_mode", proc { dictation_enter_mode },
           "Voice dictation: start + enter dictation mode (exit if in it)")
-  reg_act(:dictation_toggle_stay, proc { dictation_toggle_stay },
+  reg_act("dictation.toggle_stay", proc { dictation_toggle_stay },
           "Dictation mode: toggle listening (stay in mode)")
-  reg_act(:dictation_newline, proc { dictation_newline },
+  reg_act("dictation.newline", proc { dictation_newline },
           "Dictation mode: new line")
-  reg_act(:dictation_exit_mode, proc { dictation_exit_mode },
+  reg_act("dictation.exit_mode", proc { dictation_exit_mode },
           "Dictation mode: exit")
 
   # A dedicated dictation input mode that inherits command mode (like `audio`),
   # so unoverridden command chords stay available while dictating.
   vma.kbd.add_minor_mode("dictation", :dictation, :command)
   add_keys "dictation", {
-    "C , k" => :dictation_enter_mode,        # start + enter dictation mode
-    "C , ; k" => :dictation_toggle_dialog,   # plain toggle (choose prompt), no mode
-    "dictation space" => :dictation_toggle_stay,
-    "dictation enter || dictation return" => :dictation_newline,
-    "dictation esc || dictation ctrl! || dictation , k" => :dictation_exit_mode,
+    "C , k" => "dictation.enter_mode",        # start + enter dictation mode
+    "C , ; k" => "dictation.toggle_dialog",   # plain toggle (choose prompt), no mode
+    "dictation space" => "dictation.toggle_stay",
+    "dictation enter || dictation return" => "dictation.newline",
+    "dictation esc || dictation ctrl! || dictation , k" => "dictation.exit_mode",
   }
   # Same action as `, k`, so the menu shows that binding
-  vma.gui.menu.add_module_action(:dictation_enter_mode, "Start/Stop Dictation")
-  vma.gui.menu.add_module_action(:dictation_toggle_dialog, "Start Dictation (choose prompt)")
-  vma.gui.menu.add_module_action(:dictation_release_vram, "Release Dictation VRAM")
-  vma.gui.menu.add_module_action(:dictation_select_model, "Select Dictation Model…")
+  vma.gui.menu.add_module_action("dictation.enter_mode", "Start/Stop Dictation")
+  vma.gui.menu.add_module_action("dictation.toggle_dialog", "Start Dictation (choose prompt)")
+  vma.gui.menu.add_module_action("dictation.release_vram", "Release Dictation VRAM")
+  vma.gui.menu.add_module_action("dictation.select_model", "Select Dictation Model…")
 end
 
 def dictation_disable
@@ -1036,19 +1036,19 @@ def dictation_disable
   # The module is going away; don't leave a stale indicator behind. (stop above
   # only queues the finalize that would normally clear it.)
   vma.gui&.set_status_indicator(VmaDictationSession::STATUS_KEY, nil)
-  unreg_act(:dictation_toggle)
-  unreg_act(:dictation_toggle_dialog)
-  unreg_act(:dictation_release_vram)
-  unreg_act(:dictation_enter_mode)
-  unreg_act(:dictation_toggle_stay)
-  unreg_act(:dictation_newline)
-  unreg_act(:dictation_exit_mode)
-  unreg_act(:dictation_select_model)
+  unreg_act("dictation.toggle")
+  unreg_act("dictation.toggle_dialog")
+  unreg_act("dictation.release_vram")
+  unreg_act("dictation.enter_mode")
+  unreg_act("dictation.toggle_stay")
+  unreg_act("dictation.newline")
+  unreg_act("dictation.exit_mode")
+  unreg_act("dictation.select_model")
   unbindkey "C , k"
   unbindkey "C , ; k"
   unbindkey "dictation", include_child_nodes: true
-  vma.gui.menu.remove_module_action(:dictation_enter_mode)
-  vma.gui.menu.remove_module_action(:dictation_toggle_dialog)
-  vma.gui.menu.remove_module_action(:dictation_release_vram)
-  vma.gui.menu.remove_module_action(:dictation_select_model)
+  vma.gui.menu.remove_module_action("dictation.enter_mode")
+  vma.gui.menu.remove_module_action("dictation.toggle_dialog")
+  vma.gui.menu.remove_module_action("dictation.release_vram")
+  vma.gui.menu.remove_module_action("dictation.select_model")
 end

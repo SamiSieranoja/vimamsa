@@ -1,7 +1,7 @@
 class TestModuleInterface < VmaTest
   # Ensure the calculator is inactive before each test that needs a clean slate.
   def ensure_disabled
-    if vma.actions.include?(:insert_calculator)
+    if vma.actions.include?("calculator.insert")
       calculator_disable if respond_to?(:calculator_disable, true)
     end
   end
@@ -27,7 +27,7 @@ class TestModuleInterface < VmaTest
     ensure_disabled
     load_calculator
     calculator_init
-    assert vma.actions.include?(:insert_calculator), "action not registered after init"
+    assert vma.actions.include?("calculator.insert"), "action not registered after init"
   ensure
     calculator_disable
   end
@@ -36,7 +36,7 @@ class TestModuleInterface < VmaTest
     ensure_disabled
     load_calculator
     calculator_init
-    assert vma.gui.menu.module_action?(:insert_calculator), "menu item missing after init"
+    assert vma.gui.menu.module_action?("calculator.insert"), "menu item missing after init"
   ensure
     calculator_disable
   end
@@ -48,7 +48,7 @@ class TestModuleInterface < VmaTest
     load_calculator
     calculator_init
     calculator_disable
-    assert !vma.actions.include?(:insert_calculator), "action still registered after disable"
+    assert !vma.actions.include?("calculator.insert"), "action still registered after disable"
   end
 
   def test_disable_removes_menu_item
@@ -56,7 +56,7 @@ class TestModuleInterface < VmaTest
     load_calculator
     calculator_init
     calculator_disable
-    assert !vma.gui.menu.module_action?(:insert_calculator), "menu item still present after disable"
+    assert !vma.gui.menu.module_action?("calculator.insert"), "menu item still present after disable"
   end
 
   # --- cycle ---
@@ -66,11 +66,11 @@ class TestModuleInterface < VmaTest
     load_calculator
     3.times do |i|
       calculator_init
-      assert vma.actions.include?(:insert_calculator),        "action missing after init (cycle #{i})"
-      assert vma.gui.menu.module_action?(:insert_calculator), "menu missing after init (cycle #{i})"
+      assert vma.actions.include?("calculator.insert"),        "action missing after init (cycle #{i})"
+      assert vma.gui.menu.module_action?("calculator.insert"), "menu missing after init (cycle #{i})"
       calculator_disable
-      assert !vma.actions.include?(:insert_calculator),        "action present after disable (cycle #{i})"
-      assert !vma.gui.menu.module_action?(:insert_calculator), "menu present after disable (cycle #{i})"
+      assert !vma.actions.include?("calculator.insert"),        "action present after disable (cycle #{i})"
+      assert !vma.gui.menu.module_action?("calculator.insert"), "menu present after disable (cycle #{i})"
     end
   end
 
