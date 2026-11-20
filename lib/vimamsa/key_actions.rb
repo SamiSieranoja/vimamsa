@@ -213,16 +213,16 @@ act_list = {
   "search.buf" => { :proc => proc { invoke_search },
                        :desc => "Find", :group => :edit },
 
-  :selection_upcase => { :proc => proc { buf.transform_selection(:upcase) },
+  "case.sel.upper" => { :proc => proc { buf.transform_selection(:upcase) },
                          :desc => "Transform text: upcase", :group => :edit },
 
-  :selection_downcase => { :proc => proc { buf.transform_selection(:downcase) },
+  "case.sel.lower" => { :proc => proc { buf.transform_selection(:downcase) },
                            :desc => "Transform text: downcase", :group => :edit },
 
-  :selection_capitalize => { :proc => proc { buf.transform_selection(:capitalize) },
+  "case.sel.capitalize" => { :proc => proc { buf.transform_selection(:capitalize) },
                              :desc => "Transform text: capitalize", :group => :edit },
 
-  :selection_swapcase => { :proc => proc { buf.transform_selection(:swapcase) },
+  "case.sel.swap" => { :proc => proc { buf.transform_selection(:swapcase) },
                            :desc => "Transform text: swapcase", :group => :edit },
 
   :selection_reverse => { :proc => proc { buf.transform_selection(:reverse) },
@@ -234,25 +234,25 @@ act_list = {
   :selection_remove_common_indent => { :proc => proc { buf.remove_common_indent_selection },
                                        :desc => "Remove indentation common to all selected lines (keeps relative indent)", :group => :edit },
 
-  :word_upcase => { :proc => proc { buf.transform_range(:to_next_word, :upcase) },
+  "case.word.upper" => { :proc => proc { buf.transform_range(:to_next_word, :upcase) },
                     :desc => "Upcase to start of next word (vim gUw)", :group => :edit },
 
-  :word_downcase => { :proc => proc { buf.transform_range(:to_next_word, :downcase) },
+  "case.word.lower" => { :proc => proc { buf.transform_range(:to_next_word, :downcase) },
                       :desc => "Downcase to start of next word (vim guw)", :group => :edit },
 
-  :word_swapcase => { :proc => proc { buf.transform_range(:to_next_word, :swapcase) },
+  "case.word.swap" => { :proc => proc { buf.transform_range(:to_next_word, :swapcase) },
                       :desc => "Swap case to start of next word (vim g~w)", :group => :edit },
 
-  :line_upcase => { :proc => proc { buf.transform_range(:line, :upcase) },
+  "case.line.upper" => { :proc => proc { buf.transform_range(:line, :upcase) },
                     :desc => "Upcase current line (vim gUU)", :group => :edit },
 
-  :line_downcase => { :proc => proc { buf.transform_range(:line, :downcase) },
+  "case.line.lower" => { :proc => proc { buf.transform_range(:line, :downcase) },
                       :desc => "Downcase current line (vim guu)", :group => :edit },
 
-  :line_swapcase => { :proc => proc { buf.transform_range(:line, :swapcase) },
+  "case.line.swap" => { :proc => proc { buf.transform_range(:line, :swapcase) },
                       :desc => "Swap case of current line (vim g~~)", :group => :edit },
 
-  :vim_toggle_case => { :proc => proc {
+  "case.char.toggle" => { :proc => proc {
     b = buf
     c = b.current_char
     if !c.nil? and c != "\n"

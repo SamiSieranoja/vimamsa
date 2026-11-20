@@ -68,7 +68,7 @@ def reg_vim_actions
 
   # APPROXIMATION: set_last_command is currently only fed by f/F finds, so this
   # repeats the last find, not the last change like vim's ".".
-  reg_act(:vim_repeat_last_action, proc { repeat_last_action() },
+  reg_act("undo.repeat", proc { repeat_last_action() },
           "Repeat last recorded command (approximation of vim .)")
 end
 
@@ -183,15 +183,15 @@ VIM_BINDINGS = {
     "C r <char>" => "buf.replace_with_char(<char>)",
     "C r space" => "buf.replace_with_char(' ')",
     "C J" => "buf.join_lines()",
-    "C ~" => :vim_toggle_case,
-    "C g U w" => :word_upcase,
-    "C g u w" => :word_downcase,
-    "C g ~ w" => :word_swapcase,
-    "C g U U" => :line_upcase,
-    "C g u u" => :line_downcase,
-    "C g ~ ~" => :line_swapcase,
+    "C ~" => "case.char.toggle",
+    "C g U w" => "case.word.upper",
+    "C g u w" => "case.word.lower",
+    "C g ~ w" => "case.word.swap",
+    "C g U U" => "case.line.upper",
+    "C g u u" => "case.line.lower",
+    "C g ~ ~" => "case.line.swap",
     "C ctrl-a" => "buf.increment_current_word", # vim ctrl-a: increment number
-    "C ." => :vim_repeat_last_action,
+    "C ." => "undo.repeat",
 
     # Undo / redo
     "C u" => "undo.last",
@@ -211,8 +211,8 @@ VIM_BINDINGS = {
     "V u" => "buf.transform_selection(:downcase)",
     "V U" => "buf.transform_selection(:upcase)",
     "V ~" => "buf.transform_selection(:swapcase)",
-    "V g U" => :selection_upcase,
-    "V g u" => :selection_downcase,
+    "V g U" => "case.sel.upper",
+    "V g u" => "case.sel.lower",
     "V >" => "buf.indent_selection",
     "V <" => "buf.unindent_selection",
   },

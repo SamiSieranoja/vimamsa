@@ -116,6 +116,20 @@ ACTION_ALIASES = {
   comment_selection: "edit.comment",
   autocp_manual_trigger: "edit.complete",
   toggle_autocomplete: "edit.complete.toggle",
+  # undo namespace (2026-11-20)
+  vim_repeat_last_action: "undo.repeat",
+  # case namespace (2026-11-20)
+  word_upcase: "case.word.upper",
+  word_downcase: "case.word.lower",
+  word_swapcase: "case.word.swap",
+  line_upcase: "case.line.upper",
+  line_downcase: "case.line.lower",
+  line_swapcase: "case.line.swap",
+  selection_upcase: "case.sel.upper",
+  selection_downcase: "case.sel.lower",
+  selection_swapcase: "case.sel.swap",
+  selection_capitalize: "case.sel.capitalize",
+  vim_toggle_case: "case.char.toggle",
 }
 
 # A reference to an action by its dotted id, built by chaining: a.move.word.next

@@ -8,10 +8,10 @@ Bindings that modules and `custom.rb` add at startup are not included.
 
 | | Count |
 |---|---|
-| Conflicts (the vim binding can't be used in vimlike) | 20 |
+| Conflicts (the vim binding can't be used in vimlike) | 23 |
 | Added to vimlike from the shared table (`VIM_BINDINGS`, vim_core.rb) | 19 |
 | Missing from vimlike (no conflict, could be added) | 0 |
-| Shared (same keys, same action) | 187 |
+| Shared (same keys, same action) | 184 |
 
 ## Conflicts
 
@@ -34,9 +34,12 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | I | <code>ctrl-j</code> | <code>buf.insert_new_line()</code> | <code>buf.view.hide_completions</code> | same keys, other action |
 | I | <code>ctrl-n</code> | <code>edit.complete</code> | <code>move.line.next</code> | same keys, other action |
 | I | <code>ctrl-p</code> | <code>edit.complete</code> | <code>move.line.prev</code> | same keys, other action |
+| V | <code>U</code> | <code>buf.transform_selection(:upcase)</code> | <code>case.sel.upper</code> | same keys, other action |
 | V | <code>^</code> | <code>buf.jump(FIRST_NON_WHITESPACE)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> | same keys, other action |
 | V | <code>ctrl-c</code> | <code>buf.end_visual_mode</code> | <code>edit.comment</code> | same keys, other action |
 | V | <code>s</code> | <code>:vim_change_selection</code> | <code>jump.easy</code> | same keys, other action |
+| V | <code>u</code> | <code>buf.transform_selection(:downcase)</code> | <code>case.sel.lower</code> | same keys, other action |
+| V | <code>~</code> | <code>buf.transform_selection(:swapcase)</code> | <code>case.sel.swap</code> | same keys, other action |
 
 ## Added to vimlike
 
@@ -45,7 +48,7 @@ its own is in the way.
 
 | Mode | Vim keys | Vim action |
 |---|---|---|
-| C | <code>.</code> | <code>repeat_last_action()</code> |
+| C | <code>.</code> | <code>undo.repeat</code> |
 | C | <code>D</code> | <code>edit.delete.eol</code> |
 | C | <code>S</code> | <code>edit.change.line</code> |
 | C | <code>Y</code> | <code>edit.line.copy</code> |
@@ -139,19 +142,19 @@ its own is in the way.
 | C | <code>f &lt;char&gt;</code> | <code>buf.jump_to_next_instance_of_char(&lt;char&gt;)</code> |
 | C | <code>f space</code> | <code>buf.jump_to_next_instance_of_char(' ')</code> |
 | C | <code>g ;</code> | <code>jump.edit.prev</code> |
-| C | <code>g U U</code> | <code>buf.transform_range(:line, :upcase)</code> |
+| C | <code>g U U</code> | <code>case.line.upper</code> |
 | C | <code>g U a &lt;char&gt;</code> | <code>buf.text_object_op(:upcase, &lt;char&gt;, :a)</code> |
 | C | <code>g U i &lt;char&gt;</code> | <code>buf.text_object_op(:upcase, &lt;char&gt;, :i)</code> |
-| C | <code>g U w</code> | <code>buf.transform_range(:to_next_word, :upcase)</code> |
+| C | <code>g U w</code> | <code>case.word.upper</code> |
 | C | <code>g g</code> | <code>move.buf.start</code> |
 | C | <code>g u a &lt;char&gt;</code> | <code>buf.text_object_op(:downcase, &lt;char&gt;, :a)</code> |
 | C | <code>g u i &lt;char&gt;</code> | <code>buf.text_object_op(:downcase, &lt;char&gt;, :i)</code> |
-| C | <code>g u u</code> | <code>buf.transform_range(:line, :downcase)</code> |
-| C | <code>g u w</code> | <code>buf.transform_range(:to_next_word, :downcase)</code> |
+| C | <code>g u u</code> | <code>case.line.lower</code> |
+| C | <code>g u w</code> | <code>case.word.lower</code> |
 | C | <code>g ~ a &lt;char&gt;</code> | <code>buf.text_object_op(:swapcase, &lt;char&gt;, :a)</code> |
 | C | <code>g ~ i &lt;char&gt;</code> | <code>buf.text_object_op(:swapcase, &lt;char&gt;, :i)</code> |
-| C | <code>g ~ w</code> | <code>buf.transform_range(:to_next_word, :swapcase)</code> |
-| C | <code>g ~ ~</code> | <code>buf.transform_range(:line, :swapcase)</code> |
+| C | <code>g ~ w</code> | <code>case.word.swap</code> |
+| C | <code>g ~ ~</code> | <code>case.line.swap</code> |
 | C | <code>h</code> | <code>move.char.prev</code> |
 | C | <code>i</code> | <code>mode.insert</code> |
 | C | <code>j</code> | <code>move.line.next</code> |
@@ -180,7 +183,7 @@ its own is in the way.
 | C | <code>y e</code> | <code>buf.copy(:to_word_end)</code> |
 | C | <code>y i &lt;char&gt;</code> | <code>buf.text_object_op(:yank, &lt;char&gt;, :i)</code> |
 | C | <code>y y</code> | <code>edit.line.copy</code> |
-| C | <code>~</code> | <code>:vim_toggle_case</code> |
+| C | <code>~</code> | <code>case.char.toggle</code> |
 | I | <code>&lt;char&gt;</code> | <code>buf.insert_txt(&lt;char&gt;)</code> |
 | I | <code>backspace</code> | <code>edit.backspace</code> |
 | I | <code>ctrl-space</code> | <code>edit.complete</code> |
@@ -218,7 +221,6 @@ its own is in the way.
 | V | <code>G</code> | <code>move.buf.end</code> |
 | V | <code>G(vma.kbd.next_command_count!=nil)</code> | <code>buf.jump_to_line()</code> |
 | V | <code>J</code> | <code>buf.convert_selected_text(:joinlines)</code> |
-| V | <code>U</code> | <code>buf.transform_selection(:upcase)</code> |
 | V | <code>a &lt;char&gt;</code> | <code>buf.text_object_op(:select, &lt;char&gt;, :a)</code> |
 | V | <code>b</code> | <code>move.word.prev</code> |
 | V | <code>d</code> | <code>buf.delete(SELECTION)</code> |
@@ -228,9 +230,9 @@ its own is in the way.
 | V | <code>f &lt;char&gt;</code> | <code>buf.jump_to_next_instance_of_char(&lt;char&gt;)</code> |
 | V | <code>f space</code> | <code>buf.jump_to_next_instance_of_char(' ')</code> |
 | V | <code>g ;</code> | <code>jump.edit.prev</code> |
-| V | <code>g U</code> | <code>buf.transform_selection(:upcase)</code> |
+| V | <code>g U</code> | <code>case.sel.upper</code> |
 | V | <code>g g</code> | <code>move.buf.start</code> |
-| V | <code>g u</code> | <code>buf.transform_selection(:downcase)</code> |
+| V | <code>g u</code> | <code>case.sel.lower</code> |
 | V | <code>h</code> | <code>move.char.prev</code> |
 | V | <code>i &lt;char&gt;</code> | <code>buf.text_object_op(:select, &lt;char&gt;, :i)</code> |
 | V | <code>j</code> | <code>move.line.next</code> |
@@ -242,12 +244,10 @@ its own is in the way.
 | V | <code>pageup</code> | <code>move.page.prev</code> |
 | V | <code>q &lt;char&gt;</code> | <code>vma.kbd.set_mode(:macro);vma.macro.start_recording(&lt;char&gt;)</code> |
 | V | <code>right</code> | <code>buf.move(FORWARD_CHAR)</code> |
-| V | <code>u</code> | <code>buf.transform_selection(:downcase)</code> |
 | V | <code>up</code> | <code>buf.move(BACKWARD_LINE)</code> |
 | V | <code>w</code> | <code>move.word.next</code> |
 | V | <code>x</code> | <code>buf.delete(SELECTION)</code> |
 | V | <code>y</code> | <code>buf.copy_active_selection()</code> |
-| V | <code>~</code> | <code>buf.transform_selection(:swapcase)</code> |
 | X | <code>&lt;char&gt;</code> | <code>buf.replace_with_char(&lt;char&gt;);buf.move(FORWARD_CHAR)</code> |
 | X | <code>down</code> | <code>buf.move(FORWARD_LINE)</code> |
 | X | <code>esc</code> | <code>vma.kbd.to_previous_mode</code> |
