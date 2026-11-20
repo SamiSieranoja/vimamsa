@@ -25,8 +25,9 @@ operator-pending layer below.
 
 ## Operators: change, delete, yank
 
-- `vimlike` has no change operator at all: no `c w`, `c c`, `C`, `S`, `D` or `Y`.
-  Its `C`, `s` and `S` are bound to other actions. The `vim` keymap has these.
+- `vimlike` now has `c w`, `c e`, `c c`, `c $`, `S`, `D` and `Y`, from the shared
+  `VIM_BINDINGS` table (`vim_core.rb`). `C` and `s` stay vimlike's own actions, so
+  they remain `vim`-keymap only.
 - Many combinations are missing in both, such as `d b`, `c b`, `y b`, `d t x`,
   `c f x`, `d G`, `d g g` and `d }`. `d j` and `d k` are missing in both keymaps
   (in `vimlike` they're commented-out TODOs).
@@ -60,7 +61,7 @@ operator-pending layer below.
 
 - Line-wise visual (`V`), block visual (`ctrl-v`) and `o` (swap selection ends) are
   missing. `vimlike` binds `V` and `ctrl-v` to other actions.
-- `ctrl-x` (decrement a number) is missing; `ctrl-a` exists only in the `vim` keymap.
+- `ctrl-x` (decrement a number) is missing; `ctrl-a` is in both keymaps.
 - `gJ` (join lines without adding a space) and named registers (`"a` etc.) are
   missing.
 

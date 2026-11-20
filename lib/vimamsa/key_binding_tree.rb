@@ -47,6 +47,8 @@ class KeyBindingTree
   attr_accessor :C, :I, :cur_state, :root, :match_state, :last_action, :cur_action, :modifiers, :next_command_count, :method_handles_repeat, :default_mode
   attr_accessor :action_handler, :on_action_error, :logger, :fatal_handler, :error_handler
   attr_reader :mode_root_state, :state_trail, :act_bindings, :default_mode_stack, :actions
+  # [mode, keys] of the shared vim bindings bound by bind_vim_bindings (vim_core.rb)
+  attr_accessor :vim_added
 
   # This class is host-agnostic: it never touches the editor or GUI directly.
   # The host injects collaborators (actions registry, action_handler, logger,

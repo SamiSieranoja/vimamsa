@@ -9,7 +9,8 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | | Count |
 |---|---|
 | Conflicts (the vim binding can't be used in vimlike) | 20 |
-| Missing from vimlike (no conflict, could be added) | 19 |
+| Added to vimlike from the shared table (`VIM_BINDINGS`, vim_core.rb) | 19 |
+| Missing from vimlike (no conflict, could be added) | 0 |
 | Shared (same keys, same action) | 187 |
 
 ## Conflicts
@@ -37,7 +38,10 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | V | <code>ctrl-c</code> | <code>buf.end_visual_mode</code> | <code>buf.comment_selection</code> | same keys, other action |
 | V | <code>s</code> | <code>:vim_change_selection</code> | <code>EasyJump.start</code> | same keys, other action |
 
-## Missing from vimlike
+## Added to vimlike
+
+Vim bindings that vimlike loads from the shared table because nothing of
+its own is in the way.
 
 | Mode | Vim keys | Vim action |
 |---|---|---|
@@ -60,6 +64,11 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | V | <code>&lt;</code> | <code>buf.unindent_selection</code> |
 | V | <code>&gt;</code> | <code>buf.indent_selection</code> |
 | V | <code>c</code> | <code>:vim_change_selection</code> |
+
+## Missing from vimlike
+
+| Mode | Vim keys | Vim action |
+|---|---|---|
 
 ## Shared
 

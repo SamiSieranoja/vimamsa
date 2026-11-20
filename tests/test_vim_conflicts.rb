@@ -29,7 +29,7 @@ class TestVimConflicts < VmaTest
     r = row("C", "s")                                       # vim substitute, vimlike easy_jump
     assert_eq [:conflict, :same_keys], [r[:status], r[:why]]
     r = row("C", "c c")                                     # vimlike has no c operator
-    assert_eq :missing, r[:status]
+    assert_eq :added, r[:status]                            # so it comes from VIM_BINDINGS
     assert_eq :shared, row("C", "d i <char>")[:status]      # text objects in both
   end
 
@@ -44,6 +44,43 @@ class TestVimConflicts < VmaTest
     assert_eq [:conflict, :prefix], st.(",").values_at(:status, :why)
     assert_eq [:conflict, :wildcard], st.("q a").values_at(:status, :why)
     assert_eq :missing, st.("t <char>")[:status]
+  end
+
+  # Everything vimlike could take from the shared table, it took
+  def test_nothing_left_missing
+    missing = rows.select { |r| r[:status] == :missing }
+    assert missing.empty?, missing.map { |r| "#{r[:mode]} #{r[:keys].join(" ")}" }.inspect
+  end
+
+  # The live vimlike tree (the one the tests run with) has the added
+  # bindings, and they behave as in vim
+  def test_added_bindings_work_in_vimlike
+    assert vma.kbd.vim_added.include?(["C", ["c", "w"]]), "c w not added"
+    buf.set_content("foo bar baz\n")
+    buf.set_pos(4)
+    keys("D")
+    assert_buf "foo \n"
+    assert_mode :command
+
+    buf.set_content("foo bar\n")
+    buf.set_pos(0)
+    keys("c w x esc")
+    assert_buf "x bar\n"
+    assert_mode :command
+
+    buf.set_content("  foo\nbar\n")
+    buf.set_pos(3)
+    keys("S y esc")
+    assert_buf "y\nbar\n"
+  end
+
+  # Conflicting vim bindings are not loaded: vimlike's own action stays
+  def test_vimlike_keeps_its_own_bindings
+    st = vim_binding_status(vma.kbd, "C", ["s"], :vim_substitute_char)
+    assert_eq [:conflict, :same_keys], st.values_at(:status, :why)
+    assert !vma.kbd.vim_added.include?(["C", ["s"]])
+    # Adding C ctrl-f (:page_down) doesn't change the key the menu shows
+    assert_eq "pagedown", vma.kbd.act_bindings["C"][:page_down]
   end
 
   def test_loading_schemes_leaves_editor_alone

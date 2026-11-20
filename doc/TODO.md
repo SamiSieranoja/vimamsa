@@ -150,16 +150,16 @@ State (2026-11-19):
    - `d j`, `d k`: missing in both; in vimlike they're commented-out TODOs at
      `key_bindings_vimlike.rb:222-223`
    - `d G`, `d g g`; `d }`, `d {`, `y }`; `d %`; `d ^`, `y ^`
-   - vimlike has no change operator at all (`c`, `C`, `s`, `S` are bound to other
-     things), so it needs a key decision first. See `doc/vimlike_vim_conflicts.md`.
+   - vimlike now has `c w`, `c e`, `c c`, `c $`, `S` from the shared vim table
+     (2026-11-20); `C` and `s` stay vimlike's own. See `doc/vimlike_vim_conflicts.md`.
 3. **Missing motions** (they then also work after operators):
    - `W` / `E` / `ge` (`B` is commented out in vimlike)
    - `T x`, and `,` (`;` exists)
    - `%`, `{` / `}`, `(` / `)`
    - `H` / `L` (`M` is taken in vimlike), `#`
 4. **Doubled operators / other count commands**:
-   - `>>` / `<<` with counts, and Visual `>` / `<` in vimlike
-   - `ctrl-a` / `ctrl-x` (neither is in vimlike)
+   - `>>` / `<<` with counts (Visual `>` / `<` are now in vimlike too)
+   - `ctrl-x` (`ctrl-a` is now in vimlike, from the shared vim table)
    - check that `3 r x`, `3 p` and `J` / `gJ` with counts apply the count correctly
 5. **Larger, already planned**: line-wise `V`, block `ctrl-v`, `o` / `gv` in Visual
    mode, named registers (`"a`). See plan steps 4–5.
@@ -443,6 +443,53 @@ Depends on / ties in with:
 ### Modules page and module extraction
 
 See `doc/modules_settings_plan.md`.
+
+### Consistent, hierarchical action names
+
+Action ids are ad hoc. They mix verb-first and noun-first names, use implementation
+prefixes (`gui_`, `vim_`, `e_`, `V_`), contain duplicates (`undo` / `edit_undo`,
+`move_next_line` / `forward_line`, …) and use inconsistent words (forward / next,
+buf / buffer). Plan: `doc/action_names_plan.md`.
+- the scheme is `<namespace>_<object>[_<variant>]`, e.g. `move_word_next`, `buf_close`, `sel_copy`
+- namespaces map onto the key bindings report categories
+- `ACTION_ALIASES` keep the old ids working in `custom.rb` and in saved macros
+- `Action#namespace` replaces the unused `:group` option
+
+### Replace complicated shell scripts with Ruby scripts
+
+The longer scripts have outgrown bash: env-var parsing, error handling, quoting,
+retries and many steps. Port them to Ruby. Ruby is already the project language,
+so testing and sharing helpers between scripts gets easier.
+
+Candidates (lines as of 2026-11-20):
+- `run_tests_vm.sh` (130): host side; VBoxManage calls, syncing, required-variable checks.
+  The snapshot reset in `doc/vm_snapshots_plan.md` is the next big addition, so port first.
+- `vm_guest_run.sh` (120): guest side; provisioning, gem build, test run
+- `scripts/appimage/build_in_container.sh` (192): the AppImage build
+
+Keep as shell:
+- small wrappers: `run_e2e_vm.sh`, `scripts/appimage/build.sh`,
+  `scripts/appimage/smoke_test.sh`, `install.sh`, `docker_cmd.sh`
+
+Constraints:
+- **Bootstrap without Ruby.** A clean VM (the `clean` snapshot) has no Ruby, and
+  `vm_guest_run.sh` is what installs it (`apt-get install ruby ruby-dev …`). So
+  keep a few lines of shell that install Ruby if it's missing and then `exec`
+  the `.rb` script.
+- Same for the AppImage container: the Dockerfile installs no system Ruby, and the
+  script builds the bundled Ruby itself. Either add `ruby` to the Dockerfile for the
+  build script only (it must not leak into the AppDir), or keep the steps before
+  the Ruby build in shell.
+- Use only the standard library (`open3`, `fileutils`, `optparse`); no gems,
+  because they aren't installed yet when the script runs.
+- Keep the same interface: env vars (`VM_NAME`, `VM_USER`, `VM_PASS`, `VM_DISPLAY`,
+  `FORCE_PROVISION`, `VMA_TEST_ARGS`, `VMA_REF`, `RUBY_VERSION`), the arguments, and the exit codes
+  (the suite's 0/1, 2 for missing variables). Never print `VM_PASS`.
+- Shared helpers (run a command and echo `>>` steps, fail with a message) go in
+  `scripts/lib/`.
+- Update the references in `CLAUDE.md`, `doc/vm_snapshots_plan.md` and
+  `doc/bundling_plan.md`.
+- Check each port with a full VM run (`run_tests_vm.sh`) or an AppImage build plus its smoke test.
 
 ## DONE
 

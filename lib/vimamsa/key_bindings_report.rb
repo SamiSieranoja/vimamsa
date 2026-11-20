@@ -121,7 +121,8 @@ end
 # Compare each binding of the vim keymap with the vimlike keymap (tree
 # `other`, default: a fresh vimlike tree with no module or custom.rb
 # bindings). Returns rows {mode:, keys:, action:, status:, why:, other:}:
-#   :shared   same keys, same action
+#   :shared   same keys, same action, bound by vimlike itself
+#   :added    vimlike got it from the shared table (bind_vim_bindings)
 #   :missing  vimlike has nothing there, so the binding could be added
 #   :conflict vimlike uses the keys differently; why is one of
 #     :same_keys   same keys bound to another action
@@ -131,8 +132,10 @@ end
 def vim_binding_conflicts(other = nil)
   other ||= load_scheme_kbd("vimlike")
   vim = load_scheme_kbd("vim")
+  added = other.vim_added || []
   kbd_leaf_bindings(vim).map { |mode, keys, action|
     row = { mode: mode, keys: keys, action: kbd_action_code(action, vim.actions) }
+    next row.merge(status: :added) if added.include?([mode, keys])
     row.merge(vim_binding_status(other, mode, keys, action, vim.actions))
   }
 end
@@ -230,6 +233,7 @@ def vim_binding_conflicts_report(rows = vim_binding_conflicts)
   out << "Bindings that modules and `custom.rb` add at startup are not included.\n\n"
   out << "| | Count |\n|---|---|\n"
   out << "| Conflicts (the vim binding can't be used in vimlike) | #{by.fetch(:conflict, []).size} |\n"
+  out << "| Added to vimlike from the shared table (`VIM_BINDINGS`, vim_core.rb) | #{by.fetch(:added, []).size} |\n"
   out << "| Missing from vimlike (no conflict, could be added) | #{by.fetch(:missing, []).size} |\n"
   out << "| Shared (same keys, same action) | #{by.fetch(:shared, []).size} |\n\n"
 
@@ -239,6 +243,11 @@ def vim_binding_conflicts_report(rows = vim_binding_conflicts)
     vl = ok == r[:keys] ? act.(oa) : "#{code.(ok.join(" "))} #{act.(oa)}"
     vl = code.(oa) if r[:why] == :prefix
     out << "| #{r[:mode]} | #{code.(r[:keys].join(" "))} | #{act.(r[:action])} | #{vl} | #{VIM_CONFLICT_WHY[r[:why]]} |\n"
+  }
+  out << "\n## Added to vimlike\n\nVim bindings that vimlike loads from the shared table because nothing of\n"
+  out << "its own is in the way.\n\n| Mode | Vim keys | Vim action |\n|---|---|---|\n"
+  by.fetch(:added, []).each { |r|
+    out << "| #{r[:mode]} | #{code.(r[:keys].join(" "))} | #{act.(r[:action])} |\n"
   }
   out << "\n## Missing from vimlike\n\n| Mode | Vim keys | Vim action |\n|---|---|---|\n"
   by.fetch(:missing, []).each { |r|

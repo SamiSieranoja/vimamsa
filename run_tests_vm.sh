@@ -117,6 +117,7 @@ set +e
   --putenv="VMA_TEST_ARGS=$*" \
   --putenv="FORCE_PROVISION=${FORCE_PROVISION:-}" \
   --putenv="VMA_E2E_INTERACTIVE=${VMA_E2E_INTERACTIVE:-}" \
+  --putenv="VMA_UPDATE_DOC=${VMA_UPDATE_DOC:-}" \
   -- "${GUEST_HOME}/vm_guest_run.sh" 2>&1 | tee "$OUT"
 set -e
 
@@ -127,4 +128,14 @@ if [ -z "$sentinel" ]; then
   exit 5
 fi
 echo ">> Suite exit code (from guest): $sentinel"
+
+# VMA_UPDATE_DOC=1: tests that generate a tracked doc (test_vim_conflicts)
+# wrote it in the guest; copy it back into this working tree.
+if [ "${VMA_UPDATE_DOC:-}" = "1" ]; then
+  for f in doc/vimlike_vim_conflicts.md; do
+    echo ">> Copying regenerated $f from guest"
+    "${GC[@]}" copyfrom "${CRED[@]}" --target-directory="${REPO}/doc/" "${GUEST_HOME}/vimamsa/$f" ||
+      echo "!! could not copy $f back" >&2
+  done
+fi
 exit "$sentinel"

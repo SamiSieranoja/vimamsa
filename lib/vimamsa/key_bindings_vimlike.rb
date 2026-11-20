@@ -447,4 +447,9 @@ bindkey "C , i p", "generate_password_to_buf(15)"
 
 # Vim text objects (diw, ci", ya(, vip, ...), see text_objects.rb
 bind_vim_text_objects
+
+# Vim bindings from the shared table (vim_core.rb) that don't conflict with
+# the bindings above; the rest are listed in doc/vimlike_vim_conflicts.md.
+# Keep this last, so every vimlike binding counts as taken.
+bind_vim_bindings(only_free: true)
 end # module Vimamsa
