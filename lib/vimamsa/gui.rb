@@ -1504,7 +1504,38 @@ class VMAgui
         l[:maximized] ? @window.maximize : @window.set_default_size(l[:width], l[:height])
         apply_view_layout(l) if @view_layout_restored
       end
+      undo_auto_maximize
       false
+    }
+  end
+
+  # GNOME (mutter, org.gnome.mutter auto-maximize) maximizes a new window that
+  # covers most of the screen, so a saved window only a little smaller than
+  # the screen would come back maximized, and be saved so at quit. For a
+  # while after the first map: if the layout says not maximized but the
+  # window is, unmaximize it to the saved size.
+  def undo_auto_maximize
+    l = @startup_layout
+    return if l.nil? || l[:maximized]
+    tries = 0
+    GLib::Timeout.add(100) {
+      if @window.maximized?
+        @window.unmaximize
+        # Unmaximizing is asynchronous: set the size once it's done, or the
+        # window manager's own unmaximized size wins
+        waits = 0
+        GLib::Timeout.add(50) {
+          if !@window.maximized?
+            @window.set_default_size(l[:width], l[:height])
+            false
+          else
+            (waits += 1) < 60 # 3 s
+          end
+        }
+        false
+      else
+        (tries += 1) < 20 # 2 s
+      end
     }
   end
 

@@ -216,4 +216,85 @@ class TestWindowLayout < VmaTest
                 "second start: #{second.inspect}\nsaved: #{Marshal.load(File.binread("#{ud}/#{VMAgui::LAYOUT_FILE}")).inspect}"
     }
   end
+
+  # custom.rb for a real startup: after 3 s, run the Ruby code in steps (a
+  # list of [delay ms, code] run one after another), then write the window
+  # layout to dir/name and quit
+  def layout_custom_rb(dir, name, steps = [])
+    chain = steps.reverse.inject("File.binwrite(#{"#{dir}/#{name}".inspect}, Marshal.dump(vma.gui.window_layout))\n" \
+                                 "GLib::Timeout.add(1000) { vma.shutdown; false }") { |inner, (ms, code)|
+      "#{code}\nGLib::Timeout.add(#{ms}) {\n#{inner}\nfalse }"
+    }
+    "def hook_custom_after_init\n  GLib::Timeout.add(3000) {\n#{chain}\nfalse }\nend\n"
+  end
+
+  # Maximize (full display), then make the window somewhat narrower, keeping
+  # the full height (like dragging its side edge), and quit: the next starts
+  # get that size back, not the maximized one, and starting and quitting
+  # doesn't change it.
+  def test_resized_after_maximize_restored
+    skip "needs a display" unless ENV["DISPLAY"] || ENV["WAYLAND_DISPLAY"]
+    Dir.mktmpdir { |dir|
+      ud = "#{dir}/ud"
+      Dir.mkdir(ud)
+      mw, mh = gui.monitor_size(gui.layout_monitor)
+      # Each step waits (up to 8 s) for the window manager to really
+      # maximize or unmaximize: with animations, or on a busy machine, that
+      # can take a while
+      File.write("#{ud}/custom.rb", <<~RUBY)
+        def hook_custom_after_init
+          win = vma.gui.window
+          save = ->(name) { File.binwrite(#{dir.inspect} + "/" + name, Marshal.dump(vma.gui.window_layout)) }
+          wait = ->(cond, done) {
+            t0 = Time.now
+            GLib::Timeout.add(100) { (cond.() || Time.now - t0 > 8) ? (done.(); false) : true }
+          }
+          GLib::Timeout.add(3000) {
+            win.maximize
+            wait.(-> { win.maximized? }, -> {
+              GLib::Timeout.add(500) { # let the maximized size settle
+                save.("max")
+                w, h = win.width, win.height
+                win.unmaximize
+                wait.(-> { !win.maximized? }, -> {
+                  win.set_default_size((w * 0.85).to_i, h)
+                  GLib::Timeout.add(1500) {
+                    save.("run1")
+                    GLib::Timeout.add(1000) { vma.shutdown; false }
+                    false
+                  }
+                })
+                false
+              }
+            })
+            false
+          }
+        end
+      RUBY
+      run_editor(ud)
+      max = Marshal.load(File.binread("#{dir}/max"))
+      assert_eq true, max[:maximized], "the window manager didn't maximize the window within 8 s: #{max.inspect}"
+      maxw = max[:win_width]
+      first = Marshal.load(File.binread("#{dir}/run1"))
+      assert_eq false, first[:maximized], "still maximized after unmaximize: #{first.inspect}"
+      fw, fh = first.values_at(:width, :height)
+      w = (maxw * 0.85).to_i
+      # The window manager may adjust it a little, but it must be narrower
+      # than the maximized window
+      assert fw < maxw && (fw - w).abs <= 50, "resized width #{fw}, asked #{w}, maximized #{maxw}, monitor #{mw}x#{mh}"
+
+      File.write("#{ud}/custom.rb", layout_custom_rb(dir, "run2"))
+      run_editor(ud)
+      second = Marshal.load(File.binread("#{dir}/run2"))
+      saved = Marshal.load(File.binread("#{ud}/#{VMAgui::LAYOUT_FILE}")).inspect
+      assert_eq [false, fw, fh], second.values_at(:maximized, :width, :height),
+                "second start: #{second.inspect}\nsaved: #{saved}"
+
+      File.write("#{ud}/custom.rb", layout_custom_rb(dir, "run3"))
+      run_editor(ud)
+      third = Marshal.load(File.binread("#{dir}/run3"))
+      assert_eq [false, fw, fh], third.values_at(:maximized, :width, :height),
+                "third start (after a plain start and stop): #{third.inspect}"
+    }
+  end
 end
