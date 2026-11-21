@@ -119,9 +119,9 @@ class TestKeylogPanel < VmaTest
       assert h.markup.include?("<b>j</b>"), "hint was #{h.markup.inspect}"
       assert !h.markup.include?("[COMMAND]"), "hint has the mode: #{h.markup.inspect}"
       _x, y = vma.gui.view.pos_to_coord(vma.buf.pos)
-      top = h.label.margin_top
+      top = h.widget.margin_top
       assert (top - y).abs < 100, "hint at y #{top}, cursor at y #{y}"
-      assert h.label.can_target? == false, "the hint takes mouse input"
+      assert h.widget.can_target? == false, "the hint takes mouse input"
     end
   end
 
@@ -134,10 +134,29 @@ class TestKeylogPanel < VmaTest
       keys "v"
       drain_for(0.05)
       assert panel.hint.markup.include?("VISUAL"), panel.hint.markup
+      # the badge's own CSS classes, as the status badge: same theme colors
+      ml = panel.hint.mode_label
+      assert ml.has_css_class?("mode-badge") && ml.has_css_class?("mode-visual"), ml.css_classes.inspect
+      assert !ml.has_css_class?("mode-command"), ml.css_classes.inspect
       keys "esc"
       keys "i"
       drain_for(0.05)
       assert panel.hint.markup.include?("INSERT"), panel.hint.markup
+      keys "esc"
+    end
+  end
+
+  # A long bubble on a long line stays inside the editor (it used to be
+  # placed by the width of the previous, shorter text)
+  def test_hint_fits_in_view
+    with_panel do
+      keys "i"
+      keys ("a b c d e f g h " * 6).strip
+      drain_for(0.1)
+      w = panel.hint.widget
+      ov = vma.gui.active_window[:overlay]
+      right = w.measure(:horizontal, -1)[1] - w.margin_end # measure counts margin_start
+      assert right <= ov.width + 1, "hint ends at x #{right}, editor is #{ov.width} wide"
       keys "esc"
     end
   end
