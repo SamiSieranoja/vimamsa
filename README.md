@@ -49,7 +49,7 @@ gh attestation verify Vimamsa-x86_64.AppImage --repo SamiSieranoja/vimamsa
 ## Install as a Ruby gem
 
 Requirements:
- - Ruby 3.1+
+ - Ruby 3.2+
  - GTK 4
 
 On Ubuntu (24.04):

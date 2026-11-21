@@ -501,7 +501,8 @@ when the development machine moves to Ubuntu 26.04.
   `exe/run_tests.rb` load `lib/`/`ext/` next to the script; dead `ext/stridx` load
   path removed; the desktop launcher runs `$APPIMAGE` when set (quoted per the
   Desktop Entry spec); gemspec `required_ruby_version >= 3.1` (3.1 untested; the VM
-  runs 3.2). Tests: `tests/test_bundling.rb`. Code change 5 (the `ruby-lsp` binstub
+  runs 3.2). Raised to `>= 3.2` on 2026-11-21 (`scan_indexes` uses
+  `MatchData#byteoffset`). Tests: `tests/test_bundling.rb`. Code change 5 (the `ruby-lsp` binstub
   on PATH) belongs to AppRun, so it comes with `scripts/build_appimage.sh`.
 - **AppImage build script** (2026-11-19, `bc43676`): `scripts/appimage/build.sh`
   (host, Docker) runs `scripts/appimage/build_in_container.sh` in the Ubuntu 24.04

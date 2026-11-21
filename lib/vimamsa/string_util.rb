@@ -107,10 +107,24 @@ module Vimamsa
     camel_case_words.join
   end
 
-  # Get all indexes for start of matching regexp
+  # Get all (character) indexes for start of matching regexp.
+  # MatchData#begin counts characters from the start of the string on every
+  # call when the text is not ASCII-only, which made this O(n^2): 13 s for the
+  # line ends of a 5.5 MB file with one "ä". Instead count only the characters
+  # between consecutive matches, using byte offsets.
   def scan_indexes(txt, regex)
-    # indexes = txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0) + 1 }
-    indexes = txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0) }
+    if txt.ascii_only?
+      return txt.enum_for(:scan, regex).map { Regexp.last_match.begin(0) }
+    end
+    indexes = []
+    bpos = 0
+    cpos = 0
+    txt.scan(regex) do
+      b = Regexp.last_match.byteoffset(0)[0]
+      cpos += txt.byteslice(bpos, b - bpos).size
+      bpos = b
+      indexes << cpos
+    end
     return indexes
   end
 

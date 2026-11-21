@@ -450,10 +450,200 @@ Action ids are ad hoc. They mix verb-first and noun-first names, use implementat
 prefixes (`gui_`, `vim_`, `e_`, `V_`), contain duplicates (`undo` / `edit_undo`,
 `move_next_line` / `forward_line`, …) and use inconsistent words (forward / next,
 buf / buffer). Plan: `doc/action_names_plan.md`.
-- the scheme is `<namespace>_<object>[_<variant>]`, e.g. `move_word_next`, `buf_close`, `sel_copy`
+- dotted ids, from general to specific: `move.word.next`, `buf.close`, `sel.copy`
+- an `a` proxy like `cnf`: `bindkey "C w", a.move.word.next`, and `a.buf.save!` runs an action
 - namespaces map onto the key bindings report categories
 - `ACTION_ALIASES` keep the old ids working in `custom.rb` and in saved macros
-- `Action#namespace` replaces the unused `:group` option
+- `Action#path` replaces the unused `:group` option
+
+### Tab completes file names on the command line
+
+`:!cat /proc/cpu<tab>` should complete to `:!cat /proc/cpuinfo`. Today the command
+line (`lib/vimamsa/gui_command_line.rb`) handles only Escape, Up and Down. Tab
+does nothing useful.
+- Complete the word before the cursor as a path: absolute, `~/…`, or relative to the
+  current buffer's directory (or the working directory for unsaved buffers).
+- A single match is completed in place, with `/` added for a directory. Several
+  matches complete to their longest common prefix. A second Tab lists them, in the
+  message area or a small popup.
+- Works for `:!cmd` and `:e`, and anywhere a word looks like a path. Escape spaces,
+  or quote the path, as the shell needs.
+- Later: complete command names after `:!` from `$PATH`, and action ids after
+  `:a.` (`doc/action_names_plan.md`).
+- Test: in a temp directory with `foo_one`, `foo_two` and `bar/`, `:e ba<tab>` gives
+  `bar/`, and `:e fo<tab>` gives `foo_`.
+
+### Keymap syntax that isn't Ruby code (`map` strings and keymap files)
+
+Declare keymaps in a plain text format, one binding per line, instead of Ruby hashes:
+
+```
+# today (key_bindings_vimlike.rb)
+"C z " => "mode.browse",
+
+# keymap file
+C z         mode.browse
+VC l        move.char.next
+C d <num> e edit.delete.word_end
+```
+
+The last token is the action id; everything before it is the mode and the keys, in
+the notation used today. This depends on the dotted ids from
+`doc/action_names_plan.md`: an id always contains a `.`, so it can't be mistaken for
+a key name.
+- The same syntax works in two places:
+  - **In Ruby, as a multiline string passed to `map`**, so it can sit in the scheme
+    files, in modules and in `custom.rb`:
+
+    ```ruby
+    map <<~KEYS
+      [motion]
+      VC h  move.char.prev
+      VC l  move.char.next
+      C z   mode.browse
+    KEYS
+    ```
+  - **In separate files** (optional), such as `keymaps/vimlike.keys`, or a user file in
+    the config dir that is loaded after the scheme. This lets users rebind keys without
+    writing Ruby. Loading a file is just `map(File.read(path))`, with the file name
+    used in error messages.
+- Lines starting with `#` are comments. A section line such as `[motion]` sets the
+  category for the lines below it (`doc/key_bindings_report_plan.md`).
+- Conditions (today `I tab(vma.buf.view.autocp_active)`) become named conditions
+  defined in Ruby: `I tab  edit.complete.next  when completion_open`.
+- Key sets for operators and motions (`doc/vim_compatibility_plan.md`, step 1) need a
+  block syntax, e.g. `set op` … `end`, plus template lines like `C <op> <motion>
+  operator.motion`.
+- No Ruby code in the keymap syntax. The Ruby-string bindings get named actions first (the
+  "Descriptive names for key bindings" item).
+- The parser reports errors with file and line: an unknown action, an unknown key
+  name, a mode that doesn't exist. For a `map` string, the line is the calling
+  file's line plus the offset inside the string (`caller_locations`).
+- Parse into the same `add_keys` / `bindkey` calls, so the tree, the conflict
+  report and the tests don't change. A test checks that the `map` version of a
+  scheme gives the same tree as the `add_keys` hashes it replaces.
+
+### Git functions as a separate module
+
+Move the git features into `modules/git/`: "Show git diff" of the current file
+(`buf.diff.git`, `git_diff_buffer`) and of the whole repo (`file.diff.repo`, `git_diff_w`).
+Both are in `lib/vimamsa/diff_buffer.rb` today.
+
+Stays in core:
+- the diff view: the `diffview` minor mode, `DiffLineMapper`, jump to source, and the
+  unsaved-changes diff (`buf.diff`, which uses plain `diff`)
+- project-root detection by a `.git` directory (`editor.rb:823`). It only looks for a
+  marker and doesn't run git.
+
+Changes needed in the module interface (checked 2026-11-20):
+- **Default on.** Modules are off unless `cnf.modules.<name>.enabled` is set. Only
+  `color_highlight` gets a default, hardcoded in core (`conf.rb:165`). Git diff is an
+  existing feature, so add `default_enabled: true` to `_info` and drop the hardcoded
+  default.
+- **Menu entries anywhere.** `gui_menu.rb:57-58` hardcodes the git items under
+  Actions ▸ experimental. Modules can only add items to the top-level Modules menu
+  (`add_module_action`). Let a module add items to any menu path, and remove them in
+  `<name>_disable`.
+- **Core code that knows about git.** `Buffer#git_root` and `resolve_diff_path`, which
+  runs `git rev-parse` itself, are git-specific. Replace them with a generic
+  `diff_base_dir` (the directory that relative `a/` and `b/` paths in a diff are
+  relative to). The module sets it when it creates the diff buffer.
+- **A public diff view API.** The module has to open a diff buffer in diff view
+  without copying core code. Something like `open_diff_buffer(text, name, base_dir:)`,
+  which does what `create_new_buffer` + `gui_set_file_lang("diff")` + `diffview` do
+  today.
+- **Actions of a disabled module.** Today they give "Unknown action". Instead, say
+  "enable the git module (Settings ▸ Modules)". For this, `_info` lists the module's
+  action ids (`actions: ["git.diff.buf", "git.diff.repo"]`). This also lets the
+  `ACTION_ALIASES` entries (`git_diff_buffer` → …) point to module actions. The alias
+  test then allows an alias whose target belongs to a module.
+- **Requirements.** The `git` executable, through the `requirements:` key from
+  `doc/modules_settings_plan.md`. Check it with `which git`.
+- **Tests.** `tests/test_diff_buffer_name.rb` calls `git_diff_buffer` directly. Add a
+  test helper that loads and initializes a module for one test (`with_module(:git)`),
+  so module tests don't depend on the user's settings.
+
+Renames (with aliases): `buf.diff.git` → `git.diff.buf`, `file.diff.repo` →
+`git.diff.repo`. Later candidates for the module: blame, log of the current file,
+stage the current file.
+
+### Open links in Markdown files, as with hpt `⟦…⟧` links
+
+Enter (`handle_line_action`) on a link in a `.md` file should open it, as it does
+for hyperplaintext links `⟦file⟧`. For example `[vimlike_vim_conflicts.md]` or
+`[the report](vimlike_vim_conflicts.md)` in `doc/vim_compatibility_plan.md`.
+
+Why it fails today (`Buffer#get_cur_nonwhitespace_word`, `buffer.rb:1514`):
+- The word under the cursor is cut at white space, so it keeps the brackets:
+  `[vimlike_vim_conflicts.md](vimlike_vim_conflicts.md)`. That's not an existing
+  file, a URL, a `file:line` pointer or a `⟦…⟧` link.
+- A relative path resolves against `bufs.last_dir`, not the directory of the file
+  that contains the link. `hpt_check_cur_word` does use the buffer's directory.
+- In `[link text](target)`, the cursor is often on the link text, which may contain
+  spaces, so the target isn't in the "word" at all.
+
+To do:
+- Recognize the Markdown link forms around the cursor on the current line (not by
+  white-space word):
+  - `[text](target)` and `[text](target "title")`, with the cursor anywhere on it
+  - `<https://…>` autolinks
+  - `[text][ref]` and `[ref]` with a `[ref]: target` definition in the file
+  - a bracketed file name `[name.md]` that exists next to the file, as in the
+    example above
+- Resolve relative targets against the file's directory, like `hpt_check_cur_word`.
+- `target#anchor`: open the file and jump to the heading whose GitHub-style slug
+  matches.
+- Then dispatch as now: text file → open it, URL → browser, other file →
+  default program (`handle_word`). Also offer it in the context menu.
+- Maybe share this with `file_path_at` (`buffer.rb:1561`), which already strips
+  surrounding brackets and punctuation for the hover/open-file check.
+- Tests: Enter on each form in a temp `.md` file opens the right file and line.
+
+### WYSIWYG editing: rich text with hidden markup
+
+Bold, italic and font size shown as formatting, with the markup hidden in the file
+and shown only on request ("Show markup"). The buffer holds only the visible text,
+the formatting is a separate span model mirrored to GtkTextView tags, and the hpt
+markers are the file format. Plan: `doc/wysiwyg_plan.md`.
+
+### Changesets as the change format
+
+Replace the `[pos, op, len, text]` delta arrays with OT-style changesets (`retain` /
+`delete` / `insert`, with optional attributes), as in CodeMirror and Quill. They give
+one `map_pos` for every position-based structure, composed undo groups, formatting
+changes for WYSIWYG, and later `transform` for multiple cursors. Decided 2026-11-21.
+Plan: `doc/delta_syntax_plan.md`.
+
+### Performance: line ends and UTF-8 indexing in large files
+
+Measured 2026-11-21 in plain Ruby 3.4, ~55-character lines. Fixed already:
+`scan_indexes` (O(n^2) on non-ASCII text: 13 s → about 0.1 s for 5.5 MB) and
+`get_line_end` (`select` → `bsearch`). See DONE.
+
+Still open:
+- **`update_line_ends` shifts every later line end on each edit** (`buffer.rb:1209`,
+  a Ruby `collect!` loop). That's 0.65 ms per edit at 10k lines and 6.3 ms at 100k,
+  and it's paid for each delta (a replace pays it twice).
+  - Replace `@line_ends` with a Fenwick tree (binary indexed tree) over line lengths
+    behind a small interface (`line_start(i)`, `line_of(pos)`, `line_count`). Both
+    edits and lookups are then O(log n). About 40 lines of code, but `@line_ends[...]`
+    is used directly in many places, which must move to the interface.
+  - Simpler alternative: lazy shifting. Store "shift from index k by d", and apply it
+    only when an edit lands somewhere else. Typing on one line is then O(1).
+  - Do it with the changeset `map_pos` work (`doc/delta_syntax_plan.md`, step 3), which
+    moves the position updates out of `run_delta` anyway.
+- **UTF-8 character indexing.** Ruby strings have no character index. Once a buffer
+  contains one non-ASCII character, every `self[pos]`, `insert` and `slice!` scans from
+  the start. That's 0.5 ms each at 5.5 MB, versus 0.002 ms for ASCII-only text. Motions
+  and syntax checks make many such calls per keystroke.
+  - First profile typing and moving around in a large non-ASCII file in the real editor
+    (`perf`, or `ruby-prof`) to see whether this dominates.
+  - If it does, the options are:
+    - a checkpoint index: character → byte offset every ~4 KB, updated through a
+      Fenwick tree, used for `byteslice` access
+    - a rope: a balanced tree of chunks with character counts per node. This changes
+      the `Buffer < String` model, so it's a last resort.
+- The GTK side needs nothing: `GtkTextBuffer` is already a B-tree.
 
 ### Replace complicated shell scripts with Ruby scripts
 
@@ -494,6 +684,13 @@ Constraints:
 ## DONE
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
+
+- **Fast line ends for non-ASCII text** (2026-11-21, not yet committed): `scan_indexes`
+  (`string_util.rb`) counts characters only between consecutive matches, using byte
+  offsets, instead of calling `MatchData#begin`, which counts from the start of the
+  file each time. Loading the line ends of a 5.5 MB file with one non-ASCII character
+  went from 13 s to about 0.1 s. `get_line_end` uses `bsearch` instead of `select`.
+  Tests: `tests/test_line_ends.rb`.
 
 - **Restore window geometry and view layout on startup** (2026-11-18, `99cd484`): window
   size/maximized, file/func/keylog panels with widths, two-column split and file, and

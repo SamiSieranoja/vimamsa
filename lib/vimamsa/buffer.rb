@@ -1062,7 +1062,7 @@ class Buffer < String
   end
 
   def get_line_end(pos)
-    return @line_ends.select { |x| x > pos }.min
+    return @line_ends.bsearch { |x| x > pos } # @line_ends is sorted
   end
 
   def comment_selection(op = :comment)
