@@ -1,4 +1,5 @@
 
+#TODO: separate this into its own module. Could ack be included in appimage? If yes, enable by default (if appimage).
 module Vimamsa
 # Interface for ack! https://beyondgrep.com/
 
@@ -83,6 +84,7 @@ class FileContentSearch
   end
 end
 
+#TODO: avoid global functions. put into own module or class. 
 def gui_ack()
   search_paths = vma.get_content_search_paths.join("<br/>")
 

@@ -21,6 +21,8 @@ class HookItem
   end
 end
 
+#TODO: add a few comments/examples on how to use this
+
 #$hook.register(:puts,"puts")
 #$hook.call(:puts,"AAAA")
 

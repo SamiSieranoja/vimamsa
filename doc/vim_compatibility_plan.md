@@ -168,6 +168,7 @@ binds `d <x>` to something of its own, that wins, and the report lists it.
 
 ### 2. Missing motions
 
+
 - `t` / `T`, with `;` and `,` repeating them.
 - `%`.
 - `?`, and `#` for the word under the cursor.
@@ -200,7 +201,7 @@ through other keys if wanted.
 - `.` repeats the last change exactly: the operator, the motion and count, and
   any text typed in Insert mode. Recording changes as data (step 1) makes this
   possible.
-- One Insert-mode session (`i...esc`) is one undo step.
+- One Insert-mode session (`i...esc`) is one undo step. (TODO: this should be configurable option. if user spends a long time in insert mode, this doesn't make sense)
 
 ### 5. Ex commands
 
