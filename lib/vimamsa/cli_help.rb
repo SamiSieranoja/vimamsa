@@ -38,6 +38,7 @@ def self.cli_load_actions
   require "vimamsa/key_actions"
   ed.kbd = KeyBindingTree.new(actions: ed.actions)
   require "vimamsa/key_bindings_vimlike"
+  form_input_setup
   require "vimamsa/text_transforms"
   BufferManager.init
   Bookmarks.init

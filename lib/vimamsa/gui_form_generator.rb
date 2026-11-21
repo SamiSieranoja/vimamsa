@@ -26,10 +26,15 @@ class PopupFormGenerator
   def self.popup_active? = !@@popup_active.nil?
   def self.popup_queue_size = @@popup_queue.size
 
+  # The form's keys go through the key bindings, in form mode (form_input.rb)
+  attr_reader :form
+
   def submit()
-    for id, entry in @vals
-      @ret[id] = entry.text
+    for id, field in @vals
+      @ret[id] = field.text
     end
+    # Back to the editor's mode before the callback, which may change it
+    @form.deactivate
     if !@callback.nil?
       run_dialog_callback("form submit") { @callback.call(@ret) }
     end
@@ -40,6 +45,7 @@ class PopupFormGenerator
   # (submit, cancel, escape, window close) route through here. GTK4 has no
   # widget "destroy" signal to hook, so the queue is advanced explicitly.
   def close
+    @form.deactivate
     @window.destroy
     PopupFormGenerator.advance_popup_queue if @@popup_active.equal?(self)
   end
@@ -55,9 +61,11 @@ class PopupFormGenerator
     # params[:callback] = proc { |x| puts "====="; puts x.inspect; puts "=====" }
 
     @callback = params[:callback]
+    @form = FormInput.new(@window, submit: method(:submit), cancel: method(:close))
     # Window manager close (title-bar X): advance the queue too, then let GTK
     # destroy the window (return false). Programmatic closes go through #close.
     @window.signal_connect("close-request") do
+      @form.deactivate
       PopupFormGenerator.advance_popup_queue if @@popup_active.equal?(self)
       false
     end
@@ -97,6 +105,7 @@ class PopupFormGenerator
           @ret[id] = "submit"
           submit
         end
+        @form.add_button(button)
       elsif elem[:type] == :entry
         label = Gtk::Label.new(elem[:label])
         entry = Gtk::Entry.new
@@ -105,9 +114,7 @@ class PopupFormGenerator
         end
         hbox.append(label)
         hbox.append(entry)
-        @vals[id] = entry
-
-        on_submit_escape(entry, submit: method(:submit), escape: method(:close))
+        @vals[id] = @form.add_field(entry)
       end
     end  # each
 
@@ -118,6 +125,7 @@ class PopupFormGenerator
       close
     end
     hbox.append(cancel_button)
+    @form.add_button(cancel_button)
     @cancel_button = cancel_button
     return
   end
@@ -136,8 +144,11 @@ class PopupFormGenerator
   def present_now
     @@popup_active = self
     @window.present
+    @form.activate
     if !@default_button.nil?
-      @default_button.grab_focus
+      @form.focus_item(@default_button)
+    else
+      @form.focus(0)
     end
     @window.set_focus_visible(true)
     @window

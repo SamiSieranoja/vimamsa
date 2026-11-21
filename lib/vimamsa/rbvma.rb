@@ -51,6 +51,7 @@ require "vimamsa/appimage_env"
 require "vimamsa/bundled_fonts"
 Vimamsa::BundledFonts.setup!   # install bundled Oxanium before the GUI renders
 require "vimamsa/gui"
+require "vimamsa/form_input"
 require "vimamsa/gui_form_generator"
 require "vimamsa/gui_text"
 require "vimamsa/gui_menu"

@@ -145,7 +145,7 @@ class TestActionIds < VmaTest
   OPTIONAL_IDS = /\A(mode\.notepad|dictation|tts|ollama|terminal|calculator|color_highlight|fexp|bmgr|bmark|diffview)\./
 
   NAMESPACES = %w[app mode move jump search grep ack edit undo case sel buf file
-                  panel view style macro mark lsp term help debug custom kbd op]
+                  panel view style macro mark lsp term help debug custom kbd op form]
 
   # Registered actions other than Ruby-code bindings and the user's custom.rb
   # (eval'd, so its procs come from "(eval)")

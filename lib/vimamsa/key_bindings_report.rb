@@ -57,7 +57,7 @@ ACTION_NS_CATEGORY = {
 }
 
 # Bindings in these major modes, when nothing else decides
-KEY_MODE_CATEGORY = { "B" => "buffer", "X" => "edit", "R" => "internal" }
+KEY_MODE_CATEGORY = { "B" => "buffer", "X" => "edit", "R" => "internal", "F" => "edit" }
 
 # Words of older section keywords (add_keys "vim motion", ...)
 KEY_WORD_CATEGORY = {
@@ -131,7 +131,7 @@ BASIC_ACTIONS = %w[
 
 KEY_MODE_NAMES = {
   "C" => "Command", "V" => "Visual", "I" => "Insert", "X" => "Replace",
-  "B" => "Browse", "R" => "Read char", "M" => "Minibuffer",
+  "B" => "Browse", "R" => "Read char", "M" => "Minibuffer", "F" => "Form",
 }
 
 # Binding conditions ("C G(rule)") as text; others are shown as they are

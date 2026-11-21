@@ -180,6 +180,9 @@ class Editor
       require "vimamsa/key_bindings_vimlike"
     end
 
+    # Form input mode and its keys, in every scheme (form_input.rb)
+    form_input_setup
+
     $buffers = BufferList.new
     $minibuffer = Buffer.new(">", "")
     @langsrv = {}

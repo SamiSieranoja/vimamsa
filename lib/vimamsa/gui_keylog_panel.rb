@@ -196,7 +196,7 @@ class KeyLogPanel
       return
     end
     if action.class == String && (m = CHAR_ACTION_RE.match(action))
-      if m[1] == "edit.insert.char"
+      if m[1] == "edit.insert.char" || m[1] == "form.insert.char" # form_input.rb
         log_insert_char(unquote(m[2]))
         return
       end
