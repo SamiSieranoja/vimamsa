@@ -692,13 +692,13 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
-- **Demo player: loop, pause, speed, demos menu** (2026-11-21, uncommitted): Help ▸
+- **Demo player: loop, pause, speed, demos menu** (2026-11-21, `19e528c`): Help ▸
   Demos ▸ Basic editing / Easy jump (`scripts/demo/demo_easyjump_steps.txt`: moves
   `to_s` with v + easy jump, x, P). A demo loops, with the file restored, until
   stopped. Buttons above the key log (Pause/Continue, −, +), ✕ closes the key log
   (stopping the demo); actions `help.demo.pause` / `.faster` / `.slower` / `.stop` /
   `.easyjump`. Tests in `tests/test_demo_player.rb`.
-- **Key hint next to the cursor** (2026-11-21, uncommitted): while the key log is
+- **Key hint next to the cursor** (2026-11-21, `19e528c`): while the key log is
   shown, a see-through bubble with a dashed border, right of the end of the cursor's
   line, shows the current mode (badge colors), the last key and action, then fades
   (`gui_key_hint.rb`). The key log is cleared at the start of each demo round. Easy
