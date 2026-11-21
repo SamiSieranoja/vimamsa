@@ -868,7 +868,16 @@ def restart_editor
   script = $PROGRAM_NAME
   message("Restarting...")
   # Signal the new instance to restore the session without prompting.
-  exec({ "VIMAMSA_RESTORE_SESSION" => "1" }, ruby, script)
+  env = { "VIMAMSA_RESTORE_SESSION" => "1" }
+  # The same user dir: a --tmp-user-dir one (kept, deleted by the new
+  # process at quit) or a --user-dir one
+  args = []
+  if $vma_tmp_user_dir
+    env[TmpUserDir::ENV_KEY] = $vma_tmp_user_dir
+  elsif File.expand_path(vma_user_dir) != File.expand_path("~/.config/vimamsa")
+    args = ["--user-dir", vma_user_dir]
+  end
+  exec(env, ruby, script, *args)
 rescue => ex
   message("Restart failed: #{ex}")
 end

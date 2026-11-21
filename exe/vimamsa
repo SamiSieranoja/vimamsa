@@ -27,6 +27,24 @@ $vma_show_intro = !ARGV.delete("--intro").nil?
 # --help / -h: the options and the actions (cli_help.rb), then exit
 $vma_cli_help = [ARGV.delete("--help"), ARGV.delete("-h")].any?
 
+# --tmp-user-dir: a new, empty user dir in the system temp dir, deleted on
+# quit (tmp_user_dir.rb). After an editor restart the dir comes in the
+# environment instead, so the new process keeps using (and deletes) it.
+require File.join(scriptdir, "lib/vimamsa/tmp_user_dir")
+tmp_requested = !ARGV.delete("--tmp-user-dir").nil?
+if Vimamsa::TmpUserDir.ours?(ENV[Vimamsa::TmpUserDir::ENV_KEY]) && File.directory?(ENV[Vimamsa::TmpUserDir::ENV_KEY])
+  $vma_tmp_user_dir = ENV.delete(Vimamsa::TmpUserDir::ENV_KEY)
+elsif tmp_requested && !$vma_cli_help
+  $vma_tmp_user_dir = Vimamsa::TmpUserDir.create
+  puts "Temporary user dir (deleted on quit): #{$vma_tmp_user_dir}"
+end
+ENV.delete(Vimamsa::TmpUserDir::ENV_KEY) # not for programs the editor starts
+if $vma_tmp_user_dir
+  $vma_user_dir = $vma_tmp_user_dir
+  # Not run on exec (restart_editor), which keeps the dir
+  at_exit { Vimamsa::TmpUserDir.delete($vma_tmp_user_dir) }
+end
+
 # If process is already running, open the parameter file in the running process and exit.
 listen_dir = File.join($vma_user_dir, "listen")
 if File.exist?(listen_dir) and !ARGV[0].nil? and !$vma_cli_help
@@ -69,6 +87,10 @@ end
 # Persist crash/segfault debug info (native stderr dump + structured reports)
 # to ~/.config/vimamsa/crash/ .
 Vimamsa::CrashHandler.setup
+
+# kill / ctrl-c: quit as from the menu (session saved, a --tmp-user-dir
+# deleted). The trap only sets a flag; VMAgui#monitor quits on the main loop.
+%w[TERM INT].each { |sig| Signal.trap(sig) { $vma_quit_requested = true } }
 
 # Ilib:ext
 # r rbvma -e "puts VMA.new.run"

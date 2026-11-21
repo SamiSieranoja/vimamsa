@@ -872,6 +872,12 @@ class VMAgui
   end
 
   def monitor
+    # kill / ctrl-c (the trap in exe/vimamsa)
+    if $vma_quit_requested
+      $vma_quit_requested = false
+      vma.shutdown
+      return false
+    end
     return true if @windows[1].nil?
     swa = @windows[1][:sw]
     @sw_width ||= swa.width

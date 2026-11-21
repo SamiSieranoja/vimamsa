@@ -35,6 +35,7 @@ require "vimamsa/dot_repeat"
 require "vimamsa/demo_player"
 require "vimamsa/intro_page"
 require "vimamsa/cli_help"
+require_relative "tmp_user_dir" # also loaded by exe/vimamsa, before the rest
 require "vimamsa/clipboard"
 # exit!
 require "vimamsa/main"
