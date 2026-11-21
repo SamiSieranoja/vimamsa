@@ -37,9 +37,9 @@ module Vimamsa
   }
 
   add_keys "notepad cat:motion", {
-    "I home" => "buf.end_selection; buf.jump(BEGINNING_OF_LINE)",
-    "I end" => "buf.end_selection; buf.jump(END_OF_LINE)",
-    "I shift-home" => "buf.continue_selection; buf.jump(BEGINNING_OF_LINE)",
-    "I shift-end" => "buf.continue_selection; buf.jump(END_OF_LINE)",
+    "I home" => "move.line.start.unselect",
+    "I end" => "move.line.end.unselect",
+    "I shift-home" => "sel.line.start",
+    "I shift-end" => "sel.line.end",
   }
 end # module Vimamsa

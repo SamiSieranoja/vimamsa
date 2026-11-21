@@ -53,11 +53,11 @@ reg_act("move.line.prev", proc { buf.move(BACKWARD_LINE) }, "Move one line backw
 reg_act("buf.history.prev", proc { bufs.history_switch(-1) }, "Prev buffer")
 reg_act("buf.history.next", proc { bufs.history_switch(+1) }, "Next buffer")
 reg_act("debug.buf.access", proc { bufs.print_by_access_time }, "Print buffers by access time")
-reg_act("view.center", "center_on_current_line", "")
+reg_act("view.center", "center_on_current_line", "Center the view on the cursor line")
 reg_act("macro.run.last", proc { vma.macro.run_last_macro }, "Run last recorded or executed macro")
 reg_act("jump.edit.next", "jump_to_next_edit", "Jump to next edit pos")
 reg_act("jump.edit.prev", proc { buf.jump_to_last_edit }, "Jump to the last edit location")
-reg_act("move.random", proc { buf.jump_to_random_pos }, "")
+reg_act("move.random", proc { buf.jump_to_random_pos }, "Jump to a random position")
 reg_act("edit.newline", proc { buf.insert_new_line() }, "Insert new line")
 reg_act("help.keys", proc { show_key_bindings }, "Show key bindings")
 reg_act("help.keys.free", proc { show_free_key_bindings }, "Show available (unbound) key binding slots")
@@ -133,7 +133,7 @@ reg_act("jump.file", proc {
   end
 }, "Open file whose path is under the cursor")
 reg_act "file.finder.reindex", proc { FileFinder.update_index }, "Update file index"
-reg_act "edit.delete.word.end", proc { buf.delete2(:to_word_end) }, "Delete to file end"
+reg_act "edit.delete.word.end", proc { buf.delete2(:to_word_end) }, "Delete to the end of the word"
 reg_act "edit.delete.word.next", proc { buf.delete2(:to_next_word) }, "Delete to start of next word"
 reg_act "edit.delete.line.start", proc { buf.delete2(:to_line_start) }, "Delete to line start"
 
@@ -297,6 +297,107 @@ act_list = {
 for k, v in act_list
   reg_act(k, v[:proc], v[:desc])
 end
+
+# ── Actions that were Ruby-code bindings (doc/action_names_plan.md step 6) ──
+# An action bound to a "<char>" key gets the typed character as its argument
+# (KeyBindingTree runs it as a.<id>!('<char>')).
+
+reg_act("move.line.goto", proc { buf.jump_to_line() }, "Go to line <count>")
+reg_act("move.line.first_char", proc { buf.jump(FIRST_NON_WHITESPACE) }, "Move to the first non-blank character of the line")
+reg_act("move.page.next.quarter", proc { vma.gui.page_down(multip: 0.25) }, "Scroll down a quarter page")
+reg_act("move.page.prev.quarter", proc { vma.gui.page_up(multip: 0.25) }, "Scroll up a quarter page")
+reg_act("move.page.next.cursor", proc { buf.move(:forward_page) }, "Move the cursor to the bottom of the view and scroll")
+reg_act("move.page.prev.cursor", proc { buf.move(:backward_page) }, "Move the cursor to the top of the view and scroll")
+# Insert mode: a plain arrow key ends a shift-arrow selection
+reg_act("move.char.next.unselect", proc { insert_move(FORWARD_CHAR) }, "Move forward one character, ending the selection")
+reg_act("move.char.prev.unselect", proc { insert_move(BACKWARD_CHAR) }, "Move backward one character, ending the selection")
+reg_act("move.line.next.unselect", proc { insert_move(FORWARD_LINE) }, "Move one line forward, ending the selection")
+reg_act("move.line.prev.unselect", proc { insert_move(BACKWARD_LINE) }, "Move one line backward, ending the selection")
+reg_act("move.page.next.unselect", proc { insert_move(:pagedown) }, "Page down, ending the selection")
+reg_act("move.page.prev.unselect", proc { insert_move(:pageup) }, "Page up, ending the selection")
+reg_act("move.line.start.unselect", proc { buf.end_selection; buf.jump(BEGINNING_OF_LINE) }, "Move to the beginning of the line, ending the selection")
+reg_act("move.line.end.unselect", proc { buf.end_selection; buf.jump(END_OF_LINE) }, "Move to the end of the line, ending the selection")
+
+reg_act("kbd.count.digit", proc { |c| vma.kbd.set_next_command_count(c) }, "Type a digit of the repeat count")
+
+reg_act("jump.char.next", proc { |c| buf.jump_to_next_instance_of_char(c) }, "Jump to the next <char>")
+reg_act("jump.char.prev", proc { |c| buf.jump_to_next_instance_of_char(c, BACKWARD) }, "Jump to the previous <char>")
+reg_act("jump.space.next", proc { buf.jump_to_next_instance_of_char(" ") }, "Jump to the next space")
+reg_act("jump.space.prev", proc { buf.jump_to_next_instance_of_char(" ", BACKWARD) }, "Jump to the previous space")
+reg_act("jump.char.repeat", proc { repeat_last_find }, "Repeat the last character jump (f, F)")
+reg_act("search.prev", proc { $search.jump_to_previous() }, "Find previous")
+reg_act("search.word.next", proc { buf.jump_to_next_instance_of_word }, "Find the next occurrence of the word under the cursor")
+
+reg_act("mode.insert.after", proc { buf.move(FORWARD_CHAR); vma.kbd.set_mode(:insert) }, "Switch to INSERT mode after the cursor")
+reg_act("mode.insert.line.start", proc { buf.jump(FIRST_NON_WHITESPACE); vma.kbd.set_mode(:insert) }, "Switch to INSERT mode at the first non-blank character of the line")
+reg_act("mode.insert.line.end", proc { buf.jump(END_OF_LINE); vma.kbd.set_mode(:insert) }, "Switch to INSERT mode at the end of the line")
+reg_act("mode.insert.line.below", proc { buf.jump(END_OF_LINE); buf.insert_txt("\n"); vma.kbd.set_mode(:insert) }, "Open a new line below and switch to INSERT mode")
+reg_act("mode.replace", proc { vma.kbd.set_mode(:replace) }, "Switch to REPLACE mode")
+reg_act("mode.visual.exit", proc { buf.end_visual_mode }, "Leave VISUAL mode")
+reg_act("mode.audio", proc { vma.kbd.set_mode(:audio) }, "Switch to audio playback mode")
+reg_act("mode.browse.center", proc { center_on_current_line(); call_action("mode.browse.exit") }, "Center on the cursor line and leave browse mode")
+
+reg_act("edit.insert.char", proc { |c| buf.insert_txt(c) }, "Insert <char>")
+reg_act("edit.insert.space", proc { buf.insert_txt(" ") }, "Insert a space")
+reg_act("edit.insert.password", proc { generate_password_to_buf(15) }, "Insert a random 15-character password")
+reg_act("edit.tab", proc { buf.insert_tab }, "Insert a tab or spaces (indents the selection in VISUAL mode)")
+reg_act("edit.untab", proc { buf.unindent }, "Unindent the current line one level")
+reg_act("edit.line.below", proc { buf.jump(END_OF_LINE); buf.insert_txt("\n") }, "Insert an empty line below")
+reg_act("edit.line.join", proc { buf.join_lines() }, "Join the next line to the current line")
+reg_act("edit.copy.line.end", proc { buf.copy(:to_line_end) }, "Copy to the end of the line")
+reg_act("edit.copy.line.start", proc { buf.copy(:to_line_start) }, "Copy to the start of the line")
+reg_act("edit.copy.word.end", proc { buf.copy(:to_word_end) }, "Copy to the end of the word")
+reg_act("edit.copy.word.next", proc { buf.copy(:to_next_word) }, "Copy to the start of the next word")
+reg_act("edit.copy.mark", proc { |c| buf.copy(:to_mark, c) }, "Copy to mark <char>")
+reg_act("edit.delete.mark", proc { |c| buf.delete2(:to_mark, c) }, "Delete to mark <char>")
+reg_act("edit.delete.find.next", proc { |c| buf.delete2(:to_char, c) }, "Delete up to the next <char>")
+reg_act("edit.delete.find.prev", proc { |c| buf.delete2(:to_char_backward, c) }, "Delete back to the previous <char>")
+reg_act("edit.delete.space.next", proc { buf.delete2(:to_char, " ") }, "Delete up to the next space")
+reg_act("edit.delete.space.prev", proc { buf.delete2(:to_char_backward, " ") }, "Delete back to the previous space")
+reg_act("edit.replace.char", proc { |c| buf.replace_with_char(c) }, "Replace the character under the cursor with <char>")
+reg_act("edit.replace.space", proc { buf.replace_with_char(" ") }, "Replace the character under the cursor with a space")
+reg_act("edit.replace.char.next", proc { |c| buf.replace_with_char(c); buf.move(FORWARD_CHAR) }, "Replace the character under the cursor with <char> and move forward")
+reg_act("edit.register", proc { |c| vma.set_register(c) }, "Use register <char> for the next copy or paste")
+reg_act("edit.paste.register", proc { |c| buf.paste(BEFORE, c) }, "Paste from register <char> before the cursor")
+reg_act("edit.comment.line", proc { buf.comment_line() }, "Comment the current line")
+reg_act("edit.comment.line.off", proc { buf.comment_line(:uncomment) }, "Uncomment the current line")
+reg_act("edit.comment.off", proc { buf.comment_selection(:uncomment) }, "Uncomment the selection")
+reg_act("edit.complete.next", proc { vma.buf.view.autocp_select_next }, "Select the next completion")
+reg_act("edit.complete.prev", proc { vma.buf.view.autocp_select_previous }, "Select the previous completion")
+reg_act("edit.complete.accept", proc { vma.buf.view.autocp_select }, "Insert the selected completion")
+reg_act("edit.complete.hide", proc { vma.buf.view.hide_completions }, "Hide the completion popup")
+
+reg_act("sel.char.next", proc { insert_select_move(FORWARD_CHAR) }, "Extend the selection one character forward")
+reg_act("sel.char.prev", proc { insert_select_move(BACKWARD_CHAR) }, "Extend the selection one character backward")
+reg_act("sel.page.next", proc { insert_select_move(:pagedown) }, "Extend the selection a page down")
+reg_act("sel.page.prev", proc { insert_select_move(:pageup) }, "Extend the selection a page up")
+reg_act("sel.line.start", proc { buf.continue_selection; buf.jump(BEGINNING_OF_LINE) }, "Extend the selection to the beginning of the line")
+reg_act("sel.line.end", proc { buf.continue_selection; buf.jump(END_OF_LINE) }, "Extend the selection to the end of the line")
+reg_act("sel.delete", proc { buf.delete(SELECTION) }, "Delete the selection")
+reg_act("sel.delete.append", proc { buf.delete(SELECTION, :append) }, "Delete the selection and append it to the clipboard")
+reg_act("sel.copy.append", proc { buf.copy_active_selection(:append) }, "Append the selection to the clipboard")
+reg_act("sel.indent.more", proc { buf.indent_selection }, "Indent the selected lines one level")
+reg_act("sel.indent.less", proc { buf.unindent_selection }, "Unindent the selected lines one level")
+
+reg_act("mark.set", proc { |c| buf.mark_current_position(c) }, "Set mark <char> at the cursor")
+reg_act("mark.jump", proc { |c| buf.jump_to_mark(c) }, "Jump to mark <char>")
+
+reg_act("macro.record", proc { |c| vma.kbd.set_mode(:macro); vma.macro.start_recording(c) }, "Record a macro into register <char>")
+reg_act("macro.record.stop", proc { vma.kbd.to_previous_mode; vma.macro.end_recording }, "Stop recording the macro")
+reg_act("macro.run", proc { |c| vma.macro.run_macro(c) }, "Run macro <char>")
+reg_act("macro.save", proc { vma.macro.save }, "Save the recorded and named macros")
+reg_act("macro.save.a", proc { vma.macro.save_macro("a") }, "Save macro a as a Ruby file")
+
+reg_act("buf.switch.last", proc { bufs.switch_to_last_buf }, "Switch to the last used buffer")
+reg_act("buf.close.scrap", proc { bufs.close_scrap_buffers }, "Close all buffers that have no file")
+reg_act("buf.list.save", proc { save_buffer_list }, "Save the list of open buffers")
+reg_act("buf.list.load", proc { load_buffer_list }, "Open the saved list of buffers")
+
+reg_act("debug.deltas", proc { debug_dump_deltas }, "Print the change deltas of the buffer")
+reg_act("debug.clipboard", proc { debug_dump_clipboard }, "Print the clipboard contents")
+reg_act("debug.buf.print", proc { debug_print_buffer }, "Print the buffer object and its text")
+reg_act("debug.overlay.clear", proc { vma.gui.clear_overlay }, "Clear the drawing overlay")
+reg_act("debug.pry", proc { require "pry"; binding.pry }, "Open a pry console in the terminal")
 
 def gui_select_buffer_language
   lm = GtkSource::LanguageManager.new

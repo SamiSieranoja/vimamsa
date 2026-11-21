@@ -63,7 +63,7 @@ bind_vim_bindings
 
 add_keys "vim misc cat:buffer", {
   # Kept deviations (documented in the header)
-  "C tab" => "bufs.switch_to_last_buf",
+  "C tab" => "buf.switch.last",
   # prev/next file in file panel order (no-op while the panel is hidden)
   "C alt-h" => "panel.files.prev",
   "C alt-l" => "panel.files.next",
@@ -74,12 +74,12 @@ add_keys "vim misc cat:buffer", {
   "B l" => "buf.history.next",
   "B p" => "panel.files.prev",
   "B n" => "panel.files.next",
-  "B z" => "center_on_current_line();call_action('mode.browse.exit')",
+  "B z" => "mode.browse.center",
   "B enter || B return || B esc || B j || B ctrl!" => "mode.browse.exit",
   "B s" => "move.page.prev",
   "B d" => "move.page.next",
-  "B r" => proc { vma.gui.page_down(multip: 0.25) },
-  "B e" => proc { vma.gui.page_up(multip: 0.25) },
+  "B r" => "move.page.next.quarter",
+  "B e" => "move.page.prev.quarter",
   "B i" => "move.buf.start",
   "B o" => "move.buf.end",
   "B c" => "buf.close",
@@ -93,7 +93,7 @@ add_keys "vim misc cat:buffer", {
 bindkey "audio f || audio right", ["audio.forward", proc { Audio.seek_forward }, "Seek forward in audio stream"]
 bindkey "audio left", ["audio.backward", proc { Audio.seek_forward(-5.0) }, "Seek backward in audio stream"]
 bindkey "audio space", "audio.stop"
-bindkey "audio q || audio esc", "vma.kbd.to_previous_mode"
+bindkey "audio q || audio esc", "mode.prev"
 
 # Text objects (diw, ci", ya(, vip, ...), see text_objects.rb
 bind_vim_text_objects

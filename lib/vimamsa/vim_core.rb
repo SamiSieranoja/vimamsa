@@ -79,69 +79,69 @@ end
 
 VIM_BINDINGS = {
   "vim motion" => {
-    "VCX up" => "buf.move(BACKWARD_LINE)",
-    "VCX down" => "buf.move(FORWARD_LINE)",
-    "VCX right" => "buf.move(FORWARD_CHAR)",
-    "VCX left" => "buf.move(BACKWARD_CHAR)",
+    "VCX up" => "move.line.prev",
+    "VCX down" => "move.line.next",
+    "VCX right" => "move.char.next",
+    "VCX left" => "move.char.prev",
     "VC h" => "move.char.prev",
     "VC l" => "move.char.next",
     "VC j" => "move.line.next",
     "VC k" => "move.line.prev",
-    "C space" => "buf.move(FORWARD_CHAR)",
-    "C backspace" => "buf.move(BACKWARD_CHAR)",
+    "C space" => "move.char.next",
+    "C backspace" => "move.char.prev",
 
     "VC e" => "move.word.end",
     "VC b" => "move.word.prev",
     "VC w" => "move.word.next",
 
     # NOTE: "G(condition)" must be defined before "G"
-    "VC G(vma.kbd.next_command_count!=nil)" => "buf.jump_to_line()",
+    "VC G(vma.kbd.next_command_count!=nil)" => "move.line.goto",
     "VC G" => "move.buf.end",
     "VC g g" => "move.buf.start",
     "VC g ;" => "jump.edit.prev",
 
     # Counts; "0" is BOL only when no count is pending
-    "VC /[1-9]/" => "vma.kbd.set_next_command_count(<char>)",
-    "VC 0(vma.kbd.next_command_count!=nil)" => "vma.kbd.set_next_command_count(<char>)",
-    "VC 0(vma.kbd.next_command_count==nil)" => "buf.jump(BEGINNING_OF_LINE)",
-    "VC ^" => "buf.jump(FIRST_NON_WHITESPACE)",
-    "VC $" => "buf.jump(END_OF_LINE)",
+    "VC /[1-9]/" => "kbd.count.digit",
+    "VC 0(vma.kbd.next_command_count!=nil)" => "kbd.count.digit",
+    "VC 0(vma.kbd.next_command_count==nil)" => "move.line.start",
+    "VC ^" => "move.line.first_char",
+    "VC $" => "move.line.end",
 
-    "VC f <char>" => "buf.jump_to_next_instance_of_char(<char>)",
-    "VC F <char>" => "buf.jump_to_next_instance_of_char(<char>,BACKWARD)",
-    "VC f space" => "buf.jump_to_next_instance_of_char(' ')",
-    "VC F space" => "buf.jump_to_next_instance_of_char(' ',BACKWARD)",
-    "VC ;" => "repeat_last_find",
+    "VC f <char>" => "jump.char.next",
+    "VC F <char>" => "jump.char.prev",
+    "VC f space" => "jump.space.next",
+    "VC F space" => "jump.space.prev",
+    "VC ;" => "jump.char.repeat",
 
-    "VC *" => "buf.jump_to_next_instance_of_word",
+    "VC *" => "search.word.next",
     "VC /" => "search.buf",
     "C :" => "mode.cmdline",
     "C n" => "search.next",
-    "C N" => "$search.jump_to_previous()",
+    "C N" => "search.prev",
 
     "VCI pagedown" => "move.page.next",
     "VCI pageup" => "move.page.prev",
     "C ctrl-f" => "move.page.next",
     "C ctrl-b" => "move.page.prev",
-    "C ctrl-d" => "buf.move(:forward_page)",  # approx: full page, vim: half
-    "C ctrl-u" => "buf.move(:backward_page)", # approx: full page, vim: half
+    "C ctrl-d" => "move.page.next.cursor",  # approx: full page, vim: half
+    "C ctrl-u" => "move.page.prev.cursor", # approx: full page, vim: half
     "C ctrl-o" => "jump.edit.prev",         # approx of vim jumplist back
     "C z z" => "view.center",
   },
 
   "vim marks cat:marks" => {
-    "CV m <char>" => "buf.mark_current_position(<char>)",
-    'CV \' <char>' => "buf.jump_to_mark(<char>)",
-    "C ` <char>" => "buf.jump_to_mark(<char>)",
+    "CV m <char>" => "mark.set",
+    'CV \' <char>' => "mark.jump",
+    "C ` <char>" => "mark.jump",
   },
 
   # Enter insert mode
   "vim edit cat:insert" => {
     "C i" => "mode.insert",
-    "C a" => "buf.move(FORWARD_CHAR);vma.kbd.set_mode(:insert)",
-    "C A" => "buf.jump(END_OF_LINE);vma.kbd.set_mode(:insert)",
-    "C I" => "buf.jump(FIRST_NON_WHITESPACE);vma.kbd.set_mode(:insert)",
-    "C o" => 'buf.jump(END_OF_LINE);buf.insert_txt("\n");vma.kbd.set_mode(:insert)',
+    "C a" => "mode.insert.after",
+    "C A" => "mode.insert.line.end",
+    "C I" => "mode.insert.line.start",
+    "C o" => "mode.insert.line.below",
     "C O" => "edit.line.above",
   },
 
@@ -151,15 +151,15 @@ VIM_BINDINGS = {
     "C x" => "edit.delete.char.inline",
     "C X" => "edit.delete.char.prev",
     "C d d" => ["edit.delete.line", proc { buf.delete_line }, "Delete current line"],
-    "C d e" => "buf.delete2(:to_word_end)",
+    "C d e" => "edit.delete.word.end",
     "C d w" => "edit.delete.word.next",
     "C d $" => "edit.delete.eol",
     "C d 0" => "edit.delete.line.start",
-    "C d ' <char>" => "buf.delete2(:to_mark,<char>)",
-    "C d f <char>" => "buf.delete2(:to_char,<char>)",
-    "C d F <char>" => "buf.delete2(:to_char_backward,<char>)",
-    "C d f space" => "buf.delete2(:to_char,' ')",
-    "C d F space" => "buf.delete2(:to_char_backward,' ')",
+    "C d ' <char>" => "edit.delete.mark",
+    "C d f <char>" => "edit.delete.find.next",
+    "C d F <char>" => "edit.delete.find.prev",
+    "C d f space" => "edit.delete.space.next",
+    "C d F space" => "edit.delete.space.prev",
     "C D" => "edit.delete.eol",
 
     # Change / substitute
@@ -174,18 +174,18 @@ VIM_BINDINGS = {
     # Yank / paste
     "C y y" => "edit.line.copy",
     "C Y" => "edit.line.copy",
-    "C y w" => "buf.copy(:to_next_word)",
-    "C y e" => "buf.copy(:to_word_end)",
-    "C y $" => "buf.copy(:to_line_end)",
-    "C y 0" => "buf.copy(:to_line_start)",
-    "C y ' <char>" => "buf.copy(:to_mark,<char>)",
+    "C y w" => "edit.copy.word.next",
+    "C y e" => "edit.copy.word.end",
+    "C y $" => "edit.copy.line.end",
+    "C y 0" => "edit.copy.line.start",
+    "C y ' <char>" => "edit.copy.mark",
     "C p" => "edit.paste.after",
     "C P" => "edit.paste.before",
 
     # Misc edits
-    "C r <char>" => "buf.replace_with_char(<char>)",
-    "C r space" => "buf.replace_with_char(' ')",
-    "C J" => "buf.join_lines()",
+    "C r <char>" => "edit.replace.char",
+    "C r space" => "edit.replace.space",
+    "C J" => "edit.line.join",
     "C ~" => "case.char.toggle",
     "C g U w" => "case.word.upper",
     "C g u w" => "case.word.lower",
@@ -193,7 +193,7 @@ VIM_BINDINGS = {
     "C g U U" => "case.line.upper",
     "C g u u" => "case.line.lower",
     "C g ~ ~" => "case.line.swap",
-    "C ctrl-a" => "buf.increment_current_word", # vim ctrl-a: increment number
+    "C ctrl-a" => "edit.word.increment", # vim ctrl-a: increment number
     "C ." => "undo.repeat",
 
     # Undo / redo
@@ -203,72 +203,72 @@ VIM_BINDINGS = {
 
   "vim visual" => {
     "C v" => "mode.visual",
-    "V esc" => "buf.end_visual_mode",
-    "V ctrl-c" => "buf.end_visual_mode",
-    "V y" => "buf.copy_active_selection()",
-    "V d" => ["sel.delete", proc { buf.delete(SELECTION) }, ""],
-    "V x" => "buf.delete(SELECTION)",
+    "V esc" => "mode.visual.exit",
+    "V ctrl-c" => "mode.visual.exit",
+    "V y" => "sel.copy",
+    "V d" => "sel.delete",
+    "V x" => "sel.cut",
     "V s" => "sel.change",
     "V c" => "sel.change",
     "V J" => "sel.join",
-    "V u" => "buf.transform_selection(:downcase)",
-    "V U" => "buf.transform_selection(:upcase)",
-    "V ~" => "buf.transform_selection(:swapcase)",
+    "V u" => "case.sel.lower",
+    "V U" => "case.sel.upper",
+    "V ~" => "case.sel.swap",
     "V g U" => "case.sel.upper",
     "V g u" => "case.sel.lower",
-    "V >" => "buf.indent_selection",
-    "V <" => "buf.unindent_selection",
+    "V >" => "sel.indent.more",
+    "V <" => "sel.indent.less",
   },
 
   "vim insert" => {
     "I esc" => "mode.prev",
     "I ctrl-c" => "mode.prev", # vim: ctrl-c leaves insert mode
-    "I <char>" => "buf.insert_txt(<char>)",
-    "I space" => 'buf.insert_txt(" ")',
+    "I <char>" => "edit.insert.char",
+    "I space" => "edit.insert.space",
     "I enter" => "edit.newline",
     "I backspace" => "edit.backspace",
     "I ctrl-h" => "edit.backspace",          # vim i_ctrl-h = backspace
-    "I ctrl-j" => "buf.insert_new_line()",    # vim i_ctrl-j = new line
+    "I ctrl-j" => "edit.newline",    # vim i_ctrl-j = new line
 
     # Completion (vim i_ctrl-n / i_ctrl-p; popup guards first)
-    "I tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_next",
-    "I shift-tab(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select_previous",
-    "I shift!(vma.buf.view.autocp_active)" => "vma.buf.view.autocp_select",
+    "I tab(vma.buf.view.autocp_active)" => "edit.complete.next",
+    "I shift-tab(vma.buf.view.autocp_active)" => "edit.complete.prev",
+    "I shift!(vma.buf.view.autocp_active)" => "edit.complete.accept",
     "I ctrl-n" => "edit.complete",
     "I ctrl-p" => "edit.complete",
     "I ctrl-space" => "edit.complete",
 
-    "I tab" => "buf.insert_tab",
-    "I shift-tab" => "buf.unindent",
+    "I tab" => "edit.tab",
+    "I shift-tab" => "edit.untab",
 
     "I shift-up" => "sel.line.prev",
-    "I shift-down" => "insert_select_move(FORWARD_LINE)",
-    "I shift-left" => "insert_select_move(BACKWARD_CHAR)",
-    "I shift-right" => "insert_select_move(FORWARD_CHAR)",
-    "I shift-pagedown" => "insert_select_move(:pagedown)",
-    "I shift-pageup" => "insert_select_move(:pageup)",
+    "I shift-down" => "sel.line.next",
+    "I shift-left" => "sel.char.prev",
+    "I shift-right" => "sel.char.next",
+    "I shift-pagedown" => "sel.page.next",
+    "I shift-pageup" => "sel.page.prev",
 
-    "I left" => "insert_move(BACKWARD_CHAR)",
-    "I right" => "insert_move(FORWARD_CHAR)",
-    "I down" => "insert_move(FORWARD_LINE)",
-    "I up" => "insert_move(BACKWARD_LINE)",
-    "I pagedown" => "insert_move(:pagedown)",
-    "I pageup" => "insert_move(:pageup)",
+    "I left" => "move.char.prev.unselect",
+    "I right" => "move.char.next.unselect",
+    "I down" => "move.line.next.unselect",
+    "I up" => "move.line.prev.unselect",
+    "I pagedown" => "move.page.next.unselect",
+    "I pageup" => "move.page.prev.unselect",
   },
 
   # vim R
   "vim replace" => {
-    "C R" => "vma.kbd.set_mode(:replace)",
-    "X esc" => "vma.kbd.to_previous_mode",
-    "X <char>" => "buf.replace_with_char(<char>);buf.move(FORWARD_CHAR)",
+    "C R" => "mode.replace",
+    "X esc" => "mode.prev",
+    "X <char>" => "edit.replace.char.next",
   },
 
   "vim macros" => {
     # q<char> records, q stops, @<char> runs, @@ repeats
-    "VC q <char>" => "vma.kbd.set_mode(:macro);vma.macro.start_recording(<char>)",
-    "macro q" => "vma.kbd.to_previous_mode; vma.macro.end_recording",
+    "VC q <char>" => "macro.record",
+    "macro q" => "macro.record.stop",
     "C @ @" => "macro.run.last",
-    "C @ <char>" => "vma.macro.run_macro(<char>)",
+    "C @ <char>" => "macro.run",
 
     # READCHAR mode (argument input for f/F, r, m, ', q, @)
     "R <char>" => "readchar_new_char(<char>)",

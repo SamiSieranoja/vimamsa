@@ -18,6 +18,10 @@ class KeyLogPanel
   # matched here so consecutive chars can be coalesced into one "typed:" row.
   INSERT_TXT_RE = /\Abuf\.insert_txt\((.+)\)\z/
 
+  # A named action bound to a <char> key, as the key tree runs it:
+  # a.edit.insert.char!('h') (KeyBindingTree#match_key_conf)
+  CHAR_ACTION_RE = /\Aa\.([a-z][a-z0-9_.]*)!\((.+)\)\z/
+
   def initialize
     @entries = []
     @rows = []       # Gtk::ListBoxRow per entry, parallel to @entries
@@ -103,9 +107,17 @@ class KeyLogPanel
       log_insert_char(unquote(m[1]))
       return
     end
+    if action.class == String && (m = CHAR_ACTION_RE.match(action))
+      if m[1] == "edit.insert.char"
+        log_insert_char(unquote(m[2]))
+        return
+      end
+      id, char = m[1], unquote(m[2])
+    end
     mode_divider(trail_str)
     drop_pending
-    desc = vma.actions[action]&.method_name.to_s
+    desc = vma.actions[id || action]&.method_name.to_s
+    desc = desc.gsub("<char>", char) if char
     name = action.class == Proc ? "(proc)" : action.to_s
     desc = "" if desc == name
     push(kind: :action, chord: fmt_chord(trail_str), action: action, desc: desc)

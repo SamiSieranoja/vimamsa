@@ -51,7 +51,9 @@ ACTION_NS_CATEGORY = {
   "edit.comment" => "code", "edit.indent" => "code", "undo" => "undo", "case" => "case",
   "sel" => "visual", "buf" => "buffer", "file" => "file", "panel" => "view", "view" => "view",
   "style" => "hpt", "macro" => "macro", "mark" => "marks", "lsp" => "code", "term" => "code",
-  "custom" => "custom",
+  "custom" => "custom", "obj" => "textobj", "kbd" => "internal", "kbd.count" => "undo",
+  "mode.replace" => "edit", "mode.audio" => "app", "edit.insert" => "insert",
+  "edit.tab" => "insert", "edit.untab" => "insert", "edit.complete" => "insert",
 }
 
 # Bindings in these major modes, when nothing else decides
@@ -115,27 +117,102 @@ def key_bindings_by_category(kbd = vma.kbd)
   by.sort_by { |c, _| rank.(c) }
 end
 
+# Actions listed under Basics, in this order, with whatever keys the active
+# keymap binds them to (they also appear in their own category)
+BASIC_ACTIONS = %w[
+  mode.insert mode.prev mode.visual
+  move.word.next move.word.prev move.line.start move.line.end move.buf.start move.buf.end
+  edit.delete.char edit.delete.line edit.line.copy edit.paste.after edit.paste.before
+  sel.copy sel.cut undo.last undo.redo
+  search.buf search.next search.actions
+  file.open file.finder buf.save buf.manager buf.close
+  mode.cmdline help.keys app.quit
+]
+
+KEY_MODE_NAMES = {
+  "C" => "Command", "V" => "Visual", "I" => "Insert", "X" => "Replace",
+  "B" => "Browse", "R" => "Read char", "M" => "Minibuffer",
+}
+
+# Binding conditions ("C G(rule)") as text; others are shown as they are
+KEY_CONDITIONS = {
+  "vma.buf.view.autocp_active" => "when the completion popup is open",
+  "vma.kbd.next_command_count!=nil" => "with a count",
+  "vma.kbd.next_command_count==nil" => "without a count",
+  "vma.macro.is_recording==true" => "while recording a macro",
+}
+
+def key_condition_text(rule)
+  KEY_CONDITIONS[rule] || "if #{rule}"
+end
+
+# Lines of one page section from binding records, kept in the given order:
+# the same keys and description in several modes become one row, rows are
+# grouped by their modes ("◼◼ Command, Visual" subheadings unless
+# subheads: false; ordered by their first mode), rows of a group with the
+# same description are merged ("up / k"), and keys and descriptions are
+# aligned in columns.
+def key_bindings_section(records, subheads: true)
+  rank = KEY_MODE_NAMES.keys
+  rows = {}
+  records.each { |b|
+    conds = []
+    keys = b[:keys].map { |k|
+      m = /\A(.+)\((.*)\)\z/m.match(k)
+      next k if m.nil?
+      conds << key_condition_text(m[2])
+      m[1]
+    }.join(" ")
+    r = (rows[[keys, b[:desc], conds]] ||= { keys: keys, desc: b[:desc], conds: conds, modes: [] })
+    r[:modes] << b[:mode] if !r[:modes].include?(b[:mode])
+  }
+  groups = {}
+  rows.each_value { |r|
+    ms = r[:modes].sort_by { |m| rank.index(m) || rank.size }
+    g = (groups[ms] ||= {})
+    line = (g[[r[:desc], r[:conds]]] ||= { keys: [], desc: r[:desc], conds: r[:conds] })
+    line[:keys] << r[:keys]
+  }
+  # by the first mode (Command groups, then Visual, Insert, ..., minor
+  # modes), then by which group was defined first
+  groups = groups.each_with_index.sort_by { |(ms, _), i| [rank.index(ms[0]) || rank.size, i] }.map(&:first).to_h
+  lines = groups.values.flat_map(&:values)
+  w = lines.map { |l| l[:keys].join(" / ").size }.select { |n| n <= 28 }.max.to_i
+  out = []
+  groups.each { |ms, g|
+    out << "◼◼ " + ms.map { |m| KEY_MODE_NAMES[m] || m }.join(", ") if subheads
+    g.each_value { |l|
+      desc = l[:desc].to_s
+      desc += " (#{l[:conds].join(", ")})" if l[:conds].any?
+      out << "    " + l[:keys].join(" / ").ljust(w) + "  " + desc
+    }
+  }
+  out
+end
+
+# The key bindings page as text
+def key_bindings_page(kbd = vma.kbd, scheme: cnf.keybindings.scheme! || "vimlike")
+  all = kbd.bindings
+  s = +"❙Key bindings — scheme: #{scheme}❙\n\n"
+  s << KEY_MODE_NAMES.map { |m, n| "[#{m}]=#{n}" }.first(5).join(" ") << "\n"
+  s << "<key>! = press and release <key> alone, with no other key in between\n"
+  s << "a / b = either of the keys\n"
+  s << "===============================================\n"
+  basic = BASIC_ACTIONS.flat_map { |id|
+    all.select { |b| b[:action].to_s == id && %w[C V I].include?(b[:mode]) }
+  }
+  if basic.any?
+    s << "◼ Basics\n" << key_bindings_section(basic).join("\n") << "\n\n"
+  end
+  key_bindings_by_category(kbd).each { |cat, bs|
+    s << "◼ #{key_category_heading(cat)}\n"
+    s << key_bindings_section(bs, subheads: !cat.to_s.start_with?("mode:")).join("\n") << "\n\n"
+  }
+  s << "===============================================\n"
+end
+
 def show_key_bindings()
-  kbd_s = "❙Key bindings❙\n"
-  kbd_s << "\n⦁[Mode] <keys> : <action>⦁\n"
-
-  kbd_s << "[B]=Browse, [C]=Command, [I]=Insert, [V]=Visual, [X]=Replace\n"
-  kbd_s << "<key>!: Press <key> once, release before pressing any other keys\n"
-  kbd_s << "===============================================\n"
-  kbd_s << "◼ Basics\n"
-  [["C", "Command mode"], ["I", "Insert mode"], ["V", "Visual mode"]].each { |m, title|
-    kbd_s << "◼◼ #{title}\n"
-    kbd_s << vma.kbd.get_by_keywords(modes: [m], keywords: ["intro"]) << "\n\n"
-  }
-
-  key_bindings_by_category.each { |cat, bs|
-    kbd_s << "◼ #{key_category_heading(cat)}\n"
-    kbd_s << bs.map { |b| " [#{b[:mode]}] #{b[:keys].join(" ")} : #{b[:desc]}" }.sort.join("\n")
-    kbd_s << "\n\n"
-  }
-
-  kbd_s << "===============================================\n"
-  b = create_new_buffer(kbd_s, "key-bindings")
+  b = create_new_buffer(key_bindings_page, "key-bindings")
   gui_set_file_lang(b.id, "hyperplaintext")
 end
 

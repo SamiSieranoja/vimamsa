@@ -1,7 +1,7 @@
 # Plan: better organized "Show key bindings" page
 
-TODO: act next on step 3 of "Implementation order" (the new layout). Steps 1-2
-are done (see DONE at the end).
+TODO: act next on step 4 of "Implementation order" (text-object renderer and
+`<char>`/`<num>` templates). Steps 1-3 are done (see DONE at the end).
 
 ## Context
 
@@ -194,3 +194,20 @@ Run the full suite in the VM after each step.
   Left for later: Basics still uses the `intro` keyword (`BASIC_ACTIONS` is
   step 3); the conflict report still uses its own traversal
   (`kbd_leaf_bindings`).
+- **Step 3: page layout** (2026-11-21). `key_bindings_page` builds the text,
+  `key_bindings_section` one section: rows in definition order
+  (`State#seq`, set by `bindkey`; `KeyBindingTree#bindings` is sorted by it),
+  the same keys and description in several modes merged into one row,
+  rows grouped by modes under `◼◼ Command, Visual` subheadings (ordered by
+  their first mode, then by which was defined first; none in minor-mode
+  sections), keys of a group with the same description merged (`y y / Y`),
+  keys and descriptions in aligned columns. Conditions are shown as text
+  through `KEY_CONDITIONS` (`(with a count)`), others as `(if <rule>)`. The
+  header names the scheme. Basics lists `BASIC_ACTIONS` with the keys the
+  active keymap binds them to in Command, Visual and Insert mode. Tests in
+  `tests/test_key_categories.rb` (`test_section_layout`, `test_page_layout`).
+  Not done: dimming the raw action after a description (hyperplaintext has
+  no dim style).
+- **Step 5: descriptions** (2026-11-21): done through step 6 of
+  `doc/action_names_plan.md`, which made every Ruby-string binding a named
+  action with a description.

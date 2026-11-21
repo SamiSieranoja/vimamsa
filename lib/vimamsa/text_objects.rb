@@ -339,15 +339,23 @@ end
 # vimlike otherwise (Visual "a y" / "a d" keep working: exact keys win over
 # <char>, and vim has no "ay"/"ad" objects).
 def bind_vim_text_objects
-  ops = { "d" => :delete, "c" => :change, "y" => :yank,
-          "g U" => :upcase, "g u" => :downcase, "g ~" => :swapcase }
+  # [keys, action id segment, op, description verb]
+  ops = [["d", "delete", :delete, "Delete"], ["c", "change", :change, "Change"],
+         ["y", "copy", :yank, "Copy"], ["g U", "upper", :upcase, "Uppercase"],
+         ["g u", "lower", :downcase, "Lowercase"], ["g ~", "swap", :swapcase, "Swap case"]]
+  sel = ["v", "select", :select, "Select"]
   h = {}
-  ops.each { |k, op|
-    %w[i a].each { |w|
-      h["C #{k} #{w} <char>"] = "buf.text_object_op(:#{op}, <char>, :#{w})"
+  (ops + [sel]).each { |k, name, op, verb|
+    { "i" => ["inner", "inside"], "a" => ["around", "around"] }.each { |w, (seg, prep)|
+      id = "obj.#{name}.#{seg}"
+      reg_act(id, proc { |c| buf.text_object_op(op, c, w.to_sym) }, "#{verb} #{prep} text object <char>")
+      if op == :select
+        h["V #{w} <char>"] = id
+      else
+        h["C #{k} #{w} <char>"] = id
+      end
     }
   }
-  %w[i a].each { |w| h["V #{w} <char>"] = "buf.text_object_op(:select, <char>, :#{w})" }
   add_keys "vim text objects", h
 end
 end

@@ -293,7 +293,7 @@ class ActionRef < BasicObject
       if !$vma.actions.include?(id)
         ::Kernel.raise ::NameError, "Unknown action #{id}#{$vma.actions.did_you_mean(id)}"
       end
-      return $vma.actions.call(id)
+      return $vma.actions.call(id, *args)
     end
     ActionRef.new(@path + [s])
   end
@@ -404,12 +404,13 @@ class ActionList
     out.uniq.sort
   end
 
-  def call(id)
+  # args: the typed character for an action bound to a "<char>" key
+  def call(id, *args)
     id = resolve(id)
     @acth << id
     a = @actions[id]
     if a
-      a.method.call()
+      a.method.call(*args)
     else
       message("Unknown action: " + id.inspect)
     end

@@ -22,6 +22,8 @@ module Vimamsa
 
 class State
   attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level, :cursor_type, :keywords, :root, :parent
+  # Order in which the action was bound (KeyBindingTree#bindings lists by it)
+  attr_accessor :seq
   attr_reader :cur_mode, :scope
 
   def initialize(key_name, eval_rule = "", ctype = :command, scope: :buffer)
@@ -66,6 +68,7 @@ class KeyBindingTree
   def initialize(actions: nil)
     @actions = actions
     @extra_keywords = []
+    @bind_seq = 0
     @listeners = {}
     @action_handler = nil
     @logger = nil
@@ -387,7 +390,8 @@ class KeyBindingTree
   end
 
   # Every binding as a record, in definition order:
-  #   { mode: "C", keys: ["d", "i", "<char>"], action:, keywords: [...], desc: }
+  #   { mode: "C", keys: ["d", "i", "<char>"], action:, keywords: [...], desc:, seq: }
+  # seq counts bindkey calls; rebinding keys moves them to the end.
   # A key with a condition is "name(rule)", as in the binding syntax. desc is
   # the action's description, or the action itself (Ruby code, an unknown id).
   def bindings
@@ -396,13 +400,13 @@ class KeyBindingTree
       st.children.each { |c|
         p = path + [c.eval_rule.empty? ? c.key_name : "#{c.key_name}(#{c.eval_rule})"]
         if !c.action.nil?
-          out << { mode: mode, keys: p, action: c.action, keywords: c.keywords || [], desc: action_desc(c.action) }
+          out << { mode: mode, keys: p, action: c.action, keywords: c.keywords || [], desc: action_desc(c.action), seq: c.seq || 0 }
         end
         walk.(c, mode, p) if c.children.any?
       }
     }
     @root.children.each { |m| walk.(m, m.key_name, []) }
-    out
+    out.each_with_index.sort_by { |b, i| [b[:seq], i] }.map(&:first)
   end
 
   # Description of a bound action, or the action as text
@@ -649,6 +653,7 @@ class KeyBindingTree
       end
 
       if s_act.any? and !state_with_children.any?
+        wildcard = !eval_s.nil? # matched a "<char>" or /regexp/ key
         eval_s = s_act.first.action if eval_s == nil
         # if eval_s.to_s.match(/end_recording/)
         # require "pry"; binding.pry
@@ -658,6 +663,12 @@ class KeyBindingTree
         c.gsub!("\\", %q{\\\\} * 4) # Escape \ -chars
         c.gsub!("'", "#{'\\' * 4}'") # Escape ' -chars
 
+        if wildcard && eval_s.class == String && (r = @actions&.[](eval_s)) && !r.opt&.[](:code)
+          # A named action gets the typed character as its argument. As a
+          # string, so macros and the key log can replay it like Ruby code.
+          # (the gsub! below fills in the escaped character)
+          eval_s = "a.#{eval_s}!(<char>)"
+        end
         eval_s.gsub!("<char>", "'#{c}'") if eval_s.class == String
         log eval_s
         log c
@@ -882,6 +893,7 @@ class KeyBindingTree
       prev_state.children.delete(cur_state)
     else
       @cur_state.action = action
+      @cur_state.seq = (@bind_seq += 1)
     end
     @cur_state.keywords = keywords
     @cur_state = @root
@@ -895,7 +907,8 @@ class KeyBindingTree
     # $acth << action #TODO:needed here?
     @method_handles_repeat = false #TODO:??
     n = 1
-    if @next_command_count and !(action.class == String and action.include?("set_next_command_count"))
+    counting = action.class == String && (action.include?("set_next_command_count") || action.include?("kbd.count.digit"))
+    if @next_command_count and !counting
       n = @next_command_count
       log("COUNT command #{n} times")
     end
@@ -917,7 +930,7 @@ class KeyBindingTree
       @on_action_error.call(action, e)
     end
 
-    if !(action.class == String and action.include?("set_next_command_count"))
+    if !counting
       @next_command_count = nil
     end
 

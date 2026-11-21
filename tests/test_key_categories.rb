@@ -76,4 +76,83 @@ class TestKeyCategories < VmaTest
       vma.buffers.close_buffer(vma.buf.id)
     end
   end
+
+  # Step 3: rows merged across modes and keys, grouped by modes, conditions
+  # as text, definition order
+  def test_section_layout
+    kbd = KeyBindingTree.new(actions: ActionList.new)
+    kbd.add_mode("C", :command)
+    kbd.add_mode("V", :visual, :visual)
+    kbd.bindkey("VC , Q 2", "move.word.next")
+    kbd.bindkey("VC , Q 1", "move.word.next")
+    kbd.bindkey("C , Q 3(vma.kbd.next_command_count!=nil)", "move.word.next")
+    kbd.bindkey("C , Q 4(foo_bar)", "move.word.prev")
+    w = ", Q 2 / , Q 1".size
+    assert_eq ["◼◼ Command, Visual",
+               "    , Q 2 / , Q 1  move.word.next",
+               "◼◼ Command",
+               "    #{", Q 3".ljust(w)}  move.word.next (with a count)",
+               "    #{", Q 4".ljust(w)}  move.word.prev (if foo_bar)"],
+              key_bindings_section(kbd.bindings)
+  end
+
+  def test_page_layout
+    s = key_bindings_page(vma.kbd, scheme: "vimlike")
+    assert s.start_with?("❙Key bindings — scheme: vimlike❙"), s[0, 80]
+    heads = s.scan(/^◼ (.+)$/).flatten
+    assert_eq "Basics", heads[0]
+    basics = s[/^◼ Basics\n(.*?)\n\n/m, 1]
+    assert basics.include?(vma.actions["undo.last"].method_name), basics
+    assert s.include?("(with a count)"), "condition text missing"
+    assert !s.include?("(vma.kbd.next_command_count"), "raw condition shown"
+    motion = s[/^◼ Moving the cursor\n(.*?)\n\n/m, 1]
+    e, b = %w[move.word.end move.word.prev].map { |id| motion.index(vma.actions[id].method_name) }
+    assert e && b && e < b, "not in definition order:\n#{motion}"
+    assert motion.include?("◼◼ Command, Visual"), motion
+  end
+
+  # doc/action_names_plan.md step 6: every binding of every keymap runs a
+  # named action with a description, not Ruby code. A new Ruby-string
+  # binding fails here: register an action (reg_act) and bind its id.
+  # Readchar mode ("R <char>") is internal and not named.
+  def test_every_binding_has_a_description
+    [["vimlike"], ["vim"], ["vimlike", "notepad"]].each { |scheme|
+      kbd = load_scheme_kbd(scheme)
+      bad = kbd.bindings.reject { |b|
+        next true if b[:mode] == "R"
+        act = b[:action]
+        next false if act.class == Proc
+        r = [kbd.actions, vma.actions].map { |l| l[act] }.find { |x| x && !x.opt&.[](:code) }
+        r && !r.method_name.to_s.strip.empty? && r.method_name.to_s != act.to_s
+      }
+      assert bad.empty?, "#{scheme.join("+")}: no description for " +
+                         bad.map { |b| "#{b[:mode]} #{b[:keys].join(" ")} => #{b[:action].inspect}" }.inspect
+    }
+  end
+
+  # A named action bound to a <char> key gets the typed character
+  def test_char_argument
+    buf.set_content("abc\n")
+    buf.set_pos(0)
+    keys("f c")       # jump.char.next
+    assert_pos 0, 2
+    keys("r x")       # edit.replace.char
+    assert_buf "abx\n"
+    keys("m q")       # mark.set
+    keys("0")
+    keys("' q")       # mark.jump
+    assert_pos 0, 2
+    keys("i z esc")   # edit.insert.char
+    assert_buf "abzx\n"
+  end
+
+  # The character reaches the action also when a macro replays it
+  def test_char_argument_in_macro
+    buf.set_content("abc\n")
+    buf.set_pos(0)
+    keys("q w r y q") # macro.record w, edit.replace.char y, macro.record.stop
+    assert_buf "ybc\n"
+    keys("l @ w")     # macro.run w
+    assert_buf "yyc\n"
+  end
 end

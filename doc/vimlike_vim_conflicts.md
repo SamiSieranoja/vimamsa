@@ -8,38 +8,34 @@ Bindings that modules and `custom.rb` add at startup are not included.
 
 | | Count |
 |---|---|
-| Conflicts (the vim binding can't be used in vimlike) | 23 |
+| Conflicts (the vim binding can't be used in vimlike) | 19 |
 | Added to vimlike from the shared table (`VIM_BINDINGS`, vim_core.rb) | 19 |
 | Missing from vimlike (no conflict, could be added) | 0 |
-| Shared (same keys, same action) | 184 |
+| Shared (same keys, same action) | 188 |
 
 ## Conflicts
 
 | Mode | Vim keys | Vim action | vimlike | Reason |
 |---|---|---|---|---|
-| C | <code>@ @</code> | <code>macro.run.last</code> | <code>@ &lt;char&gt;</code> <code>vma.macro.run_macro(&lt;char&gt;)</code> | a vimlike <char> binding takes the key |
+| C | <code>@ @</code> | <code>macro.run.last</code> | <code>@ &lt;char&gt;</code> <code>macro.run</code> | a vimlike <char> binding takes the key |
 | C | <code>C</code> | <code>edit.change.eol</code> | <code>grep.files</code> | same keys, other action |
 | C | <code>O</code> | <code>edit.line.above</code> | <code>move.line.end</code> | same keys, other action |
-| C | <code>X</code> | <code>edit.delete.char.prev</code> | <code>buf.jump(END_OF_LINE);buf.insert_txt("\n");</code> | same keys, other action |
-| C | <code>^</code> | <code>buf.jump(FIRST_NON_WHITESPACE)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> | same keys, other action |
-| C | <code>backspace</code> | <code>buf.move(BACKWARD_CHAR)</code> | <code>edit.backspace</code> | same keys, other action |
+| C | <code>X</code> | <code>edit.delete.char.prev</code> | <code>edit.line.below</code> | same keys, other action |
+| C | <code>^</code> | <code>move.line.first_char</code> | <code>move.line.start</code> | same keys, other action |
+| C | <code>backspace</code> | <code>move.char.prev</code> | <code>edit.backspace</code> | same keys, other action |
 | C | <code>ctrl-o</code> | <code>jump.edit.prev</code> | <code>file.open</code> | same keys, other action |
-| C | <code>d $</code> | <code>edit.delete.eol</code> | <code>buf.delete2(:to_line_end)</code> | same keys, other action |
 | C | <code>s</code> | <code>edit.change.char</code> | <code>jump.easy</code> | same keys, other action |
-| C | <code>space</code> | <code>buf.move(FORWARD_CHAR)</code> | <code>2 longer bindings</code> | vimlike uses these keys as a prefix |
+| C | <code>space</code> | <code>move.char.next</code> | <code>2 longer bindings</code> | vimlike uses these keys as a prefix |
 | C | <code>x</code> | <code>edit.delete.char.inline</code> | <code>edit.delete.char</code> | same keys, other action |
 | C | <code>z z</code> | <code>view.center</code> | <code>z</code> <code>mode.browse</code> | a shorter vimlike binding runs first |
 | I | <code>ctrl-c</code> | <code>mode.prev</code> | <code>sel.copy</code> | same keys, other action |
 | I | <code>ctrl-h</code> | <code>edit.backspace</code> | <code>edit.complete</code> | same keys, other action |
-| I | <code>ctrl-j</code> | <code>buf.insert_new_line()</code> | <code>buf.view.hide_completions</code> | same keys, other action |
+| I | <code>ctrl-j</code> | <code>edit.newline</code> | <code>edit.complete.hide</code> | same keys, other action |
 | I | <code>ctrl-n</code> | <code>edit.complete</code> | <code>move.line.next</code> | same keys, other action |
 | I | <code>ctrl-p</code> | <code>edit.complete</code> | <code>move.line.prev</code> | same keys, other action |
-| V | <code>U</code> | <code>buf.transform_selection(:upcase)</code> | <code>case.sel.upper</code> | same keys, other action |
-| V | <code>^</code> | <code>buf.jump(FIRST_NON_WHITESPACE)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> | same keys, other action |
-| V | <code>ctrl-c</code> | <code>buf.end_visual_mode</code> | <code>edit.comment</code> | same keys, other action |
+| V | <code>^</code> | <code>move.line.first_char</code> | <code>move.line.start</code> | same keys, other action |
+| V | <code>ctrl-c</code> | <code>mode.visual.exit</code> | <code>edit.comment</code> | same keys, other action |
 | V | <code>s</code> | <code>sel.change</code> | <code>jump.easy</code> | same keys, other action |
-| V | <code>u</code> | <code>buf.transform_selection(:downcase)</code> | <code>case.sel.lower</code> | same keys, other action |
-| V | <code>~</code> | <code>buf.transform_selection(:swapcase)</code> | <code>case.sel.swap</code> | same keys, other action |
 
 ## Added to vimlike
 
@@ -52,20 +48,20 @@ its own is in the way.
 | C | <code>D</code> | <code>edit.delete.eol</code> |
 | C | <code>S</code> | <code>edit.change.line</code> |
 | C | <code>Y</code> | <code>edit.line.copy</code> |
-| C | <code>` &lt;char&gt;</code> | <code>buf.jump_to_mark(&lt;char&gt;)</code> |
+| C | <code>` &lt;char&gt;</code> | <code>mark.jump</code> |
 | C | <code>c $</code> | <code>edit.change.eol</code> |
 | C | <code>c c</code> | <code>edit.change.line</code> |
 | C | <code>c e</code> | <code>edit.change.word</code> |
 | C | <code>c w</code> | <code>edit.change.word</code> |
-| C | <code>ctrl-a</code> | <code>buf.increment_current_word</code> |
+| C | <code>ctrl-a</code> | <code>edit.word.increment</code> |
 | C | <code>ctrl-b</code> | <code>move.page.prev</code> |
-| C | <code>ctrl-d</code> | <code>buf.move(:forward_page)</code> |
+| C | <code>ctrl-d</code> | <code>move.page.next.cursor</code> |
 | C | <code>ctrl-f</code> | <code>move.page.next</code> |
-| C | <code>ctrl-u</code> | <code>buf.move(:backward_page)</code> |
-| C | <code>y $</code> | <code>buf.copy(:to_line_end)</code> |
-| C | <code>y w</code> | <code>buf.copy(:to_next_word)</code> |
-| V | <code>&lt;</code> | <code>buf.unindent_selection</code> |
-| V | <code>&gt;</code> | <code>buf.indent_selection</code> |
+| C | <code>ctrl-u</code> | <code>move.page.prev.cursor</code> |
+| C | <code>y $</code> | <code>edit.copy.line.end</code> |
+| C | <code>y w</code> | <code>edit.copy.word.next</code> |
+| V | <code>&lt;</code> | <code>sel.indent.less</code> |
+| V | <code>&gt;</code> | <code>sel.indent.more</code> |
 | V | <code>c</code> | <code>sel.change</code> |
 
 ## Missing from vimlike
@@ -81,7 +77,7 @@ its own is in the way.
 | B | <code>c</code> | <code>buf.close</code> |
 | B | <code>ctrl!</code> | <code>mode.browse.exit</code> |
 | B | <code>d</code> | <code>move.page.next</code> |
-| B | <code>e</code> | <code>vma.gui.page_up(multip: 0.25)</code> |
+| B | <code>e</code> | <code>move.page.prev.quarter</code> |
 | B | <code>enter</code> | <code>mode.browse.exit</code> |
 | B | <code>esc</code> | <code>mode.browse.exit</code> |
 | B | <code>h</code> | <code>buf.history.prev</code> |
@@ -93,66 +89,67 @@ its own is in the way.
 | B | <code>o</code> | <code>move.buf.end</code> |
 | B | <code>p</code> | <code>panel.files.prev</code> |
 | B | <code>q</code> | <code>jump.edit.prev</code> |
-| B | <code>r</code> | <code>vma.gui.page_down(multip: 0.25)</code> |
+| B | <code>r</code> | <code>move.page.next.quarter</code> |
 | B | <code>return</code> | <code>mode.browse.exit</code> |
 | B | <code>s</code> | <code>move.page.prev</code> |
 | B | <code>w</code> | <code>jump.edit.next</code> |
-| B | <code>z</code> | <code>center_on_current_line();call_action('mode.browse.exit')</code> |
-| C | <code>$</code> | <code>buf.jump(END_OF_LINE)</code> |
-| C | <code>' &lt;char&gt;</code> | <code>buf.jump_to_mark(&lt;char&gt;)</code> |
-| C | <code>*</code> | <code>buf.jump_to_next_instance_of_word</code> |
+| B | <code>z</code> | <code>mode.browse.center</code> |
+| C | <code>$</code> | <code>move.line.end</code> |
+| C | <code>' &lt;char&gt;</code> | <code>mark.jump</code> |
+| C | <code>*</code> | <code>search.word.next</code> |
 | C | <code>/</code> | <code>search.buf</code> |
-| C | <code>/[1-9]/</code> | <code>vma.kbd.set_next_command_count(&lt;char&gt;)</code> |
-| C | <code>0(vma.kbd.next_command_count!=nil)</code> | <code>vma.kbd.set_next_command_count(&lt;char&gt;)</code> |
-| C | <code>0(vma.kbd.next_command_count==nil)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> |
+| C | <code>/[1-9]/</code> | <code>kbd.count.digit</code> |
+| C | <code>0(vma.kbd.next_command_count!=nil)</code> | <code>kbd.count.digit</code> |
+| C | <code>0(vma.kbd.next_command_count==nil)</code> | <code>move.line.start</code> |
 | C | <code>:</code> | <code>mode.cmdline</code> |
-| C | <code>;</code> | <code>repeat_last_find</code> |
-| C | <code>@ &lt;char&gt;</code> | <code>vma.macro.run_macro(&lt;char&gt;)</code> |
-| C | <code>A</code> | <code>buf.jump(END_OF_LINE);vma.kbd.set_mode(:insert)</code> |
-| C | <code>F &lt;char&gt;</code> | <code>buf.jump_to_next_instance_of_char(&lt;char&gt;,BACKWARD)</code> |
-| C | <code>F space</code> | <code>buf.jump_to_next_instance_of_char(' ',BACKWARD)</code> |
+| C | <code>;</code> | <code>jump.char.repeat</code> |
+| C | <code>@ &lt;char&gt;</code> | <code>macro.run</code> |
+| C | <code>A</code> | <code>mode.insert.line.end</code> |
+| C | <code>F &lt;char&gt;</code> | <code>jump.char.prev</code> |
+| C | <code>F space</code> | <code>jump.space.prev</code> |
 | C | <code>G</code> | <code>move.buf.end</code> |
-| C | <code>G(vma.kbd.next_command_count!=nil)</code> | <code>buf.jump_to_line()</code> |
-| C | <code>I</code> | <code>buf.jump(FIRST_NON_WHITESPACE);vma.kbd.set_mode(:insert)</code> |
-| C | <code>J</code> | <code>buf.join_lines()</code> |
-| C | <code>N</code> | <code>$search.jump_to_previous()</code> |
+| C | <code>G(vma.kbd.next_command_count!=nil)</code> | <code>move.line.goto</code> |
+| C | <code>I</code> | <code>mode.insert.line.start</code> |
+| C | <code>J</code> | <code>edit.line.join</code> |
+| C | <code>N</code> | <code>search.prev</code> |
 | C | <code>P</code> | <code>edit.paste.before</code> |
-| C | <code>R</code> | <code>vma.kbd.set_mode(:replace)</code> |
-| C | <code>a</code> | <code>buf.move(FORWARD_CHAR);vma.kbd.set_mode(:insert)</code> |
+| C | <code>R</code> | <code>mode.replace</code> |
+| C | <code>a</code> | <code>mode.insert.after</code> |
 | C | <code>alt-h</code> | <code>panel.files.prev</code> |
 | C | <code>alt-l</code> | <code>panel.files.next</code> |
 | C | <code>b</code> | <code>move.word.prev</code> |
-| C | <code>c a &lt;char&gt;</code> | <code>buf.text_object_op(:change, &lt;char&gt;, :a)</code> |
-| C | <code>c i &lt;char&gt;</code> | <code>buf.text_object_op(:change, &lt;char&gt;, :i)</code> |
+| C | <code>c a &lt;char&gt;</code> | <code>obj.change.around</code> |
+| C | <code>c i &lt;char&gt;</code> | <code>obj.change.inner</code> |
 | C | <code>ctrl-r</code> | <code>undo.redo</code> |
-| C | <code>d ' &lt;char&gt;</code> | <code>buf.delete2(:to_mark,&lt;char&gt;)</code> |
+| C | <code>d $</code> | <code>edit.delete.eol</code> |
+| C | <code>d ' &lt;char&gt;</code> | <code>edit.delete.mark</code> |
 | C | <code>d 0</code> | <code>edit.delete.line.start</code> |
-| C | <code>d F &lt;char&gt;</code> | <code>buf.delete2(:to_char_backward,&lt;char&gt;)</code> |
-| C | <code>d F space</code> | <code>buf.delete2(:to_char_backward,' ')</code> |
-| C | <code>d a &lt;char&gt;</code> | <code>buf.text_object_op(:delete, &lt;char&gt;, :a)</code> |
+| C | <code>d F &lt;char&gt;</code> | <code>edit.delete.find.prev</code> |
+| C | <code>d F space</code> | <code>edit.delete.space.prev</code> |
+| C | <code>d a &lt;char&gt;</code> | <code>obj.delete.around</code> |
 | C | <code>d d</code> | <code>edit.delete.line</code> |
-| C | <code>d e</code> | <code>buf.delete2(:to_word_end)</code> |
-| C | <code>d f &lt;char&gt;</code> | <code>buf.delete2(:to_char,&lt;char&gt;)</code> |
-| C | <code>d f space</code> | <code>buf.delete2(:to_char,' ')</code> |
-| C | <code>d i &lt;char&gt;</code> | <code>buf.text_object_op(:delete, &lt;char&gt;, :i)</code> |
+| C | <code>d e</code> | <code>edit.delete.word.end</code> |
+| C | <code>d f &lt;char&gt;</code> | <code>edit.delete.find.next</code> |
+| C | <code>d f space</code> | <code>edit.delete.space.next</code> |
+| C | <code>d i &lt;char&gt;</code> | <code>obj.delete.inner</code> |
 | C | <code>d w</code> | <code>edit.delete.word.next</code> |
-| C | <code>down</code> | <code>buf.move(FORWARD_LINE)</code> |
+| C | <code>down</code> | <code>move.line.next</code> |
 | C | <code>e</code> | <code>move.word.end</code> |
 | C | <code>enter</code> | <code>jump.line</code> |
-| C | <code>f &lt;char&gt;</code> | <code>buf.jump_to_next_instance_of_char(&lt;char&gt;)</code> |
-| C | <code>f space</code> | <code>buf.jump_to_next_instance_of_char(' ')</code> |
+| C | <code>f &lt;char&gt;</code> | <code>jump.char.next</code> |
+| C | <code>f space</code> | <code>jump.space.next</code> |
 | C | <code>g ;</code> | <code>jump.edit.prev</code> |
 | C | <code>g U U</code> | <code>case.line.upper</code> |
-| C | <code>g U a &lt;char&gt;</code> | <code>buf.text_object_op(:upcase, &lt;char&gt;, :a)</code> |
-| C | <code>g U i &lt;char&gt;</code> | <code>buf.text_object_op(:upcase, &lt;char&gt;, :i)</code> |
+| C | <code>g U a &lt;char&gt;</code> | <code>obj.upper.around</code> |
+| C | <code>g U i &lt;char&gt;</code> | <code>obj.upper.inner</code> |
 | C | <code>g U w</code> | <code>case.word.upper</code> |
 | C | <code>g g</code> | <code>move.buf.start</code> |
-| C | <code>g u a &lt;char&gt;</code> | <code>buf.text_object_op(:downcase, &lt;char&gt;, :a)</code> |
-| C | <code>g u i &lt;char&gt;</code> | <code>buf.text_object_op(:downcase, &lt;char&gt;, :i)</code> |
+| C | <code>g u a &lt;char&gt;</code> | <code>obj.lower.around</code> |
+| C | <code>g u i &lt;char&gt;</code> | <code>obj.lower.inner</code> |
 | C | <code>g u u</code> | <code>case.line.lower</code> |
 | C | <code>g u w</code> | <code>case.word.lower</code> |
-| C | <code>g ~ a &lt;char&gt;</code> | <code>buf.text_object_op(:swapcase, &lt;char&gt;, :a)</code> |
-| C | <code>g ~ i &lt;char&gt;</code> | <code>buf.text_object_op(:swapcase, &lt;char&gt;, :i)</code> |
+| C | <code>g ~ a &lt;char&gt;</code> | <code>obj.swap.around</code> |
+| C | <code>g ~ i &lt;char&gt;</code> | <code>obj.swap.inner</code> |
 | C | <code>g ~ w</code> | <code>case.word.swap</code> |
 | C | <code>g ~ ~</code> | <code>case.line.swap</code> |
 | C | <code>h</code> | <code>move.char.prev</code> |
@@ -160,104 +157,107 @@ its own is in the way.
 | C | <code>j</code> | <code>move.line.next</code> |
 | C | <code>k</code> | <code>move.line.prev</code> |
 | C | <code>l</code> | <code>move.char.next</code> |
-| C | <code>left</code> | <code>buf.move(BACKWARD_CHAR)</code> |
-| C | <code>m &lt;char&gt;</code> | <code>buf.mark_current_position(&lt;char&gt;)</code> |
+| C | <code>left</code> | <code>move.char.prev</code> |
+| C | <code>m &lt;char&gt;</code> | <code>mark.set</code> |
 | C | <code>n</code> | <code>search.next</code> |
-| C | <code>o</code> | <code>buf.jump(END_OF_LINE);buf.insert_txt("\n");vma.kbd.set_mo...</code> |
+| C | <code>o</code> | <code>mode.insert.line.below</code> |
 | C | <code>p</code> | <code>edit.paste.after</code> |
 | C | <code>pagedown</code> | <code>move.page.next</code> |
 | C | <code>pageup</code> | <code>move.page.prev</code> |
-| C | <code>q &lt;char&gt;</code> | <code>vma.kbd.set_mode(:macro);vma.macro.start_recording(&lt;char&gt;)</code> |
-| C | <code>r &lt;char&gt;</code> | <code>buf.replace_with_char(&lt;char&gt;)</code> |
-| C | <code>r space</code> | <code>buf.replace_with_char(' ')</code> |
+| C | <code>q &lt;char&gt;</code> | <code>macro.record</code> |
+| C | <code>r &lt;char&gt;</code> | <code>edit.replace.char</code> |
+| C | <code>r space</code> | <code>edit.replace.space</code> |
 | C | <code>return</code> | <code>jump.line</code> |
-| C | <code>right</code> | <code>buf.move(FORWARD_CHAR)</code> |
-| C | <code>tab</code> | <code>bufs.switch_to_last_buf</code> |
+| C | <code>right</code> | <code>move.char.next</code> |
+| C | <code>tab</code> | <code>buf.switch.last</code> |
 | C | <code>u</code> | <code>undo.last</code> |
-| C | <code>up</code> | <code>buf.move(BACKWARD_LINE)</code> |
+| C | <code>up</code> | <code>move.line.prev</code> |
 | C | <code>v</code> | <code>mode.visual</code> |
 | C | <code>w</code> | <code>move.word.next</code> |
-| C | <code>y ' &lt;char&gt;</code> | <code>buf.copy(:to_mark,&lt;char&gt;)</code> |
-| C | <code>y 0</code> | <code>buf.copy(:to_line_start)</code> |
-| C | <code>y a &lt;char&gt;</code> | <code>buf.text_object_op(:yank, &lt;char&gt;, :a)</code> |
-| C | <code>y e</code> | <code>buf.copy(:to_word_end)</code> |
-| C | <code>y i &lt;char&gt;</code> | <code>buf.text_object_op(:yank, &lt;char&gt;, :i)</code> |
+| C | <code>y ' &lt;char&gt;</code> | <code>edit.copy.mark</code> |
+| C | <code>y 0</code> | <code>edit.copy.line.start</code> |
+| C | <code>y a &lt;char&gt;</code> | <code>obj.copy.around</code> |
+| C | <code>y e</code> | <code>edit.copy.word.end</code> |
+| C | <code>y i &lt;char&gt;</code> | <code>obj.copy.inner</code> |
 | C | <code>y y</code> | <code>edit.line.copy</code> |
 | C | <code>~</code> | <code>case.char.toggle</code> |
-| I | <code>&lt;char&gt;</code> | <code>buf.insert_txt(&lt;char&gt;)</code> |
+| I | <code>&lt;char&gt;</code> | <code>edit.insert.char</code> |
 | I | <code>backspace</code> | <code>edit.backspace</code> |
 | I | <code>ctrl-space</code> | <code>edit.complete</code> |
-| I | <code>down</code> | <code>insert_move(FORWARD_LINE)</code> |
+| I | <code>down</code> | <code>move.line.next.unselect</code> |
 | I | <code>enter</code> | <code>edit.newline</code> |
 | I | <code>esc</code> | <code>mode.prev</code> |
-| I | <code>left</code> | <code>insert_move(BACKWARD_CHAR)</code> |
-| I | <code>pagedown</code> | <code>insert_move(:pagedown)</code> |
-| I | <code>pageup</code> | <code>insert_move(:pageup)</code> |
-| I | <code>right</code> | <code>insert_move(FORWARD_CHAR)</code> |
-| I | <code>shift!(vma.buf.view.autocp_active)</code> | <code>buf.view.autocp_select</code> |
-| I | <code>shift-down</code> | <code>insert_select_move(FORWARD_LINE)</code> |
-| I | <code>shift-left</code> | <code>insert_select_move(BACKWARD_CHAR)</code> |
-| I | <code>shift-pagedown</code> | <code>insert_select_move(:pagedown)</code> |
-| I | <code>shift-pageup</code> | <code>insert_select_move(:pageup)</code> |
-| I | <code>shift-right</code> | <code>insert_select_move(FORWARD_CHAR)</code> |
-| I | <code>shift-tab</code> | <code>buf.unindent</code> |
-| I | <code>shift-tab(vma.buf.view.autocp_active)</code> | <code>buf.view.autocp_select_previous</code> |
+| I | <code>left</code> | <code>move.char.prev.unselect</code> |
+| I | <code>pagedown</code> | <code>move.page.next.unselect</code> |
+| I | <code>pageup</code> | <code>move.page.prev.unselect</code> |
+| I | <code>right</code> | <code>move.char.next.unselect</code> |
+| I | <code>shift!(vma.buf.view.autocp_active)</code> | <code>edit.complete.accept</code> |
+| I | <code>shift-down</code> | <code>sel.line.next</code> |
+| I | <code>shift-left</code> | <code>sel.char.prev</code> |
+| I | <code>shift-pagedown</code> | <code>sel.page.next</code> |
+| I | <code>shift-pageup</code> | <code>sel.page.prev</code> |
+| I | <code>shift-right</code> | <code>sel.char.next</code> |
+| I | <code>shift-tab</code> | <code>edit.untab</code> |
+| I | <code>shift-tab(vma.buf.view.autocp_active)</code> | <code>edit.complete.prev</code> |
 | I | <code>shift-up</code> | <code>sel.line.prev</code> |
-| I | <code>space</code> | <code>buf.insert_txt(" ")</code> |
-| I | <code>tab</code> | <code>buf.insert_tab</code> |
-| I | <code>tab(vma.buf.view.autocp_active)</code> | <code>buf.view.autocp_select_next</code> |
-| I | <code>up</code> | <code>insert_move(BACKWARD_LINE)</code> |
+| I | <code>space</code> | <code>edit.insert.space</code> |
+| I | <code>tab</code> | <code>edit.tab</code> |
+| I | <code>tab(vma.buf.view.autocp_active)</code> | <code>edit.complete.next</code> |
+| I | <code>up</code> | <code>move.line.prev.unselect</code> |
 | R | <code>&lt;char&gt;</code> | <code>readchar_new_char(&lt;char&gt;)</code> |
-| V | <code>$</code> | <code>buf.jump(END_OF_LINE)</code> |
-| V | <code>' &lt;char&gt;</code> | <code>buf.jump_to_mark(&lt;char&gt;)</code> |
-| V | <code>*</code> | <code>buf.jump_to_next_instance_of_word</code> |
+| V | <code>$</code> | <code>move.line.end</code> |
+| V | <code>' &lt;char&gt;</code> | <code>mark.jump</code> |
+| V | <code>*</code> | <code>search.word.next</code> |
 | V | <code>/</code> | <code>search.buf</code> |
-| V | <code>/[1-9]/</code> | <code>vma.kbd.set_next_command_count(&lt;char&gt;)</code> |
-| V | <code>0(vma.kbd.next_command_count!=nil)</code> | <code>vma.kbd.set_next_command_count(&lt;char&gt;)</code> |
-| V | <code>0(vma.kbd.next_command_count==nil)</code> | <code>buf.jump(BEGINNING_OF_LINE)</code> |
-| V | <code>;</code> | <code>repeat_last_find</code> |
-| V | <code>F &lt;char&gt;</code> | <code>buf.jump_to_next_instance_of_char(&lt;char&gt;,BACKWARD)</code> |
-| V | <code>F space</code> | <code>buf.jump_to_next_instance_of_char(' ',BACKWARD)</code> |
+| V | <code>/[1-9]/</code> | <code>kbd.count.digit</code> |
+| V | <code>0(vma.kbd.next_command_count!=nil)</code> | <code>kbd.count.digit</code> |
+| V | <code>0(vma.kbd.next_command_count==nil)</code> | <code>move.line.start</code> |
+| V | <code>;</code> | <code>jump.char.repeat</code> |
+| V | <code>F &lt;char&gt;</code> | <code>jump.char.prev</code> |
+| V | <code>F space</code> | <code>jump.space.prev</code> |
 | V | <code>G</code> | <code>move.buf.end</code> |
-| V | <code>G(vma.kbd.next_command_count!=nil)</code> | <code>buf.jump_to_line()</code> |
+| V | <code>G(vma.kbd.next_command_count!=nil)</code> | <code>move.line.goto</code> |
 | V | <code>J</code> | <code>sel.join</code> |
-| V | <code>a &lt;char&gt;</code> | <code>buf.text_object_op(:select, &lt;char&gt;, :a)</code> |
+| V | <code>U</code> | <code>case.sel.upper</code> |
+| V | <code>a &lt;char&gt;</code> | <code>obj.select.around</code> |
 | V | <code>b</code> | <code>move.word.prev</code> |
 | V | <code>d</code> | <code>sel.delete</code> |
-| V | <code>down</code> | <code>buf.move(FORWARD_LINE)</code> |
+| V | <code>down</code> | <code>move.line.next</code> |
 | V | <code>e</code> | <code>move.word.end</code> |
-| V | <code>esc</code> | <code>buf.end_visual_mode</code> |
-| V | <code>f &lt;char&gt;</code> | <code>buf.jump_to_next_instance_of_char(&lt;char&gt;)</code> |
-| V | <code>f space</code> | <code>buf.jump_to_next_instance_of_char(' ')</code> |
+| V | <code>esc</code> | <code>mode.visual.exit</code> |
+| V | <code>f &lt;char&gt;</code> | <code>jump.char.next</code> |
+| V | <code>f space</code> | <code>jump.space.next</code> |
 | V | <code>g ;</code> | <code>jump.edit.prev</code> |
 | V | <code>g U</code> | <code>case.sel.upper</code> |
 | V | <code>g g</code> | <code>move.buf.start</code> |
 | V | <code>g u</code> | <code>case.sel.lower</code> |
 | V | <code>h</code> | <code>move.char.prev</code> |
-| V | <code>i &lt;char&gt;</code> | <code>buf.text_object_op(:select, &lt;char&gt;, :i)</code> |
+| V | <code>i &lt;char&gt;</code> | <code>obj.select.inner</code> |
 | V | <code>j</code> | <code>move.line.next</code> |
 | V | <code>k</code> | <code>move.line.prev</code> |
 | V | <code>l</code> | <code>move.char.next</code> |
-| V | <code>left</code> | <code>buf.move(BACKWARD_CHAR)</code> |
-| V | <code>m &lt;char&gt;</code> | <code>buf.mark_current_position(&lt;char&gt;)</code> |
+| V | <code>left</code> | <code>move.char.prev</code> |
+| V | <code>m &lt;char&gt;</code> | <code>mark.set</code> |
 | V | <code>pagedown</code> | <code>move.page.next</code> |
 | V | <code>pageup</code> | <code>move.page.prev</code> |
-| V | <code>q &lt;char&gt;</code> | <code>vma.kbd.set_mode(:macro);vma.macro.start_recording(&lt;char&gt;)</code> |
-| V | <code>right</code> | <code>buf.move(FORWARD_CHAR)</code> |
-| V | <code>up</code> | <code>buf.move(BACKWARD_LINE)</code> |
+| V | <code>q &lt;char&gt;</code> | <code>macro.record</code> |
+| V | <code>right</code> | <code>move.char.next</code> |
+| V | <code>u</code> | <code>case.sel.lower</code> |
+| V | <code>up</code> | <code>move.line.prev</code> |
 | V | <code>w</code> | <code>move.word.next</code> |
-| V | <code>x</code> | <code>buf.delete(SELECTION)</code> |
-| V | <code>y</code> | <code>buf.copy_active_selection()</code> |
-| X | <code>&lt;char&gt;</code> | <code>buf.replace_with_char(&lt;char&gt;);buf.move(FORWARD_CHAR)</code> |
-| X | <code>down</code> | <code>buf.move(FORWARD_LINE)</code> |
-| X | <code>esc</code> | <code>vma.kbd.to_previous_mode</code> |
-| X | <code>left</code> | <code>buf.move(BACKWARD_CHAR)</code> |
-| X | <code>right</code> | <code>buf.move(FORWARD_CHAR)</code> |
-| X | <code>up</code> | <code>buf.move(BACKWARD_LINE)</code> |
-| audio | <code>esc</code> | <code>vma.kbd.to_previous_mode</code> |
+| V | <code>x</code> | <code>sel.cut</code> |
+| V | <code>y</code> | <code>sel.copy</code> |
+| V | <code>~</code> | <code>case.sel.swap</code> |
+| X | <code>&lt;char&gt;</code> | <code>edit.replace.char.next</code> |
+| X | <code>down</code> | <code>move.line.next</code> |
+| X | <code>esc</code> | <code>mode.prev</code> |
+| X | <code>left</code> | <code>move.char.prev</code> |
+| X | <code>right</code> | <code>move.char.next</code> |
+| X | <code>up</code> | <code>move.line.prev</code> |
+| audio | <code>esc</code> | <code>mode.prev</code> |
 | audio | <code>f</code> | <code>audio.forward</code> |
 | audio | <code>left</code> | <code>audio.backward</code> |
-| audio | <code>q</code> | <code>vma.kbd.to_previous_mode</code> |
+| audio | <code>q</code> | <code>mode.prev</code> |
 | audio | <code>right</code> | <code>audio.forward</code> |
 | audio | <code>space</code> | <code>audio.stop</code> |
-| macro | <code>q</code> | <code>vma.kbd.to_previous_mode; vma.macro.end_recording</code> |
+| macro | <code>q</code> | <code>macro.record.stop</code> |

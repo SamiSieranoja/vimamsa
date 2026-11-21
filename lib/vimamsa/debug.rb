@@ -14,7 +14,7 @@ def debug(message, severity = 1)
   end
 end
 
-def debug_print_buffer(c)
+def debug_print_buffer(_c = nil)
   puts buf.inspect
   puts buf
 end

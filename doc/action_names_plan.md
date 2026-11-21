@@ -1,8 +1,7 @@
 # Plan: consistent, hierarchical action names
 
-TODO: act next on step 6 of "Order": name the Ruby-string bindings, as part of
-the "Descriptive names for key bindings" item in `doc/TODO.md`. Steps 1-5 are
-done (see DONE at the end).
+TODO: all steps of "Order" are done (see DONE at the end). Remaining: the
+aliases in `ACTION_ALIASES` can go after two releases.
 
 ## Context
 
@@ -414,3 +413,30 @@ in the Marshal backups.
   `doc/key_bindings_report_plan.md`, see its DONE entry). `ACTION_NS_CATEGORY`
   maps a namespace (or a longer prefix such as `mode.visual`) to a category of
   the key bindings page; only Ruby-string bindings need a `cat:` tag.
+- **Step 6: Ruby-string bindings named** (2026-11-21). The 116 distinct Ruby
+  strings bound in vimlike, vim (`vim_core.rb`, `key_bindings_vim.rb`) and
+  notepad, plus the 14 text-object templates, are named actions with
+  descriptions: 184 binding lines changed. Strings that ran the same code as
+  an existing action use it (`buf.move(FORWARD_CHAR)` → `move.char.next`,
+  `buf.transform_selection(:upcase)` → `case.sel.upper`, ...); the rest are
+  new actions at the end of `key_actions.rb` and, for text objects
+  (`obj.<op>.inner|around`), in `bind_vim_text_objects`. New namespaces:
+  `kbd` (`kbd.count.digit`) and `obj`. An action bound to a `<char>` key
+  gets the typed character as its argument: `KeyBindingTree` runs it as
+  `a.<id>!('<char>')`, a string, so macros, `.` repeat and the key log replay
+  it as before (`ActionRef` and `ActionList#call` pass arguments on). The
+  key log panel coalesces `a.edit.insert.char!(...)` like
+  `buf.insert_txt(...)`. Also: the `V d` / `V a d` and Browse `r` / `e`
+  inline actions moved to `key_actions.rb` (the vim keymap bound `V d` to
+  an id only vimlike registered), the dead `C , , f` binding now runs
+  `file.finder`, a duplicate `C , c b` line was removed,
+  `debug_print_buffer` no longer requires an unused argument, and empty or
+  wrong descriptions were fixed (`edit.delete.word.end`, `view.center`,
+  `move.random`).
+  Behavior change: vimlike `d O` / `d $` now use `edit.delete.eol`, which
+  does nothing on an empty line instead of deleting the previous newline.
+  Left: `R <char>` still runs `readchar_new_char(<char>)`, which is not
+  defined anywhere (readchar mode looks unused).
+  Test: `test_every_binding_has_a_description` in
+  `tests/test_key_categories.rb` (every binding of every keymap has a named
+  action with a description), plus `<char>` argument and macro replay tests.
