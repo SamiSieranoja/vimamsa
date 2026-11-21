@@ -185,6 +185,32 @@ class TestKeylogPanel < VmaTest
     end
   end
 
+  # A buffer switch by a key doesn't cover the hint: the new scrolled window
+  # is the overlay's main child, drawn below the hint (gui.rb
+  # set_current_buffer)
+  def test_hint_stays_above_after_buffer_switch
+    create_new_buffer("first buffer\n", "hint_a")
+    create_new_buffer("second buffer\n", "hint_b")
+    with_panel do
+      keys "tab"
+      drain_for(0.1)
+      assert_eq "first buffer\n", vma.buf.to_s, "tab didn't switch buffers"
+      ov = vma.gui.active_window[:overlay]
+      sw = vma.gui.active_window[:sw]
+      w = panel.hint.widget
+      assert w.visible?, "hint not shown"
+      assert_eq ov, w.parent
+      assert_eq sw, ov.child, "scrolled window not the overlay's main child"
+      kids = []
+      c = ov.first_child
+      while c
+        kids << c
+        c = c.next_sibling
+      end
+      assert kids.index(w) > kids.index(sw), "hint drawn below the text: #{kids.map { |k| k.class }.inspect}"
+    end
+  end
+
   def test_hint_typed_text_and_pending
     with_panel do
       keys "g"

@@ -929,8 +929,11 @@ class VMAgui
     n_sw = Gtk::ScrolledWindow.new
     n_sw.set_policy(:automatic, :automatic)
     n_sw.add_css_class("editor-frame")
+    # The scrolled window is the overlay's main child, which GTK always draws
+    # below the overlay children (key hint, easy jump labels): a buffer switch
+    # replaces it there and doesn't cover them (set_current_buffer)
     n_overlay = Gtk::Overlay.new
-    n_overlay.add_overlay(n_sw)
+    n_overlay.set_child(n_sw)
     # @pane = Gtk::Paned.new(:horizontal)
 
     win = { :sw => n_sw, :overlay => n_overlay, :id => win_id }
@@ -1096,13 +1099,14 @@ class VMAgui
       #TODO: improve
       swa = @active_window[:sw]
       ol = @active_window[:overlay]
-      ol.remove_overlay(swa)
       swa.set_child(nil)
       # Creating a new ScrolledWindow every time to avoid a layout bug
       # https://gitlab.gnome.org/GNOME/gtk/-/issues/6189
       swb = new_scrolled_window
       swb.set_child(view2)
-      ol.add_overlay(swb)
+      # The overlay's main child: the overlay children (key hint, easy jump
+      # labels) stay above it
+      ol.set_child(swb)
       @active_window[:view] = view
       @active_window[:sw] = swb
     end
