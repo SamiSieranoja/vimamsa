@@ -378,24 +378,42 @@ class DemoPlayer
   # (1-based), or else the first line holding that text
   def jump_label
     ej = EasyJump.class_variable_get(:@@cur) rescue nil
-    ls = target_line_start
-    return ["esc"] if ej.nil? || ls.nil?
+    tp = target_pos
+    return ["esc"] if ej.nil? || tp.nil?
     marks = ej.instance_variable_get(:@easy_jump_wsmarks)
     seq = ej.instance_variable_get(:@jump_sequence)
-    n = marks.index(ls)
+    n = marks.index(tp)
+    if n.nil?
+      # Not labelled here (e.g. not visible in this window): the nearest
+      # labelled place on the same line
+      ls = line_start_of(tp)
+      le = vma.buf.index("\n", tp) || vma.buf.size
+      near = marks.each_with_index.select { |m, _| m >= ls && m <= le }.min_by { |m, _| (m - tp).abs }
+      n = near&.last
+    end
     n.nil? || seq[n].nil? ? ["esc"] : seq[n].downcase.chars
   end
 
-  def target_line_start
+  # Where @target says easy jump goes: "line N col C" (1-based, the place
+  # the recorder saw the cursor land), "line N" (its start), or the start
+  # of the first line holding the text
+  def target_pos
     return nil if @target.nil?
-    if (m = /\Aline (\d+)\z/.match(@target))
+    if (m = /\Aline (\d+)(?: col (\d+))?\z/.match(@target))
       l = m[1].to_i - 1
       return nil if l < 0 || l > vma.buf.line_ends.size
-      return l == 0 ? 0 : vma.buf.line_ends[l - 1] + 1
+      ls = l == 0 ? 0 : vma.buf.line_ends[l - 1] + 1
+      return ls if m[2].nil?
+      le = vma.buf.index("\n", ls) || vma.buf.size
+      return (ls + m[2].to_i - 1).clamp(ls, le)
     end
     i = vma.buf.index(@target)
     return nil if i.nil?
-    i == 0 ? 0 : (vma.buf.rindex("\n", i - 1) || -1) + 1
+    line_start_of(i)
+  end
+
+  def line_start_of(pos)
+    pos == 0 ? 0 : (vma.buf.rindex("\n", pos - 1) || -1) + 1
   end
 end
 end # module Vimamsa

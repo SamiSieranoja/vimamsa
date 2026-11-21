@@ -7,7 +7,9 @@
 #   type TEXT      type TEXT character by character (Insert mode)
 #   wait SECONDS   pause
 #   delay SECONDS  time between keys from now on
-#   target TEXT    the line easy jump goes to: the first one holding TEXT.
+#   target TEXT    where easy jump goes: the start of the first line holding
+#                  TEXT; or "line N" (its start), or "line N col C" (1-based,
+#                  the exact character; written by the demo recorder).
 #                  The player in the editor types that line's label (labels
 #                  depend on the window size); the recording types
 #                  JUMP_LABEL from record_demo.rb.

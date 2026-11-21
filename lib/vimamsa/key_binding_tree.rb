@@ -222,6 +222,11 @@ class KeyBindingTree
     @override_keyhandling_callback = _callback
   end
 
+  # True while something reads the keys itself (easy jump's labels)
+  def keyhandling_override?
+    !@override_keyhandling_callback.nil?
+  end
+
   def remove_keyhandling_override()
     @override_keyhandling_callback = nil
   end

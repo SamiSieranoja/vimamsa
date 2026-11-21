@@ -13,7 +13,9 @@ module Vimamsa
 # at the start, and played from Help ▸ Demos (DemoPlayer.demos).
 class DemoRecorder
   # One recorded key
-  Key = Struct.new(:t, :key, :mode, :action, :line, keyword_init: true)
+  # read: read by something else than the key bindings (easy jump's label
+  # keys, while its key override is on)
+  Key = Struct.new(:t, :key, :mode, :action, :line, :col, :read, keyword_init: true)
 
   MODIFIERS = %w[ctrl alt shift]
   MAX_WAIT = 3.0 # a longer pause is cut to this
@@ -63,6 +65,7 @@ class DemoRecorder
     vma.gui.set_status_indicator(:demo_record, nil) rescue nil
     drop_stop_keys
     @end_line = @buf.lpos
+    @end_col = @buf.cpos
     if @keys.empty?
       message("Demo recording stopped: no keys recorded")
       return
@@ -84,7 +87,8 @@ class DemoRecorder
       @pending_mod = nil
       return
     end
-    k = Key.new(t: now - @t0, key: c, mode: vma.kbd.get_mode, line: vma.buf.lpos)
+    k = Key.new(t: now - @t0, key: c, mode: vma.kbd.get_mode, line: vma.buf.lpos, col: vma.buf.cpos,
+                read: vma.kbd.keyhandling_override?)
     if MODIFIERS.include?(c)
       @pending_mod = k
     else
@@ -101,7 +105,7 @@ class DemoRecorder
 
   # The steps file text (see DemoRecorder.steps)
   def steps_text(title: nil, file: nil)
-    DemoRecorder.steps(@keys, end_line: @end_line || @buf.lpos, title: title, file: file)
+    DemoRecorder.steps(@keys, end_line: @end_line || @buf.lpos, end_col: @end_col || @buf.cpos, title: title, file: file)
   end
 
   # Saves into <user dir>/demos/<slug>/: steps.txt and the start file
@@ -132,9 +136,9 @@ class DemoRecorder
   end
 
   # Steps from recorded keys (Key list, times in seconds from the start).
-  # end_line: the cursor's line when recording stopped (for an easy jump at
-  # the end).
-  def self.steps(keys, end_line: 0, title: nil, file: nil)
+  # end_line, end_col: the cursor's place when recording stopped (for an
+  # easy jump at the end).
+  def self.steps(keys, end_line: 0, end_col: 0, title: nil, file: nil)
     out = []
     out << "# Recorded with Help ▸ Demos ▸ Record demo (#{Time.now.strftime("%Y-%m-%d")})."
     out << "# Edit freely; the format is in scripts/demo/demo_steps.txt."
@@ -146,7 +150,7 @@ class DemoRecorder
     out << "delay #{fmt(delay)}"
     out << "wait 1"
 
-    groups = group(keys, end_line)
+    groups = group(keys, end_line, end_col)
     prev_t = nil
     groups.each { |g|
       if prev_t
@@ -163,7 +167,7 @@ class DemoRecorder
   # Keys in groups that become step lines: a run typed in Insert (or form)
   # mode is a type line; an easy jump label is target + @JUMP_LABEL@; other
   # keys go in keys lines, a new one after a pause
-  def self.group(keys, end_line)
+  def self.group(keys, end_line, end_col = 0)
     groups = []
     i = 0
     while i < keys.size
@@ -183,13 +187,15 @@ class DemoRecorder
         groups << { t: k.t, t_end: keys[j - 1].t, lines: lines }
         i = j
       elsif k.action.to_s.match?(/jump\.easy/)
-        # The label keys after it (read by easy jump itself, no action)
+        # The label keys after it: read by easy jump itself (not just any
+        # key without an action: the d of d d has none either)
         j = i + 1
-        j += 1 while j < keys.size && keys[j].action.nil?
-        line = j < keys.size ? keys[j].line : end_line
+        j += 1 while j < keys.size && keys[j].read
+        # Where the cursor landed: the place before the next key
+        line, col = j < keys.size ? [keys[j].line, keys[j].col] : [end_line, end_col]
         groups << { t: k.t, t_end: k.t, lines: ["# #{desc(k)}", "keys #{k.key}"] } # s
         groups << { t: keys[i + 1]&.t || k.t, t_end: keys[j - 1].t,
-                    lines: ["target line #{line + 1}", "keys @JUMP_LABEL@"] } if j > i + 1
+                    lines: ["target line #{line + 1} col #{col.to_i + 1}", "keys @JUMP_LABEL@"] } if j > i + 1
         i = j
       else
         j = i

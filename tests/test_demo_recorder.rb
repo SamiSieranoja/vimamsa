@@ -47,14 +47,16 @@ class TestDemoRecorder < VmaTest
   def test_easy_jump_label
     keys = [
       K.new(t: 0.0, key: "s", mode: :command, action: "jump.easy", line: 0),
-      K.new(t: 0.4, key: "a", mode: :command, action: nil, line: 0),
-      K.new(t: 0.8, key: "b", mode: :command, action: nil, line: 0),
-      K.new(t: 1.2, key: "x", mode: :command, action: "edit.delete.char", line: 7),
+      K.new(t: 0.4, key: "a", mode: :command, action: nil, line: 0, read: true),
+      K.new(t: 0.8, key: "b", mode: :command, action: nil, line: 0, read: true),
+      K.new(t: 1.2, key: "d", mode: :command, action: nil, line: 7, col: 12),
+      K.new(t: 1.4, key: "d", mode: :command, action: "edit.delete.line", line: 7),
     ]
     l = lines(keys)
     i = l.index("keys s")
     assert i, l.inspect
-    assert_eq ["target line 8", "keys @JUMP_LABEL@", "keys x"], l[i + 1, 3]
+    # the d of d d has no action, but isn't a label key
+    assert_eq ["target line 8 col 13", "keys @JUMP_LABEL@", "keys d d"], l[i + 1, 3]
   end
 
   # ctrl alone is a key ("ctrl!"), ctrl held for ctrl-r is not
@@ -103,6 +105,50 @@ class TestDemoRecorder < VmaTest
     DemoRecorder.current = nil
     FormInput.current&.cancel
     drain_idle
+    p&.bufs&.each { |x| vma.buffers.close_buffer(x.id) }
+    FileUtils.rm_rf(DemoPlayer.user_demos_dir)
+  end
+
+  # An easy jump to a word inside a line (s + a label), then d w: all keys
+  # play back, at the same character (the d, which has no action, used to be
+  # taken for a label key)
+  def test_record_dd_then_easy_jump
+    text = (1..12).map { |i| "line number #{i} with words\n" }.join
+    b = create_new_buffer(text, "rectest")
+    # easy jump labels only what is shown: wait until the view is laid out
+    assert wait_until(10) { (a = get_visible_area) && a[1] - a[0] > 100 }, "view not laid out: #{get_visible_area.inspect}"
+    rec = DemoRecorder.new
+    DemoRecorder.current = rec
+    rec.start
+    keys "s"
+    ej = EasyJump.class_variable_get(:@@cur)
+    # a labelled word inside line 6, not its start
+    ls = b.index("line number 6")
+    marks = ej.instance_variable_get(:@easy_jump_wsmarks)
+    target = marks.select { |m| m > ls && m < b.index("\n", ls) }.min
+    assert target, "no labelled word inside line 6: #{marks.sort.inspect}"
+    n = marks.index(target)
+    label = ej.instance_variable_get(:@jump_sequence)[n].downcase.chars
+    keys label.join(" ")
+    assert_eq target, b.pos, "jump"
+    keys "d w"
+    keys "x"
+    want = b.to_s.dup
+    rec.stop(save: false)
+    steps = rec.steps_text(file: "demo.txt")
+    assert steps.include?("keys d w"), steps
+    col = target - ls + 1
+    assert steps.include?("target line 6 col #{col}"), steps
+    rec.save("ddjump")
+    p = DemoPlayer.new(:user_ddjump, speed: 50, loop: false)
+    p.start
+    assert wait_until { !p.running? }, "demo still running"
+    assert_eq want, p.buf.to_s, steps
+  ensure
+    vma.kbd.remove_keyhandling_override # easy jump left reading keys
+    vma.gui.clear_overlay rescue nil
+    vma.kbd.set_mode(:command)
+    DemoRecorder.current = nil
     p&.bufs&.each { |x| vma.buffers.close_buffer(x.id) }
     FileUtils.rm_rf(DemoPlayer.user_demos_dir)
   end
