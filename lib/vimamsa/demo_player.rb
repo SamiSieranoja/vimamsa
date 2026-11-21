@@ -112,9 +112,15 @@ class DemoPlayer
   # speed: every delay and wait is divided by it (tests play it fast).
   # loop: start again at the end. steps: [command, argument] pairs instead
   # of demo_steps.txt (tests).
-  def initialize(name = :basic, speed: SPEED, loop: true, steps: nil, rate: 0.75)
+  # demo: a demo entry like DEMOS' ({ steps:, files:, src: }) instead of
+  # name's (e.g. a steps file given to scripts/demo/record_demo.rb).
+  # controls: false hides the pause / speed controls (in a recording).
+  # on_finish: called with the stop message when the demo stops.
+  def initialize(name = :basic, speed: SPEED, loop: true, steps: nil, rate: 0.75, demo: nil, controls: true, on_finish: nil)
     @name = name
-    @demo = DemoPlayer.demos.fetch(name)
+    @demo = demo || DemoPlayer.demos.fetch(name)
+    @controls = controls
+    @on_finish = on_finish
     @steps_file = @demo[:steps]
     @speed = speed
     @loop = loop
@@ -246,6 +252,7 @@ class DemoPlayer
     # The key log panel goes away again if the demo opened it
     vma.gui.hide_keylog_panel if !@keylog_was_shown
     message(msg) if msg
+    @on_finish&.call(msg)
   end
 
   # The demo's buffers, the first file's first
@@ -316,6 +323,7 @@ class DemoPlayer
   end
 
   def show_controls
+    return if !@controls
     vma.gui.keylog_panel.show_demo_controls(paused: @paused, rate: DemoPlayer.rate_label(@rate), demo: @name)
   end
 

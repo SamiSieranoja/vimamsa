@@ -211,6 +211,22 @@ class TestDemoPlayer < VmaTest
     vma.buffers.close_buffer(p.buf.id) if p&.buf
   end
 
+  # A demo from any steps file (scripts/demo/record_demo.rb): no controls,
+  # on_finish gets the stop message
+  def test_given_demo_without_controls
+    got = nil
+    demo = { steps: DemoPlayer::DEMOS[:easyjump][:steps], files: ["shapes.rb"], src: DemoPlayer::DIR }
+    p = DemoPlayer.new(:recording, demo: demo, steps: [["wait", "0.1"], ["keys", "x"]], speed: 1, loop: false,
+                       controls: false, on_finish: proc { |m| got = m })
+    p.start
+    assert !vma.gui.keylog_panel.demo_bar.visible?, "controls shown"
+    wait_until_done(p, 5)
+    assert_eq "Demo finished", got
+    assert_eq original[1..], p.buf.to_s
+  ensure
+    vma.buffers.close_buffer(p.buf.id) if p&.buf
+  end
+
   def test_speed_steps
     p = DemoPlayer.new
     r = p.rate
