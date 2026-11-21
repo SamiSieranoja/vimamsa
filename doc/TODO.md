@@ -685,7 +685,7 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
-- **Fast line ends for non-ASCII text** (2026-11-21, not yet committed): `scan_indexes`
+- **Fast line ends for non-ASCII text** (2026-11-21, `57d3030`): `scan_indexes`
   (`string_util.rb`) counts characters only between consecutive matches, using byte
   offsets, instead of calling `MatchData#begin`, which counts from the start of the
   file each time. Loading the line ends of a 5.5 MB file with one non-ASCII character
