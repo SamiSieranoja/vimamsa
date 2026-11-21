@@ -1,0 +1,6 @@
+Example file for the file switching demo.
+
+Notes
+- shapes.rb: the Shape classes
+- report.rb: prints a table of shapes
+- add a Square shape
