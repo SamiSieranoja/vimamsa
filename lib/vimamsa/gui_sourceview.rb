@@ -610,82 +610,9 @@ class VSourceView < GtkSource::View
     # Gdk::Keyval.to_name()
     # end
 
-    keyval_trans = {}
-    keyval_trans[Gdk::Keyval::KEY_Control_L] = "ctrl"
-    keyval_trans[Gdk::Keyval::KEY_Control_R] = "ctrl"
-
-    keyval_trans[Gdk::Keyval::KEY_Escape] = "esc"
-
-    keyval_trans[Gdk::Keyval::KEY_Return] = "enter"
-    keyval_trans[Gdk::Keyval::KEY_ISO_Enter] = "enter"
-    keyval_trans[Gdk::Keyval::KEY_KP_Enter] = "enter"
-    keyval_trans[Gdk::Keyval::KEY_Alt_L] = "alt"
-    keyval_trans[Gdk::Keyval::KEY_Alt_R] = "alt"
-    keyval_trans[Gdk::Keyval::KEY_Caps_Lock] = "caps"
-
-    keyval_trans[Gdk::Keyval::KEY_BackSpace] = "backspace"
-    keyval_trans[Gdk::Keyval::KEY_KP_Page_Down] = "pagedown"
-    keyval_trans[Gdk::Keyval::KEY_KP_Page_Up] = "pageup"
-    keyval_trans[Gdk::Keyval::KEY_Page_Down] = "pagedown"
-    keyval_trans[Gdk::Keyval::KEY_Page_Up] = "pageup"
-    keyval_trans[Gdk::Keyval::KEY_Left] = "left"
-    keyval_trans[Gdk::Keyval::KEY_Right] = "right"
-    keyval_trans[Gdk::Keyval::KEY_Down] = "down"
-    keyval_trans[Gdk::Keyval::KEY_Up] = "up"
-    keyval_trans[Gdk::Keyval::KEY_space] = "space"
-
-    keyval_trans[Gdk::Keyval::KEY_Shift_L] = "shift"
-    keyval_trans[Gdk::Keyval::KEY_Shift_R] = "shift"
-    keyval_trans[Gdk::Keyval::KEY_Tab] = "tab"
-    keyval_trans[Gdk::Keyval::KEY_ISO_Left_Tab] = "tab"
-
-    keyval_trans[Gdk::Keyval::KEY_Home] = "home"
-    keyval_trans[Gdk::Keyval::KEY_KP_Home] = "home"
-    keyval_trans[Gdk::Keyval::KEY_End] = "end"
-    keyval_trans[Gdk::Keyval::KEY_KP_End] = "end"
-    keyval_trans[Gdk::Keyval::KEY_Delete] = "delete"
-    keyval_trans[Gdk::Keyval::KEY_KP_Delete] = "delete"
-
-    key_trans = {}
-    key_trans["\e"] = "esc"
-    tk = keyval_trans[keyval]
-    keyname = tk if !tk.nil?
-
-    key_str_parts = []
-    key_str_parts << "ctrl" if vma.kbd.modifiers[:ctrl]
-    key_str_parts << "alt" if vma.kbd.modifiers[:alt]
-    key_str_parts << "shift" if vma.kbd.modifiers[:shift]
-    key_str_parts << "meta" if vma.kbd.modifiers[:meta]
-    key_str_parts << "super" if vma.kbd.modifiers[:super]
-    key_str_parts << keyname
-
-    # After remapping capslock to control in gnome-tweak tool,
-    # if pressing and immediately releasing the capslock (control) key,
-    # we get first "caps" on keydown and ctrl-"caps" on keyup (keyval 65509, Gdk::Keyval::KEY_Caps_Lock)
-    # If mapping capslock to ctrl in hardware, we get keyval 65507 (Gdk::Keyval::KEY_Control_L) instead
-    if key_str_parts[0] == "ctrl" and key_str_parts[1] == "caps"
-      # Replace ctrl-caps with ctrl
-      key_str_parts.delete_at(1)
-    end
-
-    if key_str_parts[0] == key_str_parts[1]
-      # We don't want "ctrl-ctrl" or "alt-alt"
-      # TODO:There should be a better way to do this
-      key_str_parts.delete_at(0)
-    end
-
-    if key_str_parts[0] == "shift" and key_str_parts.size == 2
-      if key_str_parts[1].size == 1 # and key_str_parts[1].match(/^[[:upper:]]$/)
-        #"shift-P" to just "P" etc.
-        # but keep shift-tab as is
-        key_str_parts.delete_at(0)
-      end
-    end
-
-    key_str = key_str_parts.join("-")
-    if key_str == "\u0000"
-      key_str = ""
-    end
+    # The editor's name for the key (key_names.rb, shared with forms)
+    key_str = gui_key_name(keyval, keyname)
+    keyname = GUI_KEYVAL_NAMES[keyval] || keyname
     
     # if keyname == "\u0000"
       # puts "FOOOO 0000"

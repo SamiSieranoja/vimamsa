@@ -593,13 +593,7 @@ class VMAgui
       # eventctr: Gtk::EventControllerKey
       # modtype: Gdk::ModifierType
       debug "modifier change"
-      vma.kbd.modifiers[:ctrl] = modtype.control_mask?
-      vma.kbd.modifiers[:alt] = modtype.alt_mask?
-      vma.kbd.modifiers[:hyper] = modtype.hyper_mask?
-      vma.kbd.modifiers[:lock] = modtype.lock_mask?
-      vma.kbd.modifiers[:meta] = modtype.meta_mask?
-      vma.kbd.modifiers[:shift] = modtype.shift_mask?
-      vma.kbd.modifiers[:super] = modtype.super_mask?
+      gui_set_modifiers(modtype) # key_names.rb
 
       #TODO:?
       # button1_mask?
