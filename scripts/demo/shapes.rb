@@ -26,3 +26,4 @@ end
 
 shapes = [Circle.new(1), Circle.new(2.5)]
 shapes.each { |s| puts s }
+

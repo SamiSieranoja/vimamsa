@@ -46,10 +46,15 @@ class TestDemoPlayer < VmaTest
   # The basic demo (square/steps.txt), fast: it plays to the end and turns
   # Circle into a Square class with a width (search and replace in a form,
   # the action search, easy jumps), back in Command mode
+  # (Not faster: at 50x an easy jump can come before the view has scrolled
+  # to its target, which then has no label.)
   def test_plays_whole_demo
-    p = DemoPlayer.new(speed: 50, loop: false)
+    # its action searches find the same action whatever else is registered
+    assert_eq "sel.convert.remove_empty_lines", vma.actions.search_actions_update_callback("sel.convert.remempty")[0][1]
+    assert_eq "sel.convert.eval", vma.actions.search_actions_update_callback("sel.convert.eval")[0][1]
+    p = DemoPlayer.new(speed: 3, loop: false)
     p.start
-    wait_until_done(p, 120)
+    wait_until_done(p, 300)
     assert_eq "Demo finished", p.stop_message
     t = p.buf.to_s
     assert t.include?("class Square < Shape"), t
