@@ -163,6 +163,8 @@ cnf.flash.duration = 0.15   # seconds the flash stays visible
 cnf.easy_jump.glow = false  # glow around easy jump labels (slower without a GPU)
 cnf.key_hint.y_offset = 4  # px between the cursor's row and the key hint below it (above it if no room)
 
+cnf.help.button_style = "solid"  # buttons on help pages: flat / link / pill / solid / key (intro_page.rb)
+cnf.intro.show_on_startup = true  # the introduction page (Help ▸ Introduction) at the next start; set false once shown
 cnf.fold.start_closed = true  # collapse {{{ ... }}} marker folds when a file is loaded
 
 cnf.modules.color_highlight.enabled = true   # paint #rrggbb hex codes with their color

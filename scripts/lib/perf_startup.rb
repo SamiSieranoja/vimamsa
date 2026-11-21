@@ -29,6 +29,7 @@ module PerfStartup
     FileUtils.mkdir_p(dir)
     File.write(File.join(dir, "custom.rb"), <<~RUBY)
       cnf.lsp.enabled = false
+      cnf.intro.show_on_startup = false # the same work as in older versions
       def hook_custom_after_init
         GLib::Idle.add {
           File.write(#{File.join(dir, "ready").inspect}, Process.clock_gettime(Process::CLOCK_MONOTONIC).to_s)

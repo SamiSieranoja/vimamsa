@@ -33,6 +33,8 @@ require "vimamsa/line_tree"
 require "vimamsa/registers"
 require "vimamsa/dot_repeat"
 require "vimamsa/demo_player"
+require "vimamsa/intro_page"
+require "vimamsa/cli_help"
 require "vimamsa/clipboard"
 # exit!
 require "vimamsa/main"

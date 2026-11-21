@@ -21,24 +21,31 @@ class DemoPlayer
   # steps: the step file. files: copied and opened, the first one last (it
   # is current and the newest in the buffer history). dir: a subfolder of
   # WORK_DIR, emptied first, so the file explorer shows only these files.
+  # title, desc, action: for the Help ▸ Demos menu, the introduction page
+  # (help/intro.txt) and the demo list above the key log.
   DEMOS = {
-    basic: { steps: STEPS, files: ["shapes.rb"] },
-    easyjump: { steps: File.join(DIR, "demo_easyjump_steps.txt"), files: ["shapes.rb"] },
-    files: { steps: File.join(DIR, "demo_files_steps.txt"), files: ["shapes.rb", "report.rb", "notes.txt"], dir: "files" },
+    basic: { steps: STEPS, files: ["shapes.rb"],
+             title: "Basic editing", desc: "moving, editing, undo, Insert and Visual mode", action: "help.demo" },
+    easyjump: { steps: File.join(DIR, "demo_easyjump_steps.txt"), files: ["shapes.rb"],
+                title: "Easy jump", desc: "jump anywhere on the screen with a few keys", action: "help.demo.easyjump" },
+    files: { steps: File.join(DIR, "demo_files_steps.txt"), files: ["shapes.rb", "report.rb", "notes.txt"], dir: "files",
+             title: "Switching files", desc: "the last file, buffer history, the file explorer", action: "help.demo.files" },
   }
   WORK_DIR = File.join(Dir.tmpdir, "vimamsa-demo")
   SPEED = 0.7 # as the recording: every delay and wait is divided by this
   RATES = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4] # user speeds, times SPEED
 
   # Plays demo name; if it is the one playing, stops it instead (another
-  # one playing is stopped first)
+  # one playing is stopped first, and the new one keeps its speed)
   def self.toggle(name = :basic)
+    rate = nil
     if @current&.running?
       same = @current.name == name
+      rate = @current.rate
       @current.stop("Demo stopped")
       return if same
     end
-    @current = new(name)
+    @current = rate ? new(name, rate: rate) : new(name)
     @current.start
   end
 
@@ -68,14 +75,14 @@ class DemoPlayer
   # speed: every delay and wait is divided by it (tests play it fast).
   # loop: start again at the end. steps: [command, argument] pairs instead
   # of demo_steps.txt (tests).
-  def initialize(name = :basic, speed: SPEED, loop: true, steps: nil)
+  def initialize(name = :basic, speed: SPEED, loop: true, steps: nil, rate: 0.75)
     @name = name
     @demo = DEMOS.fetch(name)
     @steps_file = @demo[:steps]
     @speed = speed
     @loop = loop
     @given_steps = steps
-    @rate = 0.75
+    @rate = rate
     @rounds = 0 # finished rounds
   end
 
@@ -129,6 +136,28 @@ class DemoPlayer
     "#{r.to_s.sub(/\.0\z/, "")}×"
   end
 
+  # Seconds one round of demo name takes at the default speed (keys after
+  # an easy jump label count as one)
+  def self.duration(name, rate: new(name).rate)
+    secs = 0.0
+    delay = 0.4
+    parse(File.read(DEMOS.fetch(name)[:steps])).each { |cmd, arg|
+      case cmd
+      when "wait" then secs += arg.to_f
+      when "delay" then delay = arg.to_f
+      when "keys" then secs += delay * arg.split.size
+      when "type" then secs += delay * arg.size
+      end
+    }
+    secs / (SPEED * rate)
+  end
+
+  # "40 s", "2 min"
+  def self.duration_text(name)
+    s = duration(name)
+    s < 90 ? "#{(s / 10).round * 10} s" : "#{(s / 60).round} min"
+  end
+
   # The steps of demo_steps.txt as [command, argument] pairs (see its header)
   def self.parse(text)
     text.lines(chomp: true).filter_map { |line|
@@ -146,6 +175,8 @@ class DemoPlayer
       return
     end
     @steps = @given_steps || DemoPlayer.parse(File.read(@steps_file))
+    # Started from a help page (the introduction): back to it at the end
+    @return_buf = vma.buf if vma.buf&.help_page
     open_files
     @keylog_was_shown = vma.gui.instance_variable_get(:@keylog_shown)
     vma.gui.show_keylog_panel
@@ -167,8 +198,14 @@ class DemoPlayer
     @running = false
     @paused = false
     remove_timer
+    in_demo = demo_buf?(vma.buf) || explorer_buf?(vma.buf)
     vma.kbd.set_mode(:command) if demo_buf?(vma.buf)
     vma.gui.keylog_panel.hide_demo_controls
+    # Back to the help page it was started from, unless the user went to
+    # another buffer
+    if in_demo && @return_buf && vma.buffers.list.any? { |b| b.equal?(@return_buf) }
+      vma.buffers.set_current_buffer_by_id(@return_buf.id)
+    end
     # The key log panel goes away again if the demo opened it
     vma.gui.hide_keylog_panel if !@keylog_was_shown
     message(msg) if msg
@@ -242,7 +279,7 @@ class DemoPlayer
   end
 
   def show_controls
-    vma.gui.keylog_panel.show_demo_controls(paused: @paused, rate: DemoPlayer.rate_label(@rate))
+    vma.gui.keylog_panel.show_demo_controls(paused: @paused, rate: DemoPlayer.rate_label(@rate), demo: @name)
   end
 
   def plan(cmd, arg)

@@ -20,9 +20,16 @@ elsif (arg = ARGV.find { |a| a.start_with?("--user-dir=") })
 end
 $vma_user_dir ||= File.expand_path("~/.config/vimamsa")
 
+# --intro: show the introduction page at start (intro_page.rb), whatever the
+# settings say. Removed from ARGV so it isn't taken for a file name.
+$vma_show_intro = !ARGV.delete("--intro").nil?
+
+# --help / -h: the options and the actions (cli_help.rb), then exit
+$vma_cli_help = [ARGV.delete("--help"), ARGV.delete("-h")].any?
+
 # If process is already running, open the parameter file in the running process and exit.
 listen_dir = File.join($vma_user_dir, "listen")
-if File.exist?(listen_dir) and !ARGV[0].nil?
+if File.exist?(listen_dir) and !ARGV[0].nil? and !$vma_cli_help
   tmpf = Tempfile.new("vmarun", listen_dir)
   fp = tmpf.path
   paramfn = File.expand_path(ARGV[0])
@@ -46,8 +53,18 @@ end
 $LOAD_PATH.unshift(File.join(scriptdir, "lib"))
 $LOAD_PATH.unshift(File.join(scriptdir, "ext"))
 
+if $vma_cli_help
+  require "vimamsa/cli_help"
+  Vimamsa.print_cli_usage # before loading the rest (GTK takes a while)
+end
+
 require "vimamsa"
 include Vimamsa
+
+if $vma_cli_help
+  Vimamsa.print_cli_actions
+  exit(0)
+end
 
 # Persist crash/segfault debug info (native stderr dump + structured reports)
 # to ~/.config/vimamsa/crash/ .

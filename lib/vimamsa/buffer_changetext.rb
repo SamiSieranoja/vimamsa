@@ -7,6 +7,10 @@ class Buffer < String
 
   #TODO: change to apply=true as default
   def add_delta(delta, apply = false, auto_update_cpos = false)
+    if @read_only
+      message("This page is read-only")
+      return
+    end
     @t_modified = Time.now
     return if !is_delta_ok(delta)
     if delta[1] == DELETE

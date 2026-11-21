@@ -121,6 +121,8 @@ class CommandLine
       exec_action("app.quit")
     when "reg", "registers", "di", "display"
       exec_action("edit.register.list")
+    when "intro"
+      exec_action("help.intro")
     when /\Ae\s+(\S.*)\z/
       open_new_file(File.expand_path(Regexp.last_match(1).strip))
     else

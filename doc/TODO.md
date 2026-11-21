@@ -698,6 +698,12 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
+- **Introduction page for first-time users** (2026-11-21, not committed yet): shown on
+  the first start, from Help ▸ Introduction, with `:intro` or with `--intro`. It has
+  inline buttons that start the demos, key names taken from the bindings, and a
+  one-screen "Vimamsa for Vim users" page, plus a demo dropdown above the key log.
+  `doc/intro_page_plan.md`.
+
 - **Switching files demo** (2026-11-21, uncommitted): Help ▸ Demos ▸ Switching files
   (`scripts/demo/demo_files_steps.txt`, on shapes.rb, report.rb and notes.txt): tab,
   browse mode h / l, and the file explorer (`, f`, then k / j and l). Demos can have

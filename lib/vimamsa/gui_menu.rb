@@ -80,11 +80,13 @@ module Vimamsa
 
       add_to_menu "Actions.EncryptFile", { :label => "Encrypt file", :action => "buf.encrypt" }
       add_to_menu "Actions.LspRestart", { :label => "Restart LSP server", :action => "lsp.restart" }
+      add_to_menu "Help.Intro", { :label => "Introduction", :action => "help.intro" }
       add_to_menu "Help.KeyBindings", { :label => "Show key bindings", :action => "help.keys" }
+      add_to_menu "Help.VimIntro", { :label => "Vimamsa for Vim users", :action => "help.vim_intro" }
       add_to_menu "Help.VimConflicts", { :label => "Vim keys that differ in vimlike", :action => "help.vim_conflicts" }
-      add_to_menu "Help.Demos.Basic", { :label => "Basic editing", :action => "help.demo" }
-      add_to_menu "Help.Demos.EasyJump", { :label => "Easy jump", :action => "help.demo.easyjump" }
-      add_to_menu "Help.Demos.Files", { :label => "Switching files", :action => "help.demo.files" }
+      DemoPlayer::DEMOS.each { |name, d|
+        add_to_menu "Help.Demos.#{name}", { :label => d[:title], :action => d[:action] }
+      }
       add_to_menu "Help.InstallDemo", { :action => "app.demo" }
 
       #TODO: "edit.indent.buf"
@@ -119,6 +121,18 @@ module Vimamsa
         end
       end
       return ""
+    end
+
+    # "Help ▸ Show key bindings" for the menu item that runs action, or nil
+    def path_for(action, nfo = @nfo, path = [])
+      nfo.each_value { |x|
+        p = path + [x[:label].to_s]
+        return p.join(" ▸ ") if x[:action].to_s == action.to_s
+        if x[:items].is_a?(Hash) && (r = path_for(action, x[:items], p))
+          return r
+        end
+      }
+      nil
     end
 
     # Add a menu item under the top-level "Modules" menu.

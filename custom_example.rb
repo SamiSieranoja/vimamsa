@@ -90,6 +90,10 @@ end
 # Try on this line:
 # Restless Cottage
 
+# The introduction page (Help ▸ Introduction) is shown at start once. To show
+# it at every start:
+# cnf.intro.show_on_startup = true
+
 # Primitive support for LSP (not well tested)
 # To enable LSP:
 # cnf.lsp.enabled = true

@@ -311,6 +311,9 @@ class Editor
     @kbd.set_state_to_root
     @kbd.show_state_trail
 
+    # The introduction page on the first start, or with --intro (intro_page.rb)
+    show_intro_on_startup
+
     # AppImage: from here on, started programs get the user's environment
     restore_host_env
 
@@ -897,7 +900,7 @@ def call_custom_after_init
   end
 end
 
-def save_settings_to_file
+def save_settings_to_file(quiet: false)
   settings_path = get_dot_path("settings.rb")
   lines = all_settings_defs.flat_map { |section| section[:settings] }.map do |s|
     key_str = "cnf." + s[:key].join(".")
@@ -905,7 +908,7 @@ def save_settings_to_file
     "#{key_str} = #{val.inspect}"
   end
   IO.write(settings_path, lines.join("\n") + "\n")
-  message("Settings saved to #{settings_path}")
+  message("Settings saved to #{settings_path}") if !quiet
 end
 
 DEMO_FILES = ["demo.txt", "sheep.jpg", "README.md"]

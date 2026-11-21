@@ -20,6 +20,8 @@ SETTINGS_DEFS = [
     :label => "Appearance",
     :settings => [
       { :key => [:match, :highlight, :color], :label => "Search highlight color", :type => :string },
+      { :key => [:help, :button_style], :label => "Buttons on help pages (e.g. the introduction)", :type => :select,
+        :options => HELP_BUTTON_STYLES.keys },
       { :key => [:theme, :cyberpunk_glow], :label => "Cyberpunk glow theme (neon glow & shadows)", :type => :bool },
       { :key => [:kbd, :show_prev_action], :label => "Show previous action in toolbar", :type => :bool },
       { :key => [:style_scheme], :label => "Color scheme", :type => :select,
@@ -41,6 +43,7 @@ SETTINGS_DEFS = [
       { :key => [:lsp, :enabled], :label => "Enable LSP (Language Server)", :type => :bool },
       { :key => [:experimental], :label => "Enable experimental features", :type => :bool },
       { :key => [:macro, :animation_delay], :label => "Macro animation delay (sec)", :type => :float, :min => 0.0, :max => 2.0, :step => 0.0001 },
+      { :key => [:intro, :show_on_startup], :label => "Show the introduction page (Help ▸ Introduction) at the next start", :type => :bool },
       { :key => [:undo, :insert_one_step], :label => "Undo an Insert-mode session in one step (vim), even after pauses", :type => :bool },
       { :key => [:paste, :cursor_at_start], :label => "Leave cursor at start of pasted text", :type => :bool },
       { :key => [:mouse, :drag_selection], :label => "Move selected text by dragging it with the mouse (off: pressing inside a selection starts a new one)", :type => :bool },

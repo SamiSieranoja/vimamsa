@@ -164,6 +164,9 @@ reg_act("help.demo.pause", proc { DemoPlayer.pause_toggle }, "Pause or continue 
 reg_act("help.demo.faster", proc { DemoPlayer.faster }, "Play the demo faster")
 reg_act("help.demo.slower", proc { DemoPlayer.slower }, "Play the demo slower")
 reg_act("help.demo.stop", proc { DemoPlayer.stop }, "Stop the demo")
+reg_act("help.intro", proc { show_help_page("intro") }, "Show the introduction page")
+reg_act("help.vim_intro", proc { show_help_page("vim_intro") }, "Show the main differences from Vim")
+reg_act("help.intro.startup.toggle", proc { toggle_intro_on_startup }, "Show the introduction page at start, or not")
 reg_act("app.customrb.reload", proc { reload_customrb }, "Reload custom.rb")
 
 reg_act("edit.complete.toggle", proc {

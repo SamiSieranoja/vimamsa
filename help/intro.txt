@@ -1,0 +1,32 @@
+❙Welcome to Vimamsa❙
+A Vim-inspired text editor. This page is always in Help ▸ Introduction.
+Links: put the cursor on one and press ⦁enter⦁, or click the button.
+
+◼ Modes
+Command mode: keys move the cursor and edit. The badge at the bottom right shows the mode.
+Insert mode: keys type text. Enter it with {key:C:mode.insert}, leave it with {key:I:mode.prev}.
+Visual mode: select text, {key:C:mode.visual}.
+(ctrl! = press and release ctrl alone, with no other key)
+
+◼ Watch a demo
+Each demo plays in its own buffer. The key log on the right shows every key and
+what it did; the controls above it pause, change the speed or switch the demo.
+{demos}
+
+◼ The essentials
+Open a file      {key:file.open}
+Find a file      {key:file.finder}
+Save             {key:buf.save}
+Search           {key:search.buf}
+Undo             {key:undo.last}
+Command line     {key:mode.cmdline}
+
+◼ Coming from Vim?
+⟦help:vim_intro⟧  the main differences, in one screen
+
+◼ Learn more
+⟦help:keybindings⟧  all key bindings
+⟦run:app.demo|Install demo files⟧  text and images to try
+Customize: ⟦~/.config/vimamsa/custom.rb⟧ (Ruby, loaded at startup)
+
+⟦run:help.intro.startup.toggle|Show at startup: on / off⟧

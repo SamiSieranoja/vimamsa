@@ -1,0 +1,31 @@
+❙Vimamsa for Vim users❙
+The differences you meet first. Back: ⟦help:intro⟧
+
+◼ The command line (:) is very limited
+It understands only :w, :q, :wq, :e <file>, :<line number>, :!<shell command>
+(the output goes to a buffer) and :reg. Anything else is run as Ruby, so there is
+no :s///, :g, :set, ranges or :help. Search with {key:search.buf}; search and
+replace is in the Search menu; settings are in Settings.
+
+◼ ctrl alone switches modes
+Press and release ctrl with no other key: in Command mode it enters Insert mode,
+in Insert and Visual mode it leaves them. esc works too, but it doesn't move the
+cursor one character left as Vim's does.
+
+◼ Keys that do something else
+{vim_key_table}
+, starts many of Vimamsa's own commands (see ⟦help:keybindings⟧).
+
+◼ Not there yet
+Line-wise and block visual mode (V, ctrl-v); ge, { }, %; = and gq;
+ctrl-e / ctrl-y; gv and gi.
+
+◼ The same as in Vim
+Operators with motions and text objects (d c y gU gu g~ > <, dw, ci(, yap ...),
+counts, registers ("a-"z, "+), . (repeat), macros (q, @) and marks.
+
+◼ Prefer Vim's keys?
+Settings ▸ Keybinding scheme ▸ vim (needs a restart).
+
+◼ All the differences
+⟦help:vim_conflicts⟧  every key that differs (generated from the keymaps)

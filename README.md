@@ -99,6 +99,12 @@ it alone), selecting in Visual mode, and easy jump (`s`: type a word's label to
 jump there). The key log panel on the right (View ▸ Toggle
 key log panel) shows each key and the action it ran.
 
+The editor plays this demo and others itself: the introduction page (shown on
+the first start, and from Help ▸ Introduction) has a button for each. It also
+links to a one-screen summary for Vim users (Help ▸ Vimamsa for Vim users).
+`vimamsa --intro` shows the introduction page at start whatever the settings
+say.
+
 ## Key bindings
 
 The default keybinding scheme, "vimlike", is close to Vim. It keeps the Vim

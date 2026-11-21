@@ -12,6 +12,10 @@ $ifuncon = false
 class Buffer < String
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images, :last_save, :access_time, :selection_active, :lsp, :edit_version
   attr_writer :call_func, :update_highlight
+  # help_page: the name of the help page shown (intro_page.rb), else nil.
+  # read_only: edits are refused (help pages). help_buttons: [[action,
+  # Gtk::Button]] of a help page's ⟦run:…⟧ links.
+  attr_accessor :help_page, :read_only, :help_buttons
   attr_accessor :gui_update_highlight, :update_hl_startpos, :update_hl_endpos, :hl_queue, :syntax_parser, :highlights, :gui_reset_highlight, :is_parsing_syntax, :line_ends, :bt, :line_action_handler, :module, :active_kbd_mode, :title, :subtitle, :paste_lines, :mode_stack, :default_mode, :git_root, :needs_autosave_check
 
   @@num_buffers = 0
@@ -1415,9 +1419,14 @@ class Buffer < String
     elsif wtype == :hpt_link
       open_new_file(word)
     elsif wtype == :help
-      if word == "keybindings"
-        call_action("help.keys")
+      case word
+      when "keybindings" then call_action("help.keys")
+      when "vim_conflicts" then call_action("help.vim_conflicts")
+      when *HELP_PAGES then show_help_page(word)
+      else message("No help page #{word}")
       end
+    elsif wtype == :run
+      hpt_run_link(word)
     else
       #TODO
     end
@@ -1450,6 +1459,10 @@ class Buffer < String
         m << ["Open file (xdg-open)", self.method("handle_word"), [word, wtype]]
       elsif wtype == :hpt_link
         m << ["Jump to file", self.method("handle_word"), [word, wtype]]
+      elsif wtype == :run
+        m << ["Run: #{word.split("|", 2)[1] || word}", self.method("handle_word"), [word, wtype]]
+      elsif wtype == :help
+        m << ["Open help page", self.method("handle_word"), [word, wtype]]
       else
         # m << ["TODO", self.method("handle_word"), word]
         m << ["Paste", method("call"), :paste_after]
@@ -1499,6 +1512,19 @@ class Buffer < String
   end
 
   def get_cur_nonwhitespace_word()
+    # ⟦run:…⟧ / ⟦help:…⟧ links may have spaces in them. On a help page the
+    # cursor sits on a link's button, just before the (hidden) link.
+    link = hpt_link_at(self, @pos)
+    if link.nil? && self[@pos] == HPT_BUTTON_SLOT && hpt_link_at(self, @pos + 1)&.start_with?("⟦run:")
+      link = hpt_link_at(self, @pos + 1)
+    end
+    if link
+      if (m = link.match(/\A⟦run:(.*)⟧\z/))
+        return [m[1], :run]
+      elsif (m = link.match(/\A⟦help:(.*)⟧\z/))
+        return [m[1], :help]
+      end
+    end
     (word, range) = get_word_in_pos(@pos, boundary: :space)
     debug "'WORD: #{word}'"
     # message("Open link #{word}")

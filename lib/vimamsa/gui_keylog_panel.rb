@@ -15,7 +15,7 @@ class KeyLogPanel
   attr_reader :newest_row
 
   # Demo controls (Help ▸ Play demo), shown while a demo plays
-  attr_reader :demo_bar, :demo_pause_btn, :demo_speed_lbl, :close_btn
+  attr_reader :demo_bar, :demo_pause_btn, :demo_speed_lbl, :close_btn, :demo_list
 
   # The bubble next to the cursor with the newest entry (gui_key_hint.rb)
   attr_reader :hint
@@ -102,22 +102,50 @@ class KeyLogPanel
     faster = btn.call("+", "Faster") { call_action("help.demo.faster") }
     @demo_speed_lbl = Gtk::Label.new("1×")
     @demo_speed_lbl.width_chars = 5
+
+    # The demos (DemoPlayer::DEMOS); choosing one switches to it
+    @demo_names = DemoPlayer::DEMOS.keys
+    @demo_list = Gtk::DropDown.new(Gtk::StringList.new(DemoPlayer::DEMOS.values.map { |d| d[:title] }), nil)
+    @demo_list.tooltip_text = "Switch to another demo"
+    @demo_list.focusable = false
+    @demo_list.hexpand = true
+    @demo_list.signal_connect("notify::selected") {
+      name = @demo_names[@demo_list.selected]
+      cur = DemoPlayer.current
+      if !@demo_list_updating && name && cur&.running? && cur.name != name
+        GLib::Idle.add { DemoPlayer.toggle(name); false }
+      end
+    }
+
     title = Gtk::Label.new("Demo")
-    title.hexpand = true
     title.xalign = 0.0
 
-    @demo_bar = Gtk::Box.new(:horizontal, 4)
+    # Two rows (the demo list, then the buttons), so the panel keeps its width
+    list_row = Gtk::Box.new(:horizontal, 6)
+    [title, @demo_list].each { |w| list_row.append(w) }
+    spacer = Gtk::Label.new("")
+    spacer.hexpand = true
+    btn_row = Gtk::Box.new(:horizontal, 4)
+    [spacer, @demo_pause_btn, slower, @demo_speed_lbl, faster].each { |w| btn_row.append(w) }
+
+    @demo_bar = Gtk::Box.new(:vertical, 4)
     @demo_bar.margin_start = 8
     @demo_bar.margin_end = 6
     @demo_bar.margin_bottom = 4
-    [title, @demo_pause_btn, slower, @demo_speed_lbl, faster].each { |w| @demo_bar.append(w) }
+    [list_row, btn_row].each { |w| @demo_bar.append(w) }
     @demo_bar.visible = false
     @demo_bar
   end
 
-  def show_demo_controls(paused:, rate:)
+  def show_demo_controls(paused:, rate:, demo: nil)
     @demo_pause_btn.label = paused ? "Continue" : "Pause"
     @demo_speed_lbl.label = rate
+    i = @demo_names.index(demo)
+    if i && @demo_list.selected != i
+      @demo_list_updating = true
+      @demo_list.selected = i
+      @demo_list_updating = false
+    end
     @demo_bar.visible = true
   end
 

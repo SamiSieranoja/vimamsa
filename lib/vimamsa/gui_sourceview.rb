@@ -999,6 +999,8 @@ class VSourceView < GtkSource::View
           open_url(@@context_link)
         elsif m = @@context_link.match(/⟦help:(.*)⟧/)
           vma.buf.handle_word([m[1], :help])
+        elsif m = @@context_link.match(/⟦run:(.*)⟧/)
+          vma.buf.handle_word([m[1], :run])
         else
           fn = hpt_check_cur_word(@@context_link)
           open_new_file(fn) if fn
@@ -1031,6 +1033,9 @@ class VSourceView < GtkSource::View
     bx, by = window_to_buffer_coords(:widget, x.to_i, y.to_i)
     iter = get_iter_at_location(bx, by)
     return nil unless iter
+    # ⟦run:…⟧ / ⟦help:…⟧ links may have spaces in them
+    link = hpt_link_at(@bufo, iter.offset)
+    return link if link
     word, _range = @bufo.get_word_in_pos(iter.offset, boundary: :space)
     return nil unless word
     return word if is_url(word)

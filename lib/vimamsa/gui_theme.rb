@@ -141,6 +141,14 @@ def base_chrome_css
 
     popover background > contents { padding: 8px; border-radius: 20px; }
 
+    /* Buttons of ⟦run:…⟧ links on help pages, e.g. the demos on the
+       introduction page (intro_page.rb). Size and spacing here; colors, border
+       and corners come from the button rule of the theme (cyber_css). */
+    button.help-run-button { padding: 0px 0px; margin: 0px 0px; min-height: 0px; font-size: 80%;
+    border-radius: 1px;
+    box-shadow: none;
+      }
+
     label.action-trail { font-family: monospace; font-size: 10pt; margin-right: 8px; color: #{theme_color(:action_trail_fg)}; }
 
     label.mode-badge {
@@ -585,6 +593,7 @@ def gui_refresh_colors
   $vmag.keylog_panel&.refresh_css
   $vmag.file_panel_refresh
   gui_refresh_theme   # rebuilds/reloads the cyberpunk provider from current cnf
+  help_button_refresh_css if $help_button_css_provider # intro_page.rb
 end
 
 # Re-`load` this source file, then refresh. Unlike gui_refresh_colors (which
