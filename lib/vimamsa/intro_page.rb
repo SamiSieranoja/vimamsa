@@ -147,6 +147,8 @@ def help_add_run_buttons(b)
     anchor = vbuf.create_child_anchor(vbuf.get_iter_at(offset: at))
     btn = Gtk::Button.new(label: label)
     btn.focus_on_click = false
+    # its own mouse pointer: it would show the text view's text cursor
+    btn.set_cursor_from_name("pointer")
     btn.add_css_class("help-run-button")
     btn.valign = :baseline_center rescue nil # the label on the text's baseline (GTK 4.12+)
     btn.signal_connect("clicked") { hpt_run_link(action) }

@@ -159,6 +159,7 @@ class TestIntroPage < VmaTest
     assert hidden?(b, from + 5)
     btn = b.help_buttons[0][1]
     assert btn.visible?, "button hidden"
+    assert_eq "pointer", btn.cursor&.name, "mouse pointer over the button"
     # the cursor on the link's line: still hidden (read-only)
     b.set_pos(from + 3)
     hpt_update_run_buttons(b)
