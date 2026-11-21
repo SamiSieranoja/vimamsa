@@ -67,14 +67,14 @@ wait 1.1
 # Easy jump
 keys s
 wait 0.3
-target line 23 col 7
+target line 22 col 7
 keys @JUMP_LABEL@
 # Delete to the end of the word, Switch to INSERT mode
 keys d e i
 type Square
 # Return to the previous mode
 keys esc
-wait 2.5
+wait 1.1
 # Move one line forward, Move to the beginning of the current line, Enter VISUAL mode (for selections)
 keys j 0 v
 # Easy jump
@@ -84,7 +84,7 @@ target line 30 col 1
 keys @JUMP_LABEL@
 # Move to the end of the current line, Move backward one character
 keys O h , , r
-wait 1.6
+wait 1.1
 keys ,
 wait 1.1
 # Search and replace
@@ -97,7 +97,7 @@ type width
 wait 0.4
 # Form: submit, or press the focused button
 keys enter
-wait 1.7
+wait 1.1
 # Move one line backward, Jump to the end of the next word
 keys k k e
 wait 2
@@ -108,16 +108,30 @@ keys d f * x
 wait 3
 # Move one line forward
 keys j j j j j
-wait 1.4
+wait 1.1
 # Move one line backward, Jump to the start of the next word, Enter VISUAL mode (for selections), Move forward one character, Jump to the next ,, Move backward one character, Copy selection to clipboard, Move one line forward, Insert an empty line below, Paste text after the cursor, Move to the beginning of the current line, Copy the current line
-keys k w v l f , h y j X X p 0 y y
-wait 3
+keys w
+wait 0.2
+keys v l
+wait 0.2
+keys f , h
+wait 0.2
+keys y
+wait 0.1
+keys j
+wait 0.2
+keys X X
+wait 0.2
+keys p 0
+wait 0.2
+keys y y
+wait 0.5
 # Move to the end of the current line, Switch to INSERT mode
 keys esc O i
 type .area
 # Return to the previous mode, Move to the beginning of the current line, Copy the current line, Paste text after the cursor
 keys esc 0 y y p
-wait 2.7
+wait 1.1
 # Delete to the end of the word, Switch to INSERT mode
 keys d e i
 type AS
@@ -132,12 +146,17 @@ wait 3
 keys k
 wait 1.1
 # Join the next line to the current line, Move backward one character, Insert ,, Move to the beginning of the current line, Switch to INSERT mode
-keys J h space , 0 i
+keys J h
+wait 0.2
+keys space , 0
+wait 0.2
+keys i
 type [
 # Move to the end of the current line
 keys ctrl-e
+wait 0.5
 type ]
-wait 1.1
+wait 0.5
 # Move to the beginning of the current line
 keys ctrl-a
 wait 1.1
