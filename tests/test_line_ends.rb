@@ -37,14 +37,15 @@ class TestLineEnds < VmaTest
     end
   end
 
-  # 3 MB with one non-ASCII character: the old code took seconds, the new one
-  # takes well under 0.1 s. The bound is loose for slow machines.
+  # 3 MB with one non-ASCII character: the old code took seconds (13 s at
+  # 5.5 MB), the new one well under 0.1 s. The bound is loose for slow
+  # machines (the test VM once took 1.0 s).
   def test_scan_indexes_utf8_is_not_quadratic
     txt = "ä" + ("the quick brown fox jumps over the lazy dog 0123456789\n" * 55_000)
     res = nil
     t = Benchmark.realtime { res = scan_indexes(txt, /\n/) }
     assert_eq 55_000, res.size
     assert_eq txt.size - 1, res.last
-    assert t < 1.0, "scan_indexes took #{t.round(2)} s for 3 MB of UTF-8"
+    assert t < 2.0, "scan_indexes took #{t.round(2)} s for 3 MB of UTF-8"
   end
 end
