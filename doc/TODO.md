@@ -8,6 +8,14 @@ the git ref(s), as a short commit hash or a range.
 
 ## Open
 
+### Record demos; form input through the key bindings
+
+Record a demo like a macro, into the demo step format, by capturing keys in
+`match_key_conf`. First, form fields get a form input mode: GTK widgets as the
+view, a vimamsa `Buffer` per field as the model, and the form window's keys going
+to the key bindings. Then typing in forms (e.g. `, r r`) records and replays too.
+Plan: `doc/demo_recording_plan.md`.
+
 ### Faster startup
 
 About 0.9 s of a 2.6–3.0 s startup can be saved. The biggest item: the red-colors gem,
