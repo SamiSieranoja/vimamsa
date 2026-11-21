@@ -1,0 +1,158 @@
+# Recorded with Help ▸ Demos ▸ Record demo (2026-11-21).
+# Edit freely; the format is in scripts/demo/demo_steps.txt.
+title square
+file shapes.rb
+delay 0.3
+wait 1
+# Jump to the start of the next word
+keys w d
+wait 1
+# Delete to end of line (vim D), Switch to INSERT mode
+keys O i
+type Hello World!!!
+# Return to the previous mode
+keys esc
+wait 3
+# Jump to the start of the previous word
+keys b
+wait 0.7
+# Move backward one character, Switch to INSERT mode
+keys h ctrl
+wait 0.5
+type ooo
+# Return to the previous mode
+keys ctrl
+wait 0.8
+# Move to the beginning of the current line
+keys 0
+wait 0.9
+# Move one line forward, Enter VISUAL mode (for selections), Move to the end of the buffer, Search actions
+keys j v G , , s
+wait 1.3
+type delemptyspacelines
+wait 3
+type fuzzysearch
+wait 3
+# Form: next item of the list
+keys down
+wait 1.5
+# Form: submit, or press the focused button
+keys enter
+wait 1.8
+# Move one line backward
+keys k
+wait 2.4
+# Easy jump
+keys s
+target line 13 col 1
+keys @JUMP_LABEL@
+# Enter VISUAL mode (for selections)
+keys v
+# Easy jump
+keys s
+wait 0.4
+target line 21 col 1
+keys @JUMP_LABEL@
+# Move to the end of the current line, Move backward one character, Copy selection to clipboard
+keys O h y
+wait 1.9
+# Insert an empty line below, Move one line backward, Paste text after the cursor
+keys X X k X p
+wait 2.1
+# Easy jump
+keys s
+wait 0.3
+target line 23 col 7
+keys @JUMP_LABEL@
+# Delete to the end of the word, Switch to INSERT mode
+keys d e i
+type Square
+# Return to the previous mode
+keys esc
+wait 2.5
+# Move one line forward, Move to the beginning of the current line, Enter VISUAL mode (for selections)
+keys j 0 v
+# Easy jump
+keys s
+wait 1.4
+target line 30 col 1
+keys @JUMP_LABEL@
+# Move to the end of the current line, Move backward one character
+keys O h , , r
+wait 1.6
+keys ,
+wait 1.1
+# Search and replace
+keys r r
+wait 3
+type radius
+# Form: next field or button
+keys tab
+type width
+wait 0.4
+# Form: submit, or press the focused button
+keys enter
+wait 1.7
+# Move one line backward, Jump to the end of the next word
+keys k k e
+wait 2
+# Jump to the start of the previous word, Delete up to the next *, Delete char forward
+keys b d f * x
+wait 3
+# Move one line forward
+keys j j j j j
+wait 1.4
+# Move one line backward, Jump to the start of the next word, Enter VISUAL mode (for selections), Move forward one character, Jump to the next ,, Move backward one character, Copy selection to clipboard, Move one line forward, Insert an empty line below, Paste text after the cursor, Move to the beginning of the current line, Copy the current line
+keys k w v l f , h y j X X p 0 y y
+wait 3
+# Move to the end of the current line, Switch to INSERT mode
+keys esc O i
+type .area
+# Return to the previous mode, Move to the beginning of the current line, Copy the current line, Paste text after the cursor
+keys esc 0 y y p
+wait 2.7
+# Delete to the end of the word, Switch to INSERT mode
+keys d e i
+type AS
+wait 0.3
+# Delete backwards
+keys backspace backspace
+type Square
+# Return to the previous mode
+keys esc
+wait 3
+# Move one line backward
+keys k
+wait 2.4
+# Join the next line to the current line, Move backward one character, Insert ,, Move to the beginning of the current line, Switch to INSERT mode
+keys J h space , 0 i
+type [
+# Move to the end of the current line
+keys ctrl-e
+type ]
+wait 1.8
+# Move to the beginning of the current line
+keys ctrl-a
+wait 1.7
+# Return to the previous mode
+keys esc
+wait 1.2
+# Move to the start of the buffer, Enter VISUAL mode (for selections), Move to the end of the buffer, Search actions
+keys g g v G , , s
+wait 0.3
+type eval
+wait 1.1
+# Form: submit, or press the focused button
+keys enter
+wait 0.9
+# Move one line forward
+keys j j
+wait 2.1
+# Copy the current line, Paste text after the cursor, Move one line backward
+keys y y p p k
+wait 0.8
+# Delete to the end of the word
+keys d e d e d e d e
+wait 0.9
+# Delete to the end of the word, Delete char forward
+keys d e d e x

@@ -2,8 +2,11 @@ module Vimamsa
 # Plays a demo inside the running editor (Help ▸ Demos), on fresh copies of
 # files in scripts/demo, with the key log panel showing each key and the
 # action it ran. The demos (DEMOS) are step files in scripts/demo:
-#   basic     demo_steps.txt, the README demo that scripts/demo/record_demo.rb
-#             records into img/demo.gif
+#   basic     square/steps.txt (recorded with Help ▸ Demos ▸ Record demo):
+#             editing shapes.rb into a Square class, with Insert and Visual
+#             mode, easy jump, search and replace and the action search.
+#             (demo_steps.txt is the README demo that record_demo.rb
+#             records into img/demo.gif.)
 #   easyjump  demo_easyjump_steps.txt: moving and selecting with easy jump
 #   files     demo_files_steps.txt: switching between files (tab, browse
 #             mode h / l, the file explorer , f)
@@ -24,8 +27,8 @@ class DemoPlayer
   # title, desc, action: for the Help ▸ Demos menu, the introduction page
   # (help/intro.txt) and the demo list above the key log.
   DEMOS = {
-    basic: { steps: STEPS, files: ["shapes.rb"],
-             title: "Basic editing", desc: "moving, editing, undo, Insert and Visual mode", action: "help.demo" },
+    basic: { steps: File.join(DIR, "square", "steps.txt"), files: ["shapes.rb"], src: File.join(DIR, "square"),
+             title: "Basic editing", desc: "a Square class: editing, Visual mode, easy jump, replace, actions", action: "help.demo" },
     easyjump: { steps: File.join(DIR, "demo_easyjump_steps.txt"), files: ["shapes.rb"],
                 title: "Easy jump", desc: "jump anywhere on the screen with a few keys", action: "help.demo.easyjump" },
     files: { steps: File.join(DIR, "demo_files_steps.txt"), files: ["shapes.rb", "report.rb", "notes.txt"], dir: "files",

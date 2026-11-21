@@ -28,7 +28,8 @@ class TestDemoPlayer < VmaTest
   def short_player(wait, closing = nil, **opts)
     steps = [["wait", wait.to_s], ["keys", "x"]]
     steps << ["wait", closing.to_s] if closing
-    DemoPlayer.new(speed: 1, steps: steps, **opts)
+    # on the easy jump demo's file (scripts/demo/shapes.rb, as original)
+    DemoPlayer.new(:easyjump, speed: 1, steps: steps, **opts)
   end
 
   def original
@@ -42,17 +43,20 @@ class TestDemoPlayer < VmaTest
     assert steps.any? { |c, a| c == "type" && a.start_with?("puts ") }
   end
 
-  # The whole demo, fast: the file ends up with the typed line below the
-  # last one (G k o), nothing else changed (the yank/paste/delete/undo/redo
-  # cancel out), in Command mode at the top
+  # The basic demo (square/steps.txt), fast: it plays to the end and turns
+  # Circle into a Square class with a width (search and replace in a form,
+  # the action search, easy jumps), back in Command mode
   def test_plays_whole_demo
     p = DemoPlayer.new(speed: 50, loop: false)
     p.start
-    wait_until_done(p)
-    want = File.read(SHAPES) + "puts \"Total: \#{shapes.sum(&:area).round(1)}\"\n"
-    assert_eq want, p.buf.to_s
+    wait_until_done(p, 120)
+    assert_eq "Demo finished", p.stop_message
+    t = p.buf.to_s
+    assert t.include?("class Square < Shape"), t
+    assert t.include?("@width**2"), t
+    # the action search ran the eval converter on the whole file
+    assert t.end_with?("[3.141592653589793, 1]\n\n") || t.include?("[3.141592653589793, 1]"), t
     assert_mode :command
-    assert_eq 0, p.buf.pos
   ensure
     vma.buffers.close_buffer(p.buf.id) if p&.buf
   end
