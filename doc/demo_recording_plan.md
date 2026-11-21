@@ -1,6 +1,6 @@
 # Plan: recording demos, and a form input mode
 
-TODO: steps 1, 2, 4, 5 and 6 done (not committed yet). Act next on step 7 of "Implementation order" (step 3 is for later).
+TODO: steps 1, 2, 4, 5 and 6 done (`3415ded`..`b5b01c9`). Act next on step 7 of "Implementation order" (step 3 is for later).
 
 ## Context
 
@@ -240,10 +240,10 @@ Run the suite in the test VM after each step (`./run_tests_vm.rb`).
 
 ## DONE
 
-- Step 1 (2026-11-21, not committed yet): `gui_key_name` and `gui_set_modifiers` in
+- Step 1 (2026-11-21, `3415ded`): `gui_key_name` and `gui_set_modifiers` in
   `lib/vimamsa/key_names.rb`, used by `VSourceView#handle_key_event` and the main
   window's `modifiers` handler.
-- Step 2 (2026-11-21, not committed yet): `lib/vimamsa/form_input.rb`.
+- Step 2 (2026-11-21, `a38c55f`): `lib/vimamsa/form_input.rb`.
   - `FormField`: a `Gtk::Entry` showing a hidden-view `Buffer`. It reads the
     widget's own changes on `changed`, and the mouse cursor and selection before
     each key.
@@ -256,7 +256,7 @@ Run the suite in the test VM after each step (`./run_tests_vm.rb`).
   - The key log groups form typing like Insert-mode typing.
   - Tests: `tests/test_form_input.rb` (11). Not covered: real key events through
     the form window (no e2e test).
-- Steps 4–6 (2026-11-21, not committed yet): `lib/vimamsa/demo_recorder.rb`.
+- Steps 4–6 (2026-11-21, `b5b01c9`): `lib/vimamsa/demo_recorder.rb`.
   - Recording: Help ▸ Demos ▸ Record demo (`help.demo.record`), the "● REC demo"
     status indicator. Keys come from the new `:key_input` event of
     `match_key_conf`, emitted before the override callback so easy jump labels
