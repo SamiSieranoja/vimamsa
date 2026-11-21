@@ -337,7 +337,7 @@ class DemoPlayer
         if k == "@JUMP_LABEL@"
           # The label easy jump gave the target line: known only once the
           # labels are drawn, for this window size
-          @queue << [@delay, proc { jump_label.each { |c| press(c) } }]
+          @queue << [@delay, proc { type_jump_label }]
         else
           @queue << [@delay, proc { press(k) }]
         end
@@ -355,6 +355,16 @@ class DemoPlayer
       stop("Demo stopped (another buffer was opened: #{vma.buf&.fname || vma.buf.class})")
       return
     end
+    # A paste (p, P, ctrl-v) reads the clipboard asynchronously: the next
+    # key waits for it (at most 2 s: the flag stays set if the read fails)
+    if vma.buf.instance_variable_get(:@clipboard_paste_running)
+      @paste_wait ||= Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      if Process.clock_gettime(Process::CLOCK_MONOTONIC) - @paste_wait < 2
+        @timer = GLib::Timeout.add(20) { @timer = nil; run_next; false }
+        return
+      end
+    end
+    @paste_wait = nil
     if @queue.empty?
       @loop ? restart : stop("Demo finished")
       return
@@ -383,6 +393,24 @@ class DemoPlayer
     v = vma.buf.view
     v.handle_deltas
     v.draw_cursor
+  end
+
+  # Types the label easy jump gave the target. A target not shown in this
+  # window (smaller than the one the demo was recorded in) has no label:
+  # easy jump is cancelled and the cursor goes there directly, where the
+  # jump would have taken it.
+  def type_jump_label
+    keys = jump_label
+    tp = target_pos
+    if keys == ["esc"] && tp
+      press("esc")
+      vma.buf.set_pos(tp)
+      v = vma.buf.view
+      v&.handle_deltas
+      v&.draw_cursor
+    else
+      keys.each { |c| press(c) }
+    end
   end
 
   # The easy jump label of the start of the line @target names: "line N"

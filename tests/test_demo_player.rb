@@ -227,6 +227,25 @@ class TestDemoPlayer < VmaTest
     vma.buffers.close_buffer(p.buf.id) if p&.buf
   end
 
+  # An easy jump target outside the window (a demo recorded in a bigger
+  # one): the cursor still ends on it
+  def test_jump_target_not_shown
+    Dir.mktmpdir("vma-demo-src") { |src|
+      File.write(File.join(src, "long.txt"), (1..300).map { |i| "line #{i} some words here\n" }.join)
+      steps = [["wait", "0.1"], ["keys", "s"], ["target", "line 200 col 6"], ["keys", "@JUMP_LABEL@"], ["keys", "x"]]
+      p = DemoPlayer.new(:recording, demo: { steps: nil, files: ["long.txt"], src: src }, steps: steps,
+                         speed: 1, loop: false, controls: false)
+      p.start
+      wait_until_done(p, 10)
+      assert_eq "Demo finished", p.stop_message
+      l = p.buf.lines[199]
+      assert_eq "line 00 some words here\n", l, "x not at line 200 col 6"
+      assert_mode :command
+    }
+  ensure
+    vma.buffers.close_buffer(p.buf.id) if p&.buf
+  end
+
   def test_speed_steps
     p = DemoPlayer.new
     r = p.rate
