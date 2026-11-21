@@ -293,6 +293,11 @@ class TestIntroPage < VmaTest
     assert !rule.(argv: [File.join(REPO, "README.md")]), "file argument"
     assert !rule.(argv: [REPO]), "dir argument"
     assert !rule.(session: ["/x"]), "session to restore"
+    cnf.startup_file = "/nonexistent/startup.txt"
+    assert rule.(), "startup file that doesn't exist"
+    cnf.startup_file = File.join(REPO, "README.md")
+    assert !rule.(), "startup file opened"
+    cnf.startup_file = false
     cnf.intro.show_on_startup = false
     assert !rule.(), "setting off"
   ensure
@@ -320,7 +325,9 @@ class TestIntroPage < VmaTest
     FileUtils.mkdir_p(ud)
     out = File.join(ud, "shown.txt")
     FileUtils.rm_f(out)
-    File.write(File.join(ud, "custom.rb"), <<~RUBY)
+    # custom.rb as on a real first start (from custom_example.rb), plus a
+    # report of the page shown
+    File.write(File.join(ud, "custom.rb"), File.read(File.join(REPO, "custom_example.rb")) + <<~RUBY)
       cnf.lsp.enabled = false
       def hook_custom_after_init
         GLib::Idle.add {

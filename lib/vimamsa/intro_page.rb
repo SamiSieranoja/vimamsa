@@ -269,7 +269,9 @@ end
 def intro_on_startup?(argv: ARGV, forced: $vma_show_intro, test_mode: vma_test_mode?, session: nil)
   return true if forced
   return false if test_mode || !cnf.intro.show_on_startup?
-  return false if cnf.startup_file?
+  # a startup file that is opened (custom_example.rb sets one that usually
+  # doesn't exist)
+  return false if cnf.startup_file? && File.exist?(File.expand_path(cnf.startup_file!))
   return false if argv.any? { |a| File.exist?(File.expand_path(a)) }
   return false if (session || session_files_to_restore).any?
   true
