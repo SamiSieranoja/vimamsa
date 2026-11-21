@@ -24,6 +24,10 @@ class State
   attr_accessor :key_name, :eval_rule, :children, :action, :label, :major_modes, :level, :cursor_type, :keywords, :root, :parent
   # Order in which the action was bound (KeyBindingTree#bindings lists by it)
   attr_accessor :seq
+  # For a binding expanded from a template ("C <op> <motion>"): the values it
+  # was expanded from ({ op: :delete, motion: :word_next }), passed to the
+  # action, and the template keys
+  attr_accessor :bind_args, :template
   attr_reader :cur_mode, :scope
 
   def initialize(key_name, eval_rule = "", ctype = :command, scope: :buffer)
@@ -53,6 +57,8 @@ class KeyBindingTree
   attr_accessor :vim_added
   # Keywords added to every binding made inside with_keywords
   attr_reader :extra_keywords
+  # Key sets ({ name => { keys => value } }) and the templates bound with them
+  attr_reader :key_sets, :templates
 
   # This class is host-agnostic: it never touches the editor or GUI directly.
   # The host injects collaborators (actions registry, action_handler, logger,
@@ -69,6 +75,8 @@ class KeyBindingTree
     @actions = actions
     @extra_keywords = []
     @bind_seq = 0
+    @key_sets = {}
+    @templates = []
     @listeners = {}
     @action_handler = nil
     @logger = nil
@@ -400,7 +408,8 @@ class KeyBindingTree
       st.children.each { |c|
         p = path + [c.eval_rule.empty? ? c.key_name : "#{c.key_name}(#{c.eval_rule})"]
         if !c.action.nil?
-          out << { mode: mode, keys: p, action: c.action, keywords: c.keywords || [], desc: action_desc(c.action), seq: c.seq || 0 }
+          out << { mode: mode, keys: p, action: c.action, keywords: c.keywords || [], desc: action_desc(c.action), seq: c.seq || 0,
+                   args: c.bind_args, template: c.template }
         end
         walk.(c, mode, p) if c.children.any?
       }
@@ -663,7 +672,12 @@ class KeyBindingTree
         c.gsub!("\\", %q{\\\\} * 4) # Escape \ -chars
         c.gsub!("'", "#{'\\' * 4}'") # Escape ' -chars
 
-        if wildcard && eval_s.class == String && (r = @actions&.[](eval_s)) && !r.opt&.[](:code)
+        node = s_act.first
+        if node.bind_args && eval_s.class == String
+          # A template expansion gets its values (and the typed character)
+          vals = "{" + node.bind_args.map { |k, v| "#{k}: #{v.inspect}" }.join(", ") + "}"
+          eval_s = wildcard ? "a.#{eval_s}!(#{vals}, <char>)" : "a.#{eval_s}!(#{vals})"
+        elsif wildcard && eval_s.class == String && (r = @actions&.[](eval_s)) && !r.opt&.[](:code)
           # A named action gets the typed character as its argument. As a
           # string, so macros and the key log can replay it like Ruby code.
           # (the gsub! below fills in the escaped character)
@@ -685,7 +699,10 @@ class KeyBindingTree
     return true
   end
 
-  def bindkey(key, action, keywords: "")
+  # A key using a key set ("C <op> <motion>") is a template, see
+  # bind_template. filter: for templates, a proc (mode, keys, action) that
+  # says whether to bind one expansion.
+  def bindkey(key, action, keywords: "", args: nil, template: nil, filter: nil)
     # puts "keywords #{keywords}" if !keywords.empty?
     if keywords.class == String
       keywords = keywords.split(" ")
@@ -715,7 +732,112 @@ class KeyBindingTree
     elsif a.class == Symbol
       a = @actions.resolve(a) # old id => new id (ACTION_ALIASES)
     end
-    key.each { |k| _bindkey(k, a, keywords: keywords) }
+    key.each { |k|
+      if template_key?(k)
+        bind_template(k.strip, a, keywords, filter)
+      else
+        _bindkey(k, a, keywords: keywords, args: args, template: template)
+      end
+    }
+  end
+
+  # ── Key sets and templates (doc/vim_compatibility_plan.md, step 1) ──
+  #
+  # A key set maps keys to values, e.g. the Vim operators and motions:
+  #   define_key_set :op, { "d" => :delete, "g U" => :upcase }
+  #   define_key_set :motion, { "w" => :word_next, "f <char>" => :find_char,
+  #                             "f space" => { id: :find_char, char: " " } }
+  # A binding whose keys name a key set is a template:
+  #   bindkey "C <op> <motion>", "op.motion"
+  # It is expanded into one binding per combination (C d w, C g U f <char>,
+  # ...), each passing its values to the action: a.op.motion!({ op: :delete,
+  # motion: :word_next }). A Hash value adds its other fields to the values.
+  # "<same>" repeats the last key of the placeholder before it (d d, g U U).
+  # A count may be typed before every placeholder but the first (d 3 w): the
+  # expansion also gets a "<num>" variant there.
+
+  def define_key_set(name, entries)
+    @key_sets[name.to_sym] = entries.dup
+  end
+
+  # Add entries to a key set; the templates already bound with it get the
+  # new combinations too
+  def key_set_add(name, entries)
+    name = name.to_sym
+    (@key_sets[name] ||= {}).merge!(entries)
+    @templates.each { |t|
+      next if !t[:key].split.include?("<#{name}>")
+      bind_template(t[:key], t[:action], t[:keywords], t[:filter], only: { name => entries.keys }, record: false)
+    }
+  end
+
+  def key_set(name)
+    @key_sets[name.to_sym]
+  end
+
+  def template_key?(key)
+    key.split.any? { |t|
+      t == "<same>" || ((m = t.match(/\A<([a-z_]+)>\z/)) && @key_sets.key?(m[1].to_sym))
+    }
+  end
+
+  # The expansions of the key part of a template ("<op> <motion>") as
+  # [[keys, values], ...]. only: { set name => [keys] } limits that set to
+  # those entries.
+  def expand_template(keydef, only: nil)
+    out = [[[], {}, nil]] # keys, values, last key of the previous placeholder
+    first = true
+    keydef.split.each { |tok|
+      m = tok.match(/\A<([a-z_]+)>\z/)
+      name = m && m[1].to_sym
+      if tok == "<same>" || (name && @key_sets.key?(name))
+        nums = first ? [false] : [false, true]
+        out = out.flat_map { |ks, vals, last|
+          if tok == "<same>"
+            next [] if last.nil?
+            entries = { last => nil }
+          else
+            entries = @key_sets[name]
+            entries = entries.select { |k, _| only[name].include?(k) } if only && only[name]
+          end
+          nums.flat_map { |num|
+            entries.map { |ek, ev|
+              v = vals.dup
+              if ev.is_a?(Hash)
+                v[name] = ev[:id]
+                v.merge!(ev.reject { |k, _| k == :id })
+              elsif tok != "<same>"
+                v[name] = ev
+              end
+              eks = ek.split
+              [ks + (num ? ["<num>"] : []) + eks, v, eks.last]
+            }
+          }
+        }
+        first = false
+      else
+        out = out.map { |ks, vals, last| [ks + [tok], vals, last] }
+      end
+    }
+    out.map { |ks, vals, _| [ks, vals] }
+  end
+
+  # Bind every expansion of a template, e.g. "C <op> <motion>"
+  def bind_template(key, action, keywords, filter = nil, only: nil, record: true)
+    m = key.match(/\A(\S+)\s(\S.*)\z/)
+    if m.nil?
+      error("bindkey: invalid template #{key.inspect}. Binding skipped.")
+      return
+    end
+    mstr, keydef = m[1], m[2]
+    modes = mstr.match?(/\A\p{Lu}+\z/) ? mstr.chars : [mstr]
+    @templates << { key: key, action: action, keywords: keywords, filter: filter } if record
+    modes.each { |mode|
+      expand_template(keydef, only: only).each { |keys, vals|
+        next if filter && !filter.call(mode, keys, action)
+        _bindkey("#{mode} #{keys.join(" ")}", action, keywords: keywords, args: vals, template: "#{mode} #{keydef}")
+      }
+    }
   end
 
   # Unbind one or more key definitions (split on "||").
@@ -772,7 +894,7 @@ class KeyBindingTree
     node
   end
 
-  def _bindkey(key, action, keywords: [])
+  def _bindkey(key, action, keywords: [], args: nil, template: nil)
     key.strip!
     key.gsub!(/\s+/, " ")
 
@@ -820,17 +942,18 @@ class KeyBindingTree
 
     # puts "keywords #{keywords}"
     modes.each { |mode_id|
-      next if !mode_bind_key(mode_id, keydef, action, keywords: keywords)
+      next if !mode_bind_key(mode_id, keydef, action, keywords: keywords, args: args, template: template)
 
-      # Map froma actions to keybindings (e.g. to show bindings in menu)
-      @act_bindings[mode_id][action] = keydef
+      # Map froma actions to keybindings (e.g. to show bindings in menu).
+      # Not for template expansions: the action has hundreds of them.
+      @act_bindings[mode_id][action] = keydef if template.nil?
     }
   end
 
   # Binds a keyboard key combination to an action,
   # for a given keyboard mode like insert ("I") or command ("C")
   # Returns true if the binding was created, false if the mode is unknown.
-  def mode_bind_key(mode_id, keydef, action, keywords: [])
+  def mode_bind_key(mode_id, keydef, action, keywords: [], args: nil, template: nil)
     # debug "mode_bind_key #{mode_id.inspect}, #{keydef.inspect}, #{action.inspect}", 2
     # Example:
     # bindkey "C , f", "file.finder"
@@ -894,6 +1017,8 @@ class KeyBindingTree
     else
       @cur_state.action = action
       @cur_state.seq = (@bind_seq += 1)
+      @cur_state.bind_args = args
+      @cur_state.template = template
     end
     @cur_state.keywords = keywords
     @cur_state = @root
@@ -938,8 +1063,8 @@ class KeyBindingTree
   end
 end
 
-def bindkey(key, action, keywords: "")
-  vma.kbd.bindkey(key, action, keywords: keywords)
+def bindkey(key, action, keywords: "", filter: nil)
+  vma.kbd.bindkey(key, action, keywords: keywords, filter: filter)
 end
 
 def unbindkey(key, include_child_nodes: false)

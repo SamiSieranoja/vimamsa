@@ -30,7 +30,7 @@ class TestVimConflicts < VmaTest
     assert_eq [:conflict, :same_keys], [r[:status], r[:why]]
     r = row("C", "c c")                                     # vimlike has no c operator
     assert_eq :added, r[:status]                            # so it comes from VIM_BINDINGS
-    assert_eq :shared, row("C", "d i <char>")[:status]      # text objects in both
+    assert_eq :added, row("C", "d i <char>")[:status]       # text objects from the shared templates
   end
 
   def test_shorter_and_prefix_conflicts

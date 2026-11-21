@@ -37,55 +37,29 @@ class Buffer < String
   end
 
   # Apply op to a text object, e.g. text_object_op(:delete, "w", :i) = vim diw.
-  # op: :delete, :change, :yank, :upcase, :downcase, :swapcase, or :select
-  # (Visual mode: select the object). which: :i (inner) or :a.
+  # op: an operator of VIM_OPERATORS (:delete, :change, :yank, :upcase, ...)
+  # or :select (Visual mode: select the object). which: :i (inner) or :a.
   # Returns true if there was an object at the cursor.
   def text_object_op(op, obj, which)
     count = get_repeat_num
     r = text_object_range(obj, which == :i, @pos, count)
     return false if r.nil?
     s, e, linewise = r
-    case op
-    when :select
+    if op == :select
       return false if e <= s
       @selection_start = s
       set_pos(e - 1)
-    when :yank
+      return true
+    end
+    # yank / change of an empty inner (yi( on "()") still sets the cursor
+    return false if e <= s && ![:yank, :change].include?(op)
+    if op == :yank
       vma.clipboard.set(self[s...e]) if e > s
       @paste_lines = linewise
       set_pos(s)
-    when :delete
-      return false if e <= s
-      txt = self[s...e]
-      ds, de = s, e - 1
-      # The buffer's final "\n" can't be deleted: for the last lines, take
-      # the newline before them instead (vim dap on the last paragraph).
-      ds, de = s - 1, e - 2 if linewise && e >= size && s > 0
-      Gui.flash_range(self, ds..de) do
-        delete_range(ds, de)
-        vma.clipboard.set(txt)
-        @paste_lines = linewise
-        linewise ? tobj_set_line_pos(ds) : tobj_set_normal_pos(s)
-      end
-    when :change
-      # Linewise (cip, multi-line ci{): leave an empty line to type on, as vim
-      if linewise && e >= size && e - 1 > s
-        delete_range(s, e - 2) # the final "\n" stays as that line
-      else
-        delete_range(s, e - 1) if e > s
-        insert_txt_at("\n", s) if linewise
-      end
-      @paste_lines = linewise
-      set_pos(s)
-      vma.kbd.set_mode(:insert)
-    when :upcase, :downcase, :swapcase
-      return false if e <= s
-      old = self[s...e]
-      txt = transform_text(old.dup, op)
-      replace_range(s..(e - 1), txt) if txt != old
-      set_pos(s)
+      return true
     end
-    return true
+    vim_apply_operator(op, s, e, linewise)
   end
 
   private
@@ -334,28 +308,4 @@ class Buffer < String
   public
 end
 
-# Bind the text objects for operators d c y gU gu g~ and Visual mode.
-# Called by the vim and vimlike keymaps; none of these keys are used by
-# vimlike otherwise (Visual "a y" / "a d" keep working: exact keys win over
-# <char>, and vim has no "ay"/"ad" objects).
-def bind_vim_text_objects
-  # [keys, action id segment, op, description verb]
-  ops = [["d", "delete", :delete, "Delete"], ["c", "change", :change, "Change"],
-         ["y", "copy", :yank, "Copy"], ["g U", "upper", :upcase, "Uppercase"],
-         ["g u", "lower", :downcase, "Lowercase"], ["g ~", "swap", :swapcase, "Swap case"]]
-  sel = ["v", "select", :select, "Select"]
-  h = {}
-  (ops + [sel]).each { |k, name, op, verb|
-    { "i" => ["inner", "inside"], "a" => ["around", "around"] }.each { |w, (seg, prep)|
-      id = "obj.#{name}.#{seg}"
-      reg_act(id, proc { |c| buf.text_object_op(op, c, w.to_sym) }, "#{verb} #{prep} text object <char>")
-      if op == :select
-        h["V #{w} <char>"] = id
-      else
-        h["C #{k} #{w} <char>"] = id
-      end
-    }
-  }
-  add_keys "vim text objects", h
-end
 end

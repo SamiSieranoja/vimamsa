@@ -4,13 +4,14 @@
 # where it doesn't conflict; this file adds the modes and the vim keymap's own
 # deviations. Selected via cnf.keybindings.scheme = "vim" (applied on restart).
 #
+# Operators, motions and text objects combine freely (d w, c 3 e, g U t x,
+# > j, d i (, ...): the "vim operators" templates of VIM_BINDINGS and the key
+# sets in vim_operators.rb.
 # Not implemented (no core primitives) — intentionally left unbound:
-#   generic {op}{motion} operator-pending, t/T, %, ?, #, W/B/E/ge,
-#   V (linewise) / ctrl-v (blockwise) visual, : ex commands, >>/<<,
-#   named registers, faithful change-only "." repeat, backward ranges
-#   (db, cb, insert-mode ctrl-w).
+#   %, ?, #, ge, { }, ( ), = and gq, V (linewise) / ctrl-v (blockwise)
+#   visual, : ex commands, named registers, faithful change-only "." repeat,
+#   insert-mode ctrl-w.
 # Known deviations kept on purpose:
-#   "$" parks the cursor on the newline (one past vim's last char);
 #   C tab = switch to last buffer; C enter = line action;
 #   ctrl-d/ctrl-u scroll a full page, not half; ctrl-o approximates the
 #   jumplist with jump_to_last_edit; "." repeats only the last f/F find.
@@ -95,6 +96,4 @@ bindkey "audio left", ["audio.backward", proc { Audio.seek_forward(-5.0) }, "See
 bindkey "audio space", "audio.stop"
 bindkey "audio q || audio esc", "mode.prev"
 
-# Text objects (diw, ci", ya(, vip, ...), see text_objects.rb
-bind_vim_text_objects
 end # module Vimamsa

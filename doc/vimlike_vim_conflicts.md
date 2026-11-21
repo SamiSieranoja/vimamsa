@@ -8,15 +8,16 @@ Bindings that modules and `custom.rb` add at startup are not included.
 
 | | Count |
 |---|---|
-| Conflicts (the vim binding can't be used in vimlike) | 19 |
-| Added to vimlike from the shared table (`VIM_BINDINGS`, vim_core.rb) | 19 |
+| Conflicts (the vim binding can't be used in vimlike) | 42 |
+| Added to vimlike from the shared table (`VIM_BINDINGS`, vim_core.rb) | 457 |
 | Missing from vimlike (no conflict, could be added) | 0 |
-| Shared (same keys, same action) | 188 |
+| Shared (same keys, same action) | 152 |
 
 ## Conflicts
 
 | Mode | Vim keys | Vim action | vimlike | Reason |
 |---|---|---|---|---|
+| C | <code>$</code> | <code>move.motion(line_end)</code> | <code>move.line.end</code> | same keys, other action |
 | C | <code>@ @</code> | <code>macro.run.last</code> | <code>@ &lt;char&gt;</code> <code>macro.run</code> | a vimlike <char> binding takes the key |
 | C | <code>C</code> | <code>edit.change.eol</code> | <code>grep.files</code> | same keys, other action |
 | C | <code>O</code> | <code>edit.line.above</code> | <code>move.line.end</code> | same keys, other action |
@@ -24,15 +25,37 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | C | <code>^</code> | <code>move.line.first_char</code> | <code>move.line.start</code> | same keys, other action |
 | C | <code>backspace</code> | <code>move.char.prev</code> | <code>edit.backspace</code> | same keys, other action |
 | C | <code>ctrl-o</code> | <code>jump.edit.prev</code> | <code>file.open</code> | same keys, other action |
+| C | <code>d $</code> | <code>op.motion(delete, line_end)</code> | <code>edit.delete.eol</code> | same keys, other action |
+| C | <code>d ' &lt;char&gt;</code> | <code>op.motion(delete, mark_line)</code> | <code>edit.delete.mark</code> | same keys, other action |
+| C | <code>d 0</code> | <code>op.motion(delete, line_start)</code> | <code>edit.delete.line.start</code> | same keys, other action |
+| C | <code>d &lt;num&gt; e</code> | <code>op.motion(delete, word_end)</code> | <code>edit.delete.word.end</code> | same keys, other action |
+| C | <code>d F &lt;char&gt;</code> | <code>op.motion(delete, find_char_back)</code> | <code>edit.delete.find.prev</code> | same keys, other action |
+| C | <code>d F space</code> | <code>op.motion(delete, find_char_back, " ")</code> | <code>edit.delete.space.prev</code> | same keys, other action |
+| C | <code>d d</code> | <code>op.lines(delete)</code> | <code>edit.delete.line</code> | same keys, other action |
+| C | <code>d e</code> | <code>op.motion(delete, word_end)</code> | <code>edit.delete.word.end</code> | same keys, other action |
+| C | <code>d f &lt;char&gt;</code> | <code>op.motion(delete, find_char)</code> | <code>edit.delete.find.next</code> | same keys, other action |
+| C | <code>d f space</code> | <code>op.motion(delete, find_char, " ")</code> | <code>edit.delete.space.next</code> | same keys, other action |
+| C | <code>d w</code> | <code>op.motion(delete, word_next)</code> | <code>edit.delete.word.next</code> | same keys, other action |
+| C | <code>g U U</code> | <code>op.lines(upcase)</code> | <code>case.line.upper</code> | same keys, other action |
+| C | <code>g U w</code> | <code>op.motion(upcase, word_next)</code> | <code>case.word.upper</code> | same keys, other action |
+| C | <code>g u u</code> | <code>op.lines(downcase)</code> | <code>case.line.lower</code> | same keys, other action |
+| C | <code>g u w</code> | <code>op.motion(downcase, word_next)</code> | <code>case.word.lower</code> | same keys, other action |
+| C | <code>g ~ w</code> | <code>op.motion(swapcase, word_next)</code> | <code>case.word.swap</code> | same keys, other action |
+| C | <code>g ~ ~</code> | <code>op.lines(swapcase)</code> | <code>case.line.swap</code> | same keys, other action |
 | C | <code>s</code> | <code>edit.change.char</code> | <code>jump.easy</code> | same keys, other action |
 | C | <code>space</code> | <code>move.char.next</code> | <code>2 longer bindings</code> | vimlike uses these keys as a prefix |
 | C | <code>x</code> | <code>edit.delete.char.inline</code> | <code>edit.delete.char</code> | same keys, other action |
+| C | <code>y ' &lt;char&gt;</code> | <code>op.motion(yank, mark_line)</code> | <code>edit.copy.mark</code> | same keys, other action |
+| C | <code>y 0</code> | <code>op.motion(yank, line_start)</code> | <code>edit.copy.line.start</code> | same keys, other action |
+| C | <code>y e</code> | <code>op.motion(yank, word_end)</code> | <code>edit.copy.word.end</code> | same keys, other action |
+| C | <code>y y</code> | <code>op.lines(yank)</code> | <code>edit.line.copy</code> | same keys, other action |
 | C | <code>z z</code> | <code>view.center</code> | <code>z</code> <code>mode.browse</code> | a shorter vimlike binding runs first |
 | I | <code>ctrl-c</code> | <code>mode.prev</code> | <code>sel.copy</code> | same keys, other action |
 | I | <code>ctrl-h</code> | <code>edit.backspace</code> | <code>edit.complete</code> | same keys, other action |
 | I | <code>ctrl-j</code> | <code>edit.newline</code> | <code>edit.complete.hide</code> | same keys, other action |
 | I | <code>ctrl-n</code> | <code>edit.complete</code> | <code>move.line.next</code> | same keys, other action |
 | I | <code>ctrl-p</code> | <code>edit.complete</code> | <code>move.line.prev</code> | same keys, other action |
+| V | <code>$</code> | <code>move.motion(line_end)</code> | <code>move.line.end</code> | same keys, other action |
 | V | <code>^</code> | <code>move.line.first_char</code> | <code>move.line.start</code> | same keys, other action |
 | V | <code>ctrl-c</code> | <code>mode.visual.exit</code> | <code>edit.comment</code> | same keys, other action |
 | V | <code>s</code> | <code>sel.change</code> | <code>jump.easy</code> | same keys, other action |
@@ -40,28 +63,29 @@ Bindings that modules and `custom.rb` add at startup are not included.
 ## Added to vimlike
 
 Vim bindings that vimlike loads from the shared table because nothing of
-its own is in the way.
+its own is in the way. A template (`<op> <motion>`, vim_operators.rb) is one row with
+the number of its combinations that vimlike got.
 
 | Mode | Vim keys | Vim action |
 |---|---|---|
 | C | <code>.</code> | <code>undo.repeat</code> |
+| C | <code>&lt;op&gt; &lt;motion&gt; (384 combinations)</code> | <code>op.motion</code> |
+| C | <code>&lt;op&gt; &lt;same&gt; (11 combinations)</code> | <code>op.lines</code> |
+| C | <code>&lt;op&gt; &lt;textobj&gt; (32 combinations)</code> | <code>op.textobj</code> |
+| C | <code>&lt;motion&gt; (7 combinations)</code> | <code>move.motion</code> |
 | C | <code>D</code> | <code>edit.delete.eol</code> |
 | C | <code>S</code> | <code>edit.change.line</code> |
 | C | <code>Y</code> | <code>edit.line.copy</code> |
 | C | <code>` &lt;char&gt;</code> | <code>mark.jump</code> |
-| C | <code>c $</code> | <code>edit.change.eol</code> |
-| C | <code>c c</code> | <code>edit.change.line</code> |
-| C | <code>c e</code> | <code>edit.change.word</code> |
-| C | <code>c w</code> | <code>edit.change.word</code> |
 | C | <code>ctrl-a</code> | <code>edit.word.increment</code> |
 | C | <code>ctrl-b</code> | <code>move.page.prev</code> |
 | C | <code>ctrl-d</code> | <code>move.page.next.cursor</code> |
 | C | <code>ctrl-f</code> | <code>move.page.next</code> |
 | C | <code>ctrl-u</code> | <code>move.page.prev.cursor</code> |
-| C | <code>y $</code> | <code>edit.copy.line.end</code> |
-| C | <code>y w</code> | <code>edit.copy.word.next</code> |
 | V | <code>&lt;</code> | <code>sel.indent.less</code> |
 | V | <code>&gt;</code> | <code>sel.indent.more</code> |
+| V | <code>&lt;motion&gt; (8 combinations)</code> | <code>move.motion</code> |
+| V | <code>&lt;textobj&gt; (2 combinations)</code> | <code>sel.textobj</code> |
 | V | <code>c</code> | <code>sel.change</code> |
 
 ## Missing from vimlike
@@ -94,7 +118,6 @@ its own is in the way.
 | B | <code>s</code> | <code>move.page.prev</code> |
 | B | <code>w</code> | <code>jump.edit.next</code> |
 | B | <code>z</code> | <code>mode.browse.center</code> |
-| C | <code>$</code> | <code>move.line.end</code> |
 | C | <code>' &lt;char&gt;</code> | <code>mark.jump</code> |
 | C | <code>*</code> | <code>search.word.next</code> |
 | C | <code>/</code> | <code>search.buf</code> |
@@ -118,40 +141,14 @@ its own is in the way.
 | C | <code>alt-h</code> | <code>panel.files.prev</code> |
 | C | <code>alt-l</code> | <code>panel.files.next</code> |
 | C | <code>b</code> | <code>move.word.prev</code> |
-| C | <code>c a &lt;char&gt;</code> | <code>obj.change.around</code> |
-| C | <code>c i &lt;char&gt;</code> | <code>obj.change.inner</code> |
 | C | <code>ctrl-r</code> | <code>undo.redo</code> |
-| C | <code>d $</code> | <code>edit.delete.eol</code> |
-| C | <code>d ' &lt;char&gt;</code> | <code>edit.delete.mark</code> |
-| C | <code>d 0</code> | <code>edit.delete.line.start</code> |
-| C | <code>d F &lt;char&gt;</code> | <code>edit.delete.find.prev</code> |
-| C | <code>d F space</code> | <code>edit.delete.space.prev</code> |
-| C | <code>d a &lt;char&gt;</code> | <code>obj.delete.around</code> |
-| C | <code>d d</code> | <code>edit.delete.line</code> |
-| C | <code>d e</code> | <code>edit.delete.word.end</code> |
-| C | <code>d f &lt;char&gt;</code> | <code>edit.delete.find.next</code> |
-| C | <code>d f space</code> | <code>edit.delete.space.next</code> |
-| C | <code>d i &lt;char&gt;</code> | <code>obj.delete.inner</code> |
-| C | <code>d w</code> | <code>edit.delete.word.next</code> |
 | C | <code>down</code> | <code>move.line.next</code> |
 | C | <code>e</code> | <code>move.word.end</code> |
 | C | <code>enter</code> | <code>jump.line</code> |
 | C | <code>f &lt;char&gt;</code> | <code>jump.char.next</code> |
 | C | <code>f space</code> | <code>jump.space.next</code> |
 | C | <code>g ;</code> | <code>jump.edit.prev</code> |
-| C | <code>g U U</code> | <code>case.line.upper</code> |
-| C | <code>g U a &lt;char&gt;</code> | <code>obj.upper.around</code> |
-| C | <code>g U i &lt;char&gt;</code> | <code>obj.upper.inner</code> |
-| C | <code>g U w</code> | <code>case.word.upper</code> |
 | C | <code>g g</code> | <code>move.buf.start</code> |
-| C | <code>g u a &lt;char&gt;</code> | <code>obj.lower.around</code> |
-| C | <code>g u i &lt;char&gt;</code> | <code>obj.lower.inner</code> |
-| C | <code>g u u</code> | <code>case.line.lower</code> |
-| C | <code>g u w</code> | <code>case.word.lower</code> |
-| C | <code>g ~ a &lt;char&gt;</code> | <code>obj.swap.around</code> |
-| C | <code>g ~ i &lt;char&gt;</code> | <code>obj.swap.inner</code> |
-| C | <code>g ~ w</code> | <code>case.word.swap</code> |
-| C | <code>g ~ ~</code> | <code>case.line.swap</code> |
 | C | <code>h</code> | <code>move.char.prev</code> |
 | C | <code>i</code> | <code>mode.insert</code> |
 | C | <code>j</code> | <code>move.line.next</code> |
@@ -174,12 +171,6 @@ its own is in the way.
 | C | <code>up</code> | <code>move.line.prev</code> |
 | C | <code>v</code> | <code>mode.visual</code> |
 | C | <code>w</code> | <code>move.word.next</code> |
-| C | <code>y ' &lt;char&gt;</code> | <code>edit.copy.mark</code> |
-| C | <code>y 0</code> | <code>edit.copy.line.start</code> |
-| C | <code>y a &lt;char&gt;</code> | <code>obj.copy.around</code> |
-| C | <code>y e</code> | <code>edit.copy.word.end</code> |
-| C | <code>y i &lt;char&gt;</code> | <code>obj.copy.inner</code> |
-| C | <code>y y</code> | <code>edit.line.copy</code> |
 | C | <code>~</code> | <code>case.char.toggle</code> |
 | I | <code>&lt;char&gt;</code> | <code>edit.insert.char</code> |
 | I | <code>backspace</code> | <code>edit.backspace</code> |
@@ -205,7 +196,6 @@ its own is in the way.
 | I | <code>tab(vma.buf.view.autocp_active)</code> | <code>edit.complete.next</code> |
 | I | <code>up</code> | <code>move.line.prev.unselect</code> |
 | R | <code>&lt;char&gt;</code> | <code>readchar_new_char(&lt;char&gt;)</code> |
-| V | <code>$</code> | <code>move.line.end</code> |
 | V | <code>' &lt;char&gt;</code> | <code>mark.jump</code> |
 | V | <code>*</code> | <code>search.word.next</code> |
 | V | <code>/</code> | <code>search.buf</code> |
@@ -219,7 +209,6 @@ its own is in the way.
 | V | <code>G(vma.kbd.next_command_count!=nil)</code> | <code>move.line.goto</code> |
 | V | <code>J</code> | <code>sel.join</code> |
 | V | <code>U</code> | <code>case.sel.upper</code> |
-| V | <code>a &lt;char&gt;</code> | <code>obj.select.around</code> |
 | V | <code>b</code> | <code>move.word.prev</code> |
 | V | <code>d</code> | <code>sel.delete</code> |
 | V | <code>down</code> | <code>move.line.next</code> |
@@ -232,7 +221,6 @@ its own is in the way.
 | V | <code>g g</code> | <code>move.buf.start</code> |
 | V | <code>g u</code> | <code>case.sel.lower</code> |
 | V | <code>h</code> | <code>move.char.prev</code> |
-| V | <code>i &lt;char&gt;</code> | <code>obj.select.inner</code> |
 | V | <code>j</code> | <code>move.line.next</code> |
 | V | <code>k</code> | <code>move.line.prev</code> |
 | V | <code>l</code> | <code>move.char.next</code> |

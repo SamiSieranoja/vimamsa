@@ -86,6 +86,92 @@ class TestVimBindings < VmaTest
     assert_matches_vim("foo bar\n", "wgUUx")      # cursor to line start
   end
 
+  # The operator + motion layer (vim_operators.rb): every operator with
+  # every motion, counts in both places
+  def test_operator_counts
+    assert_matches_vim("a b c d e f g\n", "d2w")
+    assert_matches_vim("a b c d e f g\n", "2dw")
+    assert_matches_vim("a b c d e f g\n", "2d2w")
+    assert_matches_vim("a\nb\nc\nd\ne\n", "d2j")
+    assert_matches_vim("a\nb\nc\nd\ne\n", "3dd")
+    assert_matches_vim("a\nb\nc\n", "5dd")          # more lines than left: no-op
+    assert_matches_vim("a\nb\nc\n", "j2dd")
+  end
+
+  def test_operator_word_motions
+    assert_matches_vim("foo.bar baz\n", "dW")
+    assert_matches_vim("foo.bar baz\n", "dE")
+    assert_matches_vim("foo bar.baz\n", "$dB")
+    assert_matches_vim("foo bar baz\n", "wwdb")
+    assert_matches_vim("foo bar\nbaz\n", "wdw")       # last word: not joined
+    assert_matches_vim("foo bar\nbaz qux\n", "wd2w")
+    assert_matches_vim("foo\n\nbar\n", "dw")
+    assert_matches_vim("foo bar\n", "jdb")
+    assert_matches_vim("x\n  foo\nbar\n", "jjdb")
+    assert_matches_vim("foo bar baz\n", "llcwX\e")    # cw inside a word
+    assert_matches_vim("foo bar baz\n", "lllcwX\e")   # cw on a blank
+    assert_matches_vim("a bc d\n", "c2wX\e")
+    assert_matches_vim("foo bar\n", "yeP")
+  end
+
+  def test_operator_line_motions
+    assert_matches_vim("x\n  abc def\n", "jwd0")
+    assert_matches_vim("x\n  abc def\n", "j$d^")
+    assert_matches_vim("abc def\n", "wd$")
+    assert_matches_vim("abc\ndef\nghi\n", "d2$")
+    assert_matches_vim("abcdef\n", "$dh")
+    assert_matches_vim("abcdef\n", "$dl")
+    assert_matches_vim("abcdef\n", "d3l")
+  end
+
+  def test_operator_find_till
+    assert_matches_vim("foo bar baz\n", "dtb")
+    assert_matches_vim("foo bar baz\n", "d2fa")
+    assert_matches_vim("foo bar baz\n", "$dTo")
+    assert_matches_vim("foo bar baz\n", "$dF ")
+    assert_matches_vim("foo bar baz\n", "dt ")
+    assert_matches_vim("foo bar baz\n", "cfrX\e")
+    assert_matches_vim("foo bar baz\n", "gUfr")
+  end
+
+  def test_operator_linewise_motions
+    assert_matches_vim("a\nb\nc\nd\n", "jdk")
+    assert_matches_vim("a\nb\nc\nd\n", "jdG")
+    assert_matches_vim("a\nb\nc\nd\n", "jjdgg")
+    assert_matches_vim("a\nb\nc\nd\n", "d3G")
+    assert_matches_vim("a\nb\nc\n", "yjGp")
+    assert_matches_vim("a\nb\nc\n", "jcjX\e")
+    assert_matches_vim("a\nb\nc\n", "Gdj")             # can't move: no-op
+  end
+
+  def test_indent_operators
+    assert_matches_vim("a\nb\nc\n", ">>")
+    assert_matches_vim("a\nb\nc\n", "3>>")
+    assert_matches_vim("a\n\nc\n", ">j")
+    assert_matches_vim("a\n\nc\n", ">2j")              # empty lines stay empty
+    assert_matches_vim("\ta\n\tb\n", "<j")
+    assert_matches_vim("    a\nb\n", "<<")
+    assert_matches_vim("a b\nc\n", ">w")                # > always works on lines
+  end
+
+  def test_operator_text_objects_and_case
+    assert_matches_vim("foo (bar baz) x\n", "fbd2w")
+    assert_matches_vim("foo (bar baz) x\n", "fb>i(")
+    assert_matches_vim("foo bar\nbaz\n", "g~j")
+    assert_matches_vim("foo bar\n", "gUiw")
+    assert_matches_vim("Foo Bar\n", "gu$")
+    assert_matches_vim("foo bar\n", "wgUb")
+  end
+
+  def test_plain_motions_from_the_layer
+    assert_matches_vim("foo.bar baz\n", "Wix\e")
+    assert_matches_vim("foo.bar baz\n", "Eix\e")
+    assert_matches_vim("foo bar.baz\n", "$Bix\e")
+    assert_matches_vim("foo bar baz\n", "tzix\e")
+    assert_matches_vim("foo bar baz\n", "$Tfix\e")
+    assert_matches_vim("abc\n", "$ix\e")              # $ on the last character
+  end
+
   def test_join
     assert_matches_vim("aa\nbb\n", "J")
   end
@@ -215,7 +301,7 @@ class TestVimBindings < VmaTest
       # last line, so jump to line 1 first.
       mode = NVIM == "nvim" ? ["--headless"] : ["-E", "-s", "-c", "1"]
       ok = system(NVIM, *mode, "-u", "NONE", "-i", "NONE", "-n",
-                  "-c", "set noautoindent nosmartindent",
+                  "-c", "set noautoindent nosmartindent sw=4 ts=4",
                   "-c", "normal! #{nkeys}",
                   "-c", "wq!", f.path,
                   out: File::NULL, err: File::NULL)

@@ -51,7 +51,7 @@ ACTION_NS_CATEGORY = {
   "edit.comment" => "code", "edit.indent" => "code", "undo" => "undo", "case" => "case",
   "sel" => "visual", "buf" => "buffer", "file" => "file", "panel" => "view", "view" => "view",
   "style" => "hpt", "macro" => "macro", "mark" => "marks", "lsp" => "code", "term" => "code",
-  "custom" => "custom", "obj" => "textobj", "kbd" => "internal", "kbd.count" => "undo",
+  "custom" => "custom", "op" => "edit", "op.textobj" => "textobj", "sel.textobj" => "textobj", "kbd" => "internal", "kbd.count" => "undo",
   "mode.replace" => "edit", "mode.audio" => "app", "edit.insert" => "insert",
   "edit.tab" => "insert", "edit.untab" => "insert", "edit.complete" => "insert",
 }
@@ -157,7 +157,9 @@ def key_bindings_section(records, subheads: true)
   rows = {}
   records.each { |b|
     conds = []
-    keys = b[:keys].map { |k|
+    # A template expansion (C d w) is shown as its template (<op> <motion>)
+    keys = b[:template] ? b[:template].split(" ", 2)[1].split : b[:keys]
+    keys = keys.map { |k|
       m = /\A(.+)\((.*)\)\z/m.match(k)
       next k if m.nil?
       conds << key_condition_text(m[2])
@@ -204,11 +206,56 @@ def key_bindings_page(kbd = vma.kbd, scheme: cnf.keybindings.scheme! || "vimlike
   if basic.any?
     s << "◼ Basics\n" << key_bindings_section(basic).join("\n") << "\n\n"
   end
+  # The key sets of the templates go after the text objects (or before the
+  # uncategorized bindings, if there are no text objects)
+  sets = key_bindings_sets_section(kbd)
   key_bindings_by_category(kbd).each { |cat, bs|
+    if cat.nil? && sets.any?
+      s << sets.join("\n") << "\n\n"
+      sets = []
+    end
     s << "◼ #{key_category_heading(cat)}\n"
     s << key_bindings_section(bs, subheads: !cat.to_s.start_with?("mode:")).join("\n") << "\n\n"
+    if cat == "textobj" && sets.any?
+      s << sets.join("\n") << "\n\n"
+      sets = []
+    end
   }
+  s << sets.join("\n") << "\n\n" if sets.any?
   s << "===============================================\n"
+end
+
+# The key sets used by templates (<op>, <motion>, ...): each key and what it
+# means, wrapped to lines of about 80 characters
+def key_bindings_sets_section(kbd)
+  return [] if kbd.key_sets.empty?
+  out = ["◼ Operators, motions and text objects",
+         "    A line like  <op> <motion>  works with every key below: d w, c 3 e, g U f x"]
+  w = kbd.key_sets.keys.map { |n| n.size + 2 }.max
+  order = [:op, :motion, :textobj]
+  kbd.key_sets.sort_by { |name, _| order.index(name) || order.size }.each { |name, entries|
+    items = entries.map { |k, v|
+      d = key_set_value_desc(name, v.is_a?(Hash) ? v[:id] : v)
+      d = d.gsub("<char>", v[:char] == " " ? "space" : v[:char]) if v.is_a?(Hash) && v[:char]
+      "#{k} #{d}"
+    }
+    line = "    " + "<#{name}>".ljust(w) + "  "
+    indent = " " * line.size
+    cur = line
+    items.each_with_index { |it, i|
+      piece = (i == 0 ? "" : " · ") + it
+      if cur.size + piece.size > 84 && cur != line
+        out << cur.rstrip
+        cur = indent + it
+      else
+        cur += piece
+      end
+    }
+    out << cur
+  }
+  out << "    <same> = the last key of the operator again: d d, c c, > >, g U U (<count> lines)"
+  out << "    text objects (<char>): w W s p \" ' ` ( ) b [ ] { } B < > t"
+  out
 end
 
 def show_key_bindings()
@@ -249,22 +296,6 @@ def load_scheme_kbd(scheme)
   kbd
 end
 
-# Every binding of a tree as [mode, keys, action]; keys is an Array of key
-# names, with "(eval_rule)" appended where the binding has one.
-def kbd_leaf_bindings(kbd)
-  out = []
-  stack = kbd.root.children.map { |m| [m, m.key_name, []] }
-  while (x = stack.pop)
-    st, mode, path = x
-    st.children.each { |c|
-      p = path + [c.eval_rule.empty? ? c.key_name : "#{c.key_name}(#{c.eval_rule})"]
-      out << [mode, p, c.action] if !c.action.nil?
-      stack << [c, mode, p] if c.children.any?
-    }
-  end
-  out.sort_by { |m, k, _a| [m, k.join(" ")] }
-end
-
 # Compare each binding of the vim keymap with the vimlike keymap (tree
 # `other`, default: a fresh vimlike tree with no module or custom.rb
 # bindings). Returns rows {mode:, keys:, action:, status:, why:, other:}:
@@ -280,11 +311,37 @@ def vim_binding_conflicts(other = nil)
   other ||= load_scheme_kbd("vimlike")
   vim = load_scheme_kbd("vim")
   added = other.vim_added || []
-  kbd_leaf_bindings(vim).map { |mode, keys, action|
-    row = { mode: mode, keys: keys, action: kbd_action_code(action, vim.actions) }
-    next row.merge(status: :added) if added.include?([mode, keys])
+  added = added.to_h { |x| [x, true] }
+  vim.bindings.sort_by { |b| [b[:mode], b[:keys].join(" ")] }.map { |b|
+    mode, keys, action = b[:mode], b[:keys], b[:action]
+    code = kbd_action_code(action, vim.actions)
+    code += "(#{b[:args].values.map { |x| x.is_a?(String) ? x.inspect : x }.join(", ")})" if b[:args]
+    row = { mode: mode, keys: keys, action: code, template: b[:template] }
+    next row.merge(status: :added) if added[[mode, keys]]
     row.merge(vim_binding_status(other, mode, keys, action, vim.actions))
   }
+end
+
+# Rows of one status for the report: template expansions ("C <op> <motion>")
+# become one row per template, with the number of expansions
+def vim_conflict_rows_grouped(rows)
+  out = []
+  seen = {}
+  rows.each { |r|
+    if r[:template].nil?
+      out << r
+      next
+    end
+    if (g = seen[r[:template]])
+      g[:n] += 1
+      next
+    end
+    m, keys = r[:template].split(" ", 2)
+    g = seen[r[:template]] = { mode: m, keys: keys.split, action: r[:action].sub(/\(.*\)\z/, ""), n: 1 }
+    out << g
+  }
+  out.each { |g| g[:keys] = g[:keys] + ["(#{g[:n]} combinations)"] if g[:n] && g[:n] > 1 }
+  out
 end
 
 # What an action runs, as text, so bindings can be compared and listed:
@@ -392,16 +449,17 @@ def vim_binding_conflicts_report(rows = vim_binding_conflicts)
     out << "| #{r[:mode]} | #{code.(r[:keys].join(" "))} | #{act.(r[:action])} | #{vl} | #{VIM_CONFLICT_WHY[r[:why]]} |\n"
   }
   out << "\n## Added to vimlike\n\nVim bindings that vimlike loads from the shared table because nothing of\n"
-  out << "its own is in the way.\n\n| Mode | Vim keys | Vim action |\n|---|---|---|\n"
-  by.fetch(:added, []).each { |r|
+  out << "its own is in the way. A template (`<op> <motion>`, vim_operators.rb) is one row with\n"
+  out << "the number of its combinations that vimlike got.\n\n| Mode | Vim keys | Vim action |\n|---|---|---|\n"
+  vim_conflict_rows_grouped(by.fetch(:added, [])).each { |r|
     out << "| #{r[:mode]} | #{code.(r[:keys].join(" "))} | #{act.(r[:action])} |\n"
   }
   out << "\n## Missing from vimlike\n\n| Mode | Vim keys | Vim action |\n|---|---|---|\n"
-  by.fetch(:missing, []).each { |r|
+  vim_conflict_rows_grouped(by.fetch(:missing, [])).each { |r|
     out << "| #{r[:mode]} | #{code.(r[:keys].join(" "))} | #{act.(r[:action])} |\n"
   }
   out << "\n## Shared\n\n| Mode | Keys | Action |\n|---|---|---|\n"
-  by.fetch(:shared, []).each { |r|
+  vim_conflict_rows_grouped(by.fetch(:shared, [])).each { |r|
     out << "| #{r[:mode]} | #{code.(r[:keys].join(" "))} | #{act.(r[:action])} |\n"
   }
   out

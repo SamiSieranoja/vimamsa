@@ -66,6 +66,30 @@ def reg_vim_actions
     vma.kbd.set_mode(:insert)
   }, "Delete selection and enter insert mode (vim visual c/s)")
 
+  # Operators, motions and text objects (vim_operators.rb). Bound through
+  # the templates in the "vim operators" section of VIM_BINDINGS; v is the
+  # values of the expansion ({ op: :delete, motion: :word_next }), c the
+  # typed <char>. They use the count themselves (d3w deletes three words at
+  # once, it doesn't run d w three times).
+  reg_act("op.motion", proc { |v, c = nil|
+    vma.kbd.method_handles_repeat = true
+    buf.vim_operator_motion(v[:op], v[:motion], vma.kbd.next_command_count, c || v[:char])
+  }, "Apply <op> from the cursor to where <motion> moves")
+  reg_act("op.lines", proc { |v|
+    vma.kbd.method_handles_repeat = true
+    buf.vim_operator_lines(v[:op], vma.kbd.next_command_count)
+  }, "Apply <op> to the current line (<count> lines)")
+  reg_act("op.textobj", proc { |v, c|
+    buf.text_object_op(v[:op], c, v[:textobj] == :inner ? :i : :a)
+  }, "Apply <op> to text object <char>")
+  reg_act("sel.textobj", proc { |v, c|
+    buf.text_object_op(:select, c, v[:textobj] == :inner ? :i : :a)
+  }, "Select text object <char>")
+  reg_act("move.motion", proc { |v, c = nil|
+    vma.kbd.method_handles_repeat = true
+    buf.vim_motion_move(v[:motion], vma.kbd.next_command_count, c || v[:char])
+  }, "Move to where <motion> moves")
+
   # APPROXIMATION: set_last_command is currently only fed by f/F finds, so this
   # repeats the last find, not the last change like vim's ".".
   reg_act("undo.repeat", proc { repeat_last_action() },
@@ -105,7 +129,8 @@ VIM_BINDINGS = {
     "VC 0(vma.kbd.next_command_count!=nil)" => "kbd.count.digit",
     "VC 0(vma.kbd.next_command_count==nil)" => "move.line.start",
     "VC ^" => "move.line.first_char",
-    "VC $" => "move.line.end",
+    # "VC $": the vim motion (last character, not past it), from the
+    # "vim operators" templates
 
     "VC f <char>" => "jump.char.next",
     "VC F <char>" => "jump.char.prev",
@@ -150,35 +175,15 @@ VIM_BINDINGS = {
     # Delete
     "C x" => "edit.delete.char.inline",
     "C X" => "edit.delete.char.prev",
-    "C d d" => ["edit.delete.line", proc { buf.delete_line }, "Delete current line"],
-    "C d e" => "edit.delete.word.end",
-    "C d w" => "edit.delete.word.next",
-    "C d $" => "edit.delete.eol",
-    "C d 0" => "edit.delete.line.start",
-    "C d ' <char>" => "edit.delete.mark",
-    "C d f <char>" => "edit.delete.find.next",
-    "C d F <char>" => "edit.delete.find.prev",
-    "C d f space" => "edit.delete.space.next",
-    "C d F space" => "edit.delete.space.prev",
     "C D" => "edit.delete.eol",
 
     # Change / substitute
-    "C c c" => "edit.change.line",
-    "C c w" => "edit.change.word",
-    "C c e" => "edit.change.word",
-    "C c $" => "edit.change.eol",
     "C C" => "edit.change.eol",
     "C S" => "edit.change.line",
     "C s" => "edit.change.char",
 
     # Yank / paste
-    "C y y" => "edit.line.copy",
     "C Y" => "edit.line.copy",
-    "C y w" => "edit.copy.word.next",
-    "C y e" => "edit.copy.word.end",
-    "C y $" => "edit.copy.line.end",
-    "C y 0" => "edit.copy.line.start",
-    "C y ' <char>" => "edit.copy.mark",
     "C p" => "edit.paste.after",
     "C P" => "edit.paste.before",
 
@@ -187,12 +192,6 @@ VIM_BINDINGS = {
     "C r space" => "edit.replace.space",
     "C J" => "edit.line.join",
     "C ~" => "case.char.toggle",
-    "C g U w" => "case.word.upper",
-    "C g u w" => "case.word.lower",
-    "C g ~ w" => "case.word.swap",
-    "C g U U" => "case.line.upper",
-    "C g u u" => "case.line.lower",
-    "C g ~ ~" => "case.line.swap",
     "C ctrl-a" => "edit.word.increment", # vim ctrl-a: increment number
     "C ." => "undo.repeat",
 
@@ -263,6 +262,18 @@ VIM_BINDINGS = {
     "X <char>" => "edit.replace.char.next",
   },
 
+  # Every operator with every motion and text object (vim_operators.rb):
+  # d w, c 3 e, y $, g U f x, > j, d i (, ...; d d, c c, > >, g U U
+  "vim operators" => {
+    "C <op> <motion>" => "op.motion",
+    "C <op> <textobj>" => "op.textobj",
+    "C <op> <same>" => "op.lines",
+    "V <textobj>" => "sel.textobj",
+    # Plain movement for the motions the keymap has no binding of its own
+    # for (W, B, E, t, T, ...); always bound only where free
+    "VC <motion>" => "move.motion",
+  },
+
   "vim macros" => {
     # q<char> records, q stops, @<char> runs, @@ repeats
     "VC q <char>" => "macro.record",
@@ -275,16 +286,41 @@ VIM_BINDINGS = {
   },
 }
 
+# Whether keys are bound in mode m, with or without a condition ("C 0" is
+# taken by "C 0(vma.kbd.next_command_count==nil)")
+def vim_keys_taken?(kbd, m, keys)
+  node = kbd.root.children.find { |x| x.key_name == m }
+  keys.each { |k|
+    return false if node.nil?
+    node = node.children.find { |x| x.key_name == k.sub(/\(.*\)\z/, "") }
+  }
+  !node.nil?
+end
+
 # Bind VIM_BINDINGS into vma.kbd. With only_free, an entry is bound only if
 # vma.kbd has nothing in its way (see vim_binding_status), and binding it
 # doesn't change which keys the menus show for an action vimlike already
 # binds. Records what was bound as [mode, keys] in vma.kbd.vim_added.
+# Templates ("C <op> <motion>") are checked per expansion; the plain motion
+# template is bound only where free in both keymaps.
 def bind_vim_bindings(only_free: false)
   reg_vim_actions
   kbd = vma.kbd
+  # The keymap's own additions to a key set (key_set_add before this) stay
+  VIM_KEY_SETS.each { |name, entries| kbd.define_key_set(name, entries.merge(kbd.key_set(name) || {})) }
   added = []
   VIM_BINDINGS.each { |section, h|
     h.each { |key, action|
+      if kbd.template_key?(key)
+        free = only_free || action == "move.motion"
+        filter = !free ? nil : proc { |m, keys, act|
+          ok = !vim_keys_taken?(kbd, m, keys) && vim_binding_status(kbd, m, keys, act)[:status] == :missing
+          added << [m, keys] if ok && only_free
+          ok
+        }
+        bindkey(key, action, keywords: section, filter: filter)
+        next
+      end
       if !only_free
         bindkey(key, action, keywords: section)
         next

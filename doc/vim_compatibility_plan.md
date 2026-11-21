@@ -1,7 +1,7 @@
 # Plan: better Vim compatibility
 
-TODO: act next on item 2 of "Order of work": step 1, the operator + motion
-layer (the shared table, item 1, is done). When an item is finished, move it
+TODO: act next on item 3 of "Order of work": registers that remember
+linewise text, and linewise put (items 1 and 2 are done). When an item is finished, move it
 to the DONE section at the end of this document with a short summary and the
 git ref(s).
 
@@ -313,10 +313,10 @@ which), or keep the restart.
 
 1. ~~Move the existing Vim bindings into the shared table. Load the
    non-conflicting ones into vimlike.~~ Done, see DONE.
-2. The key-set binding syntax (`<op>`, `<motion>`, `<textobj>`, `<same>`), the
+2. ~~The key-set binding syntax (`<op>`, `<motion>`, `<textobj>`, `<same>`), the
    operator layer and ported motions, and the differential test suite. Port the
    existing hand-made bindings first, so nothing gets worse. This includes the
-   text object bindings, which are bound per operator for now.
+   text object bindings, which are bound per operator for now.~~ Done, see DONE.
 3. Registers that remember linewise text, and linewise put.
 4. Missing motions.
 5. `V` and `ctrl-v`.
@@ -375,3 +375,31 @@ Each step regenerates `doc/vimlike_vim_conflicts.md` and updates
 - **Count inside a key sequence** (2026-11-19, `2e9fb0b`): `d 3 e` works, and
   any binding with `<num>`. The count multiplies one typed before the
   sequence (`2 d 3 e` = 6). A first piece of the counts in step 1.
+- **Operator + motion layer** (step 1, order item 2; 2026-11-21). Key sets
+  and templates in `KeyBindingTree` (`define_key_set`, `key_set_add`,
+  `bind_template`): a binding like `"C <op> <motion>"` is expanded into one
+  tree node per combination, each remembering its values (`bind_args`) and
+  its template; the action gets the values, `a.op.motion!({ op: :delete,
+  motion: :word_next })`, plus the typed `<char>`. A `<num>` variant before
+  every placeholder but the first gives counts after the operator; they
+  multiply with a count before it. `key_set_add` binds the new combinations
+  of every template already bound. `lib/vimamsa/vim_operators.rb` has the
+  sets (`VIM_KEY_SETS`: operators `d c y gU gu g~ > <`, 27 motions, `i`/`a`
+  text objects), what each motion means (`VIM_MOTIONS`: linewise,
+  inclusive) and the Buffer methods (`vim_motion_target`,
+  `vim_operator_motion`, `vim_operator_lines`, `vim_apply_operator`, also
+  used by `text_object_op`). Vim rules: exclusive motions ending in column 0,
+  `dw` on the last word of a line, `cw` = `ce`, multi-line `d$` from the
+  indent is linewise, `5dd` with fewer lines does nothing. The templates are
+  the "vim operators" section of `VIM_BINDINGS`; the hand-made `d`/`c`/`y`/
+  `gU` combinations and `bind_vim_text_objects` are gone. The plain-motion
+  template (`VC <motion>`) is bound only where a keymap has no binding of its
+  own, so it adds `W B E t T` (and the vim keymap's `$` is now the vim
+  motion, fixing the old `$dFa` failure). vimlike adds its `O` motion to the
+  set. The key bindings page shows a template as one line and lists the key
+  sets; the conflicts report groups template expansions per template.
+  Deviation from the design above: motion properties (linewise, inclusive)
+  are in `VIM_MOTIONS`, not in the key set entries, because they belong to
+  the motion, not to its key. `=` and `gq` are not done.
+  Tests: `tests/test_vim_operators.rb` (vimlike, checked against real vim),
+  oracle cases in `tests/test_vim_bindings.rb` (vim keymap).

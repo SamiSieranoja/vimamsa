@@ -8,7 +8,8 @@ class TestKeyCategories < VmaTest
   def test_binding_records
     b = find(vma.kbd, "C", "d i <char>")
     assert !b.nil?, "text object binding missing"
-    assert b[:keywords].include?("text"), b.inspect
+    assert_eq "C <op> <textobj>", b[:template]
+    assert_eq({ op: :delete, textobj: :inner }, b[:args])
     u = find(vma.kbd, "C", "u")
     assert_eq "undo.last", u[:action]
     assert_eq "Undo the last action", u[:desc] # dotted ids show their description
@@ -109,6 +110,10 @@ class TestKeyCategories < VmaTest
     e, b = %w[move.word.end move.word.prev].map { |id| motion.index(vma.actions[id].method_name) }
     assert e && b && e < b, "not in definition order:\n#{motion}"
     assert motion.include?("◼◼ Command, Visual"), motion
+    # templates: one line each, and the key sets listed
+    assert s.include?("<op> <motion>"), "template line missing"
+    assert !s.match?(/^ +c w /), "template expansions listed one by one"
+    assert s.include?("◼ Operators, motions and text objects"), "key sets missing"
   end
 
   # doc/action_names_plan.md step 6: every binding of every keymap runs a

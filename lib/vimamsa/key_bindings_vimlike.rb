@@ -447,8 +447,9 @@ bindkey "C , i p", "edit.insert.password", keywords: "cat:edit"
   # bindkey(key, value)
 # }
 
-# Vim text objects (diw, ci", ya(, vip, ...), see text_objects.rb
-bind_vim_text_objects
+# vimlike's own motion O (end of line) also works after the Vim operators
+# (c O, g U O, > O, ...; vim_operators.rb)
+vma.kbd.key_set_add(:motion, "O" => :line_end)
 
 # Vim bindings from the shared table (vim_core.rb) that don't conflict with
 # the bindings above; the rest are listed in doc/vimlike_vim_conflicts.md.

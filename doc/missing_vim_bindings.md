@@ -11,43 +11,31 @@ This list comes from reading the binding files, not from testing in the editor.
 The generated [vimlike_vim_conflicts.md](vimlike_vim_conflicts.md) compares the two
 keymaps binding by binding.
 
-## Root cause
+## Operators and motions
 
-There is no general operator + motion system. Each combination (`d e`, `c w`, ...)
-is bound individually, so any combination nobody wrote out is missing.
+Done (2026-11-21): the operator + motion layer (`lib/vimamsa/vim_operators.rb`,
+step 1 of `doc/vim_compatibility_plan.md`). Every operator works with every motion and
+text object, with counts before the operator and before the motion (`2d3w`):
 
-## Case changes
+- Operators: `d c y gU gu g~ > <`. Doubled, they act on lines: `dd cc yy gUU >>`.
+- Motions: `h l j k w b e W B E 0 ^ $ gg G f t F T` (with a character or `space`),
+  `'x` and `` `x `` (marks). `cw` works like `ce`, and `dw` on the last word of a line
+  doesn't join lines, as in vim.
+- Text objects: `iw aw iW aW is as ip ap`, the quotes, the brackets and `it at`.
 
-Done: `gUw`, `guw`, `g~w`, `gUU`, `guu`, `g~~` and `~` work in both keymaps, and
-`vimlike` also has Visual `U`, `u`, `~`. Still missing: counts (`2gUw`) and other
-motions or text objects after the operator (`gUe`, `gUiw`, ...), which need the
-operator-pending layer below.
+The `vim` keymap has all of them. `vimlike` has every combination it doesn't use for
+something else (see [vimlike_vim_conflicts.md](vimlike_vim_conflicts.md)). Its own
+`d w`, `d e`, `d $`, `y e`, `g U w`, ... stay, so for those keys vimlike behaves as
+before. `vimlike` also gets `W B E t T` as plain motions, and its own `O` (end of line)
+works after every operator (`c O`, `g U O`).
 
-## Operators: change, delete, yank
-
-- `vimlike` now has `c w`, `c e`, `c c`, `c $`, `S`, `D` and `Y`, from the shared
-  `VIM_BINDINGS` table (`vim_core.rb`). `C` and `s` stay vimlike's own actions, so
-  they remain `vim`-keymap only.
-- Many combinations are missing in both, such as `d b`, `c b`, `y b`, `d t x`,
-  `c f x`, `d G`, `d g g` and `d }`. `d j` and `d k` are missing in both keymaps
-  (in `vimlike` they're commented-out TODOs).
-- A count after the operator (`d 3 w`, `y 2 y`, `d 2 f x`) works only for `d <num> e`
-  in `vimlike`. A count before the command (`3 d w`) works, because the action is
-  repeated.
-- Text objects are done in both keymaps (`lib/vimamsa/text_objects.rb`): `iw aw iW aW
-  is as ip ap`, the quotes, the brackets and `it at`, after `d c y gU gu g~` and in
-  Visual mode. Counts work for brackets and tags (`2di(`). Not done yet: a count after
-  the operator (`d2i(`) and repeating `i(` in Visual mode to grow the selection.
-- Indenting from Command mode (`>>`, `<<`, `=`) is missing. Visual `>` and `<` exist
-  only in the `vim` keymap.
-
-## Motions
-
-- `t` / `T` (move to just before a character) and `,` (repeat `f` backwards).
-- `W` / `B` / `E` (move by whitespace-separated "WORD"), and `ge`.
-- `{` / `}` (paragraph), `(` / `)` (sentence) and `%` (matching bracket).
-- `H` / `M` / `L` (top, middle and bottom of the screen).
+Still missing:
+- Operators `=` (reindent) and `gq` (format).
+- Motions `ge`, `{` / `}` (paragraph), `(` / `)` (sentence), `%` (matching bracket),
+  `H` / `M` / `L` (top, middle and bottom of the screen), `,` (repeat `f` backwards),
+  `;` after `t` / `T`.
 - `#` (search backward for the word under the cursor).
+- Repeating `i(` in Visual mode to grow the selection.
 
 ## Scrolling and jumps
 
@@ -64,9 +52,3 @@ operator-pending layer below.
 - `ctrl-x` (decrement a number) is missing; `ctrl-a` is in both keymaps.
 - `gJ` (join lines without adding a space) and named registers (`"a` etc.) are
   missing.
-
-## Suggested approach
-
-A small generic operator-pending layer, where an operator (`d`, `c`, `y`, `gU`, `gu`,
-`g~`, `>`) waits for any motion or text object, would cover most of the case-change,
-operator and text-object gaps at once instead of adding dozens of separate bindings.
