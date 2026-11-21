@@ -326,4 +326,16 @@ class TestTextTransforms < VmaTest
     assert_buf("a b\nc d\ne  f\n")
     assert_mode(:command)
   end
+
+  # sel.convert.remove_empty_lines: empty and blank lines in the selection go,
+  # the rest (and the lines outside it) stay
+  def test_remove_empty_lines_selection
+    act("buf.insert_txt(\"a\\n\\nb\\n   \\nc\\n\\nd\")")
+    act("buf.set_pos(0)")
+    keys("v")
+    act("buf.set_pos(10)") # through the line end after c
+    act("sel.convert.remove_empty_lines")
+    assert_buf("a\nb\nc\n\nd\n")
+  end
+
 end

@@ -21,6 +21,10 @@ end
 Converter.new(lambda { |x| x.split("\n").collect { |x| r = x.strip }.select { |y| !y.empty? }.join(" ") + "\n" }, :lambda, :joinlines)
 
 Converter.new(lambda { |x| x.split("\n").sort.join("\n") }, :lambda, :sortlines)
+
+# Remove empty lines (also those with only spaces or tabs); the line ends of
+# the others stay as they are
+Converter.new(lambda { |x| x.lines.reject { |l| l.strip.empty? }.join }, :lambda, :remove_empty_lines)
 Converter.new(lambda { |x| x.split("\n").reverse.join("\n") }, :lambda, :reverse_lines)
 
 Converter.new(lambda { |x| x.split(/\s+/).sort.join(" ") }, :lambda, :sortwords)
