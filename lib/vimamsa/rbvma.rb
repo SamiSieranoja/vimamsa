@@ -34,6 +34,7 @@ require "vimamsa/registers"
 require "vimamsa/dot_repeat"
 require "vimamsa/demo_player"
 require "vimamsa/demo_recorder"
+require "vimamsa/run_ruby"
 require "vimamsa/intro_page"
 require "vimamsa/cli_help"
 require_relative "tmp_user_dir" # also loaded by exe/vimamsa, before the rest

@@ -205,6 +205,7 @@ reg_act "move.page.next", proc { vma.gui.page_down }, "Page down"
 reg_act "move.page.prev", proc { vma.gui.page_up }, "Page up"
 reg_act("edit.indent.buf", proc { buf.auto_format }, "Auto format buffer")
 reg_act("term.line", proc { buf.execute_current_line_in_terminal }, "Execute current line in terminal")
+reg_act("buf.run.ruby", proc { run_buffer_as_ruby }, "Run the file as Ruby (saved first); its output in a new buffer")
 reg_act("term.line.autoclose", proc { buf.execute_current_line_in_terminal(true) }, "Execute current line in terminal. Close after execution.")
 reg_act("style.images", proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")
 reg_act("file.delete", proc { bufs.delete_current_buffer() }, "Delete current file")
