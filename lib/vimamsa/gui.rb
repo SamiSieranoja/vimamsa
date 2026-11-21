@@ -276,13 +276,43 @@ class VMAgui
     end
   end
 
-  def overlay_draw_text(text, textpos)
+  # Clears the overlay after ms milliseconds (e.g. to leave the chosen easy
+  # jump label up for a moment). A new overlay drawn meanwhile is kept.
+  def clear_overlay_later(ms)
+    da, ov = @da, @active_window[:overlay]
+    return if da.nil?
+    @da = nil
+    GLib::Timeout.add(ms) { ov.remove_overlay(da) rescue nil; false }
+  end
+
+  # Removes one widget drawn with overlay_draw_text
+  def overlay_remove(widget)
+    @da&.remove(widget)
+  end
+
+  # A soft glow around overlay labels (easy jump), with cnf.easy_jump.glow.
+  # Off by default: without a GPU (GTK's software renderer) the shadows made
+  # easy jump about 60% slower (a full screen, 433 labels: 0.65 s vs 0.41 s).
+  OVERLAY_LABEL_CSS = <<~CSS
+    label.overlay-label {
+      text-shadow: 0 0 3px rgba(255, 40, 40, 0.9);
+    }
+  CSS
+
+  # Draws text (or Pango markup) at buffer position textpos; returns the label
+  def overlay_draw_text(text, textpos, markup: nil)
     # debug "overlay_draw_text #{[x,y]}"
     (x, y) = @view.pos_to_coord(textpos)
     # debug "overlay_draw_text #{[x,y]}"
-    label = Gtk::Label.new("<span background='#000000ff' foreground='#ff0000' weight='ultrabold'>#{text}</span>")
+    label = Gtk::Label.new(markup || "<span background='#000000ff' foreground='#ff0000' weight='ultrabold'>#{text}</span>")
     label.use_markup = true
+    label.add_css_class("overlay-label")
+    if cnf.easy_jump.glow?
+      @overlay_label_css ||= Gtk::CssProvider.new.tap { |c| c.load(data: OVERLAY_LABEL_CSS) }
+      label.style_context.add_provider(@overlay_label_css)
+    end
     @da.put(label, x, y)
+    label
   end
 
   def end_overlay_draw()

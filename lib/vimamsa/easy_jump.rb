@@ -70,8 +70,9 @@ class EasyJump
       end
       vma.kbd.remove_keyhandling_override
       @jump_sequence = []
-      vma.gui.clear_overlay()
+      show_chosen(nthword)
     end
+    show_typed if state == :typing && @easy_jump_input.size <= 2
     if state == :typing && @easy_jump_input.size > 2
       state = :nomatch
       # @kbd.set_mode(:command)
@@ -85,13 +86,57 @@ class EasyJump
     return true
   end
 
+  LABEL_FG = "#ff0000"
+  TYPED_FG = "#ffff66" # the keys of a label typed so far
+  CHOSEN_SECS = 0.15 # the chosen label stays this long after the others go
+
   def easy_jump_draw()
     vma.gui.start_overlay_draw
+    @labels = []
     for i in 0..(@easy_jump_wsmarks.size - 1)
-      vma.gui.overlay_draw_text(@jump_sequence[i], @easy_jump_wsmarks[i])
+      @labels << vma.gui.overlay_draw_text(@jump_sequence[i], @easy_jump_wsmarks[i], markup: label_markup(@jump_sequence[i], 0))
     end
     vma.gui.end_overlay_draw
   end
+
+  # Markup of label seq whose first n keys are typed: those bright and
+  # bold, the rest red; dim: a label that no longer matches
+  def label_markup(seq, n, dim: false)
+    seq = seq.to_s
+    typed = CGI.escapeHTML(seq[0, n].to_s)
+    rest = CGI.escapeHTML(seq[n..].to_s)
+    alpha = dim ? " alpha='35%'" : ""
+    s = "<span background='#000000ff' weight='ultrabold'#{alpha}>"
+    s << "<span foreground='#{TYPED_FG}' weight='heavy'>#{typed}</span>" if !typed.empty?
+    s << "<span foreground='#{LABEL_FG}'>#{rest}</span>" if !rest.empty?
+    s << "</span>"
+  end
+
+  # After a key of a label: the matching labels show the typed part, the
+  # others are dimmed
+  def show_typed
+    return if @labels.nil?
+    inp = @easy_jump_input
+    @labels.each_with_index { |l, i|
+      seq = @jump_sequence[i].to_s
+      l.markup = seq.start_with?(inp) ? label_markup(seq, inp.size) : label_markup(seq, 0, dim: true)
+    }
+  end
+
+  # The chosen label alone, all bright, for CHOSEN_SECS
+  def show_chosen(i)
+    label = @labels && i && @labels[i]
+    if label.nil?
+      vma.gui.clear_overlay
+      return
+    end
+    @labels.each { |l| vma.gui.overlay_remove(l) if !l.equal?(label) }
+    label.markup = label_markup(@easy_jump_input, @easy_jump_input.size)
+    vma.gui.clear_overlay_later((CHOSEN_SECS * 1000).round)
+  end
+
+  # Test-visible: the label widgets, in the order of the marks
+  attr_reader :labels
 
   def make_jump_sequence(num_items)
     left_hand = "asdfvgbqwertzxc123".upcase.split("")

@@ -698,6 +698,10 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
+- **Easy jump label feedback** (2026-11-21, uncommitted): after the first key, matching
+  labels show it bright yellow and bold, and the others are dimmed. The chosen label
+  stays 0.15 s after the others go. `cnf.easy_jump.glow` (off: without a GPU it made
+  easy jump about 60% slower). Tests in `tests/test_easy_jump.rb`.
 - **Key hint below the row** (2026-11-21, uncommitted): `cnf.key_hint.y_offset` px
   below the cursor's row (above it if no room), right of the text it covers.
 
