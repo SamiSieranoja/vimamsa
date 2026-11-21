@@ -101,98 +101,133 @@ key log panel) shows each key and the action it ran.
 
 ## Key bindings
 
-Key bindings are very much like in VIm. For details, see menu item "Help -> Show key bindings" and file lib/vimamsa/key_bindings_vimlike.rb
+The default keybinding scheme, "vimlike", is close to Vim. It keeps the Vim
+bindings and changes a few keys for its own features. For the full list, see
+the menu item "Help ▸ Show key bindings" and the file
+lib/vimamsa/key_bindings_vimlike.rb. You can switch the scheme in Settings
+("Keybinding scheme", applied after a restart) or with
+`cnf.keybindings.scheme = "vim"` in ~/.config/vimamsa/settings.rb:
 
-Keys that work somewhat similarly as in Vim:
+ - `vimlike` (default): Vim keys plus the extra bindings below
+ - `vim`: plain Vim bindings
+ - `notepad`: non-modal, stays in insert mode (gedit/notepad style)
 
-In Command mode: 
+Keys that work much like in Vim:
+
+In Command mode:
 ```
-j k l h w b p P G f F ; 0 $ v i o  J * / a A I u ctrl-r x 
-zz dd dw gg <linenum>G r<char>
+h j k l w b e W B E 0 ^ $ gg G <count>G f F t T ; * / n N : gf g;
+i a A I o J p P D Y S u ctrl-r . x ~ r<char> R v m<char> '<char> `<char>
+q<char> @<char> "<char> ctrl-f ctrl-b ctrl-d ctrl-u ctrl-a
 ```
+Operators `d c y gU gu g~ > <` combine with the motions above and with text
+objects (`iw aw i( a" it ...`), e.g. `d w`, `c i w`, `y y`, `> >`.
 
 In Visual mode:
 ```
-d y gU gu 
+d x y c J u U ~ gU gu > < iw aw ...
 ```
 
-Keys that work differently to Vim are documented in the tables below
+The keys that work differently from Vim are listed in the tables below
+(the full list of conflicts is in doc/vimlike_vim_conflicts.md).
 
-Syntax:  
+Syntax:
 
- - ctrl! means press and immediate release of ctrl key. Triggered by key up event when no other keys were pressed between key down and key up events.
- - ctrl-x means press and hold ctrl key, press x  
+ - `ctrl!` means press and immediately release the ctrl key. Triggered by the key up event when no other keys were pressed between the key down and key up events.
+ - `ctrl-x` means press and hold the ctrl key, press x.
+ - `, a` means press `,`, then `a`.
 
-<table>
-<colgroup>
-<col style="text-align:center;"/>
-<col style="text-align:left;"/>
-</colgroup>
+**Command mode**
 
-<thead> <tr> <th style="text-align:center;" colspan="4">Command mode keys</th> </tr> </thead>
+| Key | Action |
+|---|---|
+| `ctrl!` | Switch between command and insert modes |
+| `shift!` `s` | Save file (press and release shift, then `s`) |
+| `s` | Easy jump (similar to Vim [EasyMotion](https://github.com/easymotion/vim-easymotion)): type a word's label to jump there |
+| `z` | Enter BROWSE mode |
+| `O` | Move to end of line |
+| `X` | Insert an empty line below |
+| `C` | Search in files (grep) |
+| `tab` | Switch between current and previous buffer |
+| `M` | Run the last recorded macro |
+| `enter` | On a link: open url in browser. On `/path/to/file.txt:linenum`: open the file, jump to linenum |
+| `space <char>` | Insert character `<char>` |
+| `ctrl-o` | Open file |
+| `ctrl-s` | Save file |
+| `ctrl-w` | Close buffer |
+| `ctrl-c` / `ctrl-x` | Comment / uncomment line |
+| `ctrl-q` | Quit |
+| `g s` | Jump to a file in the file panel by its label |
+| `alt-h` / `alt-l` | Previous / next file in the file panel |
+| `, b` | Switch buffer (buffer manager) |
+| `, f` | File explorer: browse directories (`h` parent directory, `l` or `enter` open) |
+| `, , f` or `, z` | File finder (fuzzy search for file names) |
+| `, h` | File history |
+| `, g` | Search for a string in the current buffer, show matching lines |
+| `, a` | Search in files using ack |
+| `, r r` | Search and replace |
+| `, e` or `:` | Command line |
+| `, s a` | Save as |
+| `, n b` | New buffer |
+| `, c b` | Close buffer |
+| `, r v b` | Revert buffer from disk |
+| `, M` / `, '` | Add bookmark / list bookmarks |
+| `, v` | Auto-indent buffer |
+| `, w` | Switch between columns |
+| `, , w` | Toggle two-column view |
+| `, m h` | Show messages |
 
-<tbody>
-<tr><th>Key</th><th>Action</th></tr>
-<tr><td style="text-align:center;">ctrl!</td>     <td style="text-align:left;">switch between command and insert modes</td> </tr>
-<tr> <td style="text-align:center;">z</td> <td style="text-align:left;"> enter into BROWSE mode</td></tr>
-<tr>     <td style="text-align:center;">shift!</td>     <td style="text-align:left;">save file</td> </tr>
-<tr>     <td style="text-align:center;">s</td>     <td style="text-align:left;">Easy jump (Similar to Vim EasyMotion https://github.com/easymotion/vim-easymotion ) </td> </tr>
-<tr> <td style="text-align:center;">tab</td> <td style="text-align:left;">switch betwen current and previous buffer/file</td></tr>
-<tr> <td style="text-align:center;">enter</td> <td style="text-align:left;"> (when cursor on link) open url in browser </td></tr>
-<tr> <td style="text-align:center;">enter</td> <td style="text-align:left;">(when cursor on /path/to/file.txt:linenum ) open file in editor, jump to linenum </td></tr>
-<tr> <td style="text-align:center;">,a</td> <td style="text-align:left;">Search for string using ack
-</td></tr>
-<tr> <td style="text-align:center;">,b</td> <td style="text-align:left;"> Switch buffer (jump to other open file)</td></tr>
-<tr> <td style="text-align:center;">,g</td> <td style="text-align:left;">search for input string inside current buffer</td></tr>
-<tr> <td style="text-align:center;">,f</td> <td style="text-align:left;">File finder</td></tr>
-<tr> <td style="text-align:center;">space c</td> <td style="text-align:left;">insert character "c"</td></tr>
-</tbody>
-</table>
+**Insert mode** (similar to bash or emacs)
 
-<table>
-<colgroup>
-<col style="text-align:center;"/>
-<col style="text-align:left;"/>
-</colgroup>
+| Key | Action |
+|---|---|
+| `ctrl!` or `esc` | Switch to command mode |
+| `ctrl-n` / `ctrl-p` | Move to next / previous line |
+| `ctrl-a` / `ctrl-e` | Move to beginning / end of line |
+| `ctrl-b` / `ctrl-f` | Move backward / forward one char |
+| `alt-b` / `alt-f` | Move backward / forward one word |
+| `ctrl-d` | Delete to end of word |
+| `ctrl-z` / `ctrl-y` | Undo / redo |
+| `ctrl-c` / `ctrl-x` / `ctrl-v` | Copy / cut / paste |
+| `shift-<arrow>` | Select |
+| `ctrl-l` / `ctrl-g` | Search in buffer / next match |
+| `ctrl-space` or `ctrl-h` | Show completions (`tab` / `shift-tab` to choose, `shift!` to accept) |
+| `alt-s` | Easy jump |
+| `ctrl-s` | Save file |
 
-<thead> <tr> <th style="text-align:center;" colspan="4">Insert mode keys (similar to bash or emacs)</th> </tr> </thead>
+**Visual mode**
 
-<tbody>
-<tr> <td style="text-align:center;">ctrl! OR esc</td> <td style="text-align:left;">Switch to command mode</td></tr>
-<tr> <td style="text-align:center;">ctrl-n</td> <td style="text-align:left;">Move to next line</td></tr>
-<tr> <td style="text-align:center;">ctrl-p</td> <td style="text-align:left;">Move to previous line</td></tr>
-<tr> <td style="text-align:center;">ctrl-a</td> <td style="text-align:left;">Move beginning of line</td></tr>
-<tr> <td style="text-align:center;">ctrl-e</td> <td style="text-align:left;">Move to end of line</td></tr>
-<tr> <td style="text-align:center;">ctrl-b</td> <td style="text-align:left;">Move backward one char</td></tr>
-<tr> <td style="text-align:center;">ctrl-f</td> <td style="text-align:left;">Move forward one char</td></tr>
-<tr> <td style="text-align:center;">alt-f</td> <td style="text-align:left;">Move forward one word</td></tr>
-<tr> <td style="text-align:center;">alt-b</td> <td style="text-align:left;">Move backward one word</td></tr>
-</tbody>
-</table>
+| Key | Action |
+|---|---|
+| `ctrl!` or `esc` | Exit visual mode |
+| `s` | Easy jump: extend the selection to a word's label |
+| `tab` / `shift-tab` | Indent / unindent selection |
+| `ctrl-c` / `ctrl-x` | Comment / uncomment selection |
+| `a y` / `a d` | Copy / delete, appending to the clipboard |
+| `g c` / `g s` | Capitalize / swap case |
+| `g r` | Reverse selection |
+| `g w` | Remove extra spaces |
+| `, t b` / `, t i` / `, t l` | Bold / italic / link (hyperplaintext) |
 
+**Browse mode** (enter with `z`)
 
-<table>
-<colgroup>
-<col style="text-align:center;"/>
-<col style="text-align:left;"/>
-</colgroup>
+| Key | Action |
+|---|---|
+| `h` / `l` | Previous / next buffer in history |
+| `q` / `w` | Previous / next edited position |
+| `p` / `n` | Previous / next file in the file panel |
+| `s` / `d` | Page up / down |
+| `e` / `r` | Quarter page up / down |
+| `i` / `o` | Start / end of buffer |
+| `z` | Center the current line, back to command mode |
+| `m` | Run the last recorded macro |
+| `c` | Close buffer |
+| `j`, `esc`, `enter` or `ctrl!` | Back to command mode |
 
-<thead> <tr> <th style="text-align:center;" colspan="4">Browse mode keys</th> </tr> </thead>
-
-<tbody>
-<tr> <td style="text-align:center;">h</td> <td style="text-align:left;">jump to previous buffer in history</td></tr>
-<tr> <td style="text-align:center;">l</td> <td style="text-align:left;">jump to next buffer in history</td></tr>
-<tr> <td style="text-align:center;">q</td> <td style="text-align:left;">jump to previous edited position</td></tr>
-<tr> <td style="text-align:center;">w</td> <td style="text-align:left;">jump to next edited position</td></tr>
-<tr> <td style="text-align:center;">j OR esc</td> <td style="text-align:left;">switch from browse to command mode</td></tr>
-</tbody>
-</table>
-
-Bindings can be customized in ~/.config/vimamsa/custom.rb
-For example, to bind ctrl-n to action "create new file":  
+Bindings can be customized in ~/.config/vimamsa/custom.rb.
+For example, to bind ctrl-n to action "create new file":
 ```
-bindkey 'C ctrl-n',  'create_new_file()'
-
+bindkey 'C ctrl-n', 'buf.new'
 ```
 
 custom.rb is loaded in two phases. The body of the file runs early, before
