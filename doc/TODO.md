@@ -250,7 +250,7 @@ every run since, so a fresh install is never tested. Plan:
 `doc/vm_snapshots_plan.md`.
 - two VirtualBox snapshots: `clean` (fresh 24.04 + Guest Additions) and
   `provisioned`
-- `run_tests_vm.sh` restores `provisioned` before every run
+- `run_tests_vm.rb` restores `provisioned` before every run
 - it automatically does a fresh run from `clean` when install inputs change or
   weekly, and then retakes `provisioned`
 
@@ -646,8 +646,7 @@ retries and many steps. Port them to Ruby. Ruby is already the project language,
 so testing and sharing helpers between scripts gets easier.
 
 Candidates (lines as of 2026-11-20):
-- `run_tests_vm.sh` (130): host side; VBoxManage calls, syncing, required-variable checks.
-  The snapshot reset in `doc/vm_snapshots_plan.md` is the next big addition, so port first.
+- ~~`run_tests_vm.sh` (130): host side~~: done, now `run_tests_vm.rb` (see DONE).
 - `vm_guest_run.sh` (120): guest side; provisioning, gem build, test run
 - `scripts/appimage/build_in_container.sh` (192): the AppImage build
 
@@ -673,11 +672,20 @@ Constraints:
   `scripts/lib/`.
 - Update the references in `CLAUDE.md`, `doc/vm_snapshots_plan.md` and
   `doc/bundling_plan.md`.
-- Check each port with a full VM run (`run_tests_vm.sh`) or an AppImage build plus its smoke test.
+- Check each port with a full VM run (`run_tests_vm.rb`) or an AppImage build plus its smoke test.
 
 ## DONE
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
+
+- **`run_tests_vm.sh` ported to Ruby** (2026-11-21): `run_tests_vm.rb`, same env
+  vars, arguments, steps and exit codes, standard library only; shared helpers in
+  `scripts/lib/script_helpers.rb`. `run_e2e_vm.sh` and the docs point to it.
+
+- **Resized window after maximize restored** (2026-11-21): GNOME's auto-maximize
+  maximized a restored window that covers most of the screen, which was then saved
+  as maximized. `VMAgui#undo_auto_maximize` unmaximizes it to the saved size.
+  Test: `test_resized_after_maximize_restored` in `tests/test_window_layout.rb`.
 
 - **Line ends in a treap** (2026-11-21, `96234a8`): `@line_ends` is a
   `LineTree` (`lib/vimamsa/line_tree.rb`), an implicit treap with one node per line

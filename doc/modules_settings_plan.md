@@ -265,7 +265,7 @@ Add (`tests/test_modules_dialog.rb`):
   `activate_no_restart_modules` path had.
 - `:show_modules` is registered and in the Settings menu.
 
-Run the full suite in the test VM (`./run_tests_vm.sh`, VM from `$VM_NAME`), not just the touched files.
+Run the full suite in the test VM (`./run_tests_vm.rb`, VM from `$VM_NAME`), not just the touched files.
 
 ### 7. Core features to turn into modules
 

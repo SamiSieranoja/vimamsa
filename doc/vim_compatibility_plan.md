@@ -368,9 +368,9 @@ Each step regenerates `doc/vimlike_vim_conflicts.md` and updates
   action. That added 19 bindings to vimlike (`c w c e c c c $ D S Y . y w y $`,
   `` ` ``, `ctrl-a ctrl-b ctrl-d ctrl-f ctrl-u`, Visual `< > c`); the 20
   conflicts are unchanged. What was added is kept in `vma.kbd.vim_added`, and
-  the report has a new "Added to vimlike" group. `run_tests_vm.sh` forwards
+  the report has a new "Added to vimlike" group. `run_tests_vm.rb` forwards
   `VMA_UPDATE_DOC=1` and copies the regenerated report back, so
-  `VMA_UPDATE_DOC=1 ./run_tests_vm.sh vim_conflicts` updates it from the VM.
+  `VMA_UPDATE_DOC=1 ./run_tests_vm.rb vim_conflicts` updates it from the VM.
   Note for later steps: module and `custom.rb` bindings load after the table,
   so they override an added entry with the same keys.
 - **Count inside a key sequence** (2026-11-19, `2e9fb0b`): `d 3 e` works, and

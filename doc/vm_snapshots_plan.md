@@ -2,7 +2,7 @@
 
 ## Context
 
-`run_tests_vm.sh` (host) + `vm_guest_run.sh` (guest) run the suite in the test
+`run_tests_vm.rb` (host) + `vm_guest_run.sh` (guest) run the suite in the test
 VirtualBox VM named by `$VM_NAME`. The VM isn't blank any more:
 - Provisioning runs once and is then skipped forever because of the marker
   `~/.vimamsa_vm_provisioned`.
@@ -64,7 +64,7 @@ The current test VM is already provisioned, so it can't become `clean`. Removing
 
    Then make sure `VBoxManage guestcontrol … run /bin/true` works, and take `clean`
    (`--live`).
-3. Run `FORCE_PROVISION=1 ./run_tests_vm.sh` against it. If it passes, take
+3. Run `FORCE_PROVISION=1 ./run_tests_vm.rb` against it. If it passes, take
    `provisioned` on the new VM. Then retire the old VM, or point `VM_NAME` (set in the
    user's shell profile) at the new one.
 
@@ -72,7 +72,7 @@ Record the ISO version (e.g. 24.04.3) in the snapshot description.
 
 ## Script changes
 
-`run_tests_vm.sh` gets a reset step before "Ensure the VM is running":
+`run_tests_vm.rb` gets a reset step before "Ensure the VM is running":
 
 - `VM_RESET=provisioned` (**new default**): power off, restore `provisioned`, start.
   Each run starts identical, so no leftovers between runs. This costs about 10–30 s
@@ -91,7 +91,7 @@ Record the ISO version (e.g. 24.04.3) in the snapshot description.
 
 ### "Occasionally": when a fresh run happens
 
-Automatically, in `run_tests_vm.sh`, so nobody has to remember:
+Automatically, in `run_tests_vm.rb`, so nobody has to remember:
 - the host keeps a state file (e.g. `~/.local/share/vimamsa/vm_fresh_state`, in line
   with the XDG item in `doc/TODO.md`) with the date of the last *passing* fresh run
   and a hash of the install inputs: `vimamsa.gemspec`, `Gemfile`/`Gemfile.lock`,

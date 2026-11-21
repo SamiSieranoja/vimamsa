@@ -195,7 +195,7 @@ from. A setting's definition (label, type, range, section) goes in the
    unnecessary. Test per module: enable, disable, and no actions, bindings or
    registry entries of that module remain.
 
-Run the full suite in the test VM after each step (`./run_tests_vm.sh`).
+Run the full suite in the test VM after each step (`./run_tests_vm.rb`).
 
 ## DONE
 
