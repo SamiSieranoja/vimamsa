@@ -209,6 +209,40 @@ class TestIntroPage < VmaTest
     close_help_pages
   end
 
+  # The cursor treats a button as one char: w and l from the button go past
+  # its (hidden) link, b and h come back onto it, w from before it stops on
+  # it; and many w's in a row move on without getting stuck
+  def test_cursor_treats_button_as_one_char
+    b = show_help_page("intro")
+    drain_idle
+    at = b.index("#{HPT_BUTTON_SLOT}⟦run:help.demo|")
+    to = b.index("⟧", at) + 1
+    b.set_pos(at)
+    hpt_skip_button(b)
+    keys "l"
+    assert_eq to, b.pos, "l from the button"
+    keys "h"
+    assert_eq at, b.pos, "h back onto the button"
+    keys "w"
+    assert_eq b.index(/\S/, to), b.pos, "w from the button: the next word after the link"
+    keys "b"
+    assert_eq at, b.pos, "b back onto the button"
+    # w from the end of the line above stops on the button
+    b.set_pos(at - 2)
+    hpt_skip_button(b)
+    keys "w"
+    assert_eq at, b.pos, "w onto the button"
+    last = b.pos
+    40.times {
+      keys "w"
+      assert b.pos > last || b.pos >= b.size - 2, "w stuck at #{b.pos}: #{b[b.pos, 20].inspect}"
+      last = b.pos
+      break if b.pos >= b.size - 2
+    }
+  ensure
+    close_help_pages
+  end
+
   # In a buffer that can be edited, the link text shows instead of the
   # button while the cursor is on its line
   def test_link_code_shown_on_cursor_line_when_editable

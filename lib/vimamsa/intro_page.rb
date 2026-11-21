@@ -189,6 +189,7 @@ def help_add_run_buttons(b)
     btn.valign = :baseline_center rescue nil # the label on the text's baseline (GTK 4.12+)
     btn.signal_connect("clicked") { hpt_run_link(action) }
     view.add_child_at_anchor(btn, anchor)
+    vbuf.apply_tag(hpt_hidden_tag(vbuf), vbuf.get_iter_at(offset: at + 1), vbuf.get_iter_at(offset: m.end(0)))
     b.help_buttons << [action, btn, anchor]
   }
   hpt_watch_run_buttons
@@ -263,24 +264,27 @@ end
 def hpt_button_ranges(b)
   vbuf = b.view.buffer
   b.help_buttons.map { |action, btn, anchor|
-    at = vbuf.get_iter_at_child_anchor(anchor).offset
+    at = vbuf.get_iter_at(anchor: anchor).offset
     m = b[(at + 1)..].match(/\A⟦run:[^⟧\n]*⟧/)
     [at, m ? at + 1 + m.end(0) : at + 1, btn]
   }
 end
 
 # Hides the link text and shows the button, or (editable buffer, cursor on
-# the line) the other way round. In a read-only buffer the cursor moves off
-# hidden text onto the button.
-def hpt_update_run_buttons(b)
+# the line) the other way round. The GTK tag changes only when a button's
+# state does (the button's visibility is its state), so a read-only page
+# makes no GTK calls per key. In a read-only buffer the cursor treats a
+# button as one char: hpt_skip_button. action: the key action that ran.
+def hpt_update_run_buttons(b, action = nil)
   return if b.nil? || b.help_buttons.nil? || b.help_buttons.empty? || b.view.nil?
   vbuf = b.view.buffer
   tag = hpt_hidden_tag(vbuf)
   ranges = hpt_button_ranges(b)
   ranges.each { |at, to, btn|
+    show_code = !b.read_only && b.get_line_start(b.pos) == b.get_line_start(at)
+    next if show_code == !btn.visible? # no change
     s, e = vbuf.get_iter_at(offset: at + 1), vbuf.get_iter_at(offset: to)
-    on_line = !b.read_only && b.get_line_start(b.pos) == b.get_line_start(at)
-    if on_line
+    if show_code
       vbuf.remove_tag(tag, s, e)
       btn.visible = false
     else
@@ -288,9 +292,30 @@ def hpt_update_run_buttons(b)
       btn.visible = true
     end
   }
-  if b.read_only && (r = ranges.find { |at, to, _| b.pos > at && b.pos < to })
-    b.set_pos(r[0])
+  hpt_skip_button(b, ranges, action) if b.read_only
+end
+
+# A button counts as one char for the cursor: a move that ends in its hidden
+# link text goes on to the button (from before it, or moving back or to
+# another line) or past the link (from the button itself, e.g. w or l on
+# it; after a word motion such as w, on to the next word)
+def hpt_skip_button(b, ranges = hpt_button_ranges(b), action = nil)
+  $hpt_button_last_pos ||= {}
+  last = $hpt_button_last_pos[b.id] || b.pos
+  r = ranges.find { |at, to, _| b.pos > at && b.pos < to }
+  if r
+    at, to = r
+    other_line = b.get_line_start(last) != b.get_line_start(b.pos)
+    forward_from_button = !other_line && b.pos > last && last >= at
+    if forward_from_button
+      pos = [to, b.size - 1].min
+      pos = (b.index(/\S/, pos) || pos) if action.to_s.include?("word")
+      b.set_pos(pos)
+    else
+      b.set_pos(at)
+    end
   end
+  $hpt_button_last_pos[b.id] = b.pos
 end
 
 # Updates the buttons of the current buffer after each key action and buffer
@@ -298,7 +323,7 @@ end
 def hpt_watch_run_buttons
   return if $hpt_run_buttons_watched
   $hpt_run_buttons_watched = true
-  vma.kbd.on(:action_handled) { |*_| hpt_update_run_buttons(vma.buf); hpt_skip_hidden_marks(vma.buf) }
+  vma.kbd.on(:action_handled) { |_trail, action| hpt_update_run_buttons(vma.buf, action); hpt_skip_hidden_marks(vma.buf) }
   vma.hook.register(:change_buffer, method(:hpt_update_run_buttons))
 end
 
