@@ -1,6 +1,6 @@
 # Plan: recording demos, and a form input mode
 
-TODO: not started. Act next on step 1 of "Implementation order".
+TODO: steps 1, 2, 4, 5 and 6 done (not committed yet). Act next on step 7 of "Implementation order" (step 3 is for later).
 
 ## Context
 
@@ -240,4 +240,49 @@ Run the suite in the test VM after each step (`./run_tests_vm.rb`).
 
 ## DONE
 
-(nothing yet)
+- Step 1 (2026-11-21, not committed yet): `gui_key_name` and `gui_set_modifiers` in
+  `lib/vimamsa/key_names.rb`, used by `VSourceView#handle_key_event` and the main
+  window's `modifiers` handler.
+- Step 2 (2026-11-21, not committed yet): `lib/vimamsa/form_input.rb`.
+  - `FormField`: a `Gtk::Entry` showing a hidden-view `Buffer`. It reads the
+    widget's own changes on `changed`, and the mouse cursor and selection before
+    each key.
+  - `FormInput`: the form's fields and buttons, the window's capture-phase key
+    controller, and mode `F` (editor scope, mode stack restored on close).
+  - `form.*` actions and keys from `form_input_setup` (called in `Editor#start`
+    after the keymap, and by `--help`). `bind_form_field_keys(mode)` is the shared
+    helper for the command line later.
+  - `PopupFormGenerator` uses it (search and replace, `Gui.confirm`).
+  - The key log groups form typing like Insert-mode typing.
+  - Tests: `tests/test_form_input.rb` (11). Not covered: real key events through
+    the form window (no e2e test).
+- Steps 4–6 (2026-11-21, not committed yet): `lib/vimamsa/demo_recorder.rb`.
+  - Recording: Help ▸ Demos ▸ Record demo (`help.demo.record`), the "● REC demo"
+    status indicator. Keys come from the new `:key_input` event of
+    `match_key_conf`, emitted before the override callback so easy jump labels
+    are captured. Each key has its time, mode, action and cursor line. Bare
+    ctrl/alt/shift count only when released alone. The stop command's own keys
+    are dropped.
+  - Recording starts in Command mode with the cursor at the top, as playback
+    does.
+  - Conversion (`DemoRecorder.steps`):
+    - `delay` is the median gap; `wait` is the pause minus the delay, capped at
+      3 s.
+    - `type` covers Insert-mode and form typing; leading spaces go in a keys
+      line.
+    - Each keys group gets a comment with its actions' descriptions.
+    - An easy jump label becomes `target line N` + `keys @JUMP_LABEL@`, and
+      `#` goes last on a keys line.
+  - Saving: on stop, a name form (form mode), then `<user dir>/demos/<slug>/`
+    with `steps.txt` (header `title`, `file`) and the start file.
+  - Playing: `DemoPlayer.demos` = `DEMOS` + `user_demos`, each with a
+    `help.demo.user.<slug>` action and its own source folder (`src:`).
+    - The menu lists the recorded demos that exist at startup.
+    - Help ▸ Demos ▸ Play the last recorded demo (`help.demo.recorded.last`)
+      plays the newest one.
+    - The demo dropdown above the key log refreshes its list.
+  - Tests: `tests/test_demo_recorder.rb` (7), including record → save through
+    the form → play back to the same text, with `, r r` typed into the form.
+  - Not done: the `mode form` sync points and the `scheme` header (playback
+    feeds keys synchronously and popups open synchronously, so not needed so
+    far); undo grouping by time can still differ at another speed.

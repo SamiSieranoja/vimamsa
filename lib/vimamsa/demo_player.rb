@@ -32,6 +32,40 @@ class DemoPlayer
              title: "Switching files", desc: "the last file, buffer history, the file explorer", action: "help.demo.files" },
   }
   WORK_DIR = File.join(Dir.tmpdir, "vimamsa-demo")
+
+  # Recorded demos (demo_recorder.rb): <user dir>/demos/<slug>/steps.txt and
+  # the files they start from
+  def self.user_demos_dir
+    File.join(vma_user_dir, "demos")
+  end
+
+  def self.user_demo_key(slug) = :"user_#{slug}"
+
+  # The recorded demos, like DEMOS. Their title, desc and files come from
+  # the steps file's header (title, desc, file). Each gets an action
+  # help.demo.user.<slug>.
+  def self.user_demos
+    Dir[File.join(user_demos_dir, "*", "steps.txt")].sort.to_h { |f|
+      dir = File.dirname(f)
+      slug = File.basename(dir)
+      steps = (parse(File.read(f)) rescue [])
+      head = lambda { |c| steps.find { |x, _| x == c }&.last }
+      files = steps.select { |x, _| x == "file" }.map(&:last)
+      key = user_demo_key(slug)
+      title = head.("title") || slug
+      action = "help.demo.user.#{slug}"
+      if vma.actions && !vma.actions.include?(action)
+        reg_act(action, proc { DemoPlayer.toggle(key) }, "Play the recorded demo #{title} (again: stop it)")
+      end
+      [key, { steps: f, files: files.empty? ? ["demo.txt"] : files, src: dir, dir: "user_#{slug}",
+              title: title, desc: head.("desc") || "recorded demo", action: action }]
+    }
+  end
+
+  # The built-in demos and the recorded ones
+  def self.demos
+    DEMOS.merge(user_demos)
+  end
   SPEED = 0.7 # as the recording: every delay and wait is divided by this
   RATES = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4] # user speeds, times SPEED
 
@@ -77,7 +111,7 @@ class DemoPlayer
   # of demo_steps.txt (tests).
   def initialize(name = :basic, speed: SPEED, loop: true, steps: nil, rate: 0.75)
     @name = name
-    @demo = DEMOS.fetch(name)
+    @demo = DemoPlayer.demos.fetch(name)
     @steps_file = @demo[:steps]
     @speed = speed
     @loop = loop
@@ -141,7 +175,7 @@ class DemoPlayer
   def self.duration(name, rate: new(name).rate)
     secs = 0.0
     delay = 0.4
-    parse(File.read(DEMOS.fetch(name)[:steps])).each { |cmd, arg|
+    parse(File.read(demos.fetch(name)[:steps])).each { |cmd, arg|
       case cmd
       when "wait" then secs += arg.to_f
       when "delay" then delay = arg.to_f
@@ -164,7 +198,7 @@ class DemoPlayer
       line = line.sub(/\s+#\s.*\z/, "") unless line.start_with?("type ")
       next if line.strip.empty? || line.start_with?("#")
       cmd, arg = line.split(" ", 2)
-      raise "demo_steps.txt: unknown command #{line.inspect}" if !%w[keys type wait delay target].include?(cmd)
+      raise "demo_steps.txt: unknown command #{line.inspect}" if !%w[keys type wait delay target title desc file].include?(cmd)
       [cmd, arg.to_s]
     }
   end
@@ -236,7 +270,7 @@ class DemoPlayer
     FileUtils.mkdir_p(dir)
     files = @demo[:files].map { |f|
       path = File.join(dir, f)
-      FileUtils.cp(File.join(DIR, f), path)
+      FileUtils.cp(File.join(@demo[:src] || DIR, f), path)
       old = vma.buffers.list.find { |b| b.fname == path }
       vma.buffers.close_buffer(old.id) if old
       path

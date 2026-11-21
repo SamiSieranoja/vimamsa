@@ -103,7 +103,8 @@ class KeyLogPanel
     @demo_speed_lbl = Gtk::Label.new("1×")
     @demo_speed_lbl.width_chars = 5
 
-    # The demos (DemoPlayer::DEMOS); choosing one switches to it
+    # The demos (DemoPlayer.demos, recorded ones too); choosing one switches
+    # to it
     @demo_names = DemoPlayer::DEMOS.keys
     @demo_list = Gtk::DropDown.new(Gtk::StringList.new(DemoPlayer::DEMOS.values.map { |d| d[:title] }), nil)
     @demo_list.tooltip_text = "Switch to another demo"
@@ -140,6 +141,7 @@ class KeyLogPanel
   def show_demo_controls(paused:, rate:, demo: nil)
     @demo_pause_btn.label = paused ? "Continue" : "Pause"
     @demo_speed_lbl.label = rate
+    refresh_demo_list
     i = @demo_names.index(demo)
     if i && @demo_list.selected != i
       @demo_list_updating = true
@@ -147,6 +149,16 @@ class KeyLogPanel
       @demo_list_updating = false
     end
     @demo_bar.visible = true
+  end
+
+  # The demo list again if demos were recorded since
+  def refresh_demo_list
+    demos = DemoPlayer.demos
+    return if demos.keys == @demo_names
+    @demo_list_updating = true
+    @demo_names = demos.keys
+    @demo_list.model = Gtk::StringList.new(demos.values.map { |d| d[:title] })
+    @demo_list_updating = false
   end
 
   def hide_demo_controls

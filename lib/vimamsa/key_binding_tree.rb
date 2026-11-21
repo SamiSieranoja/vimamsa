@@ -71,6 +71,7 @@ class KeyBindingTree
   #   :key_action(trail, action)        - action about to be executed
   #   :action_executed(action, ret)     - one execution of an action finished
   #   :action_handled(trail, action)    - key handling for an action completed
+  #   :key_input(key, event_type)       - a key came in (match_key_conf), first
   def initialize(actions: nil)
     @actions = actions
     @extra_keywords = []
@@ -545,6 +546,8 @@ class KeyBindingTree
   # if no, go back to root
   def match_key_conf(c, translated_c, event_type)
     log "MATCH KEY CONF: #{[c, translated_c]}"
+    # Every key as it comes in, before anything handles it (demo recorder)
+    emit(:key_input, c, event_type)
     # A delete still flashing from the previous key must land before this
     # key's action runs.
     Gui.flush_flash

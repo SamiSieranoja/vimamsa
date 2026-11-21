@@ -164,6 +164,11 @@ reg_act("help.demo.pause", proc { DemoPlayer.pause_toggle }, "Pause or continue 
 reg_act("help.demo.faster", proc { DemoPlayer.faster }, "Play the demo faster")
 reg_act("help.demo.slower", proc { DemoPlayer.slower }, "Play the demo slower")
 reg_act("help.demo.stop", proc { DemoPlayer.stop }, "Stop the demo")
+reg_act("help.demo.record", proc { DemoRecorder.toggle }, "Record a demo (again: stop and save it)")
+reg_act("help.demo.recorded.last", proc {
+  k = DemoRecorder.last_saved || DemoPlayer.user_demos.keys.last
+  k ? DemoPlayer.toggle(k) : message("No recorded demos (Help ▸ Demos ▸ Record demo)")
+}, "Play the demo recorded last")
 reg_act("help.intro", proc { show_help_page("intro") }, "Show the introduction page")
 reg_act("help.vim_intro", proc { show_help_page("vim_intro") }, "Show the main differences from Vim")
 reg_act("help.intro.startup.toggle", proc { toggle_intro_on_startup }, "Show the introduction page at start, or not")
