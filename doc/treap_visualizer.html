@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Treap of Lines</title>
+<style>
+/* Standalone, no external resources. Top: operations and the lines. Middle: the tree. Bottom: code and call stack. */
+:root {
+  --bg: #eef1f5; --panel: #fff; --ink: #17212d; --muted: #5b6778; --line: #d6dce5;
+  --accent: #0c7380; --chg: #b25806; --prio: #7b3bd8; --code-bg: #f6f8fb; --hot: #dff1f3;
+  --mono: ui-monospace, "SFMono-Regular", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131a; --panel: #151c26; --ink: #e5eaf1; --muted: #98a4b5; --line: #2a3443;
+    --accent: #3cc3cd; --chg: #f2a64f; --prio: #b994ff; --code-bg: #10171f; --hot: #163a40; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131a; --panel: #151c26; --ink: #e5eaf1; --muted: #98a4b5; --line: #2a3443;
+  --accent: #3cc3cd; --chg: #f2a64f; --prio: #b994ff; --code-bg: #10171f; --hot: #163a40; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 var(--sans);
+       padding: 18px max(16px, env(safe-area-inset-right, 0px)) 36px max(16px, env(safe-area-inset-left, 0px)); }
+.wrap { max-width: 1200px; margin: 0 auto; display: grid; gap: 14px; }
+h1 { font-size: 22px; margin: 0; }
+header p { margin: 4px 0 0; color: var(--muted); max-width: 90ch; }
+code { font-family: var(--mono); font-size: 0.92em; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 8px; }
+.top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.bottom { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 860px) { .top, .bottom { grid-template-columns: minmax(0, 1fr); } }
+
+.ops { display: grid; gap: 8px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+input { font: 12.5px var(--mono); color: var(--ink); background: var(--code-bg); border: 1px solid var(--line); border-radius: 5px; padding: 4px 6px; width: 64px; }
+button { font: 600 12.5px var(--sans); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 4px 10px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+button.primary:hover:not(:disabled) { color: var(--panel); filter: brightness(1.08); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button code { font-weight: 600; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hint { color: var(--muted); font-size: 12px; }
+.err { color: var(--chg); font-size: 12.5px; min-height: 1.3em; }
+
+table.lines { border-collapse: collapse; width: 100%; font: 12.5px var(--mono); font-variant-numeric: tabular-nums; }
+table.lines th { text-align: right; font: 600 11px var(--sans); color: var(--muted); padding: 2px 8px; }
+table.lines td { text-align: right; padding: 1px 8px; border-top: 1px solid var(--line); }
+table.lines td.tx, table.lines th.tx { text-align: left; width: 100%; white-space: pre; }
+table.lines tr.sel td { background: var(--hot); }
+table.lines tr { cursor: pointer; }
+
+.treebox { overflow: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--code-bg); }
+svg { display: block; }
+.edge { stroke: var(--muted); stroke-width: 1.4; opacity: 0.75; }
+.nbox { fill: var(--panel); stroke: var(--line); stroke-width: 1.4; }
+.nid { fill: var(--ink); font: 700 11px var(--sans); }
+.nprio { fill: var(--prio); font: 700 10.5px var(--mono); }
+.ntxt { fill: var(--ink); font: 10.5px var(--mono); }
+.nstat { fill: var(--muted); font: 10px var(--mono); }
+.nstat .c { fill: var(--chg); font-weight: 700; }
+.plabel { fill: var(--accent); font: 700 11px var(--mono); }
+.tag rect { fill: var(--accent); } .tag.ret rect { fill: var(--muted); }
+.tag text { fill: var(--panel); font: 700 10px var(--mono); }
+g.ref .nbox { stroke: var(--accent); stroke-width: 2.4; }
+g.changed .nbox { fill: color-mix(in srgb, var(--chg) 15%, var(--panel)); }
+
+.controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
+.stepno { margin-left: auto; color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.note { margin-top: 8px; min-height: 2.6em; font-size: 13.5px; }
+.note b { font-family: var(--mono); color: var(--accent); }
+
+.fns { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.fn { font: 12px var(--mono); padding: 1px 7px; border-radius: 4px; border: 1px solid var(--line); background: var(--code-bg); cursor: pointer; color: var(--ink); }
+.fn .n { color: var(--muted); font-size: 11px; margin-left: 4px; }
+.fn.on { border-color: var(--accent); background: var(--hot); }
+.fn.run { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.fn.run .n { color: var(--panel); }
+.fn.view { outline: 2px dashed var(--prio); outline-offset: 1px; }
+pre.code { margin: 0; font: 12.5px/1.55 var(--mono); background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 0; overflow-x: auto; }
+pre.code .ln { display: grid; grid-template-columns: 26px 1fr; white-space: pre; border-left: 3px solid transparent; padding-right: 10px; }
+pre.code .no { color: var(--muted); text-align: right; padding-right: 8px; user-select: none; }
+pre.code .ln.hot { background: var(--hot); border-left-color: var(--accent); }
+.kw { color: var(--prio); } .cm { color: var(--muted); } .iv { color: var(--chg); }
+
+.stack { display: grid; gap: 6px; }
+.box { border: 1px solid var(--line); border-radius: 6px; background: var(--code-bg); }
+.box .h { display: flex; justify-content: space-between; gap: 8px; padding: 4px 8px; font: 12px var(--mono); cursor: pointer; }
+.box .h .l { color: var(--muted); }
+.box.run { border-color: var(--accent); } .box.run .h { background: var(--hot); font-weight: 700; }
+.box.ret { border-style: dashed; border-color: var(--muted); } .box.ret.now { border-style: solid; border-color: var(--prio); }
+.box.ret .h { cursor: default; font: 600 11px var(--sans); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.vars { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 1px 10px; padding: 3px 8px 6px; font: 12px var(--mono); }
+.vars .k { color: var(--muted); }
+.vars .chg { color: var(--chg); font-weight: 700; }
+.nref { color: var(--accent); font-weight: 700; }
+.muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Treap of Lines</h1>
+    <p>Each node is one line. It stores only the line's length (<code>len</code>, with its <code>\n</code>), a random priority (<code>p</code>: a parent's is always higher), and two totals for its subtree: lines (<code>cnt</code>) and characters (<code>Σ</code>). Line numbers aren't stored. Pick an operation and step through the Ruby code line by line.</p>
+  </header>
+
+  <div class="top">
+    <section class="panel">
+      <h2>Operations</h2>
+      <div class="ops">
+        <div class="row"><label for="in-i">line i</label><input type="number" id="in-i" min="0" value="3"><span class="hint">or click a line on the right</span></div>
+        <div class="row"><button id="b-start" class="primary">Where does line i start? <code>line_start(i)</code></button></div>
+        <div class="row"><label for="in-d">chars</label><input type="number" id="in-d" value="3"><button id="b-len">Make line i longer <code>add_len(i, d)</code></button></div>
+        <div class="row"><label for="in-len">length</label><input type="number" id="in-len" min="1" value="6"><button id="b-ins">Insert a line before i <code>insert_line(i, len)</code></button></div>
+        <div class="row"><button id="b-del">Delete line i <code>delete_line(i)</code></button><button id="b-reset">New random tree</button></div>
+        <div class="err" id="err" role="status"></div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Lines (as the tree says at this step)</h2>
+      <table class="lines"><thead><tr><th>line</th><th>start</th><th>len</th><th class="tx">text</th></tr></thead><tbody id="lines"></tbody></table>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Tree</h2>
+    <div class="treebox"><svg id="svg" role="img" aria-label="The treap at this step"></svg></div>
+    <div class="note" id="note"></div>
+    <div class="controls">
+      <button id="c-first" title="First step (Home)">⏮</button>
+      <button id="c-back" title="Back (←)">◀ Back</button>
+      <button id="c-step" class="primary" title="Next line (→)">Step ▶</button>
+      <button id="c-over" title="Next line in this function (↓)">Step over</button>
+      <button id="c-out" title="Until this function returns (↑)">Step out</button>
+      <button id="c-play">Play</button>
+      <button id="c-last" title="Last step (End)">⏭</button>
+      <span class="stepno" id="stepno"></span>
+    </div>
+  </section>
+
+  <div class="bottom">
+    <section class="panel">
+      <h2>Functions</h2>
+      <div class="fns" id="fns"></div>
+      <pre class="code" id="code"></pre>
+    </section>
+    <section class="panel">
+      <h2>Call stack</h2>
+      <div class="stack" id="stack"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+// ---------------------------------------------------------------- the Ruby code (simplified from lib/vimamsa/line_tree.rb)
+const SRC = {
+line_start: `def line_start(i)              # where line i starts
+  pos = 0
+  n = @root
+  while n
+    lc = cnt(n.left)
+    if i < lc                    # line i is on the left
+      n = n.left
+    elsif i == lc                # this node is line i
+      return pos + sum(n.left)
+    else                         # skip left subtree + this line
+      pos += sum(n.left) + n.len
+      i -= lc + 1
+      n = n.right
+    end
+  end
+end`,
+add_len: `def add_len(n, i, d)           # line i got d chars longer
+  lc = cnt(n.left)
+  if i < lc
+    add_len(n.left, i, d)
+  elsif i > lc
+    add_len(n.right, i - lc - 1, d)
+  else
+    n.len += d                   # this node is line i
+  end
+  n.sum += d                     # every node on the path
+end`,
+insert_line: `def insert_line(i, len)        # new line before line i
+  l, r = split(@root, i)
+  n = Node.new(len)              # random priority
+  @root = merge(merge(l, n), r)
+end`,
+delete_line: `def delete_line(i)
+  l, rest = split(@root, i)
+  gone, r = split(rest, 1)
+  @root = merge(l, r)
+end`,
+split: `def split(n, i)                # => [lines 0...i, lines i..]
+  return [nil, nil] if n.nil?
+  if i <= cnt(n.left)            # the cut is on the left
+    l, r = split(n.left, i)
+    n.left = r
+    update(n)
+    [l, n]
+  else                           # the cut is on the right
+    l, r = split(n.right, i - cnt(n.left) - 1)
+    n.right = l
+    update(n)
+    [n, r]
+  end
+end`,
+merge: `def merge(a, b)                # all of a comes before all of b
+  return a || b if a.nil? || b.nil?
+  if a.prio > b.prio             # higher priority stays on top
+    a.right = merge(a.right, b)
+    update(a)
+    a
+  else
+    b.left = merge(a, b.left)
+    update(b)
+    b
+  end
+end`,
+update: `def update(n)                  # recompute the subtree totals
+  n.cnt = 1 + cnt(n.left) + cnt(n.right)
+  n.sum = n.len + sum(n.left) + sum(n.right)
+end`
+};
+const RET_NAMES = { split: ["l", "r"] };
+
+// ---------------------------------------------------------------- tree
+let nid = 0;
+const usedP = new Set();
+function prio() { for (;;) { const p = 10 + Math.floor(Math.random() * 90); if (!usedP.has(p) || usedP.size > 85) { usedP.add(p); return p; } } }
+class Node { constructor(len, txt) { this.id = ++nid; this.len = len; this.prio = prio(); this.left = this.right = null; this.cnt = 1; this.sum = len; this.txt = txt; } }
+const cnt = n => n ? n.cnt : 0, sum = n => n ? n.sum : 0;
+let ROOT = null;
+const fixup = n => { n.cnt = 1 + cnt(n.left) + cnt(n.right); n.sum = n.len + sum(n.left) + sum(n.right); };
+function buildQuiet(lines) { // plain O(k) build, not traced
+  const st = [];
+  for (const t of lines) {
+    const n = new Node([...t].length + 1, t); let last = null;
+    while (st.length && st[st.length - 1].prio < n.prio) { last = st.pop(); fixup(last); }
+    n.left = last; if (st.length) st[st.length - 1].right = n; st.push(n);
+  }
+  for (let k = st.length - 1; k >= 0; k--) fixup(st[k]);
+  return st[0] || null;
+}
+
+// ---------------------------------------------------------------- tracing: every yield is one Ruby line
+let STACK = [], STEPS = [], COUNTS = {}, LASTRET = null, fid = 0, prevNodes = {}, TITLE = "";
+function enter(fn, vars) { const f = { fn, line: 0, vars: { ...vars }, args: Object.entries(vars), id: ++fid }; STACK.push(f); COUNTS[fn] = (COUNTS[fn] || 0) + 1; return f; }
+function at(f, line, upd, note) { f.line = line; const ch = upd ? Object.keys(upd) : []; if (upd) Object.assign(f.vars, upd); return snap(note, ch); }
+function leave(f, val, has) { STACK.pop(); LASTRET = { fn: f.fn, args: f.args, val, has, step: STEPS.length }; }
+function* ret(f, line, val, note) { yield at(f, line, { "⇒ return": val }, note); leave(f, val, true); return val; }
+
+const ser = v => v instanceof Node ? { node: v.id } : Array.isArray(v) ? { arr: v.map(ser) } : v == null ? { nil: 1 } : { val: v };
+function snap(note, changed) {
+  // trees to draw: @root, plus every node held by a variable or the last return value that @root can't reach
+  const cands = [], seen = new Set();
+  const add = n => { if (n && !seen.has(n.id)) { seen.add(n.id); cands.push(n); } };
+  const walkV = v => { if (v instanceof Node) add(v); else if (Array.isArray(v)) v.forEach(walkV); };
+  add(ROOT);
+  if (LASTRET && LASTRET.has) walkV(LASTRET.val);
+  STACK.forEach(f => Object.values(f.vars).forEach(walkV));
+  const nodes = {}, inner = new Set();
+  const visit = (n, top) => { if (!n) return; if (!top) inner.add(n.id); if (nodes[n.id]) return;
+    nodes[n.id] = { id: n.id, len: n.len, prio: n.prio, cnt: n.cnt, sum: n.sum, txt: n.txt, left: n.left && n.left.id, right: n.right && n.right.id };
+    visit(n.left, false); visit(n.right, false); };
+  cands.forEach(c => visit(c, true));
+  const roots = cands.filter(c => !inner.has(c.id)).map(c => c.id);
+  const labels = {}; roots.forEach(id => labels[id] = []);
+  if (ROOT && labels[ROOT.id]) labels[ROOT.id].push("@root");
+  STACK.forEach((f, k) => Object.entries(f.vars).forEach(([name, v]) => {
+    const pre = k === STACK.length - 1 ? "" : f.fn + ".";
+    const w = (x, nm) => { if (x instanceof Node && labels[x.id] && !labels[x.id].includes(pre + nm)) labels[x.id].push(pre + nm); else if (Array.isArray(x)) x.forEach((y, i) => w(y, `${nm}[${i}]`)); };
+    w(v, name);
+  }));
+  const chg = {};
+  for (const id in nodes) { const a = nodes[id], b = prevNodes[id]; if (!b) continue;
+    const c = ["len", "cnt", "sum"].filter(k => a[k] !== b[k]); if (a.left !== b.left || a.right !== b.right) c.push("link"); if (c.length) chg[id] = c; }
+  prevNodes = nodes;
+  const s = { nodes, roots, labels, chg, note: note || "", counts: { ...COUNTS },
+    stack: STACK.map((f, k) => ({ fn: f.fn, line: f.line, id: f.id, vars: Object.entries(f.vars).map(([a, v]) => [a, ser(v)]), changed: k === STACK.length - 1 ? changed : [] })),
+    last: LASTRET && { fn: LASTRET.fn, args: LASTRET.args.map(([a, v]) => [a, ser(v)]), has: LASTRET.has, val: LASTRET.has ? ser(LASTRET.val) : null, step: LASTRET.step } };
+  STEPS.push(s);
+  return s;
+}
+
+// ---------------------------------------------------------------- the traced functions
+function* update(n) {
+  const f = enter("update", { n });
+  n.cnt = 1 + cnt(n.left) + cnt(n.right);
+  yield at(f, 1, null, `n.cnt = 1 + ${cnt(n.left)} + ${cnt(n.right)} = ${n.cnt}`);
+  n.sum = n.len + sum(n.left) + sum(n.right);
+  yield at(f, 2, null, `n.sum = ${n.len} + ${sum(n.left)} + ${sum(n.right)} = ${n.sum}`);
+  leave(f);
+}
+function* split(n, i) {
+  const f = enter("split", { n, i });
+  if (!n) return yield* ret(f, 1, [null, null], "An empty subtree: return [nil, nil]. Now the calls return one by one.");
+  yield at(f, 1, null, "n isn't nil.");
+  const lc = cnt(n.left);
+  yield at(f, 2, null, `i <= cnt(n.left)  →  ${i} <= ${lc}  →  ${i <= lc}`);
+  if (i <= lc) {
+    yield at(f, 3, null, `The cut is in the left subtree. Split it at ${i}.`);
+    const [l, r] = yield* split(n.left, i);
+    yield at(f, 3, { l, r }, "The call returned l and r.");
+    n.left = r; yield at(f, 4, null, `N${n.id} keeps r (the lines after the cut) as its left child.`);
+    yield* update(n); yield at(f, 5, null, "update(n) returned.");
+    return yield* ret(f, 6, [l, n], `Return [l, N${n.id}].`);
+  }
+  yield at(f, 7, null, "The cut is in the right subtree.");
+  yield at(f, 8, null, `Split the right subtree at ${i} - ${lc} - 1 = ${i - lc - 1}.`);
+  const [l, r] = yield* split(n.right, i - lc - 1);
+  yield at(f, 8, { l, r }, "The call returned l and r.");
+  n.right = l; yield at(f, 9, null, `N${n.id} keeps l (the lines before the cut) as its right child.`);
+  yield* update(n); yield at(f, 10, null, "update(n) returned.");
+  return yield* ret(f, 11, [n, r], `Return [N${n.id}, r].`);
+}
+function* merge(a, b) {
+  const f = enter("merge", { a, b });
+  if (!a || !b) return yield* ret(f, 1, a || b, `One side is nil: return the other${a || b ? ` (N${(a || b).id})` : ""}.`);
+  yield at(f, 1, null, "Neither side is nil.");
+  yield at(f, 2, null, `a.prio > b.prio  →  ${a.prio} > ${b.prio}  →  ${a.prio > b.prio}`);
+  if (a.prio > b.prio) {
+    yield at(f, 3, null, `N${a.id} stays on top. Merge its right subtree with b.`);
+    const m = yield* merge(a.right, b); a.right = m;
+    yield at(f, 3, null, `a.right = the merged tree${m ? ` (N${m.id})` : ""}.`);
+    yield* update(a); yield at(f, 4, null, "update(a) returned.");
+    return yield* ret(f, 5, a, `Return N${a.id}.`);
+  }
+  yield at(f, 6, null, "b has the higher priority.");
+  yield at(f, 7, null, `N${b.id} stays on top. Merge a with its left subtree.`);
+  const m = yield* merge(a, b.left); b.left = m;
+  yield at(f, 7, null, `b.left = the merged tree${m ? ` (N${m.id})` : ""}.`);
+  yield* update(b); yield at(f, 8, null, "update(b) returned.");
+  return yield* ret(f, 9, b, `Return N${b.id}.`);
+}
+function* line_start(i0) {
+  const f = enter("line_start", { i: i0 });
+  let i = i0, pos = 0; yield at(f, 1, { pos });
+  let n = ROOT; yield at(f, 2, { n }, `Start at the root, N${n.id}.`);
+  for (;;) {
+    yield at(f, 3, null, n ? "n isn't nil." : "n is nil.");
+    if (!n) break;
+    const lc = cnt(n.left); yield at(f, 4, { lc }, `N${n.id}'s left subtree has ${lc} line(s).`);
+    yield at(f, 5, null, `i < lc  →  ${i} < ${lc}  →  ${i < lc}`);
+    if (i < lc) { n = n.left; yield at(f, 6, { n }, "Go left."); continue; }
+    yield at(f, 7, null, `i == lc  →  ${i} == ${lc}  →  ${i === lc}`);
+    if (i === lc) return yield* ret(f, 8, pos + sum(n.left), `N${n.id} is line ${i0}. It starts at ${pos} + ${sum(n.left)} = ${pos + sum(n.left)}.`);
+    pos += sum(n.left) + n.len; yield at(f, 10, { pos }, `Skip the left subtree (Σ ${sum(n.left)}) and N${n.id} (len ${n.len}).`);
+    i -= lc + 1; yield at(f, 11, { i }, `Line ${i0} is line ${i} of the right subtree.`);
+    n = n.right; yield at(f, 12, { n }, "Go right.");
+  }
+}
+function* add_len(n, i, d) {
+  const f = enter("add_len", { n, i, d });
+  const lc = cnt(n.left); yield at(f, 1, { lc });
+  yield at(f, 2, null, `i < lc  →  ${i} < ${lc}  →  ${i < lc}`);
+  if (i < lc) { yield at(f, 3, null, "Line i is on the left."); yield* add_len(n.left, i, d); yield at(f, 3, null, "returned."); }
+  else {
+    yield at(f, 4, null, `i > lc  →  ${i} > ${lc}  →  ${i > lc}`);
+    if (i > lc) { yield at(f, 5, null, `Line i is on the right, as its line ${i - lc - 1}.`); yield* add_len(n.right, i - lc - 1, d); yield at(f, 5, null, "returned."); }
+    else { n.len += d; yield at(f, 7, null, `N${n.id} is the line: len += ${d} → ${n.len}.`); }
+  }
+  n.sum += d; yield at(f, 9, null, `N${n.id}.sum += ${d} → ${n.sum}. Line counts don't change.`);
+  leave(f);
+}
+function* insert_line(i, len) {
+  const f = enter("insert_line", { i, len });
+  yield at(f, 1, null, `Cut the tree before line ${i}.`);
+  const [l, r] = yield* split(ROOT, i);
+  yield at(f, 1, { l, r }, `l has lines 0…${i - 1}, r has line ${i} and after.`);
+  const n = new Node(len, "(new)");
+  yield at(f, 2, { n }, `A new node N${n.id} with len ${len} and random priority ${n.prio}.`);
+  yield at(f, 3, null, "First merge l with the new node…");
+  const ln = yield* merge(l, n);
+  yield at(f, 3, null, "…then merge the result with r.");
+  const all = yield* merge(ln, r);
+  ROOT = all;
+  yield at(f, 3, null, `@root is N${all.id}. The lines after the new one got new numbers without being touched.`);
+  leave(f);
+}
+function* delete_line(i) {
+  const f = enter("delete_line", { i });
+  yield at(f, 1, null, `Cut before line ${i}.`);
+  const [l, rest] = yield* split(ROOT, i);
+  yield at(f, 1, { l, rest });
+  yield at(f, 2, null, "Cut the first line off rest.");
+  const [gone, r] = yield* split(rest, 1);
+  yield at(f, 2, { gone, r }, `gone holds just the deleted line (N${gone.id}).`);
+  yield at(f, 3, null, "Merge the two outer parts.");
+  const all = yield* merge(l, r);
+  ROOT = all;
+  yield at(f, 3, null, `@root is N${all.id}. gone is dropped when this method returns.`);
+  leave(f);
+}
+
+function run(title, gen) {
+  STACK = []; STEPS = []; COUNTS = {}; LASTRET = null; fid = 0; prevNodes = {}; TITLE = title;
+  const g = gen(); let r = g.next(); while (!r.done) r = g.next();
+  snap(`Done: ${title}${r.value !== undefined ? " → " + r.value : ""}.`, []);
+  viewFn = null; viewFrame = null; stop(); show(0);
+}
+
+// ---------------------------------------------------------------- rendering
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+let cur = 0, viewFn = null, viewFrame = null, timer = null;
+const NW = 92, NH = 58, SW = 100, LH = 86, PAD = 12, TOP = 34;
+
+function inorderIds(s, id, out) { if (id == null) return out; inorderIds(s, s.nodes[id].left, out); out.push(id); inorderIds(s, s.nodes[id].right, out); return out; }
+
+function drawTree(s) {
+  const P = {}, edges = [], lbl = [];
+  let slot = 0, maxD = 0;
+  s.roots.forEach((rid, t) => {
+    const start = slot;
+    const w = (id, d) => { if (id == null) return; const n = s.nodes[id]; w(n.left, d + 1); P[id] = { x: PAD + slot * SW, y: TOP + d * LH }; slot++; maxD = Math.max(maxD, d); w(n.right, d + 1);
+      if (n.left != null) edges.push([id, n.left]); if (n.right != null) edges.push([id, n.right]); };
+    w(rid, 0);
+    lbl.push({ x: PAD + ((start + slot - 1) / 2) * SW + NW / 2, t: s.labels[rid].join(", ") });
+    if (t < s.roots.length - 1) slot += 0.5;
+  });
+  const W = Math.max(280, PAD * 2 + slot * SW - (SW - NW)), H = TOP + (maxD + 1) * LH - (LH - NH) + 12;
+  const tags = {};
+  const top = s.stack[s.stack.length - 1];
+  if (top) top.vars.forEach(([k, v]) => { const w = (x, nm) => { if (x.node) (tags[x.node] ||= []).push([nm, ""]); else if (x.arr) x.arr.forEach((y, i) => w(y, `${nm}[${i}]`)); }; w(v, k); });
+  if (s.last && s.last.has) retParts(s.last).forEach(([k, v]) => { if (v.node) (tags[v.node] ||= []).push(["⇐" + k, "ret"]); });
+  let h = lbl.map(l => `<text class="plabel" x="${l.x}" y="14" text-anchor="middle">${esc(l.t)}</text>`).join("");
+  edges.forEach(([a, b]) => { h += `<line class="edge" x1="${P[a].x + NW / 2}" y1="${P[a].y + NH}" x2="${P[b].x + NW / 2}" y2="${P[b].y}"/>`; });
+  for (const id in P) {
+    const n = s.nodes[id], p = P[id], c = s.chg[id] || [];
+    const v = (key, label, val) => c.includes(key) ? `<tspan class="c">${label} ${val}</tspan>` : `${label} ${val}`;
+    h += `<g class="${tags[id] ? "ref " : ""}${c.length ? "changed" : ""}" transform="translate(${p.x},${p.y})">`;
+    h += `<rect class="nbox" width="${NW}" height="${NH}" rx="6"/>`;
+    h += `<text class="nid" x="7" y="15">N${n.id}</text><text class="nprio" x="${NW - 7}" y="15" text-anchor="end">p ${n.prio}</text>`;
+    h += `<text class="ntxt" x="7" y="32">${esc([...n.txt].slice(0, 12).join("") + ([...n.txt].length > 12 ? "…" : ""))}</text>`;
+    h += `<text class="nstat" x="7" y="49">${v("len", "len", n.len)} ${v("cnt", "cnt", n.cnt)} ${v("sum", "Σ", n.sum)}</text>`;
+    h += `<title>N${n.id}: len ${n.len}, priority ${n.prio}; its subtree has ${n.cnt} line(s), ${n.sum} chars</title>`;
+    let tx = 0;
+    (tags[id] || []).forEach(([t, cl]) => { const w = 8 + 6.4 * [...t].length; h += `<g class="tag ${cl}" transform="translate(${tx},-12)"><rect width="${w}" height="13" rx="3"/><text x="4" y="10">${esc(t)}</text></g>`; tx += w + 3; });
+    h += `</g>`;
+  }
+  const svg = $("svg");
+  svg.setAttribute("width", W); svg.setAttribute("height", H); svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.innerHTML = h;
+}
+
+function drawLines(s) {
+  const rid = Object.keys(s.labels).find(id => s.labels[id].includes("@root"));
+  const ids = rid ? inorderIds(s, +rid, []) : [];
+  let p = 0, h = "";
+  const sel = +$("in-i").value;
+  ids.forEach((id, k) => { const n = s.nodes[id];
+    h += `<tr data-i="${k}"${k === sel ? ' class="sel"' : ""}><td>${k}</td><td>${p}</td><td>${n.len}</td><td class="tx">${esc(n.txt)}</td></tr>`; p += n.len; });
+  if (s.roots.length > 1) h += `<tr><td colspan="4" class="tx muted" style="text-align:left">(only the lines @root reaches right now)</td></tr>`;
+  $("lines").innerHTML = h;
+}
+
+const fmt = (v, s) => v.nil ? `<span class="muted">nil</span>` : v.node ? `<span class="nref">N${v.node}</span>` : v.arr ? "[" + v.arr.map(x => fmt(x, s)).join(", ") + "]" : esc(v.val);
+function retParts(l) {
+  const nm = RET_NAMES[l.fn];
+  if (l.val.arr && nm) return l.val.arr.map((x, i) => [nm[i], x]);
+  return [["value", l.val]];
+}
+function drawStack(s) {
+  let h = "";
+  const l = s.last;
+  if (l) {
+    const ago = STEPS.indexOf(s) - l.step;
+    h += `<div class="box ret${ago === 0 ? " now" : ""}"><div class="h">Last return${ago === 0 ? " (just now)" : ` (${ago} step${ago === 1 ? "" : "s"} ago)`}</div><div class="vars">`;
+    h += `<span class="k">call</span><span>${esc(l.fn)}(${l.args.map(([k, v]) => `${esc(k)}=${fmt(v, s)}`).join(", ")})</span>`;
+    if (l.has) retParts(l).forEach(([k, v]) => { h += `<span class="k">⇐ ${esc(k)}</span><span>${fmt(v, s)}</span>`; });
+    else h += `<span class="k">⇐</span><span class="muted">nothing</span>`;
+    h += `</div></div>`;
+  }
+  if (!s.stack.length) h += `<div class="muted">No function is running.</div>`;
+  for (let k = s.stack.length - 1; k >= 0; k--) {
+    const f = s.stack[k], run = k === s.stack.length - 1, open = run || viewFrame === f.id;
+    h += `<div class="box${run ? " run" : ""}"><div class="h" data-frame="${f.id}" role="button" tabindex="0"><span>${esc(f.fn)}</span><span class="l">line ${f.line + 1}</span></div>`;
+    if (open) h += `<div class="vars">${f.vars.map(([a, v]) => `<span class="k">${esc(a)}</span><span class="${f.changed.includes(a) ? "chg" : ""}">${fmt(v, s)}</span>`).join("")}</div>`;
+    h += `</div>`;
+  }
+  $("stack").innerHTML = h;
+}
+
+function drawCode(s) {
+  let fn = null, line = -1;
+  const fr = viewFrame != null && s.stack.find(f => f.id === viewFrame);
+  if (fr) { fn = fr.fn; line = fr.line; }
+  else if (viewFn) fn = viewFn;
+  else if (s.stack.length) { const t = s.stack[s.stack.length - 1]; fn = t.fn; line = t.line; }
+  fn ||= "line_start";
+  const run = s.stack.length ? s.stack[s.stack.length - 1].fn : null, on = new Set(s.stack.map(f => f.fn));
+  $("fns").innerHTML = Object.keys(SRC).map(k => `<button class="fn${k === run ? " run" : on.has(k) ? " on" : ""}${k === fn && (viewFn || fr) ? " view" : ""}" data-fn="${k}">${k}<span class="n">${s.counts[k] || 0}</span></button>`).join("");
+  $("code").innerHTML = SRC[fn].split("\n").map((t, i) => {
+    const m = t.match(/^(.*?)(\s+#\s.*)?$/);
+    const c = esc(m[1]).replace(/\b(def|end|if|elsif|else|while|return|nil)\b/g, '<span class="kw">$1</span>').replace(/(@\w+)/g, '<span class="iv">$1</span>');
+    return `<span class="ln${i === line ? " hot" : ""}"><span class="no">${i + 1}</span><span>${c}${m[2] ? `<span class="cm">${esc(m[2])}</span>` : ""}</span></span>`;
+  }).join("");
+}
+
+function show(k) {
+  cur = Math.max(0, Math.min(k, STEPS.length - 1));
+  const s = STEPS[cur];
+  if (viewFrame != null && !s.stack.some(f => f.id === viewFrame)) viewFrame = null;
+  drawTree(s); drawLines(s); drawStack(s); drawCode(s);
+  const t = s.stack[s.stack.length - 1];
+  $("note").innerHTML = (t ? `<b>${esc(t.fn)}, line ${t.line + 1}:</b> ` : "") + esc(s.note);
+  $("stepno").textContent = `${TITLE} · step ${cur + 1} of ${STEPS.length}`;
+  $("c-first").disabled = $("c-back").disabled = cur === 0;
+  $("c-step").disabled = $("c-over").disabled = $("c-out").disabled = $("c-last").disabled = cur === STEPS.length - 1;
+}
+const depth = k => STEPS[k].stack.length;
+const over = () => { const d = depth(cur); for (let k = cur + 1; k < STEPS.length; k++) if (depth(k) <= d) return show(k); show(STEPS.length - 1); };
+const out = () => { const d = depth(cur); for (let k = cur + 1; k < STEPS.length; k++) if (depth(k) < d) return show(k); show(STEPS.length - 1); };
+function play() { if (cur >= STEPS.length - 1) show(0); $("c-play").textContent = "Pause"; const tick = () => { if (cur < STEPS.length - 1) { show(cur + 1); timer = setTimeout(tick, 450); } else stop(); }; timer = setTimeout(tick, 450); }
+function stop() { clearTimeout(timer); timer = null; $("c-play").textContent = "Play"; }
+
+// ---------------------------------------------------------------- operations
+const lineCount = () => cnt(ROOT);
+function getI(max) {
+  const i = parseInt($("in-i").value, 10);
+  if (!(i >= 0 && i <= max)) { $("err").textContent = `Line i must be between 0 and ${max}.`; return null; }
+  $("err").textContent = ""; return i;
+}
+$("b-start").onclick = () => { const i = getI(lineCount() - 1); if (i != null) run(`line_start(${i})`, () => line_start(i)); };
+$("b-len").onclick = () => {
+  const i = getI(lineCount() - 1); if (i == null) return;
+  const d = parseInt($("in-d").value, 10) || 0;
+  let len = 0; (function w(n, j) { if (!n) return; const lc = cnt(n.left); if (j < lc) w(n.left, j); else if (j > lc) w(n.right, j - lc - 1); else len = n.len; })(ROOT, i);
+  if (len + d < 1) { $("err").textContent = "A line keeps at least its \\n (length 1)."; return; }
+  run(`add_len(@root, ${i}, ${d})`, () => add_len(ROOT, i, d));
+};
+$("b-ins").onclick = () => {
+  const i = getI(lineCount()); if (i == null) return;
+  const len = parseInt($("in-len").value, 10);
+  if (!(len >= 1)) { $("err").textContent = "The length must be at least 1 (the \\n)."; return; }
+  run(`insert_line(${i}, ${len})`, () => insert_line(i, len));
+};
+$("b-del").onclick = () => {
+  if (lineCount() <= 1) { $("err").textContent = "Keep at least one line."; return; }
+  const i = getI(lineCount() - 1); if (i != null) run(`delete_line(${i})`, () => delete_line(i));
+};
+const SAMPLE = ["# a treap of lines", "def greet(name)", "  puts \"Hi, #{name}\"", "end", "", "greet(\"Vimamsa\")", "greet(\"world\")"];
+function reset() {
+  nid = 0; usedP.clear(); ROOT = buildQuiet(SAMPLE);
+  STACK = []; STEPS = []; COUNTS = {}; LASTRET = null; prevNodes = {}; TITLE = "new tree";
+  snap(`A random treap of ${SAMPLE.length} lines. The order of the lines is fixed; the shape comes from the random priorities.`, []);
+  viewFn = null; viewFrame = null; stop(); show(0);
+}
+$("b-reset").onclick = reset;
+$("in-i").oninput = () => show(cur);
+$("lines").onclick = e => { const r = e.target.closest("tr[data-i]"); if (r) { $("in-i").value = r.dataset.i; show(cur); } };
+
+$("c-first").onclick = () => { stop(); show(0); };
+$("c-back").onclick = () => { stop(); show(cur - 1); };
+$("c-step").onclick = () => { stop(); show(cur + 1); };
+$("c-over").onclick = () => { stop(); over(); };
+$("c-out").onclick = () => { stop(); out(); };
+$("c-last").onclick = () => { stop(); show(STEPS.length - 1); };
+$("c-play").onclick = () => timer ? stop() : play();
+$("fns").onclick = e => { const b = e.target.closest(".fn"); if (!b) return; viewFrame = null; viewFn = viewFn === b.dataset.fn ? null : b.dataset.fn; show(cur); };
+const pick = e => { const h = e.target.closest("[data-frame]"); if (!h) return; const id = +h.dataset.frame; const s = STEPS[cur];
+  viewFn = null; viewFrame = (viewFrame === id || s.stack[s.stack.length - 1].id === id) ? null : id; show(cur); };
+$("stack").onclick = pick;
+$("stack").onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(e); } };
+document.addEventListener("keydown", e => {
+  if (e.target.closest && e.target.closest("input")) return;
+  const m = { ArrowRight: () => show(cur + 1), ArrowLeft: () => show(cur - 1), ArrowDown: over, ArrowUp: out, Home: () => show(0), End: () => show(STEPS.length - 1) };
+  if (m[e.key]) { e.preventDefault(); stop(); m[e.key](); }
+});
+
+reset();
+})();
+</script>
+</body>
+</html>
