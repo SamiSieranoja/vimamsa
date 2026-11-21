@@ -84,6 +84,44 @@ class TestIntroPage < VmaTest
     close_help_pages
   end
 
+  # The links to the other help pages are buttons too, and open them
+  def test_help_page_links_are_buttons
+    b = show_help_page("intro")
+    drain_idle
+    %w[help.vim_intro help.keys].each { |act|
+      assert b.help_buttons.any? { |a, _, _| a == act }, "no button for #{act}"
+    }
+    btn = b.help_buttons.find { |a, _, _| a == "help.vim_intro" }[1]
+    btn.signal_emit("clicked")
+    assert_eq "vim_intro", vma.buf.help_page
+  ensure
+    close_help_pages
+  end
+
+  # On a read-only page the ⦁ marks are hidden, the text between them is
+  # not, and the cursor steps over a hidden mark
+  def test_marks_hidden_on_help_page
+    b = show_help_page("intro")
+    drain_idle
+    i = b.index("⦁enter⦁")
+    assert hidden?(b, i), "opening mark shown"
+    assert hidden?(b, i + 6), "closing mark shown"
+    assert !hidden?(b, i + 1), "key text hidden"
+    b.set_pos(i - 1)
+    hpt_skip_hidden_marks(b)
+    keys "l"
+    assert_eq i + 1, b.pos, "cursor on the hidden opening mark"
+    keys "h"
+    assert_eq i - 1, b.pos, "cursor back on the hidden opening mark"
+    # an editable buffer shows them
+    e = create_new_buffer("a ⦁key⦁ b\n", "marktest")
+    gui_set_file_lang(e.id, "hyperplaintext")
+    hpt_hide_marks(e)
+    assert !hidden?(e, 2), "mark hidden in an editable buffer"
+  ensure
+    close_help_pages
+  end
+
   # The keys come from the bindings, so the page works in notepad too
   # (which never leaves Insert mode, so it has no I:mode.prev)
   def test_keys_resolve_in_notepad
@@ -135,7 +173,7 @@ class TestIntroPage < VmaTest
     drain_idle
     n = b.lines.count { |l| l.include?("⟦run:") }
     assert_eq n, b.help_buttons.size
-    assert_eq DemoPlayer::DEMOS.size + 2, n
+    assert_eq DemoPlayer::DEMOS.size + 4, n
     assert_eq b.size, b.view.buffer.char_count
   ensure
     close_help_pages

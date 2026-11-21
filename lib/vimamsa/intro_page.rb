@@ -125,7 +125,43 @@ def show_help_page(name)
   gui_set_file_lang(b.id, "hyperplaintext")
   b.set_pos(0)
   help_add_run_buttons(b)
+  hpt_hide_marks(b)
   b
+end
+
+# Style marks that a read-only buffer hides (⦁ around ⦁bold⦁ keys); the
+# text between them keeps its style
+HPT_HIDDEN_MARKS = /⦁/
+
+# Hides the HPT_HIDDEN_MARKS of read-only buffer b with the invisible GTK
+# tag, so the text and its offsets stay as they are. Once: a read-only
+# buffer doesn't change.
+def hpt_hide_marks(b)
+  return if b.nil? || !b.read_only || b.view.nil?
+  vbuf = b.view.buffer
+  tag = hpt_hidden_tag(vbuf)
+  b.to_enum(:scan, HPT_HIDDEN_MARKS).each {
+    i = Regexp.last_match.begin(0)
+    vbuf.apply_tag(tag, vbuf.get_iter_at(offset: i), vbuf.get_iter_at(offset: i + 1))
+  }
+  hpt_watch_run_buttons
+end
+
+# Moves the cursor of read-only buffer b off a hidden mark, on in the
+# direction it moved (a step onto a hidden mark would look like no move)
+def hpt_skip_hidden_marks(b)
+  return if b.nil? || !b.read_only
+  $hpt_mark_last_pos ||= {}
+  last = $hpt_mark_last_pos[b.id] || 0
+  pos = b.pos
+  if HPT_HIDDEN_MARKS.match?(b[pos].to_s)
+    dir = pos < last ? -1 : 1
+    pos += dir while pos > 0 && pos < b.size - 1 && HPT_HIDDEN_MARKS.match?(b[pos].to_s)
+    # at the start or end of the buffer: the other way
+    pos -= dir while pos > 0 && pos < b.size - 1 && HPT_HIDDEN_MARKS.match?(b[pos].to_s)
+    b.set_pos(pos) if pos != b.pos
+  end
+  $hpt_mark_last_pos[b.id] = b.pos
 end
 
 # A button in place of each ⟦run:ACTION|LABEL⟧ link: the link text is hidden
@@ -262,7 +298,7 @@ end
 def hpt_watch_run_buttons
   return if $hpt_run_buttons_watched
   $hpt_run_buttons_watched = true
-  vma.kbd.on(:action_handled) { |*_| hpt_update_run_buttons(vma.buf) }
+  vma.kbd.on(:action_handled) { |*_| hpt_update_run_buttons(vma.buf); hpt_skip_hidden_marks(vma.buf) }
   vma.hook.register(:change_buffer, method(:hpt_update_run_buttons))
 end
 
