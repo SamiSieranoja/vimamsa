@@ -197,7 +197,8 @@ class TestActionIds < VmaTest
     rows = vma.actions.search_actions_update_callback("move.")
     assert rows.size > 5, rows.inspect
     assert rows.all? { |_key, str| str.start_with?("move.") }, rows.inspect
-    assert rows.any? { |_key, str| str.start_with?("move.word.next  ") }, "no description shown"
+    # id and description in columns of their own
+    assert rows.any? { |_key, id, desc| id == "move.word.next" && !desc.to_s.empty? }, "no description shown"
     rows = vma.actions.search_actions_update_callback("move.wordnext")
     assert rows.all? { |_key, str| str.start_with?("move.") }, rows.inspect
     assert rows[0][1].start_with?("move.word.next"), rows.inspect

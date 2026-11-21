@@ -8,8 +8,13 @@ def gui_select_update_window(item_list, jump_keys, select_callback, update_callb
   # :desc
 end
 
+# A list filtered by a search field (action search, file finder, file
+# history, macros, language). The field is edited through the key bindings in
+# form mode (form_input.rb), so the typing shows in the key log and a demo can
+# record it: up / down move the selection, enter picks, esc closes, delete
+# deletes an item if the list allows it (opt[:delete_callback]).
 class SelectUpdateWindow
-  include PopupRun
+  attr_reader :form, :selected_row
 
   COLUMN_JUMP_KEY = 0
   COLUMN_DESCRIPTION = 1
@@ -45,7 +50,8 @@ class SelectUpdateWindow
   end
 
   def initialize(main_window, item_list, jump_keys, select_callback, update_callback, opt = {})
-    @window = make_modal_window(opt[:title] || "", modal: false)
+    # Modal: while it is up, its form takes the keys
+    @window = make_modal_window(opt[:title] || "")
 
     @selected_row = 0
     @opt = opt
@@ -68,7 +74,7 @@ class SelectUpdateWindow
     vbox.margin_bottom = 8
     vbox.margin_top = 8
 
-    @window.add(vbox)
+    @window.set_child(vbox)
 
     if !opt[:desc].nil?
       descl = Gtk::Label.new(opt[:desc])
@@ -85,7 +91,9 @@ class SelectUpdateWindow
     container.append(@entry)
 
     # create tree view
-    @model = Gtk::ListStore.new(String, String)
+    # As many columns as opt[:columns] has (2 without)
+    ncols = opt[:columns] ? opt[:columns].map { |c| c[:id] }.max + 1 : 2
+    @model = Gtk::ListStore.new(*([String] * ncols))
     treeview = Gtk::TreeView.new(@model)
     treeview.search_column = COLUMN_DESCRIPTION
     @tv = treeview
@@ -97,45 +105,17 @@ class SelectUpdateWindow
     # @entry.handle_event(event)
     # end
 
-    on_submit_escape(@entry,
-                     submit: proc {
-                       path = Gtk::TreePath.new(@selected_row.to_s)
-                       iter = @model.get_iter(path)
-                       run_dialog_callback("select") { @select_callback.call(iter[1], @selected_row) }
-                       @window.destroy
-                     },
-                     escape: proc { @window.destroy }) do |keyval|
-      if keyval == Gdk::Keyval::KEY_Down
-        set_selected_row(@selected_row + 1)
-        true
-      elsif keyval == Gdk::Keyval::KEY_Up
-        set_selected_row(@selected_row - 1)
-        true
-      elsif keyval == Gdk::Keyval::KEY_Delete && @opt[:delete_callback]
-        path = Gtk::TreePath.new(@selected_row.to_s)
-        iter = @model.get_iter(path)
-        next false unless iter
-        name = iter[COLUMN_DESCRIPTION]
-        refresh = proc {
-          update_item_list(@update_callback.call(@entry.text))
-          @window.present
-        }
-        @opt[:delete_callback].call(name, refresh)
-        true
-      else
-        false
-      end
-    end
-
-    @entry.signal_connect("search-changed") do |widget|
-      debug "search changed: #{widget.text || ""}"
-      item_list = run_dialog_callback("select update") { @update_callback.call(widget.text) }
-
-      update_item_list(item_list) if item_list
-      # label.text = widget.text || ""
-    end
-    @entry.signal_connect("changed") { debug "[changed] " }
-    @entry.signal_connect("next-match") { debug "[next-match] " }
+    @form = FormInput.new(@window, submit: method(:select_current), cancel: method(:close))
+    @field = @form.add_field(@entry)
+    # The list follows the field, in an idle (typing stays quick with a slow
+    # update callback); enter first applies a pending update
+    @field.on_change = proc { |_t| schedule_update }
+    @form.key_handlers = {
+      up: proc { set_selected_row(@selected_row - 1) },
+      down: proc { set_selected_row(@selected_row + 1) },
+    }
+    @form.key_handlers[:delete] = method(:delete_current) if @opt[:delete_callback]
+    @window.signal_connect("close-request") { @form.deactivate; false }
 
     # label = Gtk::Label.new(<<-EOF)
     # Search:
@@ -182,6 +162,60 @@ class SelectUpdateWindow
 
     @window.set_default_size(280, 500)
     debug "SelectUpdateWindow"
+  end
+
+  def run
+    @window.show
+    @form.activate
+    @form.focus(0)
+    @window
+  end
+
+  # The list for the field's text now
+  def update_now
+    remove_update
+    item_list = run_dialog_callback("select update") { @update_callback.call(@field.text) }
+    update_item_list(item_list) if item_list
+  end
+
+  # enter: the selected row to the callback
+  def select_current
+    update_now if @update_pending
+    path = Gtk::TreePath.new(@selected_row.to_s)
+    iter = @model.get_iter(path)
+    @form.deactivate
+    run_dialog_callback("select") { @select_callback.call(iter[1], @selected_row) } if iter
+    close
+  end
+
+  def close
+    remove_update
+    @form.deactivate
+    @window.destroy
+  end
+
+  private
+
+  def schedule_update
+    return if @update_pending
+    @update_pending = GLib::Idle.add { @update_pending = nil; update_now; false }
+  end
+
+  def remove_update
+    GLib::Source.remove(@update_pending) rescue nil if @update_pending
+    @update_pending = nil
+  end
+
+  def delete_current
+    path = Gtk::TreePath.new(@selected_row.to_s)
+    iter = @model.get_iter(path)
+    return if !iter
+    name = iter[COLUMN_DESCRIPTION]
+    refresh = proc {
+      update_now
+      @window.present
+    }
+    @opt[:delete_callback].call(name, refresh)
   end
 end
 end # module Vimamsa

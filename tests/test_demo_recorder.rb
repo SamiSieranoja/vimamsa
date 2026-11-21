@@ -153,6 +153,38 @@ class TestDemoRecorder < VmaTest
     FileUtils.rm_rf(DemoPlayer.user_demos_dir)
   end
 
+  # The action search (a list window): select lines, , , s, type a fuzzy
+  # name, enter. It is recorded (form mode) and plays back.
+  def test_record_action_search
+    b = create_new_buffer("a\n\nb\n\nc\n", "rectest")
+    rec = DemoRecorder.new
+    DemoRecorder.current = rec
+    rec.start
+    keys "v j j j"
+    keys ", , s"
+    assert FormInput.current, "action search not in form mode"
+    keys "r e m e m p t y l i n e s"
+    keys "enter"
+    assert FormInput.current.nil?, "action search still open"
+    want = b.to_s.dup
+    assert_eq "a\nb\nc\n", want
+    rec.stop(save: false)
+    steps = rec.steps_text(file: "demo.txt")
+    assert steps.include?("type rememptylines"), steps
+    assert steps.include?("keys enter"), steps
+    rec.save("search")
+    p = DemoPlayer.new(:user_search, speed: 50, loop: false)
+    p.start
+    assert wait_until { !p.running? }, "demo still running"
+    assert_eq want, p.buf.to_s, steps
+  ensure
+    FormInput.current&.cancel
+    vma.kbd.set_mode(:command)
+    DemoRecorder.current = nil
+    p&.bufs&.each { |x| vma.buffers.close_buffer(x.id) }
+    FileUtils.rm_rf(DemoPlayer.user_demos_dir)
+  end
+
   # The stop command's own keys aren't in the demo
   def test_stop_keys_dropped
     rec = DemoRecorder.new

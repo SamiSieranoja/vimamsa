@@ -422,8 +422,8 @@ class ActionList
 
   def gui_search()
     l = []
-    opt = { :title => "Search for actions", :desc => "Fuzzy search for actions. <up> or <down> to change selcted. <enter> to select current.",
-            :columns => [{ :title => "Shortcut", :id => 0 }, { :title => "Action", :id => 1 }] }
+    opt = { :title => "Search for actions", :desc => "Fuzzy search for actions. <up> or <down> to change selected. <enter> to select current.",
+            :columns => [{ :title => "Shortcut", :id => 0 }, { :title => "Action", :id => 1 }, { :title => "Description", :id => 2 }] }
 
     @select_keys = ["h", "l", "f", "d", "s", "a", "g", "z"]
 
@@ -435,7 +435,7 @@ class ActionList
 
   @item_list = []
 
-  # Rows for Search for Actions: [key, "id  description"]. A query that
+  # Rows for Search for Actions: [key, id, description]. A query that
   # starts with a namespace and a dot ("move." or "move.wo") searches only that
   # namespace, and "move." alone lists all of it. An old id finds the action
   # it was renamed to.
@@ -463,7 +463,8 @@ class ActionList
       end
       item[:action] = act_id
       desc = act.method_name.to_s
-      item[:str] = desc.empty? || desc == act_id.to_s ? act_id.to_s : "#{act_id}  #{desc}"
+      item[:desc] = desc == act_id.to_s ? "" : desc
+      item[:str] = item[:desc].empty? ? act_id.to_s : "#{act_id}  #{desc}"
       item[:match] = ([item[:str]] + old_ids[act_id]).join(" ")
       item_list << item
     end
@@ -474,7 +475,7 @@ class ActionList
       found = filter_items(item_list, 0, ns ? search_str[ns.size..] : search_str)
     end
     @item_list = found.collect { |x| [x[0][0], 0, x] }
-    return found.collect { |x| [x[0][:key], x[0][:str]] }
+    return found.collect { |x| [x[0][:key], x[0][:action].to_s, x[0][:desc]] }
   end
 
   def search_actions_select_callback(search_str, idx)

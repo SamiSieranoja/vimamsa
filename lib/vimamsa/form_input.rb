@@ -22,6 +22,8 @@ module Vimamsa
 # One field: a Gtk::Entry showing a Buffer
 class FormField
   attr_reader :entry, :buf
+  # Called with the new text when it changes (e.g. to filter a list)
+  attr_accessor :on_change
 
   def initialize(entry)
     @entry = entry
@@ -69,10 +71,12 @@ class FormField
     @buf.insert_txt_at(t, 0) if t.size > 0
     @buf.set_pos(@entry.position.to_i.clamp(0, text.size))
     @sel = nil
+    changed
   end
 
   # The buffer into the widget
   def sync
+    changed
     @syncing = true
     @entry.text = text if @entry.text.to_s != text
     if @sel
@@ -156,6 +160,13 @@ class FormField
 
   private
 
+  # on_change, if the text is new
+  def changed
+    return if text == @last_text
+    @last_text = text
+    @on_change&.call(text)
+  end
+
   def entry_selection
     r = @entry.selection_bounds
     return [nil, nil] if !r.is_a?(Array)
@@ -174,6 +185,9 @@ class FormInput
   end
 
   attr_reader :window, :fields, :items
+  # Extra keys of this form: { up: proc, down: proc, delete: proc } (a
+  # list's selection; delete overrides deleting a char)
+  attr_accessor :key_handlers
 
   # submit: called with no arguments by enter in a field; cancel: by esc
   def initialize(window, submit:, cancel:)
@@ -184,6 +198,7 @@ class FormInput
     @items = [] # fields' entries and buttons, in tab order
     @index = 0
     @last_keyval = nil
+    @key_handlers = {}
     install_key_handler
   end
 
@@ -317,7 +332,12 @@ def form_input_setup
   reg_act("form.insert.char", f.call { |x, c| x.insert(c) }, "Form: insert <char>")
   reg_act("form.insert.space", f.call { |x| x.insert(" ") }, "Form: insert a space")
   reg_act("form.backspace", f.call { |x| x.backspace }, "Form: delete the char before the cursor")
-  reg_act("form.delete", f.call { |x| x.delete }, "Form: delete the char at the cursor")
+  reg_act("form.delete", proc {
+    h = FormInput.current&.key_handlers&.[](:delete)
+    h ? h.call : form_field&.delete
+  }, "Form: delete the char at the cursor (in a list: the item, if it can be)")
+  reg_act("form.up", proc { FormInput.current&.key_handlers&.[](:up)&.call }, "Form: previous item of the list")
+  reg_act("form.down", proc { FormInput.current&.key_handlers&.[](:down)&.call }, "Form: next item of the list")
   reg_act("form.left", f.call { |x| x.move_to(x.pos - 1) }, "Form: cursor left")
   reg_act("form.right", f.call { |x| x.move_to(x.pos + 1) }, "Form: cursor right")
   reg_act("form.home", f.call { |x| x.move_to(0) }, "Form: cursor to the start of the field")
@@ -342,6 +362,8 @@ def form_input_setup
     "F shift-tab" => "form.prev",
     "F enter" => "form.enter",
     "F esc" => "form.cancel",
+    "F up" => "form.up",
+    "F down" => "form.down",
   }
 end
 
