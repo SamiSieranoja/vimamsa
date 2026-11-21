@@ -2,9 +2,10 @@ module Vimamsa
 # A see-through bubble next to the cursor with the key just pressed and the
 # action it ran, so a demo (or a new user) can follow the keys without
 # looking at the key log panel. Shown while the key log panel is shown, fed
-# by it (KeyLogPanel#push), and fades out after a moment. It goes right of
-# the end of the cursor's line, where it covers no text (below the line if
-# that is too long), with a dashed border to set it apart from the text. It
+# by it (KeyLogPanel#push), and fades out after a moment. It goes slightly
+# below the cursor's row (cnf.key_hint.y_offset px; above it if there is
+# no room), starting at the cursor's column but right of the text of the
+# rows it covers, with a dashed border to set it apart from the text. It
 # starts with the current mode as a copy of the mode badge (same CSS
 # classes, so it follows the theme, cyberpunk included). It is drawn over
 # the editor, above easy jump's labels, and takes no mouse input.
@@ -14,6 +15,7 @@ class KeyHint
   OPACITY = 0.8
   GAP = 44 # px between the end of the line and the bubble
   MIN_GAP = 12 # the gap used when GAP doesn't leave room for the bubble
+  Y_OFFSET = 4 # px below the cursor's row (cnf.key_hint.y_offset)
 
   # Test-visible: the mode and markup shown; the bubble (a Gtk::Box), its
   # mode badge label and its key/action label
@@ -116,21 +118,31 @@ class KeyHint
     # previous text's); measure counts the margins, which place it
     w = [@widget.measure(:horizontal, -1)[1] - @widget.margin_start - @widget.margin_end, 80].max
     h = [@widget.measure(:vertical, -1)[1] - @widget.margin_top - @widget.margin_bottom, 24].max
-    eol = b.index("\n", b.pos) || b.size
-    xe, _ye = v.pos_to_coord(eol)
-    gap = [GAP, MIN_GAP].find { |g| xe + g + w <= @parent.width }
-    if gap
-      left = xe + gap
-      top = y + (line_h - h) / 2
-    else
-      left = x.clamp(0, [@parent.width - w, 0].max)
-      top = y + line_h + 4
-      top = y - h - 4 if top + h > @parent.height && y - h - 4 >= 0
+    # Slightly below the cursor's row, or above it if there is no room
+    off = cnf.key_hint.y_offset! || Y_OFFSET
+    nrows = ((h + off) / line_h.to_f).ceil
+    top = y + line_h + off
+    rows = (b.lpos + 1..b.lpos + nrows)
+    if top + h > @parent.height && y - h - off >= 0
+      top = y - h - off
+      rows = ([b.lpos - nrows, 0].max..b.lpos - 1)
     end
+    # From the cursor's column, but right of the text of the rows it covers
+    xe = rows.map { |l| row_end_x(v, b, l) }.compact.max
+    gap = xe && [GAP, MIN_GAP].find { |g| xe + g + w <= @parent.width }
+    left = xe.nil? ? x : (gap ? [x, xe + gap].max : x)
+    left = left.clamp(0, [@parent.width - w, 0].max)
     @widget.margin_start = [left, 0].max
     @widget.margin_top = [top, 0].max
   rescue => e
     debug "KeyHint#place: #{e.message}"
+  end
+
+  # The x where the text of line l (0-based) ends, or nil past the last line
+  def row_end_x(v, b, l)
+    return nil if l < 0 || l > b.line_ends.size
+    eol = l < b.line_ends.size ? b.line_ends[l] : b.size
+    v.pos_to_coord(eol)[0]
   end
 
   def fade

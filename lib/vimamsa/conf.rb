@@ -160,6 +160,8 @@ cnf.match.highlight.color = "#10bd8e"
 cnf.flash.enabled = true    # briefly flash the range yanked/deleted (y ', d ', d w, ...)
 cnf.flash.duration = 0.15   # seconds the flash stays visible
 
+cnf.key_hint.y_offset = 4  # px between the cursor's row and the key hint below it (above it if no room)
+
 cnf.fold.start_closed = true  # collapse {{{ ... }}} marker folds when a file is loaded
 
 cnf.modules.color_highlight.enabled = true   # paint #rrggbb hex codes with their color

@@ -698,6 +698,9 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
+- **Key hint below the row** (2026-11-21, uncommitted): `cnf.key_hint.y_offset` px
+  below the cursor's row (above it if no room), right of the text it covers.
+
 - **Demo player: loop, pause, speed, demos menu** (2026-11-21, `19e528c`): Help ▸
   Demos ▸ Basic editing / Easy jump (`scripts/demo/demo_easyjump_steps.txt`: moves
   `to_s` with v + easy jump, x, P). A demo loops, with the file restored, until

@@ -146,6 +146,30 @@ class TestKeylogPanel < VmaTest
     end
   end
 
+  # cnf.key_hint.y_offset px below the cursor's row, starting right of the
+  # text of the row it covers
+  def test_hint_below_row_by_offset
+    act 'buf.insert_txt("one\nsecond line here\nthree\nfour\n")'
+    keys "g g"
+    old = cnf.key_hint.y_offset!
+    with_panel do
+      [4, 20].each { |off|
+        cnf.key_hint.y_offset = off
+        keys "j k"
+        drain_for(0.1)
+        v = vma.gui.view
+        x, y = v.pos_to_coord(vma.buf.pos)
+        line_h = v.get_iter_location(v.buffer.get_iter_at(offset: vma.buf.pos)).height
+        w = panel.hint.widget
+        assert_eq y + line_h + off, w.margin_top, "offset #{off}"
+        xe, _ = v.pos_to_coord(vma.buf.line_ends[1]) # end of "second line here"
+        assert w.margin_start > xe, "hint at x #{w.margin_start} covers row 2 (ends at x #{xe})"
+      }
+    end
+  ensure
+    cnf.key_hint.y_offset = old
+  end
+
   # A long bubble on a long line stays inside the editor (it used to be
   # placed by the width of the previous, shorter text)
   def test_hint_fits_in_view
