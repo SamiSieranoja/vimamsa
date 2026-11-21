@@ -8,6 +8,12 @@ the git ref(s), as a short commit hash or a range.
 
 ## Open
 
+### Faster startup
+
+About 0.9 s of a 2.6–3.0 s startup can be saved. The biggest item: the red-colors gem,
+which cairo requires, builds every colormap when loaded (0.6–0.8 s); it can be loaded
+only when it is used. Plan: `doc/startup_speed_plan.md`.
+
 ### Easy jump: line-start labels in the gutter
 
 Easy jump labels are opaque black boxes with bold red text, drawn over the first

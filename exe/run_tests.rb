@@ -6,6 +6,7 @@
 #   run_tests.rb tests/test_foo.rb TestFooClass  # specific class from specific file
 #   run_tests.rb foo,bar,baz              # run tests/test_foo.rb, test_bar.rb, test_baz.rb
 #   run_tests.rb test_random_edit duration=60   # pass duration option to stress test
+#   run_tests.rb perf_startup ref=HEAD~10 runs=7 # startup time vs an older commit
 #   run_tests.rb --headless               # invisible window (xvfb-run, or Broadway if
 #                                         # xvfb not installed); does not disturb
 #                                         # normal use; e2e kbd tests skip
@@ -84,6 +85,8 @@ class_filter = raw_args.select { |a| a.match?(/\A[A-Z]/) }
 # Parse key=value options (e.g. duration=60)
 raw_args.each do |a|
   $vma_test_duration = $1.to_i if a =~ /\Aduration=(\d+)\z/
+  $vma_test_ref = $1 if a =~ /\Aref=(\S+)\z/   # test_perf_startup
+  $vma_test_runs = $1.to_i if a =~ /\Aruns=(\d+)\z/
 end
 
 # Expand comma-separated shorthand: "foo,bar" -> tests/test_foo.rb, tests/test_bar.rb
@@ -103,7 +106,8 @@ if test_files.empty?
   # test_notepad_bindings / test_vim_bindings: load alternative keybinding
   # schemes, which would corrupt bindings for later test files in the
   # shared process.
-  excluded = ["test_random_edit.rb", "test_notepad_bindings.rb", "test_vim_bindings.rb"]
+  # test_perf_startup: starts the editor a dozen times (about a minute).
+  excluded = ["test_random_edit.rb", "test_notepad_bindings.rb", "test_vim_bindings.rb", "test_perf_startup.rb"]
   test_files.reject! { |f| excluded.include?(File.basename(f)) }
 end
 
