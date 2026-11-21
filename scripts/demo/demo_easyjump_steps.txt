@@ -1,0 +1,60 @@
+# Easy jump demo, played inside the editor by Help ▸ Demos ▸ Easy jump
+# (lib/vimamsa/demo_player.rb), on scripts/demo/shapes.rb. The commands are
+# those of demo_steps.txt; "target line N" names line N (1-based).
+# The key log panel on the right shows each key and the action it ran.
+#
+# It moves the to_s method of Shape above area: the range is selected with
+# v and easy jump, cut, and pasted where easy jump goes.
+
+delay 0.45
+wait 1.5
+
+# Easy jump (s): every line start and many word starts get a label; type
+# one to jump there
+target def to_s
+keys s
+wait 1.6
+keys @JUMP_LABEL@
+wait 0.8
+target shapes.each
+keys s
+wait 1.2
+keys @JUMP_LABEL@
+wait 0.8
+target class Shape
+keys s
+wait 1.2
+keys @JUMP_LABEL@
+wait 1.0
+
+# Select a range: go to the empty line above to_s, start the selection with
+# v, and let easy jump extend it to the line where to_s ends
+target line 10
+keys s
+wait 1.2
+keys @JUMP_LABEL@
+wait 0.6
+keys v
+wait 0.6
+target line 13
+keys s
+wait 1.4
+keys @JUMP_LABEL@
+wait 0.6
+keys $
+wait 1.0
+
+# Cut it, jump to the empty line below initialize and paste it there
+keys x
+wait 1.0
+target line 6
+keys s
+wait 1.2
+keys @JUMP_LABEL@
+wait 0.6
+keys P
+wait 1.5
+
+# Back to the top
+keys g g
+wait 2.0

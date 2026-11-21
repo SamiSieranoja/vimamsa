@@ -766,6 +766,11 @@ class VMAgui
   MODE_BADGE_CSS = { "C" => "mode-command", "I" => "mode-insert", "V" => "mode-visual",
                      "B" => "mode-browse", "X" => "mode-replace" }.freeze
 
+  # The mode badge's text (e.g. "COMMAND") and CSS class (MODE_BADGE_CSS)
+  def mode_badge_info
+    [@last_badge_text, @badge_css_class]
+  end
+
   # Render the mode badge and pending key chord in the status area.
   # Subscribed to KeyBindingTree's :state_trail_changed event.
   def update_mode_badge(badge, badge_key, trail)

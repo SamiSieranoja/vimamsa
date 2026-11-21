@@ -14,6 +14,12 @@ class KeyLogPanel
   # The highlighted Gtk::ListBoxRow of the newest entry
   attr_reader :newest_row
 
+  # Demo controls (Help ▸ Play demo), shown while a demo plays
+  attr_reader :demo_bar, :demo_pause_btn, :demo_speed_lbl, :close_btn
+
+  # The bubble next to the cursor with the newest entry (gui_key_hint.rb)
+  attr_reader :hint
+
   # Insert-mode typing arrives as eval-string actions like buf.insert_txt('h');
   # matched here so consecutive chars can be coalesced into one "typed:" row.
   INSERT_TXT_RE = /\Abuf\.insert_txt\((.+)\)\z/
@@ -29,6 +35,7 @@ class KeyLogPanel
     @active = false
     @last_mode = nil # last seen mode badge, e.g. "[COMMAND]"
     @newest_row = nil
+    @hint = KeyHint.new
 
     @list = Gtk::ListBox.new
     @list.selection_mode = :none
@@ -50,6 +57,12 @@ class KeyLogPanel
     clear_btn = Gtk::Button.new(label: "Clear")
     clear_btn.signal_connect("clicked") { clear }
 
+    # Closes the panel (and stops a demo, whose controls are here)
+    @close_btn = Gtk::Button.new(label: "✕")
+    @close_btn.tooltip_text = "Close the key log"
+    @close_btn.focus_on_click = false
+    @close_btn.signal_connect("clicked") { close }
+
     header = Gtk::Box.new(:horizontal, 6)
     header.margin_start = 8
     header.margin_end = 6
@@ -57,13 +70,59 @@ class KeyLogPanel
     header.margin_bottom = 4
     header.append(title)
     header.append(clear_btn)
+    header.append(@close_btn)
 
     # @box is the outermost widget: header on top, scrollable log below.
     @box = Gtk::Box.new(:vertical, 0)
     @box.set_size_request(320, -1)
     @box.add_css_class("side-panel")
     @box.append(header)
+    @box.append(demo_bar_init)
     @box.append(@sw)
+  end
+
+  # The ✕ button: hides the panel, stopping a demo that plays
+  def close
+    DemoPlayer.current.stop("Demo stopped") if DemoPlayer.current&.running?
+    vma.gui.hide_keylog_panel
+  end
+
+  # Pause / continue, slower and faster for DemoPlayer. The buttons
+  # don't take the focus, so the editor keeps getting the keys.
+  def demo_bar_init
+    btn = lambda { |label, tip, &blk|
+      b = Gtk::Button.new(label: label)
+      b.focus_on_click = false
+      b.tooltip_text = tip
+      b.signal_connect("clicked") { blk.call }
+      b
+    }
+    @demo_pause_btn = btn.call("Pause", "Pause or continue the demo") { call_action("help.demo.pause") }
+    slower = btn.call("−", "Slower") { call_action("help.demo.slower") }
+    faster = btn.call("+", "Faster") { call_action("help.demo.faster") }
+    @demo_speed_lbl = Gtk::Label.new("1×")
+    @demo_speed_lbl.width_chars = 5
+    title = Gtk::Label.new("Demo")
+    title.hexpand = true
+    title.xalign = 0.0
+
+    @demo_bar = Gtk::Box.new(:horizontal, 4)
+    @demo_bar.margin_start = 8
+    @demo_bar.margin_end = 6
+    @demo_bar.margin_bottom = 4
+    [title, @demo_pause_btn, slower, @demo_speed_lbl, faster].each { |w| @demo_bar.append(w) }
+    @demo_bar.visible = false
+    @demo_bar
+  end
+
+  def show_demo_controls(paused:, rate:)
+    @demo_pause_btn.label = paused ? "Continue" : "Pause"
+    @demo_speed_lbl.label = rate
+    @demo_bar.visible = true
+  end
+
+  def hide_demo_controls
+    @demo_bar.visible = false
   end
 
   # Returns the outermost widget to embed in the paned layout.
@@ -82,6 +141,7 @@ class KeyLogPanel
 
   def set_active(v)
     @active = v
+    @hint.hide if !v
   end
 
   # Re-read the newest-row highlight color from cnf and reload it live.
@@ -129,6 +189,22 @@ class KeyLogPanel
     mode_divider(trail_str)
     e = { kind: :pending, chord: fmt_chord(trail_str) }
     if @entries.last && @entries.last[:kind] == :pending
+      @entries[-1] = e
+      update_last_row(e)
+    else
+      push(e)
+    end
+  end
+
+  # A key of an easy jump label (easy_jump.rb, which reads them itself).
+  # label: the keys so far; state: :typing, :jumped (to 1-based line) or
+  # :nomatch. One row per label, updated as it is typed.
+  def log_jump_label(label, state, line = nil)
+    return unless @active
+    drop_pending
+    e = { kind: :jump, text: label.downcase, state: state, line: line }
+    last = @entries.last
+    if last && last[:kind] == :jump && last[:state] == :typing
       @entries[-1] = e
       update_last_row(e)
     else
@@ -191,6 +267,7 @@ class KeyLogPanel
     @list.prepend(row)   # newest entry shown at top
     @rows << row
     highlight(row)
+    show_hint(e)
     if @entries.size > MAX_ENTRIES
       @entries.shift
       @list.remove(@rows.shift)   # oldest row sits at the bottom
@@ -200,7 +277,30 @@ class KeyLogPanel
 
   def update_last_row(e)
     @rows.last.child.markup = markup_for(e)
+    show_hint(e)
     scroll_to_top
+  end
+
+  # The entry in the bubble next to the cursor, shorter: no mode badge (the
+  # mode divider rows aren't shown there)
+  def show_hint(e)
+    return if e[:kind] == :mode
+    chord = esc(e[:chord].to_s.sub(/\A\[[^\]]*\]\s*/, ""))
+    m = case e[:kind]
+      when :action
+        name = e[:action].class == Proc ? "(proc)" : e[:action].to_s
+        what = e[:desc].to_s.empty? ? name : e[:desc]
+        what = what[0, 45] + "…" if what.size > 46
+        "<b>#{chord}</b>  <span alpha='80%'>#{esc(what)}</span>"
+      when :pending then "<b>#{chord}</b> …"
+      when :insert
+        t = e[:text]
+        t = "…" + t[-30..] if t.size > 31
+        "<span alpha='80%'>typed</span> <b>#{esc(t)}</b>"
+      when :nomatch then "<b>#{chord}</b>  <span alpha='80%'>(no binding)</span>"
+      when :jump then "<span alpha='80%'>label</span> <b>#{esc(e[:text])}</b><span alpha='80%'>#{jump_result(e)}</span>"
+      end
+    @hint.show(m)
   end
 
   # Mark row as the newest entry, unmarking the previous one.
@@ -215,7 +315,7 @@ class KeyLogPanel
     when :action
       name = e[:action].class == Proc ? "(proc)" : e[:action].to_s
       s = "<span size='large' weight='bold'>#{esc(e[:chord])}</span>\n"
-      s << "<span foreground='#4a90d9' size='large' alpha='60%'>#{esc(e[:desc])}</span>" unless e[:desc].empty?
+      s << "<span foreground='#8fbef0' size='large'>#{esc(e[:desc])}</span>" unless e[:desc].empty?
       s << "\n<span>#{esc(name)}</span>"
       s
     when :pending
@@ -226,7 +326,17 @@ class KeyLogPanel
       "<span size='small' alpha='50%'>— #{esc(e[:text])} —</span>"     
     when :nomatch
       "<span size='large' alpha='45%'>#{esc(e[:chord])}  (no binding)</span>"
+    when :jump
+      "<span size='large'>label: <b>#{esc(e[:text])}</b>#{jump_result(e)}</span>"
 
+    end
+  end
+
+  def jump_result(e)
+    case e[:state]
+    when :typing then " …"
+    when :jumped then "  → line #{e[:line]}"
+    else "  (no such label)"
     end
   end
 

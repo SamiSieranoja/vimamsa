@@ -8,6 +8,20 @@ the git ref(s), as a short commit hash or a range.
 
 ## Open
 
+### Easy jump: line-start labels in the gutter
+
+Easy jump labels are opaque black boxes with bold red text, drawn over the first
+characters of words and lines (`easy_jump.rb`, `VMAgui#overlay_draw_text`). While
+they're shown, the code under them can't be read: `AA` covers `# E`, `DD` covers `def`
+(seen in the easy jump demo, 2026-11-21).
+
+- Draw the line-start labels in the gutter, next to the line numbers, so they cover
+  no code.
+- Word-start labels stay in the text. Possibly make them see-through, with brighter
+  text.
+- `DemoPlayer#jump_label` and its test look labels up by position
+  (`@easy_jump_wsmarks`), so they should still work.
+
 ### Stop writing to `~/.vimamsa`; use XDG dirs (`~/.config` / `~/.local/share`)
 
 Nothing should be written to `~/.vimamsa` or other ad-hoc dot dirs. User-edited
@@ -677,6 +691,18 @@ Constraints:
 ## DONE
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
+
+- **Demo player: loop, pause, speed, demos menu** (2026-11-21, uncommitted): Help ▸
+  Demos ▸ Basic editing / Easy jump (`scripts/demo/demo_easyjump_steps.txt`: moves
+  `to_s` with v + easy jump, x, P). A demo loops, with the file restored, until
+  stopped. Buttons above the key log (Pause/Continue, −, +), ✕ closes the key log
+  (stopping the demo); actions `help.demo.pause` / `.faster` / `.slower` / `.stop` /
+  `.easyjump`. Tests in `tests/test_demo_player.rb`.
+- **Key hint next to the cursor** (2026-11-21, uncommitted): while the key log is
+  shown, a see-through bubble with a dashed border, right of the end of the cursor's
+  line, shows the current mode (badge colors), the last key and action, then fades
+  (`gui_key_hint.rb`). The key log is cleared at the start of each demo round. Easy
+  jump labels are logged too (`log_jump_label`). Tests in `tests/test_keylog_panel.rb`.
 
 - **`run_tests_vm.sh` ported to Ruby** (2026-11-21, `ac4251a`): `run_tests_vm.rb`, same env
   vars, arguments, steps and exit codes, standard library only; shared helpers in

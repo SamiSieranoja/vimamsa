@@ -157,7 +157,12 @@ reg_act("mode.insert", proc { vma.kbd.set_mode(:insert) }, "Switch to INSERT mod
 reg_act("mode.prev", proc { vma.kbd.to_previous_mode }, "Return to the previous mode")
 reg_act("mode.visual", proc { buf.start_selection; vma.kbd.set_mode(:visual) }, "Enter VISUAL mode (for selections)")
 reg_act("app.demo", proc { install_demo_files }, "Install and show Demo")
-reg_act("help.demo", proc { DemoPlayer.toggle }, "Play the demo (again: stop it)")
+reg_act("help.demo", proc { DemoPlayer.toggle(:basic) }, "Play the basic editing demo (again: stop it)")
+reg_act("help.demo.easyjump", proc { DemoPlayer.toggle(:easyjump) }, "Play the easy jump demo (again: stop it)")
+reg_act("help.demo.pause", proc { DemoPlayer.pause_toggle }, "Pause or continue the demo")
+reg_act("help.demo.faster", proc { DemoPlayer.faster }, "Play the demo faster")
+reg_act("help.demo.slower", proc { DemoPlayer.slower }, "Play the demo slower")
+reg_act("help.demo.stop", proc { DemoPlayer.stop }, "Stop the demo")
 reg_act("app.customrb.reload", proc { reload_customrb }, "Reload custom.rb")
 
 reg_act("edit.complete.toggle", proc {

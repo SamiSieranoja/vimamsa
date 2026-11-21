@@ -58,7 +58,9 @@ class EasyJump
     # vma.paint_stack = []
     debug "EASY JUMP: easy_jump_input_char [#{c}]"
     @easy_jump_input << c.upcase
+    state = :typing
     if @jump_sequence.include?(@easy_jump_input)
+      state = :jumped
       jshash = Hash[@jump_sequence.map.with_index.to_a]
       nthword = jshash[@easy_jump_input]
       newpos = @easy_jump_wsmarks[nthword]
@@ -70,12 +72,16 @@ class EasyJump
       @jump_sequence = []
       vma.gui.clear_overlay()
     end
-    if @easy_jump_input.size > 2
+    if state == :typing && @easy_jump_input.size > 2
+      state = :nomatch
       # @kbd.set_mode(:command)
       vma.kbd.remove_keyhandling_override
       @jump_sequence = []
       vma.gui.clear_overlay
     end
+    # The keys of the label go to this override, not to the key bindings:
+    # the key log gets them from here
+    vma.gui.keylog_panel&.log_jump_label(@easy_jump_input, state, state == :jumped ? buf.lpos + 1 : nil)
     return true
   end
 

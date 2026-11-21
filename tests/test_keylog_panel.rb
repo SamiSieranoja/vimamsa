@@ -98,4 +98,94 @@ class TestKeylogPanel < VmaTest
   ensure
     gui.instance_variable_set(:@keylog_width, old)
   end
+  def drain_for(secs)
+    t = Time.now
+    while Time.now - t < secs
+      drain_idle
+      sleep 0.01
+    end
+  end
+
+  # The bubble next to the cursor (gui_key_hint.rb) shows the key and the
+  # action, without the mode badge, near the cursor's line
+  def test_hint_near_cursor
+    act 'buf.insert_txt("one\ntwo\nthree\nfour\n")'
+    keys "g g"
+    with_panel do
+      keys "j j"
+      drain_for(0.1)
+      h = panel.hint
+      assert h.visible?, "hint not shown"
+      assert h.markup.include?("<b>j</b>"), "hint was #{h.markup.inspect}"
+      assert !h.markup.include?("[COMMAND]"), "hint has the mode: #{h.markup.inspect}"
+      _x, y = vma.gui.view.pos_to_coord(vma.buf.pos)
+      top = h.label.margin_top
+      assert (top - y).abs < 100, "hint at y #{top}, cursor at y #{y}"
+      assert h.label.can_target? == false, "the hint takes mouse input"
+    end
+  end
+
+  # The bubble starts with the mode after the action: v shows VISUAL
+  def test_hint_shows_mode
+    with_panel do
+      keys "j"
+      drain_for(0.05)
+      assert panel.hint.markup.include?("COMMAND"), panel.hint.markup
+      keys "v"
+      drain_for(0.05)
+      assert panel.hint.markup.include?("VISUAL"), panel.hint.markup
+      keys "esc"
+      keys "i"
+      drain_for(0.05)
+      assert panel.hint.markup.include?("INSERT"), panel.hint.markup
+      keys "esc"
+    end
+  end
+
+  def test_hint_typed_text_and_pending
+    with_panel do
+      keys "g"
+      assert panel.hint.markup.include?("<b>g</b> …"), panel.hint.markup
+      keys "esc i a b c"
+      assert panel.hint.markup.include?("typed"), panel.hint.markup
+      assert panel.hint.markup.include?("abc"), panel.hint.markup
+      keys "esc"
+    end
+  end
+
+  def test_hint_fades_and_hides_with_panel
+    with_panel do
+      keys "j"
+      assert panel.hint.visible?
+      drain_for(KeyHint::SHOW_SECS + KeyHint::FADE_SECS + 0.4)
+      assert !panel.hint.visible?, "hint didn't fade out"
+      keys "k"
+      assert panel.hint.visible?
+    end
+    assert !panel.hint.visible?, "hint still shown with the panel hidden"
+  end
+  # Easy jump reads its label keys itself; they are logged as one row
+  def test_easy_jump_label_logged
+    act 'buf.insert_txt("one\ntwo\nthree\nfour\n")'
+    keys "g g"
+    vma.buf.view.handle_deltas
+    with_panel do
+      20.times { drain_idle; sleep 0.02 } # laid out: easy jump labels only what's visible
+      keys "s"
+      ej = EasyJump.class_variable_get(:@@cur)
+      marks = ej.instance_variable_get(:@easy_jump_wsmarks)
+      seq = ej.instance_variable_get(:@jump_sequence)
+      n = marks.index(vma.buf.line_ends[1] + 1) # the start of line 3
+      assert n, "no label for line 3: marks #{marks.first(10).inspect}"
+      label = seq[n].downcase
+      keys label.chars.join(" ")
+      e = panel.entries.last
+      assert_eq :jump, e[:kind]
+      assert_eq label, e[:text]
+      assert_eq :jumped, e[:state]
+      assert_eq 3, e[:line]
+      assert_eq 1, panel.entries.count { |x| x[:kind] == :jump }, "one row per label"
+      assert panel.hint.markup.include?(label), panel.hint.markup
+    end
+  end
 end
