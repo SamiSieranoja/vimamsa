@@ -42,7 +42,10 @@ keys enter
 wait 1.0
 # Move one line backward
 keys k
-wait 1.1
+wait 0.5
+keys G
+wait 0.2
+keys X X X 
 # Easy jump
 keys s
 target line 13 col 1
