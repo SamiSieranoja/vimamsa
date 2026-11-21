@@ -320,7 +320,8 @@ which), or keep the restart.
 3. ~~Registers that remember linewise text, and linewise put.~~ Done, see DONE.
 4. Missing motions.
 5. `V` and `ctrl-v`.
-6. `.` repeat, and undo grouping for Insert sessions.
+6. ~~`.` repeat, and undo grouping for Insert sessions.~~ Done (ahead of 4 and
+   5), see DONE.
 7. `:s` with ranges, then the few other Ex commands.
 8. Onboarding: the first-run question and the differences page.
 9. Step 6 items and `.vimrc` import.
@@ -427,3 +428,23 @@ Each step regenerates `doc/vimlike_vim_conflicts.md` and updates
   registers across restarts, Visual mode put replacing the selection from a
   register.
   Tests: `tests/test_registers.rb`.
+- **`.` repeat and Insert-session undo** (step 4, order item 6; 2026-11-21).
+  `lib/vimamsa/dot_repeat.rb` (`vma.dot`) follows the key tree's
+  `:key_action` / `:action_handled` events. A change is a command run from
+  Command mode that changed the buffer, or that started Insert or Replace
+  mode; then everything done until that mode is left is part of it (typed
+  text, backspace, the leaving key). It is stored as the tree ran it (for the
+  operator layer `a.op.motion!({...})`), with its count and register. `.`
+  (`undo.repeat`) runs it again through `handle_key_bindigs_action`, as one
+  undo step; a count given to `.` replaces the change's count, or for an
+  insert command (`i`, `a`, `o`) repeats the typed text. Undo, macros and
+  commands on files, buffers or the view are not changes. A mode change no
+  longer starts a new undo step while a group runs as one step (a macro, a
+  repeat). `cnf.undo.insert_one_step` (Settings ▸ Behavior, default false):
+  true makes an Insert session one undo step also across pauses; false
+  keeps the current behavior, where a pause of `cnf.undo.group_threshold`
+  seconds starts a new step.
+  Not done: `.` for Visual mode changes, `"1p...` stepping through the
+  numbered registers, a `cw` and its typed text as one undo step (they are
+  two). Found on the way: `esc` doesn't move the cursor left as in vim.
+  Tests: `tests/test_dot_repeat.rb`, oracle cases in `test_vim_bindings.rb`.

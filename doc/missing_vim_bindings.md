@@ -51,6 +51,10 @@ Still missing:
   missing. `vimlike` binds `V` and `ctrl-v` to other actions.
 - `ctrl-x` (decrement a number) is missing; `ctrl-a` is in both keymaps.
 - `gJ` (join lines without adding a space) is missing.
+- `.` is done (2026-11-21, `lib/vimamsa/dot_repeat.rb`): it repeats the last change,
+  including the text typed after `c`, `i`, `o`, ..., with a new count if one is given,
+  as one undo step. Not for changes made in Visual mode.
+- `esc` in Insert mode doesn't move the cursor one character left, as vim's does.
 - Registers are done (2026-11-21, `lib/vimamsa/registers.rb`): `""`, `"0`, `"1`–`"9`,
   `"-`, `"a`–`"z` (`"A` appends), `"+` / `"*` and `"_`, selected with `"x` before any
   copy, delete or put. They remember whether the text was whole lines. Insert-mode

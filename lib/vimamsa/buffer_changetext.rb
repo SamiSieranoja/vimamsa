@@ -25,7 +25,8 @@ class Buffer < String
       @deltas << delta
     end
 
-    unless @macro_group_active
+    # cnf.undo.insert_one_step: no time-based steps inside an Insert session
+    unless @macro_group_active || (cnf.undo.insert_one_step? && vma.kbd&.get_mode == :insert)
       if @last_delta_time && (Time.now - @last_delta_time) > cnf.undo.group_threshold!
         new_undo_group
       end

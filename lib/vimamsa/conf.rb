@@ -174,6 +174,10 @@ cnf.startup_file=false
 cnf.macro.animation_delay = 0.02
 
 cnf.undo.group_threshold = 1.8 # seconds of inactivity before starting a new undo group
+# true: an Insert-mode session (i ... esc) is one undo step, as in vim, also
+# when you pause while typing. false: a pause of group_threshold seconds
+# starts a new undo step, so a long session can be undone in parts.
+cnf.undo.insert_one_step = false
 
 cnf.paste.cursor_at_start = false
 

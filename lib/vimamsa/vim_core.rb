@@ -90,10 +90,11 @@ def reg_vim_actions
     buf.vim_motion_move(v[:motion], vma.kbd.next_command_count, c || v[:char])
   }, "Move to where <motion> moves")
 
-  # APPROXIMATION: set_last_command is currently only fed by f/F finds, so this
-  # repeats the last find, not the last change like vim's ".".
-  reg_act("undo.repeat", proc { repeat_last_action() },
-          "Repeat last recorded command (approximation of vim .)")
+  # vim ".": the last change, with the text typed after it (dot_repeat.rb)
+  reg_act("undo.repeat", proc {
+    vma.kbd.method_handles_repeat = true
+    vma.dot.repeat(vma.kbd.next_command_count)
+  }, "Repeat the last change (vim .)")
 end
 
 # ── the table: section => { keys => action } ─────────────────────────────────

@@ -172,6 +172,21 @@ class TestVimBindings < VmaTest
     assert_matches_vim("abc\n", "$ix\e")              # $ on the last character
   end
 
+  # "." repeats the last change (dot_repeat.rb)
+  def test_dot_repeat
+    assert_matches_vim("a b c d e\n", "dw.")
+    assert_matches_vim("a b c d e\n", "dw2.")
+    assert_matches_vim("one two three\n", "cwfoo\ew.")
+    assert_matches_vim("ab\n", "ixy\e0.")         # (vim's esc also moves left; vimamsa's doesn't)
+    assert_matches_vim("abcd\n", "x..")
+    assert_matches_vim("1\n2\n3\n4\n", "dd.")
+    assert_matches_vim("a\nb\n", ">>j.")
+    assert_matches_vim("a\nb\n", "A!\ej.")
+    assert_matches_vim("a\nb\n", "ox\ej.")
+    assert_matches_vim("foo bar\n", "gUiww.")
+    assert_matches_vim("a b c\n", "dwlu.")         # undo doesn't replace the change
+  end
+
   def test_join
     assert_matches_vim("aa\nbb\n", "J")
   end

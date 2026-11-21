@@ -9,12 +9,13 @@
 # sets in vim_operators.rb.
 # Not implemented (no core primitives) — intentionally left unbound:
 #   %, ?, #, ge, { }, ( ), = and gq, V (linewise) / ctrl-v (blockwise)
-#   visual, : ex commands, faithful change-only "." repeat,
-#   insert-mode ctrl-w.
+#   visual, : ex commands, insert-mode ctrl-w; "." of a Visual mode change.
 # Known deviations kept on purpose:
 #   C tab = switch to last buffer; C enter = line action;
 #   ctrl-d/ctrl-u scroll a full page, not half; ctrl-o approximates the
-#   jumplist with jump_to_last_edit; "." repeats only the last f/F find.
+#   jumplist with jump_to_last_edit.
+# Known deviation, not fixed yet: esc in Insert mode doesn't move the cursor
+#   one character left.
 
 module Vimamsa
 vma.kbd.add_mode("C", :command)

@@ -7,7 +7,7 @@ class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook, :macro, :actions
   # @!attribute [rw] kbd
   #   @return [KeyBindingTree]
-  attr_accessor :converters, :fh, :bookmarks, :paint_stack, :kbd, :langsrv, :registers, :clipboard
+  attr_accessor :converters, :fh, :bookmarks, :paint_stack, :kbd, :langsrv, :registers, :clipboard, :dot
   #attr_writer :call_func, :update_highlight
 
   def initialize()
@@ -25,6 +25,7 @@ class Editor
     @_plugins = {}
     @errors
     @registers = Registers.new
+    @dot = DotRepeat.new
     @clipboard = Clipboard.new
   end
 
@@ -94,7 +95,12 @@ class Editor
       end
     }
 
-    @kbd.on(:mode_set) { |label| vma.buf&.new_undo_group }
+    # A mode change starts a new undo step, except inside a group run as one
+    # step (a macro, a "." repeat)
+    @kbd.on(:mode_set) { |label|
+      b = vma.buf
+      b.new_undo_group if b && !b.instance_variable_get(:@macro_group_active)
+    }
     @kbd.on(:mode_changed) { |label|
       if label != :insert
         # Dismiss the autocomplete popup when leaving insert mode
@@ -111,7 +117,10 @@ class Editor
     }
     @kbd.on(:key_no_match) { |c, trail| vma.gui.keylog_panel&.log_nomatch(c, trail) }
     @kbd.on(:key_pending) { |trail| vma.gui.keylog_panel&.log_pending(trail) }
-    @kbd.on(:key_action) { |trail, action| vma.gui.keylog_panel&.log_action(trail, action) }
+    @kbd.on(:key_action) { |trail, action|
+      vma.gui.keylog_panel&.log_action(trail, action)
+      @dot.before(action) # "." (dot_repeat.rb)
+    }
     @kbd.on(:action_executed) { |action, ret|
       if vma.macro.is_recording and ret != false
         debug "RECORD ACTION:#{action}", 2
@@ -124,6 +133,7 @@ class Editor
       # between: "a3yy)
       a = action.to_s
       @registers.clear_pending if !a.include?("edit.register!") && !a.include?("kbd.count.digit")
+      @dot.after(action)
     }
   end
 
