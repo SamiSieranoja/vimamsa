@@ -9,8 +9,9 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | | Count |
 |---|---|
 | Conflicts (the vim binding can't be used in vimlike) | 42 |
-| Added to vimlike from the shared table (`VIM_BINDINGS`, vim_core.rb) | 457 |
+| Added to vimlike from the shared table (`VIM_BINDINGS`, vim_core.rb) | 459 |
 | Missing from vimlike (no conflict, could be added) | 0 |
+| vim keymap only (left out of vimlike on purpose) | 1 |
 | Shared (same keys, same action) | 152 |
 
 ## Conflicts
@@ -68,6 +69,7 @@ the number of its combinations that vimlike got.
 
 | Mode | Vim keys | Vim action |
 |---|---|---|
+| C | <code>" &lt;char&gt;</code> | <code>edit.register</code> |
 | C | <code>.</code> | <code>undo.repeat</code> |
 | C | <code>&lt;op&gt; &lt;motion&gt; (384 combinations)</code> | <code>op.motion</code> |
 | C | <code>&lt;op&gt; &lt;same&gt; (11 combinations)</code> | <code>op.lines</code> |
@@ -82,6 +84,7 @@ the number of its combinations that vimlike got.
 | C | <code>ctrl-d</code> | <code>move.page.next.cursor</code> |
 | C | <code>ctrl-f</code> | <code>move.page.next</code> |
 | C | <code>ctrl-u</code> | <code>move.page.prev.cursor</code> |
+| V | <code>" &lt;char&gt;</code> | <code>edit.register</code> |
 | V | <code>&lt;</code> | <code>sel.indent.less</code> |
 | V | <code>&gt;</code> | <code>sel.indent.more</code> |
 | V | <code>&lt;motion&gt; (8 combinations)</code> | <code>move.motion</code> |
@@ -92,6 +95,14 @@ the number of its combinations that vimlike got.
 
 | Mode | Vim keys | Vim action |
 |---|---|---|
+
+## vim keymap only
+
+Left out of vimlike on purpose (`VIM_KEYMAP_ONLY`, vim_core.rb).
+
+| Mode | Vim keys | Vim action | Why |
+|---|---|---|---|
+| I | <code>ctrl-r &lt;char&gt;</code> | <code>edit.insert.register</code> | no new ctrl chords in vimlike |
 
 ## Shared
 

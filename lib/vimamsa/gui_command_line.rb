@@ -14,6 +14,7 @@ module Vimamsa
 #   :42         jump to line 42
 #   :e PATH     open file
 #   :w  :q  :wq save / quit / save-and-quit
+#   :reg        show the registers (also :registers, :di, :display)
 #
 # Actions run with a.<id>!, e.g. :a.buf.save! — tab completes the id after
 # "a." one level at a time (namespaces, then the segments below them).
@@ -118,6 +119,8 @@ class CommandLine
     when "wq"
       buf.save
       exec_action("app.quit")
+    when "reg", "registers", "di", "display"
+      exec_action("edit.register.list")
     when /\Ae\s+(\S.*)\z/
       open_new_file(File.expand_path(Regexp.last_match(1).strip))
     else

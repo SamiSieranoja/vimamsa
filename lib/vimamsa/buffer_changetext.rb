@@ -95,14 +95,21 @@ class Buffer < String
     set_pos(l.end + 1)
   end
 
+  # Whether text is what the editor copied as whole lines (the unnamed
+  # register): text from other programs, read from the system clipboard, is
+  # put as characters. entry: the unnamed register when the paste started.
+  def register_linewise?(text, entry = vma.registers['"'])
+    !entry.nil? && entry.linewise && entry.text == text
+  end
+
   # Workaround for https://github.com/ruby-gnome/ruby-gnome/issues/1609
   def paste_start_xclip(at, register)
     @clipboard_paste_running = true
     ipos = @pos                # capture insertion point before the async read
-    paste_lines = @paste_lines
+    entry = vma.registers['"']
     Thread.new {
       text = `xclip -selection c -o`
-      GLib::Idle.add { paste_finish(text, at, register, ipos: ipos, paste_lines: paste_lines); false }
+      GLib::Idle.add { paste_finish(text, at, register, ipos: ipos, paste_lines: register_linewise?(text, entry)); false }
     }
     return nil
   end
@@ -121,7 +128,7 @@ class Buffer < String
     # paste would land at wherever the cursor happens to be when the clipboard
     # data finally arrives.
     ipos = @pos
-    paste_lines = @paste_lines
+    entry = vma.registers['"']
 
     clipboard = vma.gui.window.display.clipboard
     clipboard.read_text_async do |_clipboard, result|
@@ -130,27 +137,23 @@ class Buffer < String
       rescue Gio::IOError::NotSupported
         debug Gio::IOError::NotSupported
       else
-        paste_finish(text, at, register, overwrite: overwrite, ipos: ipos, paste_lines: paste_lines)
+        paste_finish(text, at, register, overwrite: overwrite, ipos: ipos, paste_lines: register_linewise?(text, entry))
       end
     end
     return nil
   end
 
-  # ipos/paste_lines: when given, restore the cursor position and line-paste
-  # state captured when the paste was initiated (see paste_start). nil means
-  # use the live state (synchronous/macro path), preserving prior behavior.
+  # ipos/paste_lines: when given, the cursor position and whether to put
+  # whole lines, captured when the paste was started (see paste_start). nil
+  # means the live cursor, and whole lines if text is what the editor copied
+  # as lines (register_linewise?).
   def paste_finish(text, at, register, overwrite: false, ipos: nil, paste_lines: nil)
     debug "PASTE: #{text}"
 
-    @paste_lines = paste_lines unless paste_lines.nil?
+    @paste_lines = paste_lines.nil? ? register_linewise?(text) : paste_lines
     if !ipos.nil?
       # Clamp in case the buffer shrank during the async window.
       set_pos(ipos.clamp(0, [size - 1, 0].max))
-    end
-
-    # If we did not put this text to clipboard
-    if text != vma.clipboard[-1]
-      @paste_lines = false
     end
 
     text = sanitize_input(text)
@@ -194,27 +197,42 @@ class Buffer < String
   end
 
   def paste_over(at = AFTER, register = nil)
-    if vma.macro.running_macro
-      text = vma.clipboard.get()
-      paste_finish(text, at, register, overwrite: true)
+    paste_register(at, register, overwrite: true)
+  end
+
+  def paste(at = AFTER, register = nil)
+    paste_register(at, register)
+  end
+
+  # Put a register (registers.rb): register (a name), else the one selected
+  # with "x, else the unnamed one. The unnamed register and "+ / "* read the
+  # system clipboard, so text copied in other programs is put too.
+  def paste_register(at, register = nil, overwrite: false)
+    reg = (register || vma.registers.take_pending || '"').to_s
+    if ['"', "+", "*"].include?(reg)
+      if vma.macro.running_macro
+        # Macros can't wait for the asynchronous read: use the editor's copy
+        paste_finish(vma.clipboard.get(), at, reg, overwrite: overwrite)
+      else
+        paste_start(at, reg, overwrite: overwrite)
+      end
     else
-      paste_start(at, register, overwrite: true)
+      e = vma.registers[reg]
+      if e.nil?
+        message("Register #{reg} is empty")
+        return false
+      end
+      paste_finish(e.text, at, reg, overwrite: overwrite, paste_lines: e.linewise)
     end
     return true
   end
 
-  def paste(at = AFTER, register = nil)
-    # Macro's don't work with asynchronous call using GTK
-    # TODO: implement as synchronous?
-    # Use internal clipboard
-    if vma.macro.running_macro
-      text = vma.clipboard.get()
-      paste_finish(text, at, register)
-    else
-      # Get clipboard using GUI
-      paste_start(at, register)
-    end
-    return true
+  # Insert mode ctrl-r x: insert the text of register x at the cursor
+  def insert_register(name)
+    e = vma.registers[name]
+    return false if e.nil? || e.text.empty?
+    insert_txt(e.text)
+    true
   end
 
   def increment_current_word()
@@ -247,12 +265,11 @@ class Buffer < String
   def replace_range(range, text)
     # add_delta restores the final "\n" of the buffer if the range deleted it
     text = text.delete_suffix("\n") if range.last >= self.size - 1
-    delete_range(range.first, range.last)
+    delete_range(range.first, range.last, register: false)
     insert_txt_at(text, range.begin)
   end
 
   def delete2(range_id, mark = nil)
-    @paste_lines = false
     range = get_range(range_id, mark: mark)
     return false if range == nil
     debug "RANGE"
@@ -269,7 +286,6 @@ class Buffer < String
   end
 
   def delete(op, x = nil)
-    @paste_lines = false
     # Delete selection
     if op == SELECTION && visual_mode?
       (startpos, endpos) = get_visual_mode_range2
@@ -329,7 +345,9 @@ class Buffer < String
     return t..(t + txt.size - 1)
   end
 
-  def delete_range(startpos, endpos, x = nil)
+  # Delete [startpos, endpos]. register: put the text in the registers and
+  # the clipboard (false for edits that only replace text, like a case change).
+  def delete_range(startpos, endpos, x = nil, register: true)
     s = self[startpos..endpos]
     if startpos > endpos or s == ""
       return
@@ -338,7 +356,7 @@ class Buffer < String
       debug "APPEND"
       s += "\n" + vma.clipboard.get()
     end
-    vma.clipboard.set(s)
+    vma.clipboard.set(s, kind: :delete) if register
     add_delta([startpos, DELETE, (endpos - startpos + 1)], true)
     #recalc_line_ends
     calculate_line_and_column_pos
@@ -365,9 +383,8 @@ class Buffer < String
     lrange = line_range(@lpos, num_lines)
     s = self[lrange]
     add_delta([lrange.begin, DELETE, lrange.end - lrange.begin + 1], true)
-    vma.clipboard.set(s)
+    vma.clipboard.set(s, linewise: true, kind: :delete)
     update_pos(lrange.begin)
-    @paste_lines = true
     #recalc_line_ends
   end
 

@@ -9,7 +9,7 @@
 # sets in vim_operators.rb.
 # Not implemented (no core primitives) — intentionally left unbound:
 #   %, ?, #, ge, { }, ( ), = and gq, V (linewise) / ctrl-v (blockwise)
-#   visual, : ex commands, named registers, faithful change-only "." repeat,
+#   visual, : ex commands, faithful change-only "." repeat,
 #   insert-mode ctrl-w.
 # Known deviations kept on purpose:
 #   C tab = switch to last buffer; C enter = line action;
@@ -95,5 +95,9 @@ bindkey "audio f || audio right", ["audio.forward", proc { Audio.seek_forward },
 bindkey "audio left", ["audio.backward", proc { Audio.seek_forward(-5.0) }, "Seek backward in audio stream"]
 bindkey "audio space", "audio.stop"
 bindkey "audio q || audio esc", "mode.prev"
+
+# vim i_ctrl-r: insert a register. Here, not in VIM_BINDINGS, so vimlike
+# doesn't get a new ctrl chord from the shared table.
+bindkey "I ctrl-r <char>", "edit.insert.register", keywords: "vim insert"
 
 end # module Vimamsa

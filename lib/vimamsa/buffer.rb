@@ -415,7 +415,7 @@ class Buffer < String
     indent = self[r][/\A[ \t]*/].size
     return if indent == 0
     newpos = [@pos - indent, r.begin].max
-    delete_range(r.begin, r.begin + indent - 1)
+    delete_range(r.begin, r.begin + indent - 1, register: false)
     set_pos(newpos)
   end
 
@@ -1131,7 +1131,6 @@ class Buffer < String
   end
 
   def copy(range_id, mark = nil)
-    @paste_lines = false
     debug "range_id: #{range_id}"
     debug range_id.inspect
     range = get_range(range_id, mark: mark)
@@ -1781,7 +1780,6 @@ class Buffer < String
 
   def copy_active_selection(x = nil)
     debug "!COPY SELECTION vm=#{@visual_mode}"
-    @paste_lines = false
     return if !@visual_mode
 
     debug "COPY SELECTION"
@@ -1902,8 +1900,7 @@ class Buffer < String
 
   def copy_line()
     num_lines = get_repeat_num()
-    vma.clipboard.set(self[line_range(@lpos, num_lines)])
-    @paste_lines = true
+    vma.clipboard.set(self[line_range(@lpos, num_lines)], linewise: true)
   end
 
   def put_file_path_to_clipboard
@@ -1918,7 +1915,7 @@ class Buffer < String
     return if !@visual_mode #TODO: this should not happen
 
     _start, _end = get_visual_mode_range
-    vma.clipboard.set(self[_start, _end])
+    vma.clipboard.set(self[_start, _end], kind: :delete)
     end_visual_mode
   end
 

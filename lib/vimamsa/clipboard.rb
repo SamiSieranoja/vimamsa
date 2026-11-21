@@ -13,18 +13,21 @@ class Clipboard
     return @clipboard << str
   end
 
-  def set(s)
+  # Copied (kind :yank) or deleted (kind :delete) text: into the registers
+  # (Registers#store: the pending "x register, else vim's rules) and the
+  # system clipboard. linewise: copied as whole lines (yy, dd), so a put adds
+  # lines. Nothing happens for the black hole register "_.
+  def set(s, linewise: false, kind: :yank)
     if !(s.class <= String) or s.size == 0
       debug s.inspect
       debug [s, s.class, s.size]
       log_error("s.class != String or s.size == 0")
       return
     end
+    return if !vma.registers.store(s, linewise: linewise, kind: kind)
     @clipboard << s
     set_system_clipboard(s)
-    vma.register[vma.cur_register] = s
     debug "SET CLIPBOARD: [#{s}]"
-    debug "REGISTER: #{vma.cur_register}:#{vma.register[vma.cur_register]}"
   end
 
   def get()

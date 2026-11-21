@@ -66,7 +66,7 @@ def savedebug(message, e)
   dbginfo["trace_str"] = dbginfo["trace"].join("\n")
   dbginfo["edit_history"] = buf.edit_history
   dbginfo["cnf"] = $vimamsa_conf
-  dbginfo["register"] = vma.register
+  dbginfo["register"] = vma.registers.to_h
   dbginfo["clipboard"] = vma.clipboard
   # dbginfo["last_event"] = $last_event
   dbginfo["buffer"] = {}

@@ -54,8 +54,7 @@ class Buffer < String
     # yank / change of an empty inner (yi( on "()") still sets the cursor
     return false if e <= s && ![:yank, :change].include?(op)
     if op == :yank
-      vma.clipboard.set(self[s...e]) if e > s
-      @paste_lines = linewise
+      vma.clipboard.set(self[s...e], linewise: linewise) if e > s
       set_pos(s)
       return true
     end

@@ -318,6 +318,9 @@ def vim_binding_conflicts(other = nil)
     code += "(#{b[:args].values.map { |x| x.is_a?(String) ? x.inspect : x }.join(", ")})" if b[:args]
     row = { mode: mode, keys: keys, action: code, template: b[:template] }
     next row.merge(status: :added) if added[[mode, keys]]
+    if (why = VIM_KEYMAP_ONLY["#{mode} #{keys.join(" ")}"])
+      next row.merge(status: :vim_only, why: why)
+    end
     row.merge(vim_binding_status(other, mode, keys, action, vim.actions))
   }
 end
@@ -439,6 +442,7 @@ def vim_binding_conflicts_report(rows = vim_binding_conflicts)
   out << "| Conflicts (the vim binding can't be used in vimlike) | #{by.fetch(:conflict, []).size} |\n"
   out << "| Added to vimlike from the shared table (`VIM_BINDINGS`, vim_core.rb) | #{by.fetch(:added, []).size} |\n"
   out << "| Missing from vimlike (no conflict, could be added) | #{by.fetch(:missing, []).size} |\n"
+  out << "| vim keymap only (left out of vimlike on purpose) | #{by.fetch(:vim_only, []).size} |\n"
   out << "| Shared (same keys, same action) | #{by.fetch(:shared, []).size} |\n\n"
 
   out << "## Conflicts\n\n| Mode | Vim keys | Vim action | vimlike | Reason |\n|---|---|---|---|---|\n"
@@ -457,6 +461,11 @@ def vim_binding_conflicts_report(rows = vim_binding_conflicts)
   out << "\n## Missing from vimlike\n\n| Mode | Vim keys | Vim action |\n|---|---|---|\n"
   vim_conflict_rows_grouped(by.fetch(:missing, [])).each { |r|
     out << "| #{r[:mode]} | #{code.(r[:keys].join(" "))} | #{act.(r[:action])} |\n"
+  }
+  out << "\n## vim keymap only\n\nLeft out of vimlike on purpose (`VIM_KEYMAP_ONLY`, vim_core.rb).\n\n"
+  out << "| Mode | Vim keys | Vim action | Why |\n|---|---|---|---|\n"
+  by.fetch(:vim_only, []).each { |r|
+    out << "| #{r[:mode]} | #{code.(r[:keys].join(" "))} | #{act.(r[:action])} | #{r[:why]} |\n"
   }
   out << "\n## Shared\n\n| Mode | Keys | Action |\n|---|---|---|\n"
   vim_conflict_rows_grouped(by.fetch(:shared, [])).each { |r|

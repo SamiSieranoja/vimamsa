@@ -50,5 +50,8 @@ Still missing:
 - Line-wise visual (`V`), block visual (`ctrl-v`) and `o` (swap selection ends) are
   missing. `vimlike` binds `V` and `ctrl-v` to other actions.
 - `ctrl-x` (decrement a number) is missing; `ctrl-a` is in both keymaps.
-- `gJ` (join lines without adding a space) and named registers (`"a` etc.) are
-  missing.
+- `gJ` (join lines without adding a space) is missing.
+- Registers are done (2026-11-21, `lib/vimamsa/registers.rb`): `""`, `"0`, `"1`–`"9`,
+  `"-`, `"a`–`"z` (`"A` appends), `"+` / `"*` and `"_`, selected with `"x` before any
+  copy, delete or put. They remember whether the text was whole lines. Insert-mode
+  `ctrl-r x` is in the `vim` keymap only. `:reg` lists them.

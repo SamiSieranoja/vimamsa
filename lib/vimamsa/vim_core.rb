@@ -182,7 +182,8 @@ VIM_BINDINGS = {
     "C S" => "edit.change.line",
     "C s" => "edit.change.char",
 
-    # Yank / paste
+    # Yank / paste. "x selects register x for the next command (registers.rb)
+    "VC \" <char>" => "edit.register",
     "C Y" => "edit.line.copy",
     "C p" => "edit.paste.after",
     "C P" => "edit.paste.before",
@@ -284,6 +285,12 @@ VIM_BINDINGS = {
     # READCHAR mode (argument input for f/F, r, m, ', q, @)
     "R <char>" => "readchar_new_char(<char>)",
   },
+}
+
+# Vim keymap bindings left out of vimlike on purpose, with the reason. The
+# conflicts report lists them separately instead of as missing.
+VIM_KEYMAP_ONLY = {
+  "I ctrl-r <char>" => "no new ctrl chords in vimlike",
 }
 
 # Whether keys are bound in mode m, with or without a condition ("C 0" is

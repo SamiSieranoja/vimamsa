@@ -29,6 +29,7 @@ require "vimamsa/util"
 require "vimamsa/string_util"
 # Clipboard must load before main: main.rb runs Editor.new at load time,
 # and Editor#initialize creates a Clipboard.
+require "vimamsa/registers"
 require "vimamsa/clipboard"
 # exit!
 require "vimamsa/main"

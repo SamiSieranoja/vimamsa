@@ -634,7 +634,7 @@ class VmaDictationSession
       return
     end
     final = res[:text].to_s
-    @buf.delete_range(@dict_start, @dict_start + @dict_len - 1) if @dict_len > 0
+    @buf.delete_range(@dict_start, @dict_start + @dict_len - 1, register: false) if @dict_len > 0
     @dict_len = 0
 
     if final.empty?

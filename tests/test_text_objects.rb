@@ -109,7 +109,7 @@ class TestTextObjects < VmaTest
   def test_yank_paragraph_is_linewise
     run_case("p1\np|1b\n\np2", "yip")
     assert_eq "p1\np1b\n", vma.clipboard.get
-    assert vma.buf.instance_variable_get(:@paste_lines), "yip should yank whole lines"
+    assert vma.registers['"'].linewise, "yip should yank whole lines"
   end
 
   def test_delete_puts_text_in_clipboard

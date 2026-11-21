@@ -224,8 +224,7 @@ class Buffer < String
     e = [e, size].min
     case op
     when :yank
-      vma.clipboard.set(self[s...e]) if e > s
-      @paste_lines = linewise
+      vma.clipboard.set(self[s...e], linewise: linewise) if e > s
       # The cursor goes to the start of the text, but a linewise yank that
       # starts on the cursor line doesn't move it (y j, y y)
       if !(linewise && tobj_line_bounds(from)[0] == s)
@@ -239,20 +238,19 @@ class Buffer < String
       # the newline before them instead (vim dap / dd on the last line).
       ds, de = s - 1, e - 2 if linewise && e >= size && s > 0
       Gui.flash_range(self, ds..de) do
-        delete_range(ds, de)
-        vma.clipboard.set(txt)
-        @paste_lines = linewise
+        delete_range(ds, de, register: false)
+        vma.clipboard.set(txt, linewise: linewise, kind: :delete)
         linewise ? tobj_set_line_pos(ds) : tobj_set_normal_pos(s)
       end
     when :change
+      vma.clipboard.set(self[s...e], linewise: linewise, kind: :delete) if e > s
       # Linewise (cc, cip, multi-line ci{): leave an empty line to type on
       if linewise && e >= size && e - 1 > s
-        delete_range(s, e - 2) # the final "\n" stays as that line
+        delete_range(s, e - 2, register: false) # the final "\n" stays as that line
       else
-        delete_range(s, e - 1) if e > s
+        delete_range(s, e - 1, register: false) if e > s
         insert_txt_at("\n", s) if linewise
       end
-      @paste_lines = linewise
       set_pos(s)
       vma.kbd.set_mode(:insert)
     when :upcase, :downcase, :swapcase

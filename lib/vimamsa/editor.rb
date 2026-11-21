@@ -7,7 +7,7 @@ class Editor
   attr_reader :file_content_search_paths, :file_name_search_paths, :gui, :hook, :macro, :actions
   # @!attribute [rw] kbd
   #   @return [KeyBindingTree]
-  attr_accessor :converters, :fh, :bookmarks, :paint_stack, :kbd, :langsrv, :register, :cur_register, :clipboard
+  attr_accessor :converters, :fh, :bookmarks, :paint_stack, :kbd, :langsrv, :registers, :clipboard
   #attr_writer :call_func, :update_highlight
 
   def initialize()
@@ -24,19 +24,13 @@ class Editor
     @paint_stack = []
     @_plugins = {}
     @errors
-    @register = Hash.new("")
-    @cur_register = "a"
+    @registers = Registers.new
     @clipboard = Clipboard.new
   end
 
+  # "x: use register char for the next copy, delete or put (registers.rb)
   def set_register(char)
-    @cur_register = char
-    message("Set register #{char}")
-  end
-
-  def paste_register(char)
-    $c = @cur_register #TODO:??
-    message("Paste: #{$c}")
+    @registers.select(char)
   end
 
   def open_file_listener(added)
@@ -124,7 +118,13 @@ class Editor
         vma.macro.record_action(action)
       end
     }
-    @kbd.on(:action_handled) { |trail, action| vma.gui.show_action_trail(trail, action) }
+    @kbd.on(:action_handled) { |trail, action|
+      vma.gui.show_action_trail(trail, action)
+      # A "x register applies to the next command only (counts may come
+      # between: "a3yy)
+      a = action.to_s
+      @registers.clear_pending if !a.include?("edit.register!") && !a.include?("kbd.count.digit")
+    }
   end
 
   def start

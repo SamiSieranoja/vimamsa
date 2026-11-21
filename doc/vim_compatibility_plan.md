@@ -1,7 +1,7 @@
 # Plan: better Vim compatibility
 
-TODO: act next on item 3 of "Order of work": registers that remember
-linewise text, and linewise put (items 1 and 2 are done). When an item is finished, move it
+TODO: act next on item 4 of "Order of work": missing motions (items 1-3 are
+done). When an item is finished, move it
 to the DONE section at the end of this document with a short summary and the
 git ref(s).
 
@@ -317,7 +317,7 @@ which), or keep the restart.
    operator layer and ported motions, and the differential test suite. Port the
    existing hand-made bindings first, so nothing gets worse. This includes the
    text object bindings, which are bound per operator for now.~~ Done, see DONE.
-3. Registers that remember linewise text, and linewise put.
+3. ~~Registers that remember linewise text, and linewise put.~~ Done, see DONE.
 4. Missing motions.
 5. `V` and `ctrl-v`.
 6. `.` repeat, and undo grouping for Insert sessions.
@@ -403,3 +403,27 @@ Each step regenerates `doc/vimlike_vim_conflicts.md` and updates
   the motion, not to its key. `=` and `gq` are not done.
   Tests: `tests/test_vim_operators.rb` (vimlike, checked against real vim),
   oracle cases in `tests/test_vim_bindings.rb` (vim keymap).
+- **Registers** (step 4, order item 3; 2026-11-21). `lib/vimamsa/registers.rb`:
+  `vma.registers` holds each register's text and whether it was copied as
+  whole lines. `""` (unnamed), `"0` (last copy), `"1`–`"9` (deletes of
+  whole lines or of text spanning lines, shifted on each one), `"-` (smaller
+  deletes), `"a`–`"z` (`"A` appends; linewise if either part is), `"+` /
+  `"*` and the black hole `"_`. `"x` (Command and Visual mode, `edit.register`,
+  in the shared table; vimlike also keeps its `, r x`) selects a register
+  for the next command only; a count may come between (`"a3yy`).
+  `Clipboard#set(text, linewise:, kind:)` stores through the registers, so
+  every copy and delete (the operators, text objects, `yy`, `dd`, Visual
+  mode, ...) goes through one place; the system clipboard still gets every
+  copy except into `"_`. Put (`Buffer#paste_register`): a named register
+  directly; the unnamed one and `"+` / `"*` read the system clipboard, and
+  its text is put as lines only if it is what the editor copied as lines.
+  This replaces the per-buffer `@paste_lines`, so `yy` in one buffer and `p`
+  in another puts a line. Case changes and other text replacements no longer
+  overwrite the clipboard (`delete_range(..., register: false)`). Insert mode
+  `ctrl-r x` (`edit.insert.register`) is in the vim keymap only, listed in
+  `VIM_KEYMAP_ONLY` (no new ctrl chords in vimlike). `:reg` / `:registers` on
+  the command line and `edit.register.list` show the registers.
+  Not done: `".`, `"%`, `":`, `"/` and the expression register, keeping
+  registers across restarts, Visual mode put replacing the selection from a
+  register.
+  Tests: `tests/test_registers.rb`.
