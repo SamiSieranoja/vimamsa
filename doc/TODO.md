@@ -698,6 +698,10 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
+- **Switching files demo** (2026-11-21, uncommitted): Help ▸ Demos ▸ Switching files
+  (`scripts/demo/demo_files_steps.txt`, on shapes.rb, report.rb and notes.txt): tab,
+  browse mode h / l, and the file explorer (`, f`, then k / j and l). Demos can have
+  several files, and a demo folder of their own.
 - **Easy jump label feedback** (2026-11-21, uncommitted): after the first key, matching
   labels show it bright yellow and bold, and the others are dimmed. The chosen label
   stays 0.15 s after the others go. `cnf.easy_jump.glow` (off: without a GPU it made

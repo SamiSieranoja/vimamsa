@@ -1,0 +1,52 @@
+# File switching demo, played inside the editor by Help ▸ Demos ▸ Switching
+# files (lib/vimamsa/demo_player.rb), on scripts/demo/shapes.rb, report.rb
+# and notes.txt (opened in that order of age: shapes.rb is current and the
+# newest in the buffer history). The commands are those of demo_steps.txt.
+# The key log panel on the right shows each key and the action it ran.
+
+delay 0.45
+wait 1.5
+
+# tab: back to the file used before; tab again: back here
+keys tab
+wait 1.5
+keys tab
+wait 1.5
+
+# Browse mode (z): h goes back in the buffer history, l forward; j leaves
+# browse mode in the file shown
+keys z
+wait 1.0
+keys h
+wait 1.2
+keys h
+wait 1.2
+keys l
+wait 1.2
+keys j
+wait 1.2
+
+# , f: the file explorer, on the current file's folder with the cursor on
+# its line. k / j move to another file; l (or enter) opens it
+keys , f
+wait 1.4
+keys k
+wait 1.0
+keys l
+wait 1.5
+
+# tab: back to the file before
+keys tab
+wait 1.5
+
+# The explorer again, to shapes.rb (below report.rb)
+keys , f
+wait 1.2
+keys j
+wait 1.0
+keys l
+wait 1.0
+
+# Back to the top
+keys g g
+wait 2.0

@@ -159,6 +159,7 @@ reg_act("mode.visual", proc { buf.start_selection; vma.kbd.set_mode(:visual) }, 
 reg_act("app.demo", proc { install_demo_files }, "Install and show Demo")
 reg_act("help.demo", proc { DemoPlayer.toggle(:basic) }, "Play the basic editing demo (again: stop it)")
 reg_act("help.demo.easyjump", proc { DemoPlayer.toggle(:easyjump) }, "Play the easy jump demo (again: stop it)")
+reg_act("help.demo.files", proc { DemoPlayer.toggle(:files) }, "Play the file switching demo (again: stop it)")
 reg_act("help.demo.pause", proc { DemoPlayer.pause_toggle }, "Pause or continue the demo")
 reg_act("help.demo.faster", proc { DemoPlayer.faster }, "Play the demo faster")
 reg_act("help.demo.slower", proc { DemoPlayer.slower }, "Play the demo slower")

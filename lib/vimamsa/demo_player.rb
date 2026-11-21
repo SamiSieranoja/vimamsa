@@ -1,24 +1,32 @@
 module Vimamsa
-# Plays a demo inside the running editor (Help ▸ Demos), on a fresh copy of
-# scripts/demo/shapes.rb, with the key log panel showing each key and the
+# Plays a demo inside the running editor (Help ▸ Demos), on fresh copies of
+# files in scripts/demo, with the key log panel showing each key and the
 # action it ran. The demos (DEMOS) are step files in scripts/demo:
 #   basic     demo_steps.txt, the README demo that scripts/demo/record_demo.rb
 #             records into img/demo.gif
 #   easyjump  demo_easyjump_steps.txt: moving and selecting with easy jump
+#   files     demo_files_steps.txt: switching between files (tab, browse
+#             mode h / l, the file explorer , f)
 #
-# The keys go to the key bindings as if typed. At the end the file goes
-# back to how it was and the demo starts again, until it is stopped: the
-# same menu item again, the key log's ✕, or switching to another buffer.
+# The keys go to the key bindings as if typed. At the end the files go back
+# to how they were and the demo starts again, until it is stopped: the same
+# menu item again, the key log's ✕, or switching to a buffer that isn't one
+# of the demo's (or the file explorer).
 # The buttons above the key log (and the help.demo.* actions) pause and
 # continue it and change its speed. When it stops, the key log panel is
 # hidden again if it wasn't shown before.
 class DemoPlayer
   DIR = File.expand_path("../../scripts/demo", __dir__)
   STEPS = File.join(DIR, "demo_steps.txt")
+  # steps: the step file. files: copied and opened, the first one last (it
+  # is current and the newest in the buffer history). dir: a subfolder of
+  # WORK_DIR, emptied first, so the file explorer shows only these files.
   DEMOS = {
-    basic: STEPS,
-    easyjump: File.join(DIR, "demo_easyjump_steps.txt"),
+    basic: { steps: STEPS, files: ["shapes.rb"] },
+    easyjump: { steps: File.join(DIR, "demo_easyjump_steps.txt"), files: ["shapes.rb"] },
+    files: { steps: File.join(DIR, "demo_files_steps.txt"), files: ["shapes.rb", "report.rb", "notes.txt"], dir: "files" },
   }
+  WORK_DIR = File.join(Dir.tmpdir, "vimamsa-demo")
   SPEED = 0.7 # as the recording: every delay and wait is divided by this
   RATES = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4] # user speeds, times SPEED
 
@@ -62,7 +70,8 @@ class DemoPlayer
   # of demo_steps.txt (tests).
   def initialize(name = :basic, speed: SPEED, loop: true, steps: nil)
     @name = name
-    @steps_file = DEMOS.fetch(name)
+    @demo = DEMOS.fetch(name)
+    @steps_file = @demo[:steps]
     @speed = speed
     @loop = loop
     @given_steps = steps
@@ -137,15 +146,7 @@ class DemoPlayer
       return
     end
     @steps = @given_steps || DemoPlayer.parse(File.read(@steps_file))
-    # A fresh copy, so the demo can edit it
-    dir = File.join(Dir.tmpdir, "vimamsa-demo")
-    FileUtils.mkdir_p(dir)
-    file = File.join(dir, "shapes.rb")
-    FileUtils.cp(File.join(DIR, "shapes.rb"), file)
-    old = vma.buffers.list.find { |b| b.fname == file }
-    vma.buffers.close_buffer(old.id) if old
-    @buf = open_new_file(file)
-    @original = File.read(file)
+    open_files
     @keylog_was_shown = vma.gui.instance_variable_get(:@keylog_shown)
     vma.gui.show_keylog_panel
     DemoPlayer.current.stop if DemoPlayer.current&.running? && !DemoPlayer.current.equal?(self)
@@ -157,19 +158,57 @@ class DemoPlayer
     begin_round
   end
 
+  # Why it stopped (the message shown), e.g. "Demo finished"
+  attr_reader :stop_message
+
   def stop(msg = nil)
     return if !@running
+    @stop_message = msg
     @running = false
     @paused = false
     remove_timer
-    vma.kbd.set_mode(:command) if vma.buf.equal?(@buf)
+    vma.kbd.set_mode(:command) if demo_buf?(vma.buf)
     vma.gui.keylog_panel.hide_demo_controls
     # The key log panel goes away again if the demo opened it
     vma.gui.hide_keylog_panel if !@keylog_was_shown
     message(msg) if msg
   end
 
+  # The demo's buffers, the first file's first
+  attr_reader :bufs
+
   private
+
+  def demo_buf?(b)
+    @bufs.any? { |x| x.equal?(b) }
+  end
+
+  # The file explorer (, f), which the files demo uses
+  def explorer_buf?(b)
+    b.respond_to?(:module) && b.module.is_a?(FileManager)
+  end
+
+  # Fresh copies of the demo's files (so the demo can edit them), opened
+  # with the first one last
+  def open_files
+    dir = WORK_DIR
+    if @demo[:dir]
+      dir = File.join(WORK_DIR, @demo[:dir])
+      FileUtils.rm_rf(dir) if dir.start_with?(WORK_DIR + "/")
+    end
+    FileUtils.mkdir_p(dir)
+    files = @demo[:files].map { |f|
+      path = File.join(dir, f)
+      FileUtils.cp(File.join(DIR, f), path)
+      old = vma.buffers.list.find { |b| b.fname == path }
+      vma.buffers.close_buffer(old.id) if old
+      path
+    }
+    @bufs = files.reverse.map { |f| open_new_file(f) }.reverse
+    @buf = @bufs[0]
+    @originals = @bufs.map { |b| File.read(b.fname) }
+  end
+
 
   # Each round starts with an empty key log
   def begin_round
@@ -187,9 +226,13 @@ class DemoPlayer
   def restart
     @rounds += 1
     vma.kbd.set_mode(:command)
-    @buf.revert_by_diff(@original.dup)
-    @buf.set_pos(0)
-    @buf.view&.handle_deltas
+    # The files as at the start, and the buffer history in the same order
+    @bufs.zip(@originals).reverse_each { |b, text|
+      vma.buffers.set_current_buffer(b.id)
+      b.revert_by_diff(text.dup)
+      b.set_pos(0)
+      b.view&.handle_deltas
+    }
     begin_round
   end
 
@@ -226,8 +269,8 @@ class DemoPlayer
   # it runs, so a pause in between plays it, with its whole delay, on resume.
   def run_next
     return if !@running || @paused
-    if !vma.buf.equal?(@buf)
-      stop("Demo stopped (another buffer was opened)")
+    if !demo_buf?(vma.buf) && !explorer_buf?(vma.buf)
+      stop("Demo stopped (another buffer was opened: #{vma.buf&.fname || vma.buf.class})")
       return
     end
     if @queue.empty?
@@ -276,12 +319,12 @@ class DemoPlayer
     return nil if @target.nil?
     if (m = /\Aline (\d+)\z/.match(@target))
       l = m[1].to_i - 1
-      return nil if l < 0 || l > @buf.line_ends.size
-      return l == 0 ? 0 : @buf.line_ends[l - 1] + 1
+      return nil if l < 0 || l > vma.buf.line_ends.size
+      return l == 0 ? 0 : vma.buf.line_ends[l - 1] + 1
     end
-    i = @buf.index(@target)
+    i = vma.buf.index(@target)
     return nil if i.nil?
-    i == 0 ? 0 : (@buf.rindex("\n", i - 1) || -1) + 1
+    i == 0 ? 0 : (vma.buf.rindex("\n", i - 1) || -1) + 1
   end
 end
 end # module Vimamsa

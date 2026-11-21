@@ -71,8 +71,33 @@ class TestDemoPlayer < VmaTest
     vma.buffers.close_buffer(p.buf.id) if p&.buf
   end
 
+  # The file switching demo: tab, browse mode h / l and the file explorer
+  # visit every file and end on shapes.rb, unchanged, at the top
+  def test_files_demo_switches_files
+    p = DemoPlayer.new(:files, speed: 20, loop: false)
+    p.start
+    seen = []
+    t = Time.now
+    while p.running? && Time.now - t < 60
+      seen << File.basename(vma.buf.fname.to_s)
+      drain_idle
+      sleep 0.005
+    end
+    assert !p.running?, "demo still running"
+    order = seen.chunk_while { |a, b| a == b }.map(&:first)
+    assert_eq "Demo finished", p.stop_message, "#{p.stop_message}; buffers in order: #{order.inspect}, log: #{vma.gui.keylog_panel.entries.last(4).map { |e| e[:chord] || e[:text] }.inspect}"
+    # "": the file explorer's buffer
+    assert_eq ["", "notes.txt", "report.rb", "shapes.rb"], seen.uniq.sort
+    assert_eq "shapes.rb", File.basename(vma.buf.fname.to_s)
+    assert_eq File.read(SHAPES), vma.buf.to_s
+    assert_eq 0, vma.buf.pos
+    assert vma.buffers.list.none? { |b| b.module.is_a?(FileManager) rescue false }, "file explorer still open"
+  ensure
+    p&.bufs&.each { |b| vma.buffers.close_buffer(b.id) }
+  end
+
   def test_easyjump_steps_parse
-    steps = DemoPlayer.parse(File.read(DemoPlayer::DEMOS[:easyjump]))
+    steps = DemoPlayer.parse(File.read(DemoPlayer::DEMOS[:easyjump][:steps]))
     assert steps.count { |c, a| c == "keys" && a.include?("@JUMP_LABEL@") } >= 5
   end
 
