@@ -68,7 +68,7 @@
      </context>
      
       <context id="bold" style-ref="bold">
-      <match>(⦁.*⦁)</match>
+      <match>(⦁[^⦁\n]*⦁)</match>
      </context>
 
       <context id="italic" style-ref="italic">
