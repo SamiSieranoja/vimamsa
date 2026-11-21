@@ -12,10 +12,10 @@ module Vimamsa
 class KeyHint
   SHOW_SECS = 2.0 # fully shown
   FADE_SECS = 0.8 # then fading out
-  OPACITY = 0.8
-  GAP = 44 # px between the end of the line and the bubble
+  OPACITY = 0.9
+  GAP = 14 # px between the end of the line and the bubble
   MIN_GAP = 12 # the gap used when GAP doesn't leave room for the bubble
-  Y_OFFSET = 4 # px below the cursor's row (cnf.key_hint.y_offset)
+  Y_OFFSET = 20 # px below the cursor's row (cnf.key_hint.y_offset)
 
   # Test-visible: the mode and markup shown; the bubble (a Gtk::Box), its
   # mode badge label and its key/action label
