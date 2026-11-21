@@ -23,7 +23,7 @@ class TestLineEnds < VmaTest
   def test_line_ends_of_utf8_buffer
     act 'buf.insert_txt("äb\nc€d\n\nlast")'
     b = vma.buf
-    assert_eq ref_scan_indexes(b.to_s, /\n/), b.line_ends
+    assert_eq ref_scan_indexes(b.to_s, /\n/), b.line_ends.to_a
     assert_eq 2, b.get_line_end(0)
     assert_eq 6, b.get_line_end(3)
     assert_eq 7, b.get_line_end(6)
@@ -33,7 +33,7 @@ class TestLineEnds < VmaTest
     act 'buf.insert_txt("a\nbb\n\nccc\nd")'
     b = vma.buf
     (0...b.size).each do |pos|
-      assert_eq b.line_ends.select { |x| x > pos }.min, b.get_line_end(pos), "pos #{pos}"
+      assert_eq b.line_ends.to_a.select { |x| x > pos }.min, b.get_line_end(pos), "pos #{pos}"
     end
   end
 

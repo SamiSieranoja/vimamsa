@@ -621,17 +621,11 @@ Measured 2026-11-21 in plain Ruby 3.4, ~55-character lines. Fixed already:
 `get_line_end` (`select` → `bsearch`). See DONE.
 
 Still open:
-- **`update_line_ends` shifts every later line end on each edit** (`buffer.rb:1209`,
-  a Ruby `collect!` loop). That's 0.65 ms per edit at 10k lines and 6.3 ms at 100k,
-  and it's paid for each delta (a replace pays it twice).
-  - Replace `@line_ends` with a Fenwick tree (binary indexed tree) over line lengths
-    behind a small interface (`line_start(i)`, `line_of(pos)`, `line_count`). Both
-    edits and lookups are then O(log n). About 40 lines of code, but `@line_ends[...]`
-    is used directly in many places, which must move to the interface.
-  - Simpler alternative: lazy shifting. Store "shift from index k by d", and apply it
-    only when an edit lands somewhere else. Typing on one line is then O(1).
-  - Do it with the changeset `map_pos` work (`doc/delta_syntax_plan.md`, step 3), which
-    moves the position updates out of `run_delta` anyway.
+- **`update_line_ends` shifted every later line end on each edit.** Done: `@line_ends`
+  is now a treap of lines (`LineTree`, see DONE and `doc/line_tree_plan.md`).
+  Follow-up: loops over all lines (`fold.rb`'s fold search) call `[i]` per line,
+  which is now O(log n) each. Walk the tree in order there if it shows up in
+  profiles.
 - **UTF-8 character indexing.** Ruby strings have no character index. Once a buffer
   contains one non-ASCII character, every `self[pos]`, `insert` and `slice!` scans from
   the start. That's 0.5 ms each at 5.5 MB, versus 0.002 ms for ASCII-only text. Motions
@@ -684,6 +678,13 @@ Constraints:
 ## DONE
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
+
+- **Line ends in a treap** (2026-11-21, not yet committed): `@line_ends` is a
+  `LineTree` (`lib/vimamsa/line_tree.rb`), an implicit treap with one node per line
+  (length, random priority, subtree line and character counts). It answers the Array
+  methods the code used (`size`, `[i]`, `bsearch_index`, `bsearch`), so no call site
+  changed. An edit costs about 0.005 ms at 100k lines, down from 6.3 ms, and lookups
+  about 0.004 ms. Plan: `doc/line_tree_plan.md`. Tests: `tests/test_line_tree.rb`.
 
 - **Fast line ends for non-ASCII text** (2026-11-21, `57d3030`): `scan_indexes`
   (`string_util.rb`) counts characters only between consecutive matches, using byte

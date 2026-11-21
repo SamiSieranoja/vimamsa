@@ -756,7 +756,7 @@ class Buffer < String
     str = fold_collapse_all(str) if cnf.fold.start_closed?
 
     self.replace(str)
-    @line_ends = scan_indexes(self, /\n/)
+    @line_ends = LineTree.from_string(self) # Array-like: see line_tree.rb
     words = scan_all_words
     Autocomplete.add_words(words, @id)
 
@@ -1142,9 +1142,9 @@ class Buffer < String
 
   def recalc_line_ends()
     t1 = Time.now
-    leo = @line_ends.clone
-    @line_ends = scan_indexes(self, /\n/)
-    if @line_ends == leo
+    leo = @line_ends.to_a
+    @line_ends = LineTree.from_string(self)
+    if @line_ends.to_a == leo
       debug "No change to line ends"
     else
       debug "CHANGES to line ends"
@@ -1155,14 +1155,14 @@ class Buffer < String
   end
 
   def sanity_check_line_ends()
-    leo = @line_ends.clone
-    @line_ends = scan_indexes(self, /\n/)
-    if @line_ends == leo
+    leo = @line_ends.to_a
+    @line_ends = LineTree.from_string(self)
+    if @line_ends.to_a == leo
       debug "No change to line ends"
     else
       debug "CHANGES to line ends"
       debug leo.inspect
-      debug @line_ends.inspect
+      debug @line_ends.to_a.inspect
       crash("CHANGES to line ends")
     end
   end
@@ -1197,25 +1197,13 @@ class Buffer < String
     end
   end
 
+  # changestr: the inserted text (changeamount >= 0) or the removed text.
+  # O(log n) per edit (+ O(k) for k new lines), see line_tree.rb.
   def update_line_ends(pos, changeamount, changestr)
     if changeamount > -1
-      changeamount = changestr.size
-      i_nl = scan_indexes(changestr, /\n/)
-      i_nl.collect! { |x| x + pos }
-    end
-    #    debug "change:#{changeamount}"
-    #TODO: this is the bottle neck in insert_txt action
-    @line_ends.collect! { |x|
-      r = nil
-      r = x if x < pos
-      r = x + changeamount if changeamount < 0 && x + changeamount >= pos
-      r = x + changeamount if changeamount > 0 && x >= pos
-      r
-    }.compact!
-
-    if changeamount > -1 && i_nl.size > 0
-      @line_ends.concat(i_nl)
-      @line_ends.sort!
+      @line_ends.insert(pos, changestr)
+    else
+      @line_ends.delete(pos, changestr)
     end
   end
 

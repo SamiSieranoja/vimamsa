@@ -27,6 +27,7 @@ require "uri"
 require "vimamsa/conf"
 require "vimamsa/util"
 require "vimamsa/string_util"
+require "vimamsa/line_tree"
 # Clipboard must load before main: main.rb runs Editor.new at load time,
 # and Editor#initialize creates a Clipboard.
 require "vimamsa/registers"
