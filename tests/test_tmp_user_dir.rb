@@ -58,6 +58,21 @@ class TestTmpUserDir < VmaTest
     TmpUserDir.delete(dir) if dir
   end
 
+  # A dir with a crash report stays (the report would be lost otherwise)
+  def test_kept_with_crash_report
+    d = TmpUserDir.create
+    FileUtils.mkdir_p(File.join(d, "crash"))
+    File.write(File.join(d, "crash", "stderr.log"), "log")
+    File.write(File.join(d, "crash", "crash_20261121_000000_1.txt"), "report")
+    assert !TmpUserDir.delete(d)
+    assert File.exist?(File.join(d, "crash", "crash_20261121_000000_1.txt"))
+    FileUtils.rm_f(File.join(d, "crash", "crash_20261121_000000_1.txt"))
+    assert TmpUserDir.delete(d), "only stderr.log: deleted"
+    assert !File.exist?(d)
+  ensure
+    FileUtils.rm_rf(d) if d && File.exist?(d)
+  end
+
   def test_help_mentions_it
     assert Vimamsa::CLI_USAGE.include?("--tmp-user-dir")
   end

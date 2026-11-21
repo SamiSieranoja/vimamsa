@@ -2103,7 +2103,7 @@ class Buffer < String
   end
 
   def refresh_title
-    if vma.buf == self
+    if vma.buf.equal?(self) # a Buffer is a String: == compares the text
       mod = unsaved_changes?
       pfx = mod ? "+ " : ""
       gui_set_window_title(pfx + title, subtitle, modified: mod)

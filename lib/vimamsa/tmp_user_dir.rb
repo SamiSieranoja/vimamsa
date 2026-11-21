@@ -23,8 +23,15 @@ module TmpUserDir
     File.dirname(d) == File.expand_path(Dir.tmpdir) && File.basename(d).start_with?(PREFIX)
   end
 
+  # Deletes dir, unless it holds a crash report (crash_handler.rb writes
+  # them into the user dir): then it stays, and is named on stderr
   def delete(dir)
     return false if !ours?(dir) || !File.directory?(dir)
+    reports = Dir[File.join(dir, "crash", "crash_*")]
+    if reports.any?
+      warn "vimamsa: kept the temporary user dir #{dir}: it has a crash report (#{File.basename(reports.max)})"
+      return false
+    end
     FileUtils.rm_rf(dir)
     true
   end
