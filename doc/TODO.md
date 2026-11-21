@@ -678,11 +678,11 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
-- **`run_tests_vm.sh` ported to Ruby** (2026-11-21): `run_tests_vm.rb`, same env
+- **`run_tests_vm.sh` ported to Ruby** (2026-11-21, `ac4251a`): `run_tests_vm.rb`, same env
   vars, arguments, steps and exit codes, standard library only; shared helpers in
   `scripts/lib/script_helpers.rb`. `run_e2e_vm.sh` and the docs point to it.
 
-- **Resized window after maximize restored** (2026-11-21): GNOME's auto-maximize
+- **Resized window after maximize restored** (2026-11-21, `36c04d3`): GNOME's auto-maximize
   maximized a restored window that covers most of the screen, which was then saved
   as maximized. `VMAgui#undo_auto_maximize` unmaximizes it to the saved size.
   Test: `test_resized_after_maximize_restored` in `tests/test_window_layout.rb`.
