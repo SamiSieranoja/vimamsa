@@ -679,7 +679,7 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
-- **Line ends in a treap** (2026-11-21, not yet committed): `@line_ends` is a
+- **Line ends in a treap** (2026-11-21, `96234a8`): `@line_ends` is a
   `LineTree` (`lib/vimamsa/line_tree.rb`), an implicit treap with one node per line
   (length, random priority, subtree line and character counts). It answers the Array
   methods the code used (`size`, `[i]`, `bsearch_index`, `bsearch`), so no call site
