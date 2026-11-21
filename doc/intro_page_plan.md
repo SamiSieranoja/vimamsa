@@ -1,6 +1,6 @@
 # Plan: introduction page for first-time users
 
-Done (2026-11-21), not committed yet. See DONE.
+Done (2026-11-21, `6448bb9`). See DONE.
 
 ## Context
 
@@ -246,7 +246,7 @@ Run the suite in the test VM after each step (`./run_tests_vm.rb`).
 
 ## DONE
 
-- 2026-11-21, not committed yet. All the steps:
+- 2026-11-21, `6448bb9`. All the steps:
   - `lib/vimamsa/intro_page.rb`, plus `help/intro.txt` and `help/vim_intro.txt`.
   - `⟦run:…⟧` links with an allowlist (`help.*`, `app.demo`), and inline buttons.
   - `{key:…}`, `{demos}` and `{vim_key_table}` placeholders.
