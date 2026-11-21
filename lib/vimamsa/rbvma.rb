@@ -32,6 +32,7 @@ require "vimamsa/line_tree"
 # and Editor#initialize creates a Clipboard.
 require "vimamsa/registers"
 require "vimamsa/dot_repeat"
+require "vimamsa/demo_player"
 require "vimamsa/clipboard"
 # exit!
 require "vimamsa/main"

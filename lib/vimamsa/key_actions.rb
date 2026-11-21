@@ -157,6 +157,7 @@ reg_act("mode.insert", proc { vma.kbd.set_mode(:insert) }, "Switch to INSERT mod
 reg_act("mode.prev", proc { vma.kbd.to_previous_mode }, "Return to the previous mode")
 reg_act("mode.visual", proc { buf.start_selection; vma.kbd.set_mode(:visual) }, "Enter VISUAL mode (for selections)")
 reg_act("app.demo", proc { install_demo_files }, "Install and show Demo")
+reg_act("help.demo", proc { DemoPlayer.toggle }, "Play the demo (again: stop it)")
 reg_act("app.customrb.reload", proc { reload_customrb }, "Reload custom.rb")
 
 reg_act("edit.complete.toggle", proc {

@@ -1,4 +1,5 @@
-# Key presses for the README demo, run by scripts/demo/record_demo.rb.
+# Key presses for the README demo, run by scripts/demo/record_demo.rb, and
+# played inside the editor by Help ▸ Play demo (lib/vimamsa/demo_player.rb).
 # Times are at --speed 1; the script divides them by its --speed.
 #   keys K K ...   press keys one at a time (editor key names: esc, enter,
 #                  space, ctrl (alone), ctrl-r, or xdotool keysyms), with the
@@ -6,6 +7,10 @@
 #   type TEXT      type TEXT character by character (Insert mode)
 #   wait SECONDS   pause
 #   delay SECONDS  time between keys from now on
+#   target TEXT    the line easy jump goes to: the first one holding TEXT.
+#                  The player in the editor types that line's label (labels
+#                  depend on the window size); the recording types
+#                  JUMP_LABEL from record_demo.rb.
 # The key log panel on the right shows each key and the action it ran.
 
 delay 0.45
@@ -49,6 +54,7 @@ keys y
 wait 0.8
 
 # Easy jump (s): every word start gets a label; type one to jump there
+target class Circle
 keys s
 wait 1.6
 keys @JUMP_LABEL@

@@ -124,6 +124,7 @@ def run_steps(env, stop_at_label: false)
     case cmd
     when "wait" then sleep arg.to_f / SPEED
     when "delay" then delay = arg.to_f / SPEED
+    when "target" then nil # for the player in the editor; JUMP_LABEL is that line's label here
     when "keys"
       keys = arg.split
       return if stop_at_label && keys.include?("@JUMP_LABEL@")
