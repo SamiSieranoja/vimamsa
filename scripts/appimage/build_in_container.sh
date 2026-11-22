@@ -140,9 +140,19 @@ step "AppRun, desktop entry, icon"
 cp /src/scripts/appimage/AppRun "$APPDIR/AppRun" && chmod +x "$APPDIR/AppRun"
 # ruby-lsp / rufo on PATH without the bundled ruby (see AppRun)
 mkdir -p "$U/lib/vimamsa/bin"
+# Without BUNDLE_GEMFILE, ruby-lsp composes a bundle from the project's
+# Gemfile (.ruby-lsp/Gemfile) and runs `bundle install`, which tries to write
+# the project's gems into the read-only image (Bundler::ReadOnlyFileSystemError)
+# and stalls the server's startup. Point it at a fixed bundle of just ruby-lsp,
+# locked here from the installed gems: it then starts at once, offline.
+mkdir -p "$U/lib/vimamsa/lsp"
+printf 'source "https://rubygems.org"\ngem "ruby-lsp"\n' > "$U/lib/vimamsa/lsp/Gemfile"
+(cd "$U/lib/vimamsa/lsp" && bundle lock --local)
 for t in ruby-lsp rufo; do
   # (the editor has put the user's GEM_HOME etc. back by the time these run)
-  printf '#!/bin/sh\nunset GEM_HOME GEM_PATH RUBYOPT RUBYLIB\nexec "$(dirname "$(readlink -f "$0")")/../../../bin/%s" "$@"\n' "$t" > "$U/lib/vimamsa/bin/$t"
+  gemfile=""
+  [ "$t" = ruby-lsp ] && gemfile='export BUNDLE_GEMFILE="$d/../lsp/Gemfile"\n'
+  printf "#!/bin/sh\nunset GEM_HOME GEM_PATH RUBYOPT RUBYLIB\nd=\"\$(dirname \"\$(readlink -f \"\$0\")\")\"\n${gemfile}exec \"\$d/../../../bin/%s\" \"\$@\"\n" "$t" > "$U/lib/vimamsa/bin/$t"
   chmod +x "$U/lib/vimamsa/bin/$t"
 done
 cat > "$APPDIR/vimamsa.desktop" <<EOF

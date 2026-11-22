@@ -5,6 +5,10 @@ LSP = LanguageServer::Protocol
 
 class LangSrv
   @@languages = {}
+  # Languages whose server failed to start: not retried for every buffer (each
+  # try blocks the GTK thread, so a session of N files stalled N times) until
+  # LangSrv.restart
+  @@failed = {}
   attr_accessor :error
   attr_reader :completion_supported, :position_encoding
 
@@ -28,6 +32,7 @@ class LangSrv
   def self.restart(lang)
     lang = LSP_LANG.fetch(lang, lang)
     @@languages.delete(lang)&.shutdown
+    @@failed.delete(lang)
     vma.buffers.list.each do |b|
       next if b.fname.nil? || b.lang.nil?
       next unless LSP_LANG.fetch(b.lang, b.lang) == lang
@@ -38,11 +43,21 @@ class LangSrv
 
   def self.get(lang)
     lang = LSP_LANG.fetch(lang, lang)
-    if @@languages[lang].nil?
-      @@languages[lang] = LangSrv.new(lang)
-      @@languages[lang] = nil if @@languages[lang].error
+    if @@languages[lang].nil? && !@@failed[lang]
+      srv = LangSrv.new(lang)
+      if srv.error
+        # Only a configured server that did not start counts as failed
+        @@failed[lang] = true if srv.configured?
+      else
+        @@languages[lang] = srv
+      end
     end
     return @@languages[lang]
+  end
+
+  # A server is configured for this language (whether or not it started)
+  def configured?
+    @configured
   end
 
   def new_id()
@@ -58,6 +73,7 @@ class LangSrv
     lspconf = nil
     ret = (cnf.lsp.server? || {}).find { |k, v| v[:languages].include?(@lang) }
     lspconf = ret[1] unless ret.nil?
+    @configured = !lspconf.nil?
 
     if !lspconf.nil?
       error = false
@@ -115,7 +131,9 @@ class LangSrv
 
     @writer.write(id: init_id, params: initp, method: "initialize")
 
+    @server_gone = false
     @lst = Thread.new {
+      begin
       @reader.read do |r|
         if r[:method] == "textDocument/publishDiagnostics"
           path = uri_to_path(r.dig(:params, :uri)) rescue nil
@@ -128,12 +146,20 @@ class LangSrv
         GLib::Idle.add { cb.call(r); false } if cb
         pp r
       end
+      rescue StandardError => e
+        debug "LSP reader stopped: #{e}"
+      ensure
+        # EOF or unreadable output: the server is gone, stop waiting for it
+        @server_gone = true
+      end
     }
 
     # LSP spec: wait for initialize result, then send initialized notification.
     # Servers such as ruby-lsp will not respond to any request until this is done.
     init_result = wait_for_response(init_id)
     if init_result.nil?
+      message("LSP server #{lspconf[:name]} did not start (command: #{lspconf[:command]})")
+      shutdown
       @error = true
       return
     end
@@ -218,6 +244,7 @@ class LangSrv
     t = Time.now
     debug "Waiting for response id:#{id}"
     while @resp[id].nil?
+      return @resp[id] if @server_gone # a last reply may have come with EOF
       sleep 0.03
       if Time.now - t > timeout
         debug "Timeout LSP call id:#{id}"

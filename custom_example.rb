@@ -103,7 +103,11 @@ end
 # cnf.lsp.server.solargraph.languages = ["ruby"]
 
 # ruby-lsp (Ruby):
-# cnf.lsp.server.ruby_lsp = { name: "ruby-lsp", command: "bundle exec ruby-lsp", type: "stdio" } 
+# The AppImage puts its own ruby-lsp on PATH. "bundle exec" only works when
+# the editor's current directory (or a parent) has a Gemfile; started from
+# anywhere else it fails ("Could not locate Gemfile") for every Ruby buffer.
+# cnf.lsp.server.ruby_lsp = { name: "ruby-lsp",
+#   command: ENV["APPIMAGE"] ? "ruby-lsp" : "bundle exec ruby-lsp", type: "stdio" }
 # cnf.lsp.server.ruby_lsp.languages = ["ruby"]
 
 
