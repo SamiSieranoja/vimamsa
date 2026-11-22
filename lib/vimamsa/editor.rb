@@ -456,8 +456,7 @@ class Editor
 
     # After a restart (restart_editor) reopen the previous files silently.
     if ENV["VIMAMSA_RESTORE_SESSION"]
-      restore_session_files(fnames)
-      message("Session restored: #{fnames.size} file(s)")
+      restore_session_files(fnames) { message("Session restored: #{fnames.size} file(s)") }
       return
     end
 
@@ -471,24 +470,51 @@ class Editor
       },
       :callback => proc { |x|
         if x["yes_btn"] == "submit"
-          restore_session_files(fnames)
-          message("Session restored: #{label}")
+          restore_session_files(fnames) { message("Session restored: #{label}") }
         end
       },
     }
     PopupFormGenerator.new(params).run
   end
 
-  def restore_session_files(fnames)
+  # Opens the session's files one per main loop turn, showing "Restoring
+  # session: 7/19" in the status bar, so the window stays responsive and shows
+  # how far it got; then calls the block. A file that fails to open is
+  # reported and skipped.
+  def restore_session_files(fnames, &done)
     initial = vma.buffers.list.find { |b| b.fname.nil? }
-    fnames.each { |f| b = load_buffer(f); b&.needs_autosave_check = true }
-    initial&.close
-    # Loading the session switches to its last file; cnf.startup_file stays
-    # the buffer shown on startup.
-    if @startup_fname and (id = vma.buffers.get_buffer_by_filename(@startup_fname))
-      vma.buffers.set_current_buffer(id)
-    end
-    gui.restore_column2_buffer
+    n = fnames.size
+    i = 0
+    finish = lambda {
+      gui.set_status_indicator(:session_restore, nil)
+      initial&.close if vma.buffers.list.any? { |b| b.equal?(initial) }
+      # Loading the session switches to its last file; cnf.startup_file stays
+      # the buffer shown on startup.
+      if @startup_fname and (id = vma.buffers.get_buffer_by_filename(@startup_fname))
+        vma.buffers.set_current_buffer(id)
+      end
+      gui.restore_column2_buffer
+      done&.call
+    }
+    step = lambda {
+      if i >= n
+        finish.call
+        next
+      end
+      f = fnames[i]
+      i += 1
+      gui.set_status_indicator(:session_restore, "Restoring session: #{i}/#{n} #{File.basename(f)}")
+      begin
+        b = load_buffer(f)
+        b&.needs_autosave_check = true
+      rescue StandardError => e
+        message("Could not restore #{f}: #{e.message}")
+      end
+      # Idle: lower priority than drawing, so the status shows between files
+      GLib::Idle.add { step.call; false }
+    }
+    gui.set_status_indicator(:session_restore, "Restoring session: 0/#{n}")
+    GLib::Idle.add { step.call; false }
   end
 
   def add_content_search_path(pathstr)
