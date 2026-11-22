@@ -22,7 +22,6 @@ HELP_PAGES = %w[intro vim_intro]
 # action's description; tests check the action against the live bindings.
 VIM_INTRO_KEYS = [
   ["C", "s", "change a character", "jump.easy"],
-  ["C", "C", "change to end of line", "grep.files"],
   ["C", "O", "open a line above", "move.line.end"],
   ["C", "X", "delete a character back", "edit.line.below"],
   ["C", "space <char>", "right, then a command", "edit.insert.char"],
