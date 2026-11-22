@@ -3,7 +3,7 @@
 title square
 file shapes.rb
 delay 0.3
-wait 1
+wait 0.3
 # Jump to the start of the next word
 keys w d
 wait 1
@@ -12,40 +12,30 @@ keys O ctrl
 type Hello World!!!
 # Return to the previous mode
 keys ctrl
-wait 3
-# Jump to the start of the previous word
-keys b
-wait 0.7
-# Move backward one character, Switch to INSERT mode
-keys h ctrl
-wait 0.5
-type ooo
-# Return to the previous mode
-keys ctrl
-wait 0.8
 # Move to the beginning of the current line
+wait 0.5
 keys 0
-wait 0.9
+wait 0.2
 # Move one line forward, Enter VISUAL mode (for selections), Move to the end of the buffer, Search actions
 keys j v
 delay 0.3
 keys G
 delay 0.3
 keys , , s
-wait 0.5
+wait 0.3
 # A namespace and a fuzzy name: always the same action (the ranking of a
 # plain fuzzy query depends on which actions exist)
 type linerempempty
-wait 3
+wait 0.5
 # Form: submit, or press the focused button
 keys enter
-wait 1.0
+wait 0.5
 # Move one line backward
 keys k
 wait 0.5
 keys G
 wait 0.2
-keys X X X 
+keys X X X X
 # Easy jump
 keys s
 target line 13 col 1
@@ -63,10 +53,10 @@ delay 0.2
 keys y
 delay 0.2
 keys h y
-wait 1
+wait 0.5
 # Insert an empty line below, Move one line backward, Paste text after the cursor
 keys X X k X p
-wait 1.1
+wait 0.5
 # Easy jump
 keys s
 wait 0.3
@@ -77,22 +67,22 @@ keys d e i
 type Square
 # Return to the previous mode
 keys esc
-wait 1.1
+wait 0.5
 # Move one line forward, Move to the beginning of the current line, Enter VISUAL mode (for selections)
 keys j 0 v
 # Easy jump
 keys s
-wait 1.4
+wait 0.5
 target line 30 col 1
 keys @JUMP_LABEL@
 # Move to the end of the current line, Move backward one character
 keys O h , , r
-wait 1.1
+wait 0.5
 keys ,
-wait 1.1
+wait 0.5
 # Search and replace
 keys r r
-wait 3
+wait 0.5
 type radius
 # Form: next field or button
 keys tab
@@ -100,18 +90,24 @@ type width
 wait 0.4
 # Form: submit, or press the focused button
 keys enter
-wait 1.1
+wait 0.5
 # Move one line backward, Jump to the end of the next word
 keys k k e
-wait 2
+wait 0.5
 target line 28 col 5
 keys @JUMP_LABEL@
 # Jump to the start of the previous word, Delete up to the next *, Delete char forward
-keys d f * x
-wait 3
+keys d f *
+wait 0.4
+keys  x
+wait 0.2
 # Move one line forward
-keys j j j j j
-wait 1.1
+keys j j
+wait 0.2
+keys j j j
+wait 0.2
+keys z z
+wait 0.2
 # Move one line backward, Jump to the start of the next word, Enter VISUAL mode (for selections), Move forward one character, Jump to the next ,, Move backward one character, Copy selection to clipboard, Move one line forward, Insert an empty line below, Paste text after the cursor, Move to the beginning of the current line, Copy the current line
 keys w
 wait 0.2
@@ -134,7 +130,7 @@ keys esc O i
 type .area
 # Return to the previous mode, Move to the beginning of the current line, Copy the current line, Paste text after the cursor
 keys esc 0 y y p
-wait 1.1
+wait 0.5
 # Delete to the end of the word, Switch to INSERT mode
 keys d e i
 type AS
@@ -144,14 +140,16 @@ keys backspace backspace
 type Square
 # Return to the previous mode
 keys esc
-wait 3
+wait 0.5
 # Move one line backward
 keys k
-wait 1.1
+wait 0.5
 # Join the next line to the current line, Move backward one character, Insert ,, Move to the beginning of the current line, Switch to INSERT mode
 keys J h
 wait 0.2
-keys space , 0
+keys space ,
+wait 0.2
+keys 0
 wait 0.2
 keys i
 type [
@@ -167,21 +165,21 @@ wait 1.1
 keys esc
 wait 1.1
 # Move to the start of the buffer, Enter VISUAL mode (for selections), Move to the end of the buffer, Search actions
-keys g g v G , , s
+keys g g
+wait 0.2
+keys v G
+wait 0.2
+keys k k k 
+wait 0.2
+keys , , s
 wait 0.3
 type evlalconver
-wait 1.1
+wait 0.5
 # Form: submit, or press the focused button
 keys enter
-wait 0.9
+wait 0.5
 # Move one line forward
 keys j j
-wait 1.1
-# Copy the current line, Paste text after the cursor, Move one line backward
-keys y y p p k
-wait 0.8
-# Delete to the end of the word
-keys d e d e d e d e
-wait 0.9
-# Delete to the end of the word, Delete char forward
-keys d e d e x
+wait 0.5
+
+
