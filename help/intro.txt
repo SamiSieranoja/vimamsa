@@ -1,6 +1,5 @@
 ❙Welcome to Vimamsa❙
 A Vim-inspired text editor. This page is always in Help ▸ Introduction.
-Links: put the cursor on one and press ⦁enter⦁, or click the button.
 
 ◼ Modes
 Command mode: keys move the cursor and edit. The badge at the bottom right shows the mode.
@@ -27,6 +26,5 @@ Command line     {key:mode.cmdline}
 ◼ Learn more
 ⟦run:help.keys|Key bindings⟧  all key bindings
 ⟦run:app.demo|Install demo files⟧  text and images to try
-Customize: ⟦~/.config/vimamsa/custom.rb⟧ (Ruby, loaded at startup)
 
 ⟦run:help.intro.startup.toggle|Show at startup: on / off⟧
