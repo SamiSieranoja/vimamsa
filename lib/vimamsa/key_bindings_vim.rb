@@ -1,6 +1,6 @@
 # Vim keybinding scheme: standard vim behavior, as close as the current
 # action inventory allows. Does not load vimlike. The Vim bindings themselves
-# are the shared VIM_BINDINGS table (vim_core.rb), which vimlike also loads
+# are the shared VIM_BINDINGS table (key_bindings_vim_core.rb), which vimlike also loads
 # where it doesn't conflict; this file adds the modes and the vim keymap's own
 # deviations. Selected via cnf.keybindings.scheme = "vim" (applied on restart).
 #
@@ -58,7 +58,7 @@ def insert_move(op)
   _insert_move(op)
 end
 
-# Vim behavior: the shared table and its actions, see vim_core.rb
+# Vim behavior: the shared table and its actions, see key_bindings_vim_core.rb
 bind_vim_bindings
 
 # ── vim keymap's own bindings (not Vim behavior) ─────────────────────────────

@@ -440,7 +440,7 @@ def vim_binding_conflicts_report(rows = vim_binding_conflicts)
   out << "Bindings that modules and `custom.rb` add at startup are not included.\n\n"
   out << "| | Count |\n|---|---|\n"
   out << "| Conflicts (the vim binding can't be used in vimlike) | #{by.fetch(:conflict, []).size} |\n"
-  out << "| Added to vimlike from the shared table (`VIM_BINDINGS`, vim_core.rb) | #{by.fetch(:added, []).size} |\n"
+  out << "| Added to vimlike from the shared table (`VIM_BINDINGS`, key_bindings_vim_core.rb) | #{by.fetch(:added, []).size} |\n"
   out << "| Missing from vimlike (no conflict, could be added) | #{by.fetch(:missing, []).size} |\n"
   out << "| vim keymap only (left out of vimlike on purpose) | #{by.fetch(:vim_only, []).size} |\n"
   out << "| Shared (same keys, same action) | #{by.fetch(:shared, []).size} |\n\n"
@@ -462,7 +462,7 @@ def vim_binding_conflicts_report(rows = vim_binding_conflicts)
   vim_conflict_rows_grouped(by.fetch(:missing, [])).each { |r|
     out << "| #{r[:mode]} | #{code.(r[:keys].join(" "))} | #{act.(r[:action])} |\n"
   }
-  out << "\n## vim keymap only\n\nLeft out of vimlike on purpose (`VIM_KEYMAP_ONLY`, vim_core.rb).\n\n"
+  out << "\n## vim keymap only\n\nLeft out of vimlike on purpose (`VIM_KEYMAP_ONLY`, key_bindings_vim_core.rb).\n\n"
   out << "| Mode | Vim keys | Vim action | Why |\n|---|---|---|---|\n"
   by.fetch(:vim_only, []).each { |r|
     out << "| #{r[:mode]} | #{code.(r[:keys].join(" "))} | #{act.(r[:action])} | #{r[:why]} |\n"

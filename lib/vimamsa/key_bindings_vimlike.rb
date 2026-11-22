@@ -359,7 +359,7 @@ add_keys "core cat:view", {
 }
 
 add_keys "core cat:grep", {
-  "C C" => "grep.files",
+  # "C C" => "grep.files",
   "C , a" => "ack.search",
 }
 
@@ -451,7 +451,7 @@ bindkey "C , i p", "edit.insert.password", keywords: "cat:edit"
 # (c O, g U O, > O, ...; vim_operators.rb)
 vma.kbd.key_set_add(:motion, "O" => :line_end)
 
-# Vim bindings from the shared table (vim_core.rb) that don't conflict with
+# Vim bindings from the shared table (key_bindings_vim_core.rb) that don't conflict with
 # the bindings above; the rest are listed in doc/vimlike_vim_conflicts.md.
 # Keep this last, so every vimlike binding counts as taken.
 bind_vim_bindings(only_free: true)

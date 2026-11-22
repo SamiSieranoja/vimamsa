@@ -16,11 +16,14 @@ Vi/Vim -inspired experimental GUI-oriented text editor written with Ruby and GTK
 
 ## Download (AppImage)
 
+[![Latest release](https://img.shields.io/github/v/release/SamiSieranoja/vimamsa?label=latest%20release)](https://github.com/SamiSieranoja/vimamsa/releases/latest)
+
 The easiest way: one file, nothing to install (Ruby, GTK and everything else
 the editor needs are inside it).
 
-1. Download [Vimamsa-x86_64.AppImage](https://github.com/SamiSieranoja/vimamsa/releases/latest/download/Vimamsa-x86_64.AppImage)
-   (all versions: [Releases](https://github.com/SamiSieranoja/vimamsa/releases)).
+1. Download [Vimamsa-x86_64.AppImage](https://github.com/SamiSieranoja/vimamsa/releases/latest/download/Vimamsa-x86_64.AppImage),
+   the latest release (each release also has the file with its version in
+   the name, e.g. Vimamsa-0.1.28-x86_64.AppImage: [Releases](https://github.com/SamiSieranoja/vimamsa/releases)).
 2. Make it executable and run it:
    ```
    chmod +x Vimamsa-x86_64.AppImage
@@ -160,7 +163,6 @@ Syntax:
 | `z` | Enter BROWSE mode |
 | `O` | Move to end of line |
 | `X` | Insert an empty line below |
-| `C` | Search in files (grep) |
 | `tab` | Switch between current and previous buffer |
 | `M` | Run the last recorded macro |
 | `enter` | On a link: open url in browser. On `/path/to/file.txt:linenum`: open the file, jump to linenum |
@@ -170,13 +172,13 @@ Syntax:
 | `ctrl-w` | Close buffer |
 | `ctrl-c` / `ctrl-x` | Comment / uncomment line |
 | `ctrl-q` | Quit |
-| `g s` | Jump to a file in the file panel by its label |
+| `g s` | Easy Jump to a file in the file panel|
 | `alt-h` / `alt-l` | Previous / next file in the file panel |
 | `, b` | Switch buffer (buffer manager) |
 | `, f` | File explorer: browse directories (`h` parent directory, `l` or `enter` open) |
-| `, , f` or `, z` | File finder (fuzzy search for file names) |
+| `, z` | File finder (fuzzy search for file names) |
 | `, h` | File history |
-| `, g` | Search for a string in the current buffer, show matching lines |
+| `, g` | Grep: Search for a string in the current buffer, show matching lines |
 | `, a` | Search in files using ack |
 | `, r r` | Search and replace |
 | `, e` or `:` | Command line |
@@ -186,9 +188,9 @@ Syntax:
 | `, r v b` | Revert buffer from disk |
 | `, M` / `, '` | Add bookmark / list bookmarks |
 | `, v` | Auto-indent buffer |
-| `, w` | Switch between columns |
 | `, , w` | Toggle two-column view |
-| `, m h` | Show messages |
+| `, w` | Switch between columns |
+| `, m h` | Show messages (toggle) |
 
 **Insert mode** (similar to bash or emacs)
 
