@@ -9,7 +9,7 @@ REPO="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 TESTS="${SMOKE_TESTS:-tests/test_basic_editing.rb tests/test_bundling.rb}"
 
 docker run --rm -v "$APPIMAGE:/app/Vimamsa.AppImage:ro" -v "$REPO/tests:/src/tests:ro" \
-  -v "$REPO/exe:/src/exe:ro" -e TESTS="$TESTS" ubuntu:24.04 bash -c '
+  -v "$REPO/exe:/src/exe:ro" -v "$REPO/lib:/src/lib:ro" -e TESTS="$TESTS" ubuntu:24.04 bash -c '
 set -e
 apt-get update -qq >/dev/null
 DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
