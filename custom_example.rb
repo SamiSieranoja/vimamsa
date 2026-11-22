@@ -5,8 +5,8 @@
 
 
 # Eval selected text as ruby code (e.g. use as calculator):
-# bindkey "V , e", "vma.buf.convert_selected_text(:eval)"
-# syntax: bindkey "mode key1 key2 ..."
+# bindkey "V , e", "sel.convert.eval"
+# syntax: bindkey "mode key1 key2 ...", "action.id"
 
 # Execute in new gnome-terminal tab
 # bindkey "C , , t", "term.line"
@@ -14,15 +14,16 @@
 # Actions have dotted ids, from general to specific: "move.word.next",
 # "buf.save", "sel.copy" (Search for Actions, [C] , , s, lists them). Bind one
 # by its id, or with the a.… form, which reports a typo when the binding is made:
-# bindkey "C , w", a.move.word.next
+# bindkey "C , i w", a.move.word.next
 # Run one from here or from the command line (:) with a trailing "!":
 # a.buf.save!
 # Your own actions: use the "custom." namespace, as below.
 
-# setcnf :tab_width, 4
+# Settings are cnf.* values (the Settings dialog writes them to settings.rb):
+# cnf.tab.width = 4
 
 # Open this file every time the program starts
-cnf.startup_file = "~/Documents/startup.txt"
+# cnf.startup_file = "~/Documents/startup.txt"
 
 
 
@@ -55,7 +56,7 @@ reg_act("custom.c_header", proc { collect_c_header }, "Collect function definiti
 
 # Extract all numbers from txt selection
 c = Converter.new(lambda { |x| x.scan(/([\+\-]?\d+(\.\d+)?)/).collect { |x| x[0] }.join(" ") }, :lambda, :getnums)
-# (find converter using action search input:"conv getnum")
+# (action sel.convert.getnums; in the action search, e.g. "conv getnum")
 
 
 def insert_lorem_ipsum()
@@ -76,18 +77,19 @@ def open_mtg(urlpref = nil)
     vma.buf.get_current_selection.strip
   else
     l = vma.buf.get_current_line.strip
-    m = l.match(/(\w[\w\'\-\s]+)/)
+    m = l.match(/(\w[\w\'\-\,\s]+)/)
     m ? m[0].strip : nil
   end
   return if cardname.nil? || cardname.empty?
   u = URI.encode_www_form_component(cardname)
+  message(u)
   url = urlpref ? urlpref + u : "https://gatherer.wizards.com/Pages/Card/Details.aspx?name=#{u}"
   open_url(url)
 end
 
 # reg_act("custom.mtg", proc { open_mtg }, "open mtg card info")
 # bindkey "VC , , m", "custom.mtg"
-# Try on this line:
+# Try on this line (keys ", , m" in command or visual mode):
 # Restless Cottage
 
 # The introduction page (Help ▸ Introduction) is shown at start once. To show
@@ -111,7 +113,7 @@ end
 # cnf.lsp.server.ruby_lsp.languages = ["ruby"]
 
 
-# cnf.lsp.server.clangd = { name: "clangd", command: "clangd-12 --offset-encoding=utf-8", type: "stdio" }
+# cnf.lsp.server.clangd = { name: "clangd", command: "clangd --offset-encoding=utf-8", type: "stdio" }
 # cnf.lsp.server.clangd.languages = ["c", "cpp"]
 
 # Autocomplete (word completion popup in insert mode). Disabled by default.
