@@ -42,7 +42,7 @@ RUN git  clone https://github.com/SamiSieranoja/vimamsa.git && cd vimamsa && gem
 RUN chmod a-w -R /usr/local/bundle/gems/vimamsa*
 RUN chmod a-w -R vimamsa
 
-CMD ["bash", "-c", "xvfb-run -a ruby /usr/local/bundle/gems/vimamsa-*/run_tests.rb /tmp/report00.txt"]
-# CMD ["bash", "-c", "cd vimamsa && xvfb-run -a ruby run_tests.rb"]
+CMD ["bash", "-c", "xvfb-run -a ruby /usr/local/bundle/gems/vimamsa-*/exe/run_tests.rb"]
+# CMD ["bash", "-c", "cd vimamsa && xvfb-run -a ruby exe/run_tests.rb"]
 
 

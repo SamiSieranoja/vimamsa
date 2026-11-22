@@ -34,7 +34,9 @@ you can.
 | `--headless` | invisible display (see below) |
 
 Naming a file explicitly bypasses the exclusion list, which is how the
-excluded tests are run.
+excluded tests are run. An argument that is not recognized (for example a
+mistyped file name) stops the run with exit code 2 instead of being ignored.
+`ruby exe/run_tests.rb --help` lists all of this.
 
 ## Files excluded from the default run
 

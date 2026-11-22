@@ -11,6 +11,41 @@
 #                                         # xvfb not installed); does not disturb
 #                                         # normal use; e2e kbd tests skip
 
+USAGE = <<~TXT
+  Usage: ruby exe/run_tests.rb [--headless] [TESTS...] [CLASSES...] [OPTIONS...]
+
+  Runs vimamsa's integration tests inside one editor instance.
+
+  TESTS (any number; none = all tests/test_*.rb except the excluded ones):
+    tests/test_foo.rb     a test file, by path
+    foo  or  test_foo     shorthand for tests/test_foo.rb
+    foo,bar               several shorthands
+
+  CLASSES:
+    TestFoo               only run test classes with this name
+
+  OPTIONS:
+    --headless            invisible display (xvfb-run, or GTK Broadway if
+                          xvfb is not installed); e2e keyboard tests skip
+    duration=N            test_random_edit: run time in seconds
+    ref=REF               test_perf_startup: commit to compare with
+    runs=N                test_perf_startup: startups per version
+    -h, --help            show this help
+
+  Excluded from the default set (run them by name, one at a time for the
+  binding schemes): test_random_edit, test_notepad_bindings,
+  test_vim_bindings, test_perf_startup.
+
+  Env: VMA_USER_DIR (test config dir, default ~/.config/vimamsa-test),
+  VMA_UPDATE_DOC=1 (regenerate generated docs), VMA_E2E_DICTATION=1,
+  VMA_E2E_INTERACTIVE=1. More: doc/test_commands.md
+TXT
+
+if (ARGV & ["-h", "--help"]).any?
+  puts USAGE
+  exit 0
+end
+
 require "ripl/multi_line"
 require "tempfile"
 require "pathname"
@@ -94,13 +129,28 @@ end
 
 # Expand comma-separated shorthand: "foo,bar" -> tests/test_foo.rb, tests/test_bar.rb
 # Accepts both "foo" and "test_foo" as shorthand for tests/test_foo.rb.
+# Anything not recognized stops the run: silently ignoring a mistyped name
+# would fall back to running the whole default set.
+unknown = []
 raw_args.each do |a|
-  next if a.end_with?(".rb") || a.match?(/\A[A-Z]/) || a.match?(/\A\w+=/)
+  if a.end_with?(".rb")
+    unknown << a if !File.file?(a)
+    next
+  end
+  next if a.match?(/\A[A-Z]/)
+  if a.match?(/\A\w+=/)
+    unknown << a if a !~ /\A(duration|runs)=\d+\z|\Aref=\S+\z/
+    next
+  end
   a.split(",").each do |name|
     name = name.strip.sub(/\Atest_/, "")
     path = File.join(scriptdir, "tests", "test_#{name}.rb")
-    test_files << path if File.file?(path)
+    File.file?(path) ? test_files << path : unknown << name
   end
+end
+if unknown.any?
+  warn "run_tests.rb: unknown argument or test file: #{unknown.join(", ")} (see --help)"
+  exit 2
 end
 
 if test_files.empty?
