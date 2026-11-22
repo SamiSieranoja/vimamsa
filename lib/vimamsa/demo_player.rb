@@ -16,7 +16,10 @@ module Vimamsa
 # menu item again, the key log's ✕, or switching to a buffer that isn't one
 # of the demo's (or the file explorer).
 # The buttons above the key log (and the help.demo.* actions) pause and
-# continue it and change its speed. When it stops, the key log panel is
+# continue it and change its speed. While it plays, the user's keys and mouse
+# clicks in the text are ignored (DemoPlayer.blocks_input?); paused, the
+# editor can be used, and if a demo buffer was changed (its text, cursor,
+# mode or the current buffer), continuing starts the demo from the beginning. When it stops, the key log panel is
 # hidden again if it wasn't shown before.
 class DemoPlayer
   DIR = File.expand_path("../../scripts/demo", __dir__)
@@ -102,6 +105,20 @@ class DemoPlayer
     nil
   end
 
+  # A demo is playing (not paused): the GUI ignores the user's keys and
+  # mouse clicks in the text, which would change what the demo's keys do
+  def self.blocks_input?
+    !!(@current&.running? && !@current.paused?)
+  end
+
+  # Called by the GUI for an ignored key or click
+  def self.input_blocked
+    t = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    return if @blocked_msg_at && t - @blocked_msg_at < 2
+    @blocked_msg_at = t
+    message("A demo is playing: pause it (the button above the key log) to use the editor")
+  end
+
   def self.pause_toggle = playing&.toggle_pause
   def self.faster = playing&.faster
   def self.slower = playing&.slower
@@ -142,6 +159,7 @@ class DemoPlayer
     return if !@running || @paused
     @paused = true
     remove_timer
+    @paused_state = state
     show_controls
     message("Demo paused")
   end
@@ -150,9 +168,18 @@ class DemoPlayer
   def resume
     return if !@running || !@paused
     @paused = false
+    changed = @paused_state && state != @paused_state
+    @paused_state = nil
     show_controls
-    message("Demo continues")
-    run_next
+    # Edited while paused (or the cursor moved): the rest of the steps would
+    # not do what they should, so the demo starts from the beginning
+    if changed && (demo_buf?(vma.buf) || explorer_buf?(vma.buf))
+      message("The demo starts from the beginning (the buffer was changed while paused)")
+      restart(next_round: false)
+    else
+      message("Demo continues")
+      run_next
+    end
   end
 
   def toggle_pause
@@ -304,8 +331,11 @@ class DemoPlayer
 
   # The file as it was at the start, and the cursor at the top, for the
   # next round
-  def restart
-    @rounds += 1
+  # next_round: false starts this round again (after edits while paused)
+  def restart(next_round: true)
+    @rounds += 1 if next_round
+    remove_timer
+    vma.buf.end_visual_mode if demo_buf?(vma.buf) && vma.buf.visual_mode?
     vma.kbd.set_mode(:command)
     # The files as at the start, and the buffer history in the same order
     @bufs.zip(@originals).reverse_each { |b, text|
@@ -315,6 +345,12 @@ class DemoPlayer
       b.view&.handle_deltas
     }
     begin_round
+  end
+
+  # What a pause and continue compares: the current buffer, the mode, and
+  # each demo buffer's text and cursor
+  def state
+    [vma.buf.object_id, vma.kbd.get_mode, @bufs.map { |b| [b.to_s, b.pos] }]
   end
 
   def remove_timer

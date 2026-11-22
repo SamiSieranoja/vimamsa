@@ -8,13 +8,6 @@ the git ref(s), as a short commit hash or a range.
 
 ## Open
 
-### (prio 1) Demo playback: block user input while running; restart after edits
-
-- While a demo runs, the user can't interact with the editor (e.g. move the cursor
-  or edit the buffer).
-- If the user pauses the demo and edits the buffer, continuing the demo starts it
-  from the beginning.
-
 ### Record demos; form input through the key bindings
 
 Record a demo like a macro, into the demo step format, by capturing keys in
@@ -612,6 +605,13 @@ Constraints:
 ## DONE
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
+
+- **Demo playback: no user input while running; restart after edits** (2026-11-22,
+  uncommitted): while a demo plays, the user's keys and clicks/drags in the text are
+  ignored (`DemoPlayer.blocks_input?`, checked in `gui.rb` and `gui_sourceview.rb`), with a
+  message to pause it. Paused, the editor can be used; if the text, cursor, mode or
+  current buffer changed, continuing starts the demo from the beginning. Tests in
+  `tests/test_demo_player.rb`.
 
 - **XDG dirs instead of `~/.vimamsa`** (2026-11-22, uncommitted): generated files
   (session, buffer list, command and file history, file index, recorded macros,

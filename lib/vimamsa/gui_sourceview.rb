@@ -258,6 +258,7 @@ class VSourceView < GtkSource::View
     @cnt_mo = Gtk::EventControllerMotion.new
     self.add_controller(@cnt_mo)
     @cnt_mo.signal_connect "motion" do |gesture, x, y|
+      next if DemoPlayer.blocks_input?
       if !@range_start.nil? and !x.nil? and !y.nil? and buf.visual_mode?
         i = coord_to_iter(x, y, true)
         @bufo.set_pos(i) if !i.nil? and @last_iter != i
@@ -269,6 +270,9 @@ class VSourceView < GtkSource::View
     @cnt_drag = Gtk::GestureDrag.new
     self.add_controller(@cnt_drag)
     @cnt_drag.signal_connect "drag-begin" do |gesture, x, y|
+      # A playing demo: no mouse selections (see "pressed")
+      @demo_blocked = DemoPlayer.blocks_input?
+      next if @demo_blocked
       debug "drag-begin", 2
       @drag_start_x = x
       @drag_start_y = y
@@ -286,6 +290,7 @@ class VSourceView < GtkSource::View
     end
 
     @cnt_drag.signal_connect "drag-update" do |gesture, offset_x, offset_y|
+      next if @demo_blocked
       if @move_sel
         t = drop_pos(@drag_start_x + offset_x, @drag_start_y + offset_y)
         # Dropping inside (or right after) the selection would not move it
@@ -307,6 +312,7 @@ class VSourceView < GtkSource::View
 
     @cnt_drag.signal_connect "drag-end" do |gesture, offsetx, offsety|
       debug "drag-end", 2
+      next if @demo_blocked
       if @move_sel
         r = @move_sel
         @move_sel = nil
@@ -351,6 +357,7 @@ class VSourceView < GtkSource::View
     rightclick.button = 3
     self.add_controller(rightclick)
     rightclick.signal_connect "pressed" do |gesture, n_press, x, y, z|
+      next true if DemoPlayer.blocks_input?
       puts "SourceView, GestureClick rightclick released button=#{gesture.button} x=#{x} y=#{y}"
       if gesture.button == 3
         show_context_menu(x, y)
@@ -360,6 +367,11 @@ class VSourceView < GtkSource::View
 
     click.signal_connect "pressed" do |gesture, n_press, x, y, z|
       debug "SourceView, GestureClick released x=#{x} y=#{y}"
+      # A playing demo: a click would move the cursor under it (demo_player.rb)
+      if DemoPlayer.blocks_input?
+        DemoPlayer.input_blocked
+        next true
+      end
       vma.gui.instance_variable_set(:@kbd_passthrough, false)
 
       xloc = (x - gutter_width).to_i
@@ -408,6 +420,7 @@ class VSourceView < GtkSource::View
 
     click.signal_connect "released" do |gesture, n_press, x, y, z|
       debug "SourceView, GestureClick released x=#{x} y=#{y} button=#{gesture.button}"
+      next true if DemoPlayer.blocks_input?
       next true if @move_sel # drag-end handles it
 
       xloc = (x - gutter_width).to_i

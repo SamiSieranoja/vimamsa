@@ -216,6 +216,60 @@ class TestDemoPlayer < VmaTest
     vma.buffers.close_buffer(p.buf.id) if p&.buf
   end
 
+  # While it plays, the GUI ignores the user's keys and clicks; paused or
+  # stopped, it doesn't
+  def test_blocks_input_while_playing
+    p = short_player(5, loop: false)
+    assert !DemoPlayer.blocks_input?
+    p.start
+    assert DemoPlayer.blocks_input?, "a playing demo lets user input through"
+    p.toggle_pause
+    assert !DemoPlayer.blocks_input?, "a paused demo blocks user input"
+    p.toggle_pause
+    assert DemoPlayer.blocks_input?
+    p.stop
+    assert !DemoPlayer.blocks_input?, "a stopped demo blocks user input"
+  ensure
+    p&.stop
+    vma.buffers.close_buffer(p.buf.id) if p&.buf
+  end
+
+  # Edited while paused: continuing starts the demo from the beginning, on
+  # the file as it was at the start
+  def test_edit_while_paused_restarts
+    p = short_player(0.2, loop: false)
+    p.start
+    p.toggle_pause
+    keys "i h e l l o esc"
+    assert p.buf.to_s.start_with?("hello"), p.buf.to_s[0, 20]
+    p.toggle_pause
+    assert_eq original, p.buf.to_s
+    assert_eq 0, p.buf.pos
+    assert_eq 0, p.rounds
+    wait_until_done(p, 5)
+    assert_eq "Demo finished", p.stop_message
+    assert_eq original[1..], p.buf.to_s
+  ensure
+    p&.stop
+    vma.buffers.close_buffer(p.buf.id) if p&.buf
+  end
+
+  # Only the cursor moved while paused: that too starts it again
+  def test_cursor_move_while_paused_restarts
+    p = short_player(0.2, loop: false)
+    p.start
+    p.toggle_pause
+    keys "j j l"
+    assert p.buf.pos > 0
+    p.toggle_pause
+    assert_eq 0, p.buf.pos
+    wait_until_done(p, 5)
+    assert_eq original[1..], p.buf.to_s
+  ensure
+    p&.stop
+    vma.buffers.close_buffer(p.buf.id) if p&.buf
+  end
+
   # A demo from any steps file (scripts/demo/record_demo.rb): no controls,
   # on_finish gets the stop message
   def test_given_demo_without_controls

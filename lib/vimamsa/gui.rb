@@ -581,6 +581,11 @@ class VMAgui
       # @entry_has_focus is set explicitly via notify_entry_focus by those widgets.
       next false if @entry_has_focus
       next false if @kbd_passthrough
+      # A playing demo types its own keys (demo_player.rb)
+      if DemoPlayer.blocks_input?
+        DemoPlayer.input_blocked
+        next true
+      end
       name = Gdk::Keyval.to_name(keyval)
       uki = Gdk::Keyval.to_unicode(keyval)
       keystr = uki.chr("UTF-8")
@@ -605,6 +610,7 @@ class VMAgui
     press.signal_connect "key-released" do |gesture, keyval, keycode, y|
       next false if @entry_has_focus
       next false if @kbd_passthrough
+      next true if DemoPlayer.blocks_input?
       name = Gdk::Keyval.to_name(keyval)
       uki = Gdk::Keyval.to_unicode(keyval)
       keystr = uki.chr("UTF-8")
