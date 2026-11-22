@@ -291,7 +291,7 @@ VIM_BINDINGS = {
 # Vim keymap bindings left out of vimlike on purpose, with the reason. The
 # conflicts report lists them separately instead of as missing.
 VIM_KEYMAP_ONLY = {
-  "I ctrl-r <char>" => "no new ctrl chords in vimlike",
+
 }
 
 # Whether keys are bound in mode m, with or without a condition ("C 0" is
