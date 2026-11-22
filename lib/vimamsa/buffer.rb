@@ -153,7 +153,7 @@ class Buffer < String
       # created during startup before editor.rb requires langservp, so require
       # it on demand. require is idempotent, so this is cheap after first load.
       require "vimamsa/langservp"
-      @lsp = LangSrv.get(@lang)
+      @lsp = LangSrv.get(@lang, @fname)
 
       if @lang == "php"
         # Ripl.start :binding => binding

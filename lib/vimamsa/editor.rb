@@ -246,12 +246,11 @@ class Editor
       require "vimamsa/audio"
     end
 
-    if cnf.lsp.enabled?
-      require "vimamsa/langservp"
-      @langsrv["ruby"] = LangSrv.new("ruby")
-      @langsrv["cpp"] = LangSrv.new("cpp")
-      #TODO: if language enabled in config?
-    end
+    # LSP servers start when a file of their language is opened (LangSrv.get,
+    # in the file's project), not here: a server started at startup ran in the
+    # editor's current directory (often the home directory, which ruby-lsp
+    # then indexed whole) and blocked startup while it initialized
+    require "vimamsa/langservp" if cnf.lsp.enabled?
 
     # Load each module that is enabled in settings.
     # Each module lives in modules/<name>/<name>.rb and may optionally define

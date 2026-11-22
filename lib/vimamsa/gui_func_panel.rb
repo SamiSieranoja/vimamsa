@@ -68,7 +68,7 @@ class FuncPanel
       set_placeholder("(no LSP)")
       return
     end
-    lsp = LangSrv.get(buf.lang)
+    lsp = LangSrv.get(buf.lang, buf.fname)
     unless lsp
       set_placeholder("(no LSP)")
       return

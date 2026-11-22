@@ -41,10 +41,12 @@ class LangSrv
     @@languages[lang]
   end
 
-  def self.get(lang)
+  # The server for lang, started if needed. fname: the file it is wanted
+  # for; a new server runs in that file's project (project_root).
+  def self.get(lang, fname = nil)
     lang = LSP_LANG.fetch(lang, lang)
     if @@languages[lang].nil? && !@@failed[lang]
-      srv = LangSrv.new(lang)
+      srv = LangSrv.new(lang, root: project_root(fname))
       if srv.error
         # Only a configured server that did not start counts as failed
         @@failed[lang] = true if srv.configured?
@@ -53,6 +55,26 @@ class LangSrv
       end
     end
     return @@languages[lang]
+  end
+
+  # Files and dirs that mark a project's top folder
+  PROJECT_MARKERS = %w[.git Gemfile compile_commands.json compile_flags.txt]
+
+  # The folder a server for fname works in (its working directory and
+  # rootUri): the nearest folder up from fname with a PROJECT_MARKERS entry,
+  # else fname's own folder. Never the home directory or /: ruby-lsp indexes
+  # its whole workspace, so a file directly in ~ gets an empty folder.
+  def self.project_root(fname)
+    return nil if fname.nil?
+    home = File.expand_path("~")
+    dir = File.dirname(File.expand_path(fname))
+    d = dir
+    until d == home || d == "/" || d == "."
+      return d if PROJECT_MARKERS.any? { |m| File.exist?(File.join(d, m)) }
+      d = File.dirname(d)
+    end
+    return dir if dir != home && dir != "/"
+    @@empty_root ||= Dir.mktmpdir("vimamsa-lsp-")
   end
 
   # A server is configured for this language (whether or not it started)
@@ -64,8 +86,10 @@ class LangSrv
     return @id += 1
   end
 
-  def initialize(lang)
+  # root: the project folder to run the server in (project_root)
+  def initialize(lang, root: nil)
     @error = true
+    @root = root
 
     # Use LSP server specified by user if available
     @lang = lang
@@ -78,7 +102,7 @@ class LangSrv
     if !lspconf.nil?
       error = false
       begin
-        @io = IO.popen(lspconf[:command], "r+")
+        @io = @root ? IO.popen(lspconf[:command], "r+", chdir: @root) : IO.popen(lspconf[:command], "r+")
       rescue Errno::ENOENT => e
         pp e
         error = true
@@ -111,6 +135,10 @@ class LangSrv
 
     pid = Process.pid
 
+    # The project folder, unless workspace folders are configured
+    if wf.empty? && @root
+      wf << LSP::Interface::WorkspaceFolder.new(uri: file_uri(@root), name: File.basename(@root))
+    end
     root_uri = lspconf[:rooturi] || (wf.empty? ? nil : wf.first.uri)
     initp = LSP::Interface::InitializeParams.new(
       process_id: pid,
@@ -581,7 +609,7 @@ end
 
 def lsp_print_functions
   return unless vma.buf&.fname
-  lsp = LangSrv.get(vma.buf.lang)
+  lsp = LangSrv.get(vma.buf.lang, vma.buf.fname)
   if lsp.nil?
     message("No LSP server available for #{vma.buf.lang}")
     return
