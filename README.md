@@ -258,7 +258,7 @@ end
 
 
 ## Known issues
- - Cursor sometimes vanishes when dragging or resizing the window. At least some cases are fixed in new GTK4 versions ( >= 4.18, in Ubuntu Ubuntu 25.04). Workaround is to press ctrl key twice.
+ - Cursor sometimes vanishes (e.g. when dragging or resizing the window). A manifestation of a GTK bug, fixed in new GTK4 versions ( >= 4.18, in Ubuntu Ubuntu 25.04+). Workaround is to press ctrl key twice.
 
 ## Current limitations
  - Linux only
@@ -267,4 +267,24 @@ Mainly tested with:
  - UTF8, English or Finnish
  - Line endings with "\n"
 
+## History
+
+The name ```vimamsa``` was taken from a Pali language dictionary. It can mean `experiment`, `investigation` or `review`.
+
+This software has been in development since at least 2015. Since 2025, development has been done mainly using AI tools (claude). 
+
+## Design goals and future plans
+
+ - GUI-based instead of focusing on running in terminal
+ - Separate key bindings from actions. Should be able to adapt any type of editor keybindings.
+ - Compatibility with the most popular vim features
+ - More modes than in vim(?) and with flexible customization.
+ - Extending with Ruby only.
+ - Support for images and other graphical elements
+ - Vim-style editing, but hopefully easier to learn.
+ - Should have a proper module API. But APIs are often too limited. Should also allow user access to all internal functions and to be able to break stuff.
+
+In future:
+ - WYSIWYG -editing (replacing need for LaTeX or Word)
+ - All-in-one approach like in Emacs. Email, File management, Terminal, Playing audio. Control everything with vim-bindings.
 
