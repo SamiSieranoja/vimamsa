@@ -12,12 +12,12 @@ module Vimamsa
 #     kill the process before any Ruby handler can run, so we tee the process
 #     stderr (where Ruby prints its native crash dump) into a persistent log.
 #
-# Reports go to ~/.config/vimamsa/crash/ .
+# Reports go to the data dir: ~/.local/share/vimamsa/crash/ (user_dirs.rb).
 module CrashHandler
   @installed = false
 
   def self.crash_dir
-    dir = get_dot_path("crash")
+    dir = get_data_path("crash")
     FileUtils.mkdir_p(dir)
     dir
   end

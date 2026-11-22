@@ -21,7 +21,7 @@ require "json"
 # inserted span is tracked by position, so concurrent edits would misplace the
 # final replacement.
 #
-# Configuration (set in ~/.vimamsa/settings.rb via cnf, all optional):
+# Configuration (set in ~/.config/vimamsa/settings.rb via cnf, all optional):
 #   cnf.dictation.python         python interpreter     (default "python3")
 #   cnf.dictation.worker         worker script path      (default bundled whisper_worker.py)
 #   cnf.dictation.model          faster-whisper model    (default "large-v3")
@@ -676,7 +676,7 @@ end
 # ── Saved prompts ───────────────────────────────────────────────────────────────
 
 def vma_dict_prompts_path
-  get_dot_path("dictation_prompts.json")
+  get_data_path("dictation_prompts.json")
 end
 
 def vma_dict_load_prompts

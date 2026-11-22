@@ -11,7 +11,7 @@ class TestStartupFile < VmaTest
       File.write(startup, "startup\n")
       File.write(a, "a\n")
       File.write(b, "b\n")
-      session = get_dot_path("session.txt")
+      session = get_data_path("session.txt")
       File.write(session, "#{a}\n#{b}\n")
 
       open_new_file(startup)

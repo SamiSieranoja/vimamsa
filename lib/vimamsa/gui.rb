@@ -544,7 +544,7 @@ class VMAgui
       # @view.check_controllers
     end
 
-    ctrl_fn = File.expand_path(get_dot_path("ripl_ctrl"))
+    ctrl_fn = File.expand_path(get_data_path("ripl_ctrl"))
     # Allows to debug in case keyboard handling is lost
     if File.exist?(ctrl_fn)
       File.delete(ctrl_fn)

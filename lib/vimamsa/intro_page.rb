@@ -342,7 +342,7 @@ end
 
 # Files of the last session that would be offered for restoring
 def session_files_to_restore
-  path = get_dot_path("session.txt")
+  path = get_data_path("session.txt")
   return [] if !File.exist?(path)
   File.read(path).lines.map(&:strip).reject(&:empty?).select { |f| File.exist?(f) }
 end

@@ -12,7 +12,7 @@ module Vimamsa
 class KeyHint
   SHOW_SECS = 2.0 # fully shown
   FADE_SECS = 0.8 # then fading out
-  OPACITY = 0.9
+  OPACITY = 1.0
   GAP = 14 # px between the end of the line and the bubble
   MIN_GAP = 12 # the gap used when GAP doesn't leave room for the bubble
   Y_OFFSET = 20 # px below the cursor's row (cnf.key_hint.y_offset)
@@ -39,9 +39,9 @@ class KeyHint
     css = Gtk::CssProvider.new
     css.load(data: <<~CSS)
       .key-hint {
-        background-color: rgba(20, 26, 34, 0.75);
+        background-color: rgba(20, 26, 34, 1.0);
         color: #ffffff;
-        border: 1px dashed rgba(255, 255, 255, 0.45);
+        border: 1px dashed rgba(255, 255, 255, 1.0);
         border-radius: 8px;
         padding: 0px 8px;
         font-size: 1.3em;

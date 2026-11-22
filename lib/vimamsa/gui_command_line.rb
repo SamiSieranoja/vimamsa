@@ -21,7 +21,7 @@ module Vimamsa
 class CommandLine
   attr_reader :history, :entry
 
-  HISTORY_FILE = "~/.vimamsa/cmd_history.txt"
+  HISTORY_FILE = "cmd_history.txt" # in the data dir
   HISTORY_MAX = 100
 
   def initialize(css_provider)
@@ -229,7 +229,7 @@ class CommandLine
   end
 
   def load_history
-    f = File.expand_path(HISTORY_FILE)
+    f = get_data_path(HISTORY_FILE)
     return [] if !File.exist?(f)
     File.readlines(f, chomp: true).reject(&:empty?).last(HISTORY_MAX)
   rescue StandardError
@@ -238,7 +238,7 @@ class CommandLine
 
   def save_history
     return if ARGV.include?("--test") # don't pollute history from test runs
-    f = File.expand_path(HISTORY_FILE)
+    f = get_data_path(HISTORY_FILE)
     return if !Dir.exist?(File.dirname(f))
     File.write(f, @history.join("\n") + "\n")
   rescue StandardError

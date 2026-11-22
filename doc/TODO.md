@@ -36,114 +36,14 @@ they're shown, the code under them can't be read: `AA` covers `# E`, `DD` covers
 - `DemoPlayer#jump_label` and its test look labels up by position
   (`@easy_jump_wsmarks`), so they should still work.
 
-### Stop writing to `~/.vimamsa`; use XDG dirs (`~/.config` / `~/.local/share`)
-
-Nothing should be written to `~/.vimamsa` or other ad-hoc dot dirs. User-edited
-configuration goes in `~/.config/vimamsa` (`$XDG_CONFIG_HOME`). Files the program
-generates (history, session, backups, caches, downloaded models/venvs) go in
-`~/.local/share/vimamsa` (`$XDG_DATA_HOME`).
-
-Hardcoded paths found (2026-11-18). They also bypass `vma_user_dir` / `--user-dir`, so
-the test suite (`~/.config/vimamsa-test`) can still touch the real user's files:
-- `lib/vimamsa/gui_command_line.rb:20`: `HISTORY_FILE = "~/.vimamsa/cmd_history.txt"`.
-  Change to data dir.
-- `lib/vimamsa/buffer.rb:2221`: backups in `~/.vimamsa/backup`. Change to data dir.
-  `editor.rb:189` already creates `get_dot_path("backup")`, which is a different
-  directory from the one backups are written to.
-- `lib/vimamsa/macro.rb:219`: `save_macro` writes to `~/.config/.vimamsa`, a stray
-  third directory. Unify it with `NAMED_MACROS_FILE` (`macro.rb:46`). Saved macros are
-  user content, so they go in the config dir.
-
-Currently everything else goes through `get_dot_path` → `~/.config/vimamsa`, including
-generated state. It should be split as follows:
-- Stays in config: `custom.rb`, `settings.rb`, `styles/`, bookmarks, named macros.
-- Moves to data: `session.txt`, `buffers.txt` (`buffer_list.rb:5,14`), `backup/`,
-  `crash/`, `cmd_history.txt`, `dictation_prompts.json`. Also the `listen/` dir and
-  `ripl_ctrl` (`gui.rb:535`). Those two are runtime files, so `$XDG_RUNTIME_DIR` could
-  be an option, but `~/.local/share` is fine for now. `exe/vimamsa` uses `listen/`
-  too, and it must agree with the editor.
-
-Plan sketch:
-1. Add `vma_data_dir` / `get_data_path(sfx)` beside `vma_user_dir` / `get_dot_path`
-   (`editor.rb:742-755`). They honor `$XDG_DATA_HOME`, and `--user-dir` overrides both
-   dirs, so tests stay isolated. Also honor `$XDG_CONFIG_HOME` in `vma_user_dir`.
-2. Route the three hardcoded paths and the data files above through these helpers.
-3. One-time migration at startup: if the old file exists and the new one doesn't, move
-   it (`~/.vimamsa/{cmd_history.txt,backup/}`, `~/.config/.vimamsa/macro_*`, and data
-   files from `~/.config/vimamsa`). Log what was moved.
-4. Fix docs that say `~/.vimamsa/...`:
-   - `README.md:62,158` (custom.rb is actually in `~/.config/vimamsa`)
-   - `modules/tts/tts.rb:14` and `modules/dictation/dictation.rb:24` ("settings.rb")
-   - `custom_example.rb`, if it applies
-5. Tests: with `$vma_user_dir` set, no file outside the test dirs is created. Run a test
-   that exercises history, backup and macro save, and check that `~/.vimamsa` is not
-   created.
-6. `doc/modules_settings_plan.md` already uses `~/.local/share/vimamsa/venv` for its
-   shared Python venv. Build it on `get_data_path("venv")`.
-
 ### Descriptive names for key bindings that lack one
 
-Many bindings show raw Ruby code instead of a description in Help ▸ Show key bindings
-(`show_key_bindings`, `key_bindings_report.rb`) and in other places that show action
-names. Example:
-
-    [C] d F space : buf.delete2(:to_char_backward,' ')
-
-It should say something like `Delete backward to previous space`.
-
-Cause: `KeyBindingTree#get_by_keywords` (`key_binding_tree.rb:404-417`) only looks up a
-description when the action is a registered **Symbol** (`@actions[sym].method_name`).
-Bindings whose action is an eval'd **String** are printed as they are. Counts
-(2026-11-19), as `"keys" => "ruby string"` entries:
-
-| Scheme | String bindings | Symbol bindings |
-|---|---|---|
-| `key_bindings_vimlike.rb` | 97 | 145 |
-| `key_bindings_vim.rb` | 78 | 79 |
-| `key_bindings_notepad.rb` | 4 | 9 |
-
-Some registered symbols also have an empty description, e.g. `:jump_to_random`
-(`key_actions.rb:67`) and `:ack_search` (`key_actions.rb:124`, a duplicate of line 151,
-which does have one). These print as the bare symbol.
-
-Other places that show the raw action and would benefit from the same lookup:
-- the previous-action label in the toolbar (`gui.rb:829`)
-- the key log panel (`gui_keylog_panel.rb:109`)
-
-Plan sketch:
-1. **One description table keyed by the action string**, shared by all schemes. Many
-   strings are identical in vim and vimlike, e.g. `buf.delete2(:to_char_backward,' ')`
-   is in both, so each one is described once. For example, a new
-   `lib/vimamsa/key_action_descs.rb` (required in `rbvma.rb`):
-   ```ruby
-   KEY_ACTION_DESCS = {
-     "buf.move(FORWARD_CHAR)"                  => "Move forward one character",
-     "buf.delete2(:to_char_backward,' ')"      => "Delete backward to previous space",
-     "buf.delete2(:to_char_backward,<char>)"   => "Delete backward to previous <char>",
-     "bufs.close_current_buffer"               => "Close current buffer",
-     ...
-   }
-   ```
-   Templates with `<char>` keep the placeholder in the description.
-   - Alternative: convert each string action to a `reg_act` symbol with a description.
-     That's cleaner in the long run (they also become searchable in Search for
-     Actions), but it touches every binding line in three scheme files, plus user
-     `custom.rb` files that rebind the same strings. Proposed: the table first.
-     Convert to symbols opportunistically, and especially convert actions that are
-     worth finding through Search for Actions.
-2. A helper `action_description(action)`: Symbol → `method_name` (if non-empty);
-   String → `KEY_ACTION_DESCS[action]`; otherwise the action itself. Use it in
-   `get_by_keywords`, `gui.rb:829` and the key log panel.
-3. Report format: show the description, with the raw code dimmed after it so power
-   users still see what runs. For example:
-   `[C] d F space : Delete backward to previous space  ⟨buf.delete2(:to_char_backward,' ')⟩`.
-   Or show the code only for entries without a description.
-4. Fill in descriptions for all ~180 string bindings and the symbols with empty
-   descriptions. Remove the duplicate `:ack_search` registration.
-5. Test (`tests/test_key_bindings.rb` or a new one): for each scheme (load it with
-   `load_scheme_kbd`), every binding resolves to a non-empty description that isn't
-   the raw action. Print the missing ones, so new bindings without a description fail
-   the suite.
+Mostly done: every binding now runs a named action (the dotted action ids, see
+"Consistent, hierarchical action names"), and the key bindings page, key log and
+toolbar show its description. Left: seven actions are registered with an empty
+description, so they show as bare ids: `bmark.select`, `bmark.delete`, `bmgr.select`,
+`bmgr.close`, `fexp.select`, `buf.history.prev` and `buf.diff`
+(`grep -rn 'reg_act(.*, "")' lib modules`).
 
 ### More Vim bindings: counts after operators, missing operator + motion combinations
 
@@ -705,6 +605,13 @@ Constraints:
 ## DONE
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
+
+- **XDG dirs instead of `~/.vimamsa`** (2026-11-22, uncommitted): generated files
+  (session, buffer list, command and file history, file index, recorded macros,
+  backups, crash reports, listen dir) go in `~/.local/share/vimamsa`; config stays in
+  `~/.config/vimamsa` (`$XDG_DATA_HOME` / `$XDG_CONFIG_HOME` honored). `--user-dir`
+  keeps both in one dir. The old files move once at start (`user_dirs.rb`). Tests in
+  `tests/test_user_dirs.rb`, one of which fails on any fixed `~/.vimamsa` path.
 
 - **Introduction page for first-time users** (2026-11-21, `6448bb9`): shown on
   the first start, from Help ▸ Introduction, with `:intro` or with `--intro`. It has

@@ -11,7 +11,7 @@ require "json"
 #   V , s   speak the current selection
 #   C , q   stop speaking
 #
-# Configuration (set in ~/.vimamsa/settings.rb via cnf, all optional):
+# Configuration (set in ~/.config/vimamsa/settings.rb via cnf, all optional):
 #   cnf.tts.voice      Piper voice name   (default "en_GB-alan-medium")
 #   cnf.tts.data_dir   voices directory    (default "~/piper-voices")
 #   cnf.tts.rate       sample rate (Hz)    (default: from <voice>.onnx.json, else 22050)

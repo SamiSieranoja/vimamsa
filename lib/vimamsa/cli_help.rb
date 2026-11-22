@@ -13,6 +13,7 @@ CLI_USAGE = <<~TXT
 
   Options:
     --user-dir DIR   config and data dir instead of ~/.config/vimamsa
+                     and ~/.local/share/vimamsa
                      (also --user-dir=DIR)
     --tmp-user-dir   a new, empty config and data dir in the temp dir,
                      deleted on quit (try the defaults, e.g. a first start)

@@ -8,8 +8,12 @@ selfpath = __FILE__
 selfpath = File.readlink(selfpath) if File.lstat(selfpath).symlink?
 scriptdir = File.expand_path(File.dirname(selfpath) + "/..")
 
-# --user-dir PATH (or --user-dir=PATH): use PATH as the config/data directory
-# instead of ~/.config/vimamsa. Consumed here (and removed from ARGV) so it is
+# Config and data dirs (user_dirs.rb): ~/.config/vimamsa and
+# ~/.local/share/vimamsa by default (the XDG dirs)
+require File.join(scriptdir, "lib/vimamsa/user_dirs")
+
+# --user-dir PATH (or --user-dir=PATH): use PATH as the config and data
+# directory instead of those two. Consumed here (and removed from ARGV) so it is
 # available before anything reads the user dir, including the listen check below.
 if (i = ARGV.index("--user-dir"))
   $vma_user_dir = File.expand_path(ARGV[i + 1]) if ARGV[i + 1]
@@ -18,7 +22,7 @@ elsif (arg = ARGV.find { |a| a.start_with?("--user-dir=") })
   $vma_user_dir = File.expand_path(arg.split("=", 2)[1])
   ARGV.delete(arg)
 end
-$vma_user_dir ||= File.expand_path("~/.config/vimamsa")
+$vma_user_dir ||= Vimamsa::UserDirs.default_config_dir
 
 # --intro: show the introduction page at start (intro_page.rb), whatever the
 # settings say. Removed from ARGV so it isn't taken for a file name.
@@ -46,7 +50,7 @@ if $vma_tmp_user_dir
 end
 
 # If process is already running, open the parameter file in the running process and exit.
-listen_dir = File.join($vma_user_dir, "listen")
+listen_dir = File.join(Vimamsa::UserDirs.data_dir_for($vma_user_dir), "listen")
 if File.exist?(listen_dir) and !ARGV[0].nil? and !$vma_cli_help
   tmpf = Tempfile.new("vmarun", listen_dir)
   fp = tmpf.path
@@ -85,7 +89,7 @@ if $vma_cli_help
 end
 
 # Persist crash/segfault debug info (native stderr dump + structured reports)
-# to ~/.config/vimamsa/crash/ .
+# to the crash dir in the data dir (~/.local/share/vimamsa/crash/).
 Vimamsa::CrashHandler.setup
 
 # kill / ctrl-c: quit as from the menu (session saved, a --tmp-user-dir

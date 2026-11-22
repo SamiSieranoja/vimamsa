@@ -2,7 +2,7 @@
 module Vimamsa
 def save_buffer_list()
   message("Save buffer list")
-  buffn = get_dot_path("buffers.txt")
+  buffn = get_data_path("buffers.txt")
   f = File.open(buffn, "w")
   bufstr = vma.buffers.list.collect { |buf| buf.fname }.inspect
   f.write(bufstr)
@@ -11,7 +11,7 @@ end
 
 def load_buffer_list()
   message("Load buffer list")
-  buffn = get_dot_path("buffers.txt")
+  buffn = get_data_path("buffers.txt")
   return if !File.exist?(buffn)
   bufstr = IO.read(buffn)
   bufl = eval(bufstr)

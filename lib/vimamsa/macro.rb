@@ -235,9 +235,7 @@ class Macro
     m = @recorded_macros[name]
     return if !(m.kind_of?(Array) and m.any?)
     contents = m.join(";")
-    dot_dir = File.expand_path("~/.config/.vimamsa")
-    Dir.mkdir(dot_dir) unless File.exist?(dot_dir)
-    save_fn = "#{dot_dir}/macro_#{name}.rb"
+    save_fn = get_dot_path("macro_#{name}.rb") # with the named macros
 
     Thread.new {
       File.open(save_fn, "w+") do |io|

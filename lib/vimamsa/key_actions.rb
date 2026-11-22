@@ -284,7 +284,7 @@ act_list = {
   "search.actions" => { :proc => proc { vma.actions.gui_search },
                        :desc => "Search actions" },
 
-  "app.customrb.edit" => { :proc => proc { jump_to_file("~/.config/vimamsa/custom.rb") },
+  "app.customrb.edit" => { :proc => proc { jump_to_file(get_dot_path("custom.rb")) },
                       :desc => "Customize (edit custom.rb)" },
 
   "view.columns.switch" => { :proc => proc { vma.gui.toggle_active_window },

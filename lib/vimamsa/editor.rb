@@ -137,8 +137,21 @@ class Editor
     }
   end
 
+  # Moves the files of older versions to their new places, once
+  # (UserDirs.migrate). Only with the default dirs: with --user-dir (tests,
+  # --tmp-user-dir) config and data share one dir and nothing moves.
+  def migrate_user_files
+    return if !UserDirs.default_config_dir?(vma_user_dir)
+    UserDirs.migrate(config_dir: vma_user_dir, data_dir: vma_data_dir).each { |from, to|
+      puts "vimamsa: moved #{from} to #{to}"
+    }
+  rescue => e
+    debug "migrate_user_files: #{e}"
+  end
+
   def start
     @gui = $vmag #TODO
+    migrate_user_files
 
     $hook = Hook.new
     @hook = $hook
@@ -199,8 +212,8 @@ class Editor
     @gui.init_menu
 
     mkdir_if_not_exists(get_dot_path(""))
-    mkdir_if_not_exists(get_dot_path("backup"))
-    listen_dir = get_dot_path("listen")
+    mkdir_if_not_exists(get_data_path("backup"))
+    listen_dir = get_data_path("listen")
     mkdir_if_not_exists(listen_dir)
     listener = Listen.to(listen_dir) do |modified, added, removed|
       debug([modified: modified, added: added, removed: removed])
@@ -376,8 +389,16 @@ class Editor
     end
   end
 
+  # marshal_save files the program generates, kept in the data dir; the
+  # others (bookmarks, named_macros) are the user's, in the config dir
+  DATA_VARS = %w[file_index file_history file_panel_shown macros]
+
+  def var_file_path(varname)
+    DATA_VARS.include?(varname.to_s) ? get_data_path(varname) : get_dot_path(varname)
+  end
+
   def save_var_to_file(varname, vardata)
-    fn = get_dot_path(varname)
+    fn = var_file_path(varname)
     #TODO: check that save path is safe
     f = File.open(fn, "w")
     File.binwrite(f, vardata)
@@ -385,7 +406,7 @@ class Editor
   end
 
   def load_var_from_file(varname)
-    fn = get_dot_path(varname)
+    fn = var_file_path(varname)
     if File.exist?(fn)
       vardata = IO.binread(fn)
       if vardata
@@ -417,13 +438,13 @@ class Editor
       .map { |b| b.fname }
       .compact
       .select { |f| File.exist?(f) }
-    IO.write(get_dot_path("session.txt"), fnames.join("\n") + "\n")
+    IO.write(get_data_path("session.txt"), fnames.join("\n") + "\n")
   rescue => ex
     debug "save_session failed: #{ex}"
   end
 
   def check_session_restore
-    session_path = get_dot_path("session.txt")
+    session_path = get_data_path("session.txt")
     return unless File.exist?(session_path)
 
     fnames = File.read(session_path).lines.map(&:strip).reject(&:empty?)
@@ -764,13 +785,13 @@ def scan_word_start_marks(search_str)
   return wsmarks
 end
 
-# Base directory for user config/data (settings.rb, custom.rb, backups,
-# session, listen dir, crash reports, ...). Defaults to ~/.config/vimamsa but
-# can be overridden with the --user-dir switch or by setting $vma_user_dir
-# before startup. Tests point this at an isolated directory so they never read
-# or write the real user config.
+# Base directory for user-edited config (settings.rb, custom.rb, styles,
+# bookmarks, named macros): $XDG_CONFIG_HOME/vimamsa, by default
+# ~/.config/vimamsa (user_dirs.rb). Can be overridden with the --user-dir
+# switch or by setting $vma_user_dir before startup. Tests point this at an
+# isolated directory so they never read or write the real user config.
 def vma_user_dir
-  $vma_user_dir ||= File.expand_path("~/.config/vimamsa")
+  $vma_user_dir ||= UserDirs.default_config_dir
 end
 
 def get_dot_path(sfx)
@@ -780,20 +801,13 @@ def get_dot_path(sfx)
   return dpath
 end
 
-# Base directory for files the program generates (window layout, ...), as
-# opposed to user-edited config: $XDG_DATA_HOME/vimamsa, by default
-# ~/.local/share/vimamsa. When the user dir was moved (--user-dir, tests),
-# data goes there too, so those runs stay isolated. See doc/TODO.md (XDG item).
+# Base directory for files the program generates (session, histories,
+# backups, crash reports, listen dir, window layout, ...):
+# $XDG_DATA_HOME/vimamsa, by default ~/.local/share/vimamsa. When the user
+# dir was moved (--user-dir, tests), data goes there too, so those runs stay
+# isolated (user_dirs.rb).
 def vma_data_dir
-  $vma_data_dir ||= begin
-    if File.expand_path(vma_user_dir) != File.expand_path("~/.config/vimamsa")
-      vma_user_dir
-    else
-      base = ENV["XDG_DATA_HOME"].to_s
-      base = File.expand_path("~/.local/share") if base.empty?
-      File.join(base, "vimamsa")
-    end
-  end
+  $vma_data_dir ||= UserDirs.data_dir_for(vma_user_dir)
 end
 
 def get_data_path(sfx)
@@ -877,7 +891,7 @@ def restart_editor
   args = []
   if $vma_tmp_user_dir
     env[TmpUserDir::ENV_KEY] = $vma_tmp_user_dir
-  elsif File.expand_path(vma_user_dir) != File.expand_path("~/.config/vimamsa")
+  elsif !UserDirs.default_config_dir?(vma_user_dir)
     args = ["--user-dir", vma_user_dir]
   end
   exec(env, ruby, script, *args)

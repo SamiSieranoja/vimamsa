@@ -2263,7 +2263,8 @@ class Buffer < String
     fname = @fname
     return if !@fname
     spfx = fname.gsub("=", "==").gsub("/", "=:")
-    spath = File.expand_path("~/.vimamsa/backup")
+    spath = get_data_path("backup")
+    FileUtils.mkdir_p(spath) rescue nil
     return false if !can_save_to_directory?(spath)
     datetime = DateTime.now().strftime("%d%m%Y:%H%M%S")
     savepath = "#{spath}/#{spfx}_#{datetime}"
