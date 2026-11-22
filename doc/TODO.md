@@ -607,7 +607,7 @@ Constraints:
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
 - **Demo playback: no user input while running; restart after edits** (2026-11-22,
-  uncommitted): while a demo plays, the user's keys and clicks/drags in the text are
+  `5254114`): while a demo plays, the user's keys and clicks/drags in the text are
   ignored (`DemoPlayer.blocks_input?`, checked in `gui.rb` and `gui_sourceview.rb`), with a
   message to pause it. Paused, the editor can be used; if the text, cursor, mode or
   current buffer changed, continuing starts the demo from the beginning. Tests in
