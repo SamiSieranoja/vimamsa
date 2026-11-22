@@ -47,6 +47,8 @@ if raw_args.delete("--headless")
     # and not the real Wayland session. xvfb-run exits with our exit code.
     ENV["GDK_BACKEND"] = "x11"
     ENV.delete("WAYLAND_DISPLAY")
+    # No window manager there: tests that need one skip (VMA_HEADLESS)
+    ENV["VMA_HEADLESS"] = "xvfb"
     exec("xvfb-run", "-a", "-s", "-screen 0 1600x1000x24",
          RbConfig.ruby, File.expand_path(selfpath), *(ARGV - ["--headless"]))
   end
@@ -77,6 +79,7 @@ if raw_args.delete("--headless")
   end
   ENV["GDK_BACKEND"] = "broadway"
   ENV["BROADWAY_DISPLAY"] = ":9"
+  ENV["VMA_HEADLESS"] = "broadway"
 end
 
 test_files   = raw_args.select { |a| a.end_with?(".rb") && File.file?(a) }

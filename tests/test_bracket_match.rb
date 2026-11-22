@@ -15,6 +15,9 @@ class TestBracketMatch < VmaTest
   # [matched_offset, state] from the last "bracket-matched" signal, state as
   # :found, :not_found, :out_of_range or :none. nil if no signal came.
   def match_at(pos, text = TEXT)
+    # Broadway (--headless without xvfb) draws nothing while no browser is
+    # connected, so GtkSourceView never updates the highlight
+    skip "no drawing on the Broadway backend" if ENV["VMA_HEADLESS"] == "broadway"
     b = vma.buf
     b.set_content(text)
     drain_idle

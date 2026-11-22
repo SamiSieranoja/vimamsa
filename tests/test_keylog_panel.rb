@@ -82,6 +82,7 @@ class TestKeylogPanel < VmaTest
   # First show uses the default width, and long entries (even without
   # spaces) don't widen it
   def test_width_fixed_on_first_show
+    skip "no layout on the Broadway backend" if ENV["VMA_HEADLESS"] == "broadway"
     gui = vma.gui
     old = gui.instance_variable_get(:@keylog_width)
     gui.instance_variable_set(:@keylog_width, nil)

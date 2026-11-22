@@ -174,6 +174,7 @@ class TestWindowLayout < VmaTest
   # first starts with the default size, maximizes, shows two columns and the
   # file panel, and quits; the second reports what it restored.
   def test_restored_after_restart
+    skip "needs a window manager to maximize (--headless has none)" if ENV["VMA_HEADLESS"]
     skip "needs a display" unless ENV["DISPLAY"] || ENV["WAYLAND_DISPLAY"]
     Dir.mktmpdir { |dir|
       ud = "#{dir}/ud"
@@ -233,6 +234,7 @@ class TestWindowLayout < VmaTest
   # get that size back, not the maximized one, and starting and quitting
   # doesn't change it.
   def test_resized_after_maximize_restored
+    skip "needs a window manager to maximize (--headless has none)" if ENV["VMA_HEADLESS"]
     skip "needs a display" unless ENV["DISPLAY"] || ENV["WAYLAND_DISPLAY"]
     Dir.mktmpdir { |dir|
       ud = "#{dir}/ud"
