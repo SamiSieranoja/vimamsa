@@ -8,10 +8,10 @@ Bindings that modules and `custom.rb` add at startup are not included.
 
 | | Count |
 |---|---|
-| Conflicts (the vim binding can't be used in vimlike) | 42 |
-| Added to vimlike from the shared table (`VIM_BINDINGS`, vim_core.rb) | 459 |
+| Conflicts (the vim binding can't be used in vimlike) | 41 |
+| Added to vimlike from the shared table (`VIM_BINDINGS`, key_bindings_vim_core.rb) | 461 |
 | Missing from vimlike (no conflict, could be added) | 0 |
-| vim keymap only (left out of vimlike on purpose) | 1 |
+| vim keymap only (left out of vimlike on purpose) | 0 |
 | Shared (same keys, same action) | 152 |
 
 ## Conflicts
@@ -20,7 +20,6 @@ Bindings that modules and `custom.rb` add at startup are not included.
 |---|---|---|---|---|
 | C | <code>$</code> | <code>move.motion(line_end)</code> | <code>move.line.end</code> | same keys, other action |
 | C | <code>@ @</code> | <code>macro.run.last</code> | <code>@ &lt;char&gt;</code> <code>macro.run</code> | a vimlike <char> binding takes the key |
-| C | <code>C</code> | <code>edit.change.eol</code> | <code>grep.files</code> | same keys, other action |
 | C | <code>O</code> | <code>edit.line.above</code> | <code>move.line.end</code> | same keys, other action |
 | C | <code>X</code> | <code>edit.delete.char.prev</code> | <code>edit.line.below</code> | same keys, other action |
 | C | <code>^</code> | <code>move.line.first_char</code> | <code>move.line.start</code> | same keys, other action |
@@ -75,6 +74,7 @@ the number of its combinations that vimlike got.
 | C | <code>&lt;op&gt; &lt;same&gt; (11 combinations)</code> | <code>op.lines</code> |
 | C | <code>&lt;op&gt; &lt;textobj&gt; (32 combinations)</code> | <code>op.textobj</code> |
 | C | <code>&lt;motion&gt; (7 combinations)</code> | <code>move.motion</code> |
+| C | <code>C</code> | <code>edit.change.eol</code> |
 | C | <code>D</code> | <code>edit.delete.eol</code> |
 | C | <code>S</code> | <code>edit.change.line</code> |
 | C | <code>Y</code> | <code>edit.line.copy</code> |
@@ -84,6 +84,7 @@ the number of its combinations that vimlike got.
 | C | <code>ctrl-d</code> | <code>move.page.next.cursor</code> |
 | C | <code>ctrl-f</code> | <code>move.page.next</code> |
 | C | <code>ctrl-u</code> | <code>move.page.prev.cursor</code> |
+| I | <code>ctrl-r &lt;char&gt;</code> | <code>edit.insert.register</code> |
 | V | <code>" &lt;char&gt;</code> | <code>edit.register</code> |
 | V | <code>&lt;</code> | <code>sel.indent.less</code> |
 | V | <code>&gt;</code> | <code>sel.indent.more</code> |
@@ -98,11 +99,10 @@ the number of its combinations that vimlike got.
 
 ## vim keymap only
 
-Left out of vimlike on purpose (`VIM_KEYMAP_ONLY`, vim_core.rb).
+Left out of vimlike on purpose (`VIM_KEYMAP_ONLY`, key_bindings_vim_core.rb).
 
 | Mode | Vim keys | Vim action | Why |
 |---|---|---|---|
-| I | <code>ctrl-r &lt;char&gt;</code> | <code>edit.insert.register</code> | no new ctrl chords in vimlike |
 
 ## Shared
 

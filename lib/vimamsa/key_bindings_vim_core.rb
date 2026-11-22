@@ -230,6 +230,7 @@ VIM_BINDINGS = {
     "I backspace" => "edit.backspace",
     "I ctrl-h" => "edit.backspace",          # vim i_ctrl-h = backspace
     "I ctrl-j" => "edit.newline",    # vim i_ctrl-j = new line
+    "I ctrl-r <char>" => "edit.insert.register", # vim i_ctrl-r: insert register <char>
 
     # Completion (vim i_ctrl-n / i_ctrl-p; popup guards first)
     "I tab(vma.buf.view.autocp_active)" => "edit.complete.next",

@@ -97,8 +97,4 @@ bindkey "audio left", ["audio.backward", proc { Audio.seek_forward(-5.0) }, "See
 bindkey "audio space", "audio.stop"
 bindkey "audio q || audio esc", "mode.prev"
 
-# vim i_ctrl-r: insert a register. Here, not in VIM_BINDINGS, so vimlike
-# doesn't get a new ctrl chord from the shared table.
-bindkey "I ctrl-r <char>", "edit.insert.register", keywords: "vim insert"
-
 end # module Vimamsa

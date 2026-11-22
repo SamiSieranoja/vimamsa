@@ -33,6 +33,15 @@ class TestRegisters < VmaTest
     assert_buf "one\ntwo\none\n"
   end
 
+  # vim's i_ctrl-r in the default keymap too (VIM_BINDINGS): Insert mode,
+  # ctrl-r and a register name insert that register's text
+  def test_insert_register_in_insert_mode
+    setup_text("foo bar\n")
+    keys('" a y w')
+    keys("A space ctrl-r a esc")
+    assert_buf("foo bar foo \n")
+  end
+
   def test_append_to_named_register
     setup_text("one two\nthree\n")
     keys('" a y y')
