@@ -103,9 +103,12 @@ class TestIntroPage < VmaTest
   def test_marks_hidden_on_help_page
     b = show_help_page("intro")
     drain_idle
-    i = b.index("⦁enter⦁")
+    # the first marked key on the page (e.g. ⦁ctrl!⦁ from {key:...})
+    m = b.match(/⦁[^⦁\n]+⦁/)
+    assert m, "no ⦁ marks on the page"
+    i = m.begin(0)
     assert hidden?(b, i), "opening mark shown"
-    assert hidden?(b, i + 6), "closing mark shown"
+    assert hidden?(b, m.end(0) - 1), "closing mark shown"
     assert !hidden?(b, i + 1), "key text hidden"
     b.set_pos(i - 1)
     hpt_skip_hidden_marks(b)
