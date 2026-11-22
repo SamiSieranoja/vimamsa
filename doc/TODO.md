@@ -8,6 +8,13 @@ the git ref(s), as a short commit hash or a range.
 
 ## Open
 
+### (prio 1) Demo playback: block user input while running; restart after edits
+
+- While a demo runs, the user can't interact with the editor (e.g. move the cursor
+  or edit the buffer).
+- If the user pauses the demo and edits the buffer, continuing the demo starts it
+  from the beginning.
+
 ### Record demos; form input through the key bindings
 
 Record a demo like a macro, into the demo step format, by capturing keys in
