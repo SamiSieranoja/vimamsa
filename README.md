@@ -87,11 +87,19 @@ Install packages for optional features:
 sudo apt install ack-grep clang-format
 ```
 
-For customization, edit ~/.vimamsa/custom.rb
+For customization, edit ~/.config/vimamsa/custom.rb (Settings ▸ Customize).
+
+Vimamsa keeps the files you edit (custom.rb, settings.rb, styles, bookmarks,
+named macros) in ~/.config/vimamsa, and the files it generates (session,
+histories, file index, backups, crash reports) in ~/.local/share/vimamsa
+(`$XDG_CONFIG_HOME` / `$XDG_DATA_HOME` if set). `--user-dir DIR` puts both in
+DIR. Files of older versions in ~/.vimamsa or ~/.config/vimamsa are moved to
+their new places at the first start.
 
 ## Demo
 
-![Vimamsa demo: moving with hjkl and words, yy p, dd, undo/redo, Insert and Visual mode, easy jump, with the key log panel showing each key](img/demo.gif)
+<video src="img/demo.mp4" autoplay muted loop playsinline width="800"></video>
+
 
 Moving with `h j k l` and `w e b`, `y y p`, `d d`, undo `u` / redo `ctrl-r`,
 typing in Insert mode and back to Command mode with `ctrl` (press and release
