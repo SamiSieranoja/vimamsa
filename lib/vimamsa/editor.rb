@@ -337,6 +337,9 @@ class Editor
       test_files = ARGV.select { |a| a.end_with?(".rb") && File.file?(a) }
       run_as_idle proc {
         test_files.each { |f| load f }
+        # VMA_TEST_CLASSES: the class filter when run_tests.rb started another
+        # build (VMA_TEST_APP, e.g. an AppImage)
+        $vma_test_class_filter ||= ENV["VMA_TEST_CLASSES"].to_s.split(",") if !ENV["VMA_TEST_CLASSES"].to_s.empty?
         classes = if $vma_test_class_filter
           $vma_test_class_filter.filter_map { |name|
             begin

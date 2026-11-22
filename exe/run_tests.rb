@@ -173,6 +173,27 @@ $vma_test_class_filter = class_filter.empty? ? nil : class_filter
 # VMA_USER_DIR). See vma_user_dir/get_dot_path in editor.rb.
 $vma_user_dir = File.expand_path(ENV["VMA_USER_DIR"] || "~/.config/vimamsa-test")
 
+# VMA_TEST_APP: run the tests with another build of the editor, e.g. an
+# AppImage's AppRun (run_tests_vm.rb --appimage), instead of loading this
+# checkout's code. The class filter goes along in VMA_TEST_CLASSES (only
+# builds that read it use it; duration=/ref=/runs= don't). exe/vimamsa --test
+# sets no exit code, so pass/fail comes from the last "Results:" line.
+if !ENV["VMA_TEST_APP"].to_s.empty?
+  app = ENV["VMA_TEST_APP"]
+  env = class_filter.empty? ? {} : { "VMA_TEST_CLASSES" => class_filter.join(",") }
+  puts ">> Running the tests with #{app}"
+  $stdout.flush
+  ok = false
+  IO.popen(env, [app, "--user-dir", $vma_user_dir, "--test", *test_files], err: [:child, :out]) { |io|
+    io.each_line { |l|
+      print l
+      $stdout.flush
+      ok = l.match?(/Results: \d+ passed, 0 failed/) if l.include?("Results:")
+    }
+  }
+  exit(ok ? 0 : 1)
+end
+
 ARGV.replace(["--test"] + test_files)
 
 require "vimamsa"

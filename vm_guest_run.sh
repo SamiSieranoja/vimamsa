@@ -9,6 +9,8 @@
 #   VMA_DISPLAY     X display of the logged-in desktop session (default :0)
 #   VMA_TEST_ARGS   optional args forwarded to exe/run_tests.rb (test filters)
 #   FORCE_PROVISION set to 1 to re-run apt/gem provisioning even if the marker exists
+#   VMA_APPIMAGE    an AppImage in the guest to test instead of building this tree
+#   VMA_APPIMAGE_DEV set to 1: this tree's code on that AppImage's runtime
 set -euo pipefail
 
 SRC_TGZ="$HOME/vimamsa_src.tgz"
@@ -72,33 +74,58 @@ fi
 sudo_do modprobe uinput 2>/dev/null || true
 sudo_do chmod 0666 /dev/uinput 2>/dev/null || true
 
-# 3. Build + install the gem. Compiles ext/vmaext and (first run) installs the
-#    ruby-gnome gems and the external StrIdx C++ gem. Copy the built .so back into
-#    the tree so `require "vmaext"` resolves when running from source.
-echo ">> Building and installing the vimamsa gem"
-rm -f vimamsa-0.1.*.gem
-gem build vimamsa.gemspec
-# NB: no --local — installing the local .gem must be allowed to fetch its runtime
-# deps (gtk4, gtksourceview5, StrIdx, language_server-protocol, …) from rubygems.org.
-sudo_do gem install vimamsa-0.1.*.gem
-# A system `gem install` compiles the extension under Gem.dir/extensions/<platform>/
-# <abi>/vimamsa-<ver>/vmaext.so (not under gems/.../ext), so locate it with find.
-GEM_DIR="$(ruby -e 'puts Gem.dir')"
-so_path="$(find "$GEM_DIR" -name vmaext.so -path '*vimamsa*' 2>/dev/null | head -1)"
-[ -z "$so_path" ] && so_path="$(find "$GEM_DIR" -name vmaext.so 2>/dev/null | head -1)"
-if [ -z "$so_path" ]; then
-  echo "!! Could not locate compiled vmaext.so under $GEM_DIR" >&2
-  exit 2
-fi
-cp "$so_path" lib/
-touch "$MARKER"
+# 3a. VMA_APPIMAGE (run_tests_vm.rb --appimage): test that AppImage instead
+#     of a build of this tree. It is unpacked (no FUSE needed) and run by
+#     exe/run_tests.rb through VMA_TEST_APP, with this tree's tests.
+#     VMA_APPIMAGE_DEV=1: this tree's code on the AppImage's Ruby, gems and
+#     libraries (AppRun's VMA_SOURCE; an older AppRun gets it by sed).
+if [ -n "${VMA_APPIMAGE:-}" ]; then
+  echo ">> Unpacking the AppImage $VMA_APPIMAGE"
+  APPDIR_X="$HOME/vma_appimage"
+  rm -rf "$APPDIR_X"
+  mkdir -p "$APPDIR_X"
+  chmod +x "$VMA_APPIMAGE"
+  (cd "$APPDIR_X" && "$VMA_APPIMAGE" --appimage-extract >/dev/null)
+  app="$APPDIR_X/squashfs-root/AppRun"
+  if [ "${VMA_APPIMAGE_DEV:-}" = "1" ]; then
+    echo ">> ... running this tree's code on it (VMA_SOURCE=$DEST)"
+    sed 's#^exec "$U/bin/ruby" "$U/bin/vimamsa" "$@"#exec "$U/bin/ruby" "$VMA_SOURCE/exe/vimamsa" "$@"#' \
+      "$app" > "$APPDIR_X/AppRun.dev"
+    chmod +x "$APPDIR_X/AppRun.dev"
+    export APPDIR="$APPDIR_X/squashfs-root" VMA_SOURCE="$DEST"
+    app="$APPDIR_X/AppRun.dev"
+  fi
+  export VMA_TEST_APP="$app"
+else
 
-# The ruby-lsp tests run `bundle exec ruby-lsp`. The synced Gemfile.lock is the
-# host's and pins exact versions the guest doesn't have (gem install above picks
-# the newest matching ones), so resolve the bundle against the guest's gems,
-# installing only what's missing (e.g. the development dependencies).
-rm -f Gemfile.lock
-bundle check >/dev/null 2>&1 || sudo_do bundle install
+  # 3. Build + install the gem. Compiles ext/vmaext and (first run) installs the
+  #    ruby-gnome gems and the external StrIdx C++ gem. Copy the built .so back into
+  #    the tree so `require "vmaext"` resolves when running from source.
+  echo ">> Building and installing the vimamsa gem"
+  rm -f vimamsa-0.1.*.gem
+  gem build vimamsa.gemspec
+  # NB: no --local — installing the local .gem must be allowed to fetch its runtime
+  # deps (gtk4, gtksourceview5, StrIdx, language_server-protocol, …) from rubygems.org.
+  sudo_do gem install vimamsa-0.1.*.gem
+  # A system `gem install` compiles the extension under Gem.dir/extensions/<platform>/
+  # <abi>/vimamsa-<ver>/vmaext.so (not under gems/.../ext), so locate it with find.
+  GEM_DIR="$(ruby -e 'puts Gem.dir')"
+  so_path="$(find "$GEM_DIR" -name vmaext.so -path '*vimamsa*' 2>/dev/null | head -1)"
+  [ -z "$so_path" ] && so_path="$(find "$GEM_DIR" -name vmaext.so 2>/dev/null | head -1)"
+  if [ -z "$so_path" ]; then
+    echo "!! Could not locate compiled vmaext.so under $GEM_DIR" >&2
+    exit 2
+  fi
+  cp "$so_path" lib/
+  touch "$MARKER"
+
+  # The ruby-lsp tests run `bundle exec ruby-lsp`. The synced Gemfile.lock is the
+  # host's and pins exact versions the guest doesn't have (gem install above picks
+  # the newest matching ones), so resolve the bundle against the guest's gems,
+  # installing only what's missing (e.g. the development dependencies).
+  rm -f Gemfile.lock
+  bundle check >/dev/null 2>&1 || sudo_do bundle install
+fi
 
 # 4. Run the suite on the real desktop (no --headless: the window shows on-screen).
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"

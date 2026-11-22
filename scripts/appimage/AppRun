@@ -51,4 +51,11 @@ fi
 # without putting the bundled ruby itself first on PATH.
 export PATH="$U/lib/vimamsa/bin:$PATH"
 
+# VMA_SOURCE=<a vimamsa checkout>: run its exe/vimamsa (its lib/, modules/)
+# on this image's Ruby, gems and libraries, e.g. to try code that isn't in a
+# release yet (run_tests_vm.rb --appimage-dev)
+if [ -n "${VMA_SOURCE:-}" ]; then
+  exec "$U/bin/ruby" "$VMA_SOURCE/exe/vimamsa" "$@"
+fi
+
 exec "$U/bin/ruby" "$U/bin/vimamsa" "$@"

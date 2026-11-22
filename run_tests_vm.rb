@@ -14,6 +14,10 @@
 #   ./run_tests_vm.rb                         # full suite
 #   ./run_tests_vm.rb undo                    # tests/test_undo.rb only
 #   FORCE_PROVISION=1 ./run_tests_vm.rb       # re-run apt provisioning
+#   ./run_tests_vm.rb --appimage build/appimage/Vimamsa-0.1.28-x86_64.AppImage [filter]
+#                                             # test that AppImage (its own code)
+#   ./run_tests_vm.rb --appimage-dev FILE.AppImage [filter]
+#                                             # this tree's code on its runtime
 #   VMA_UPDATE_DOC=1 ./run_tests_vm.rb vim_conflicts  # also copy back generated docs
 #
 # Env:
@@ -42,6 +46,21 @@ TAR_EXCLUDES = %w[
   ./.git/hooks *_vma_autosave .*_vma_autosave *.gem *.o *.so *.tar.xz
   __pycache__ *.log claude-log.* dot_git_old ./build 2del_* bug*.txt *.mp3 *.wav
 ]
+
+# --appimage FILE / --appimage-dev FILE: test an AppImage instead of a build of
+# this tree. The tests are this tree's; with --appimage-dev the code is too,
+# run on the AppImage's Ruby, gems and libraries. The rest of ARGV goes to
+# exe/run_tests.rb as before (filters, --headless).
+appimage = nil
+appimage_dev = false
+%w[--appimage --appimage-dev].each { |opt|
+  next if (i = ARGV.index(opt)).nil?
+  appimage = ARGV[i + 1]
+  appimage_dev = opt == "--appimage-dev"
+  fail!("#{opt} needs an AppImage file", 2) if appimage.nil? || !File.file?(appimage)
+  appimage = File.expand_path(appimage)
+  ARGV.slice!(i, 2)
+}
 
 missing = missing_env("VM_NAME", "VM_USER", "VM_PASS")
 if missing.any?
@@ -96,6 +115,11 @@ begin
   run!(*gc, "copyto", *cred, tarball.path, "#{guest_home}/vimamsa_src.tgz", label: "VBoxManage copyto")
   run!(*gc, "copyto", *cred, File.join(repo, "vm_guest_run.sh"), "#{guest_home}/vm_guest_run.sh",
        label: "VBoxManage copyto")
+  guest_appimage = "#{guest_home}/vimamsa.AppImage"
+  if appimage
+    step "Copying #{File.basename(appimage)} into guest#{appimage_dev ? " (this tree's code on its runtime)" : ""}"
+    run!(*gc, "copyto", *cred, appimage, guest_appimage, label: "VBoxManage copyto")
+  end
 
   # 4. Run the guest script, streaming its output. VBoxManage doesn't pass on
   # the guest's exit code, so pass/fail comes from the VMA_SUITE_EXIT sentinel
@@ -105,6 +129,7 @@ begin
     "SUDO_PASS" => ENV["VM_PASS"], "VMA_DISPLAY" => display, "VMA_TEST_ARGS" => ARGV.join(" "),
     "FORCE_PROVISION" => ENV["FORCE_PROVISION"].to_s, "VMA_E2E_INTERACTIVE" => ENV["VMA_E2E_INTERACTIVE"].to_s,
     "VMA_UPDATE_DOC" => ENV["VMA_UPDATE_DOC"].to_s,
+    "VMA_APPIMAGE" => appimage ? guest_appimage : "", "VMA_APPIMAGE_DEV" => appimage_dev ? "1" : "",
   }.map { |k, v| "--putenv=#{k}=#{v}" }
   out, = run_streaming(*gc, "run", *cred, "--exe=/bin/bash", "--wait-stdout", "--wait-stderr",
                        *putenv, "--", "#{guest_home}/vm_guest_run.sh")
