@@ -338,4 +338,36 @@ class TestTextTransforms < VmaTest
     assert_buf("a\nb\nc\n\nd\n")
   end
 
+  # V , J <char>: join the selected lines with <char>; lines are stripped and
+  # empty ones dropped, as with V J
+  def test_join_with_char
+    act("buf.insert_txt(\"a\\n b \\n\\nc\\nd\")")
+    act("buf.set_pos(0)")
+    keys("v")
+    act("buf.set_pos(7)") # on c
+    keys(", J ,")
+    assert_buf("a,b,c\nd\n")
+    assert_mode(:command)
+  end
+
+  # A selection through a line end keeps that newline. (Space can't be the
+  # <char>: the key arrives as "space"; V J joins with spaces.)
+  def test_join_with_char_keeps_last_newline
+    act("buf.insert_txt(\"x\\ny\\nz\")")
+    act("buf.set_pos(0)")
+    keys("v")
+    act("buf.set_pos(3)") # the line end after y
+    keys(", J ;")
+    assert_buf("x;y\nz\n")
+  end
+
+  # , J " makes a quoted comma list; quotes inside a line are escaped
+  def test_join_quoted_list
+    act("buf.insert_txt(\"line 1\\n say \\\"hi\\\"\\nline 3\")")
+    act("buf.set_pos(0)")
+    keys("v")
+    act("buf.set_pos(buf.line_ends[2] - 1)") # the last char of line 3
+    keys(", J \"")
+    assert_buf("\"line 1\", \"say \\\"hi\\\"\", \"line 3\"\n")
+  end
 end

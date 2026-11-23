@@ -268,6 +268,7 @@ add_keys "core cat:case", {
 
 add_keys "core cat:visual", {
   "V J" => "sel.join",
+  "V , J <char>" => "sel.join.char",
   "I shift-left" => "sel.char.prev",
   "I shift-right" => "sel.char.next",
   "I shift-down" => "sel.line.next",

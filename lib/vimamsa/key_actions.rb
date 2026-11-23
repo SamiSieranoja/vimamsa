@@ -94,6 +94,19 @@ reg_act("style.bold", proc { buf.style_transform(:bold) }, "Set text weight to b
 reg_act("style.link", proc { buf.style_transform(:link) }, "Set text as link")
 reg_act("style.italic", proc { buf.style_transform(:italic) }, "Set text style to italic")
 reg_act("sel.join", proc { vma.buf.convert_selected_text(:joinlines) }, "Join lines")
+# , J " (or ') quotes each line and joins with ", ": "line 1", "line 2"
+reg_act("sel.join.char", proc { |c|
+  buf.transform_visual_selection { |t|
+    lines = t.split("\n").map(&:strip).reject(&:empty?)
+    joined = if c == '"' || c == "'"
+        lines.map { |l| c + l.gsub(/[\\#{c}]/) { |m| "\\" + m } + c }.join(", ")
+      else
+        lines.join(c)
+      end
+    joined + (t.end_with?("\n") ? "\n" : "")
+  }
+  buf.view.after_action
+}, "Join the selected lines with <char> as the separator; \" or ' makes a quoted comma list")
 reg_act("sel.latex_itemize", proc { vma.buf.convert_selected_text(:latex_itemize) }, "Convert selection to LaTeX itemize list")
 reg_act("style.clear", proc { buf.style_transform(:clear) }, "Clear style formats")
 reg_act("style.line.heading", proc { buf.set_line_style(:heading) }, "Set style of current line as heading")
