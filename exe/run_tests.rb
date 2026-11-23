@@ -180,7 +180,11 @@ $vma_user_dir = File.expand_path(ENV["VMA_USER_DIR"] || "~/.config/vimamsa-test"
 # sets no exit code, so pass/fail comes from the last "Results:" line.
 if !ENV["VMA_TEST_APP"].to_s.empty?
   app = ENV["VMA_TEST_APP"]
-  env = class_filter.empty? ? {} : { "VMA_TEST_CLASSES" => class_filter.join(",") }
+  # VMA_TEST_APP itself is not passed on: the editor doesn't use it, and in
+  # an AppImage it points into the AppImage (test_bundling.rb checks that
+  # nothing else does)
+  env = { "VMA_TEST_APP" => nil }
+  env["VMA_TEST_CLASSES"] = class_filter.join(",") if !class_filter.empty?
   puts ">> Running the tests with #{app}"
   $stdout.flush
   ok = false
