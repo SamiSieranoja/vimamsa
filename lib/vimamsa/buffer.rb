@@ -1618,17 +1618,28 @@ class Buffer < String
     handle_word(wnfo)
   end
 
+  # J: join the next line to the current one as Vim does. The next line's
+  # leading whitespace goes, and one space is put between them unless the
+  # next line is empty (or blank), the current line is empty or ends in
+  # whitespace, or the next line starts with ")". The cursor goes to the join
+  # point: the space, or the first joined character; when nothing is joined
+  # (an empty next line), the last character of the current line.
+  # (tests/test_join_lines_vim.rb)
   def join_lines()
     if @lpos >= @line_ends.size - 1 # Cursor is on last line
       debug("ON LAST LINE")
       return
-    else
-      # TODO: replace all whitespace between lines with ' '
-      jump(END_OF_LINE)
-      delete(CURRENT_CHAR_FORWARD)
-      #insert_txt(' ',AFTER)
-      insert_txt(" ", BEFORE)
     end
+    nl = @line_ends[@lpos] # the current line's "\n"
+    cur = line(@lpos).chomp
+    nxt_full = line(@lpos + 1).chomp
+    lead = nxt_full[/\A\s*/].size
+    nxt = nxt_full[lead..]
+    sep = (nxt.empty? || cur.empty? || cur.match?(/\s\z/) || nxt.start_with?(")")) ? "" : " "
+    # The "\n" and the next line's indentation (inclusive range)
+    delete_range(nl, nl + lead, register: false)
+    insert_txt_at(sep, nl) if !sep.empty?
+    set_pos(nxt.empty? && !cur.empty? ? nl - 1 : nl)
   end
 
   def replace_with_char(char)
