@@ -574,6 +574,7 @@ end
 
 def fatal_error(msg)
   debug msg
+  STDERR.puts "vimamsa: fatal error: #{msg}" # exit! skips the crash report
   exit!
 end
 

@@ -937,7 +937,11 @@ class KeyBindingTree
       modes = [modetmp] if modetmp.match(/^\p{Ll}+$/) # Lowercase
       keydef = m[2]
     else
-      @fatal_handler.call("Error in keydef #{key.inspect}")
+      # No key after the mode, e.g. "fexp " or "C": a mistake in custom.rb
+      # must not stop the editor (it used to exit silently here)
+      error("bindkey: no key in #{key.inspect}: expected a mode and keys, " \
+            "e.g. \"C , x\". Binding skipped.")
+      return
     end
 
     # Mode part is neither all uppercase nor all lowercase, e.g. "Fexp , x"

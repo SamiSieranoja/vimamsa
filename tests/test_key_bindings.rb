@@ -281,6 +281,17 @@ class TestKeyBindings < VmaTest
       "nothing should have been bound"
   end
 
+  # A mode without keys ("fexp " in custom.rb) used to exit the editor
+  # silently at start (fatal_error -> exit!)
+  def test_bindkey_without_key_is_reported_and_binds_nothing
+    ["fexp ", "C ", "C"].each { |k|
+      errors = capture_kbd_errors { bindkey k, :_test_no_key_action }
+      assert_eq 1, errors.size, "#{k.inspect}: #{errors.inspect}"
+      assert errors[0].include?("no key"), errors[0]
+    }
+    assert_eq [], find_binding_paths(:_test_no_key_action)
+  end
+
   def test_bindkey_known_minor_mode_binds_to_that_mode
     bindkey "fexp z z", :_test_fexp_action
     assert_eq ["fexp z z"], find_binding_paths(:_test_fexp_action)
