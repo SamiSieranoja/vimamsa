@@ -606,6 +606,11 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
+- **`J` joins lines as in Vim** (2026-11-23, `c3cb510`): next line's indent removed, no
+  space for an empty/blank next line, a current line ending in whitespace, or a next line
+  starting with `)`; cursor at the join point. Cases from Vim 9 in
+  `tests/test_join_lines_vim.rb`.
+
 - **`V , J <char>`: join the selected lines with a separator** (2026-11-23, `0d775ca`):
   action `sel.join.char`; lines stripped, empty ones dropped. `, J "` / `, J '` make a
   quoted comma list. Tests in `tests/test_text_transforms.rb`.
