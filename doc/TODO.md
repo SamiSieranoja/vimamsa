@@ -606,6 +606,17 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
+- **`V , J <char>`: join the selected lines with a separator** (2026-11-23, `0d775ca`):
+  action `sel.join.char`; lines stripped, empty ones dropped. `, J "` / `, J '` make a
+  quoted comma list. Tests in `tests/test_text_transforms.rb`.
+
+- **A binding without a key no longer exits the editor** (2026-11-23, `49cef79`):
+  `bindkey "fexp ", ...` in custom.rb reached `fatal_error` (`exit!`) and quit at start
+  silently. Now reported and skipped; `fatal_error` prints its message.
+
+- **Startup warnings** (2026-11-23, `92b385a`): duplicate `"I <char>"` binding removed;
+  no GtkSourceView language guess for the minibuffer's empty file name.
+
 - **Demo playback: no user input while running; restart after edits** (2026-11-22,
   `5254114`): while a demo plays, the user's keys and clicks/drags in the text are
   ignored (`DemoPlayer.blocks_input?`, checked in `gui.rb` and `gui_sourceview.rb`), with a
