@@ -179,7 +179,9 @@ class Buffer < String
     lm = GtkSource::LanguageManager.new
 
     lm.set_search_path(lm.search_path << ppath("lang/"))
-    lang = lm.guess_language(@fname)
+    # An empty name (a buffer that has no file yet) makes GtkSourceView print
+    # a CRITICAL assertion
+    lang = @fname.empty? ? nil : lm.guess_language(@fname)
     # lang.get_metadata("line-comment-start")
     # lang.get_metadata("block-comment-start")
     # lang.get_metadata("block-comment-end")

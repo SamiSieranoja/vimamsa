@@ -205,7 +205,6 @@ add_keys "core cat:insert", {
   # Command mode only:
   "C space <char>" => "edit.insert.char",
   "C space space" => "edit.insert.space",
-  "I <char>" => "edit.insert.char",
   "I ctrl-j" => "edit.complete.hide",
   "I space" => "edit.insert.space",
 }
