@@ -9,7 +9,7 @@ class Buffer < String
 
     #TODO: implement using line_range()
     if lpos >= @line_ends.size
-      debug("lpos too large") #TODO
+      debug("lpos too large")
       return ""
     elsif lpos == @line_ends.size
     end
@@ -215,8 +215,6 @@ class Buffer < String
       search_str = self[start_search..(@pos - 1)]
       return if search_str == nil
       wsmarks = scan_indexes(search_str,
-                             #/(^|(\W)\w|\n)/) #TODO 150 length limit
-                             #/^|(?<=[^\p{Word}])\p{Word}|(?<=\n)\n/) #include empty lines?
                              /\A|(?<=[^\p{Word}])\p{Word}/) # Start of string or nonword,word.
 
       offset = 0
@@ -277,7 +275,7 @@ class Buffer < String
     line_n = get_repeat_num() if line_n == 1
 
     if line_n > @line_ends.size
-      debug("lpos too large") #TODO
+      debug("lpos too large")
       return
     end
     if line_n == 1

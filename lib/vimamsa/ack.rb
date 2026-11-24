@@ -106,8 +106,6 @@ def group_by_folder(list)
     if !fpath.nil?
       bname = File.basename(b[:fpath])
       dname = File.dirname(b[:fpath])
-    else
-      #TODO
     end
     bh[dname] ||= {}
     bh[dname][:files] ||= []

@@ -205,7 +205,6 @@ class KeyBindingTree
   end
 
   def clear_modifiers()
-    # @modifiers = [] #TODO:remove?
   end
 
   def find_state(key_name, eval_rule)
@@ -264,7 +263,6 @@ class KeyBindingTree
       return new_state
       # return true
     else # No match found
-      # @match_state = [@C] #TODO
       return nil
     end
   end
@@ -319,7 +317,7 @@ class KeyBindingTree
     if new_state != nil
       @cur_state = new_state
     else
-      @cur_state = @mode_root_state # TODO
+      @cur_state = @mode_root_state
     end
   end
 
@@ -571,17 +569,11 @@ class KeyBindingTree
     new_state = match(c)
     return true if new_state.nil? and match_num_key(c, event_type)
     finish_num_count if new_state
-    # #TODO:
-    # new_state = match(translated_c)
-    # if new_state == nil and translated_c.index("shift") == 0
-    # new_state = match(c)
-    # end
 
     if new_state == nil
       s1 = match_state[0].children.select { |s| s.key_name.include?("<char>") } # TODO: [0]
       if s1.any? and (c.size == 1) and event_type == :key_press
         eval_s = s1.first.action.clone
-        # eval_s.gsub!("<char>","'#{c}'") #TODO: remove
         new_state = [s1.first]
       end
     end
@@ -1045,8 +1037,7 @@ class KeyBindingTree
     trail_str = get_state_trail_str[0]
     # Emitted before execution so key logs show the entry even if the action raises
     emit(:key_action, trail_str, action)
-    # $acth << action #TODO:needed here?
-    @method_handles_repeat = false #TODO:??
+    @method_handles_repeat = false
     n = 1
     counting = action.class == String && (action.include?("set_next_command_count") || action.include?("kbd.count.digit"))
     if @next_command_count and !counting
@@ -1113,15 +1104,4 @@ def exec_action(action)
   end
 end
 
-# Try to clear modifiers when program loses focus
-# e.g. after alt-tab
-# TODO
-# def focus_out
-# debug "RB Clear modifiers"
-# vma.kbd.clear_modifiers()
-# end
-
-# def handle_key_event(event)
-# vma.kbd.handle_key_event(event)
-# end
 end # module Vimamsa

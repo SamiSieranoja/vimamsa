@@ -110,7 +110,6 @@ class BufferManager
 
     @buf.set_line_and_column_pos(newlpos, 0)
 
-    # Thread.new{sleep 0.1; center_on_current_line()} # TODO
   end
 end
 end # module Vimamsa

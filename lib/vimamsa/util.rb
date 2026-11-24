@@ -86,7 +86,6 @@ def file_is_text_file(fpath)
     return true if str.valid_encoding?
   end
 
-  #TODO: not sure if needed
   # Any text encoding (e.g. "ISO-8859 text"): read_file converts it to UTF-8.
   # -b: without the file name, which could itself contain "text".
   r = exec_cmd("file", "-b", fpath)
@@ -337,7 +336,6 @@ def read_file_with_format(path, encoding = Encoding::UTF_8)
   nl = content.count("\n")
   crlf = nl > 0 && content.scan("\r\n").size == nl
 
-  #TODO: Should put these as option:
   content.gsub!(/\r\n/, "\n")
   # content.gsub!(/\t/, "    ")
   content.gsub!(/\b/, "")
@@ -393,10 +391,4 @@ def is_image_file(fpath)
   return false
 end
 
-# def is_text_file(fpath)
-# return false if !File.exist?(fpath)
-# return false if !fpath.match(/.(txt|cpp|h|rb|c|php|java|py)$/i)
-# #TODO: check contents of file
-# return true
-# end
 end # module Vimamsa

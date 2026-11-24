@@ -44,7 +44,6 @@ class Buffer < String
     refresh_title
   end
 
-  # TODO: rename ot auto-format. separate module?
   # Indents whole buffer using external program
   def auto_format()
     ftype = get_file_type()
@@ -317,7 +316,7 @@ class Buffer < String
     elsif op == BACKWARD_CHAR and @pos > 0
       add_delta([@pos - 1, DELETE, 1], true)
       @pos -= 1
-    elsif op == FORWARD_CHAR #TODO: ok?
+    elsif op == FORWARD_CHAR
       add_delta([@pos + 1, DELETE, 1], true)
     end
     set_pos(@pos)

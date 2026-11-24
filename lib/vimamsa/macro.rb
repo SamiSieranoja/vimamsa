@@ -189,8 +189,6 @@ class Macro
       vma.buf&.new_undo_group
       vma.buf&.instance_variable_set(:@macro_group_active, true)
       @running_macro = true
-      # TODO:needed?
-      # set_last_command({ method: vma.macro.method("run_macro"), params: [name] })
       for a in acts
         ret = exec_action(a)
         if ret == false
@@ -253,7 +251,6 @@ class Macro
           io.write(contents)
         end
       end
-      sleep 3 #TODO:remove
     }
   end
 end

@@ -169,9 +169,6 @@ class FileManager
       message "Can't delete #{fn}"
     end
 
-    # TODO: FileUtils.remove_dir
-
-    #TODO:
   end
 
   # Main inteface, show contents of current dir

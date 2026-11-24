@@ -621,13 +621,6 @@ class VSourceView < GtkSource::View
     debug "key event" + [keyval, @last_keyval, keyname, sig].to_s
     # debug event
 
-    # key_name = event.string
-    #TODO:??
-    # if event.state.control_mask?
-    # key_name = Gdk::Keyval.to_name(event.keyval)
-    # Gdk::Keyval.to_name()
-    # end
-
     # The editor's name for the key (key_names.rb, shared with forms)
     key_str = gui_key_name(keyval, keyname)
     keyname = GUI_KEYVAL_NAMES[keyval] || keyname
@@ -670,10 +663,10 @@ class VSourceView < GtkSource::View
     b = buffer
     iter = b.get_iter_at(:offset => i)
     iterxy = get_iter_location(iter)
-    winw = width #TODO
+    winw = width
 
     view_width = visible_rect.width
-    gutter_width = winw - view_width #TODO
+    gutter_width = winw - view_width
 
     x = iterxy.x + gutter_width
     y = iterxy.y
@@ -717,7 +710,6 @@ class VSourceView < GtkSource::View
       $hook&.call(:view_text_changed, self)
     end
 
-    # sanity_check #TODO
   end
 
   def sanity_check()
@@ -879,7 +871,6 @@ class VSourceView < GtkSource::View
       set_cursor_color(ctype)
       self.overwrite = false
       debug "INSERT MODE"
-    else # TODO
     end
 
     if [:insert, :command, :replace, :browse].include?(ctype)

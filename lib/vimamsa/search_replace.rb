@@ -48,8 +48,6 @@ class FileSelector
     if File.directory?(fn)
       debug "CHDIR: #{fn}"
       dir_to_buf(fn)
-      # elsif vma.can_open_extension?(fn) #TODO: remove this check?
-      # jump_to_file(fn)
     elsif file_is_text_file(fn)
       jump_to_file(fn)
     else

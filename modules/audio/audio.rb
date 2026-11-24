@@ -151,7 +151,6 @@ class Buffer < String
     $audiof = mf
   end
 
-  #TODO: remove?
   def reset_audio_widget_positions
     debug "reset_audio_widget_positions", 2
     for mc in (@audiofiles || [])
@@ -188,7 +187,6 @@ def hpt_scan_audio(bf = nil)
     end
     bf.add_audio(imgfn, insert_pos + 1)
   }
-  # vma.gui.delex.run #TODO:gtk4
 end
 
 def audio_init

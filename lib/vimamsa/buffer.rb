@@ -252,7 +252,6 @@ class Buffer < String
     return words
   end
 
-  # TODO: review
   def cleanup_deleted_images(deleted_text)
     return if @images.empty?
     return unless deleted_text&.include?("⟦img:")
@@ -299,7 +298,6 @@ class Buffer < String
 
     da.scale_image
 
-    # vma.gui.handle_image_resize #TODO:gtk4
     @images << { :path => imgpath, :obj => da, :anchor => anchor }
 
     gui_set_current_buffer(@id) #TODO: needed?
@@ -752,7 +750,7 @@ class Buffer < String
 
     @is_highlighted = false
     @update_highlight = true
-    @update_hl_startpos = 0 #TODO
+    @update_hl_startpos = 0
     @update_hl_endpos = self.size - 1
 
     gui_set_buffer_contents(@id, self.to_s)
@@ -1074,7 +1072,7 @@ class Buffer < String
   def line_range(start_line, num_lines, include_last_nl = true)
     end_line = start_line + num_lines - 1
     if end_line >= @line_ends.size
-      debug("lpos too large") #TODO
+      debug("lpos too large")
       end_line = @line_ends.size - 1
     end
     start = @line_ends[start_line - 1] + 1 if start_line > 0
@@ -1382,8 +1380,6 @@ class Buffer < String
       end
     elsif wtype == :run
       hpt_run_link(word)
-    else
-      #TODO
     end
   end
 
@@ -1419,7 +1415,6 @@ class Buffer < String
       elsif wtype == :help
         m << ["Open help page", self.method("handle_word"), [word, wtype]]
       else
-        # m << ["TODO", self.method("handle_word"), word]
         m << ["Paste", method("call"), :paste_after]
       end
     end
@@ -1502,8 +1497,6 @@ class Buffer < String
         wtype = :file
       end
       word = path
-      # elsif hpt_check_cur_word(word) #TODO: check only
-      # debug word
     elsif linep != nil
       wtype = :linepointer
       word = linep
@@ -1669,7 +1662,6 @@ class Buffer < String
     add_delta([insert_pos, INSERT, c.size, c], true)
     #debug("encoding: #{c.encoding}")
     #debug "c.size: #{c.size}"
-    #recalc_line_ends #TODO: optimize?
     calculate_line_and_column_pos
     #need_redraw!
     #@pos += c.size
@@ -1733,7 +1725,6 @@ class Buffer < String
     # @selection_start = nil
     @selection_active = false
     @visual_mode = false
-    #TODO: remove @visual_mode
     # print(caller())
   end
 
@@ -1896,14 +1887,6 @@ class Buffer < String
 
   def put_file_ref_to_clipboard
     vma.clipboard.set(self.fname + ":#{@lpos}")
-  end
-
-  def delete_active_selection() #TODO: remove this function
-    return if !@visual_mode #TODO: this should not happen
-
-    _start, _end = get_visual_mode_range
-    vma.clipboard.set(self[_start, _end], kind: :delete)
-    end_visual_mode
   end
 
   def end_visual_mode()
@@ -2214,7 +2197,7 @@ class Buffer < String
 
   def save()
     return if @module.respond_to?(:on_save) and @module.on_save
-    check_if_modified_outside #TODO
+    check_if_modified_outside
     if !@fname
       save_as()
       return

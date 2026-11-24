@@ -150,7 +150,6 @@ def gui_set_file_lang(id, lname)
   view.buffer.highlight_syntax = true
 end
 
-# TODO:?
 def gui_select_window_close(arg = nil)
 end
 
@@ -158,11 +157,6 @@ def gui_set_buffer_contents(id, txt)
   debug "gui_set_buffer_contents(#{id}, txt)"
   # vma.gui.buffers[id].buffer.set_text(txt)
   vma.gui.buffers[id].set_content(txt)
-end
-
-#TODO: remove
-def gui_set_cursor_pos(id, pos)
-  vma.buf.view.set_cursor_pos(pos)
 end
 
 def gui_set_current_buffer(id)
@@ -184,7 +178,6 @@ def gui_set_window_title(wtitle, subtitle = "", modified: false)
   $vmag.subtitle.markup = "<span size='small'>#{mark}" \
     "<span alpha='55%'>#{CGI.escapeHTML(dir)}</span>" \
     "<span weight='bold' alpha='92%'>#{CGI.escapeHTML(base)}</span></span>"
-  #  $vmag.window.titlebar.subtitle = subtitle #TODO:gtk4
 end
 
 class VMAgui
@@ -246,27 +239,10 @@ class VMAgui
     false
   end
 
-  def handle_image_resize #TODO:gtk4
-    return if @img_resizer_active == true
-    @dtime = Time.now
-
-    $gcrw = 0
-    vma.gui.window.signal_connect "configure-event" do |widget, cr|
-      if $gcrw != cr.width
-        @delex.run
-      end
-      $gcrw = cr.width
-      false
-    end
-
-    @img_resizer_active = true
-  end
-
   def start_overlay_draw()
     @da = Gtk::Fixed.new
     @active_window[:overlay].add_overlay(@da)
 
-    # @overlay.set_overlay_pass_through(@da, true) #TODO:gtk4
   end
 
   def clear_overlay()
@@ -600,10 +576,6 @@ class VMAgui
       debug "modifier change"
       gui_set_modifiers(modtype) # key_names.rb
 
-      #TODO:?
-      # button1_mask?
-      # ...
-      # button5_mask?
       true # = handled, do not propagate further
     end
 
@@ -960,17 +932,6 @@ class VMAgui
     n_overlay.vexpand = true
     n_overlay.hexpand = true
 
-    # TODO: remove??
-    n_sw.vadjustment.signal_connect("value-changed") { |x|
- # pp x.page_increment
-           # pp x.page_size
-           # pp x.step_increment
-           # pp x.upper
-           # pp x.value
-           # pp x
-           # @last_adj_time = Time.now
-      }
-
     # @sw2.show
     return win
   end
@@ -1078,13 +1039,6 @@ class VMAgui
 
     @windows[winid][:sw].set_child(view)
     idle_ensure_cursor_drawn
-
-    #TODO:???
-    # @view = view
-    # @buf1 = buf1
-    # $view = view ???
-    # $vbuf = buf1
-
   end
 
   def set_current_buffer(id)
@@ -1155,7 +1109,6 @@ class VMAgui
   end
 
   def ensure_cursor_drawn
-    # view.place_cursor_onscreen #TODO: needed?
     view.draw_cursor
   end
 

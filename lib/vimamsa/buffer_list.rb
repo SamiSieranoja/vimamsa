@@ -41,7 +41,6 @@ class BufferList
 
     $hook.call(:change_buffer, vma.buf)
     vma.gui.set_current_buffer(vma.buf.id) #TODO: handle elswhere?
-    # vma.buf.view.set_cursor_pos(vma.buf.pos)  #TODO: handle elswhere?
     update_last_dir(_buf)
     vma.gui.file_panel_refresh
   end
@@ -124,22 +123,13 @@ class BufferList
 
     vma.hook.call(:change_buffer, vma.buf)
 
-    bu.set_active # TODO
+    bu.set_active
     bu.check_autosave_load_if_pending # deferred check for session-restored buffers
     bu.update_access_time if update_history
     reset_navigation if update_history
     vma.gui.set_current_buffer(idx)
     vma.gui.file_panel_refresh
     vma.gui.func_panel_refresh
-
-    #TODO: delete?
-    # if !vma.buf.mode_stack.nil? and vma.kbd.get_scope != :editor #TODO
-    # debug "set kbd mode stack #{vma.buf.mode_stack}  #{vma.buf.id}", 2
-    # Reload previously saved keyboard mode status
-    # vma.kbd.set_mode_stack(vma.buf.mode_stack.clone) #TODO:needed?
-    # vma.kbd.set_mode_stack([vma.buf.default_mode])
-    # end
-    # vma.kbd.set_mode_to_default if vma.kbd.get_scope != :editor
 
     vma.buf.refresh_title
 
@@ -261,20 +251,6 @@ class BufferList
   def close_other_buffer(idx)
     close_buffer(idx, auto_open: false)
   end
-
-  #TODO
-  # def close_all_buffers()
-  # message("Closing all buffers")
-  # while @list.size > 0
-  # if self.size == 1
-  # close_buffer(0)
-  # break
-  # else
-  # close_buffer(0)
-  # end
-  # end
-  # # self << Buffer.new("\n")
-  # end
 
   def close_scrap_buffers()
     l = @list.clone

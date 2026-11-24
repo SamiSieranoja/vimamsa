@@ -329,7 +329,6 @@ def missing_callfunc
   debug "missing_callfunc"
 end
 
-#TODO: remove?
 def call_action(id)
   vma.actions.call(id)
 end

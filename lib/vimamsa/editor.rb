@@ -183,7 +183,7 @@ class Editor
   end
 
   def start
-    @gui = $vmag #TODO
+    @gui = $vmag
     migrate_user_files
 
     $hook = Hook.new
@@ -705,9 +705,6 @@ def message(s)
   debug s
 
   $vmag.add_to_minibuf(s)
-  # $minibuffer = Buffer.new(s, "")
-  # $minibuffer[0..-1] = s # TODO
-  #render_minibuffer
 end
 
 GUESS_ENCODING_ORDER = [
@@ -835,7 +832,6 @@ def do_open_file(filename)
 end
 
 def open_new_file(filename, file_contents = "")
-  #TODO: expand path
   filename = File.expand_path(filename)
   b = vma.buffers.get_buffer_by_filename(filename)
   # File is already opened to existing buffer

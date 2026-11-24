@@ -40,7 +40,6 @@ def log_error(message)
   puts message
   puts "=================="
   $errors << [message, caller]
-  #TODO
 end
 
 def show_caller
@@ -104,7 +103,6 @@ def run_test(test_id)
   vma.buf = old_buffer
 end
 
-#TODO: remove?
 def gui_sleep(t2)
   t1 = Time.now()
   while Time.now < t1 + t2

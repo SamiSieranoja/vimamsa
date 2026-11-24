@@ -100,11 +100,6 @@ class SelectUpdateWindow
     # item_list = @update_callback.call("")
     update_item_list(item_list)
 
-    # @window.signal_connect("key-press-event") do |_widget, event| #TODO:gtk4
-    # debug "KEYPRESS 1"
-    # @entry.handle_event(event)
-    # end
-
     @form = FormInput.new(@window, submit: method(:select_current), cancel: method(:close))
     @field = @form.add_field(@entry)
     # The list follows the field, in an idle (typing stays quick with a slow
@@ -126,13 +121,11 @@ class SelectUpdateWindow
 
     vbox.append(container)
     sw = Gtk::ScrolledWindow.new(nil, nil)
-    # sw.shadow_type = :etched_in #TODO:gtk4
     sw.set_policy(:never, :automatic)
     vbox.append(sw)
     sw.vexpand = true
     sw.hexpand = true
 
-    # sw.add(treeview) #TODO:gtk4
     sw.set_child(treeview)
 
     if !opt[:columns].nil?

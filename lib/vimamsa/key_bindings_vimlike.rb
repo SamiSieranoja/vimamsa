@@ -162,7 +162,6 @@ add_keys "core cat:motion", {
 }
 
 add_keys "core cat:search", {
-  #    'C '=> 'buf.jump_word(BACKWARD,END)',#TODO
   "VC f <char>" => "jump.char.next",
   "VC F <char>" => "jump.char.prev",
   "VC f space" => "jump.space.next",
@@ -172,7 +171,6 @@ add_keys "core cat:search", {
   "VC /" => "search.buf",
   "C n" => "search.next",
   "C N" => "search.prev",
-  # "C ." => "repeat_last_action", # TODO
   "VC ;" => "jump.char.repeat",
   "B ;" => "jump.edit.prev",
   "B q" => "jump.edit.prev",
@@ -213,12 +211,10 @@ add_keys "core cat:edit", {
   "C J" => "edit.line.join",
   "C y O" => "edit.copy.line.end",
   "C y 0" => "edit.copy.line.start",
-  "C y e" => "edit.copy.word.end", # TODO
+  "C y e" => "edit.copy.word.end",
   "C y ' <char>" => "edit.copy.mark",
   #### Deleting
   # "C x" => "buf.delete(CURRENT_CHAR_FORWARD)",
-  # 'C d k'=> 'delete_line(BACKWARD)', #TODO
-  # 'C d j'=> 'delete_line(FORWARD)', #TODO
   # 'C d d'=> 'buf.delete_cur_line',
   "C d e" => "edit.delete.word.end",
   "C d O" => "edit.delete.eol",
@@ -230,15 +226,14 @@ add_keys "core cat:edit", {
   "C d F <char>" => "edit.delete.find.prev",
   "C d f space" => "edit.delete.space.next",
   "C d F space" => "edit.delete.space.prev",
-  "C r <char>" => "edit.replace.char", # TODO
-  "C r space" => "edit.replace.space", # TODO
-  "C , r <char>" => "edit.register", # TODO
-  "C , p <char>" => "edit.paste.register", # TODO
+  "C r <char>" => "edit.replace.char",
+  "C r space" => "edit.replace.space",
+  "C , r <char>" => "edit.register",
+  "C , p <char>" => "edit.paste.register",
   # Switch to another mode
   "C R" => "mode.replace",
   # Replace mode
   "X esc || X ctrl!" => "mode.prev",
-  # "X p" => "edit.paste.over.after", #TODO
   "X ctrl-v" => "edit.paste.over.before",
   "X <char>" => "edit.replace.char.next",
   "I ctrl-d" => "edit.delete.word.end",
@@ -294,8 +289,6 @@ add_keys "core cat:marks", {
 
 add_keys "core cat:macro", {
   "macro q" => "macro.record.stop",
-  # "VC q(vma.macro.is_recording==true)" => "vma.macro.end_recording", # TODO: does not work
-  # "VC o(vma.macro.is_recording==true)" => "vma.macro.end_recording", # TODO: does not work
   # "VC q q(vma.macro.is_recording==true)" => "vma.macro.end_recording",
   "VC q <char>" => "macro.record",
   # 'C v'=> 'vma.macro.end_recording',
@@ -412,7 +405,6 @@ add_keys "experimental", {
  "C ` r" => "lsp.restart",
 
   "C , t r" => "debug.tests",
-  # "CV , R" => "restart_application", #TODO: does not work
   "I ctrl-h" => "edit.complete",
   "I ctrl-space" => "edit.complete",
   "C , d m" => "debug.kbd",
@@ -423,7 +415,7 @@ add_keys "experimental", {
   "C , D" => "debug.buf.print",
   "C , d o" => "debug.overlay.clear",
   # Debug
-  "C , d r p" => "debug.pry", #TODO
+  "C , d r p" => "debug.pry",
 #bindkey 'C , g', proc{invoke_grep_search}
 # bindkey "C , d", "buf.diff"
  "C , , d" => "debug.save",
