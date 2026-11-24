@@ -622,6 +622,13 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
+- **Optional AppImage with GTK 4.24 on Ubuntu 22.04** (2026-11-24, `6e1015b`..`b9c0999`):
+  `scripts/appimage/build.sh --gtk-new`, needs glibc ≥ 2.35; the default build is
+  unchanged. Also fixed on the way: a GTK 4.24 crash freeing closed views' gestures,
+  restarting from an AppImage (now through AppRun). Plan: `doc/appimage_old_base_plan.md`.
+
+- **Leaving insert mode clears a shift-arrow selection** (2026-11-24, `2e162fd`).
+
 - **Function panel click keeps the editor focus** (2026-11-24, `4f65838`): clicking a function or
   heading moved the cursor but left the focus in the panel, so the cursor wasn't drawn.
 
