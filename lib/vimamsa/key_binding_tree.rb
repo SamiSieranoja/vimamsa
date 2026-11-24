@@ -292,6 +292,10 @@ class KeyBindingTree
     @cur_mode = label
 
     emit(:mode_changed, label)
+    # Repaint the mode badge here, not only after key handling: a mode can
+    # also change without a key, e.g. a popup closed with the mouse (its form
+    # mode F would otherwise stay on the badge until the next key)
+    show_state_trail
   end
 
   def get_scope

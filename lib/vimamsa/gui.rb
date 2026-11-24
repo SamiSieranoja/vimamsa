@@ -804,6 +804,7 @@ class VMAgui
   # Render the mode badge and pending key chord in the status area.
   # Subscribed to KeyBindingTree's :state_trail_changed event.
   def update_mode_badge(badge, badge_key, trail)
+    return if @statnfo.nil? # status area not built yet
     cls = MODE_BADGE_CSS.fetch(badge_key, "mode-other")
     if cls != @badge_css_class
       @statnfo.remove_css_class(@badge_css_class) if @badge_css_class
