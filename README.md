@@ -107,7 +107,7 @@ their new places at the first start.
 
 ## Demo
 
-[<video src="https://github.com/user-attachments/assets/626bc896-7e15-4e21-a013-4572cf5532a6" autoplay muted loop playsinline width="800"></video>](https://github.com/user-attachments/assets/626bc896-7e15-4e21-a013-4572cf5532a6)
+https://github.com/user-attachments/assets/701f7dad-2b56-47b7-aad7-c57f8647419a6
 
 Moving with `h j k l` and `w e b`, `y y p`, `d d`, undo `u` / redo `ctrl-r`,
 typing in Insert mode and back to Command mode with `ctrl` (press and release
