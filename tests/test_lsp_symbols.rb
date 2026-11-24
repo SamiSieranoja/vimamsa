@@ -19,7 +19,9 @@ class TestLspSymbols < VmaTest
       languages: ["ruby"],
       rooturi: "file://#{REPO_ROOT}",
     }
-    LangSrv.class_variable_get(:@@languages).delete("ruby")
+    # The server of this project, if TestLspJumpToDefinition started one with
+    # the same settings, is reused (LangSrv keys servers by language and
+    # project); forgetting it would only start and index a second ruby-lsp
   end
 
   def test_document_functions_lists_methods
@@ -29,26 +31,14 @@ class TestLspSymbols < VmaTest
 
     lsp = vma.buf.lsp
     unless lsp
-      puts "  SKIP  #{self.class}#test_document_functions_lists_methods " \
-           "(ruby-lsp unavailable — is 'bundle exec ruby-lsp' installed?)"
-      return
+      skip "ruby-lsp unavailable — is 'bundle exec ruby-lsp' installed?"
     end
 
-    # documentSymbol is per-file; give didOpen a moment, then retry.
-    sleep 1
-    drain_idle
-    funcs = nil
-    15.times do
-      funcs = lsp.document_functions(SYMBOL_FILE)
-      break if funcs && !funcs.empty?
-      sleep 1
-      drain_idle
-    end
+    # documentSymbol is per-file: retry until ruby-lsp has processed didOpen
+    funcs = poll_until(timeout: 16) { lsp.document_functions(SYMBOL_FILE) }
 
     if funcs.nil? || funcs.empty?
-      puts "  SKIP  #{self.class}#test_document_functions_lists_methods " \
-           "(ruby-lsp returned no symbols — still indexing?)"
-      return
+      skip "ruby-lsp returned no symbols — still indexing?"
     end
 
     # Shape: [{ name:, line: }, ...] with 1-based lines.

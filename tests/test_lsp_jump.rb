@@ -36,9 +36,7 @@ class TestLspJumpToDefinition < VmaTest
     wait_for_lsp(vma.buf)
 
     unless vma.buf.lsp
-      puts "  SKIP  #{self.class}#test_jump_to_definition " \
-           "(ruby-lsp unavailable — is 'bundle exec ruby-lsp' installed?)"
-      return
+      skip "ruby-lsp unavailable — is 'bundle exec ruby-lsp' installed?"
     end
 
     # Locate `class TestBasicEditing < VmaTest` and position cursor on `VmaTest`.
@@ -59,22 +57,14 @@ class TestLspJumpToDefinition < VmaTest
     assert !expected_lpos.nil?,
            "Could not locate 'class VmaTest' in #{File.basename(TARGET_FILE)}"
 
-    # Give ruby-lsp a moment to process didOpen before the first request,
-    # then retry until we get a result (workspace indexing happens in background).
-    sleep 2
-    drain_idle
-    definition = nil
-    15.times do
-      definition = vma.buf.lsp.get_definition(CALLER_FILE, caller_lnum, caller_col)
-      break if definition
-      sleep 1
-      drain_idle
-    end
+    # Retry until ruby-lsp has a result (workspace indexing happens in the
+    # background after didOpen)
+    definition = poll_until(timeout: 17) {
+      vma.buf.lsp.get_definition(CALLER_FILE, caller_lnum, caller_col)
+    }
 
     if definition.nil?
-      puts "  SKIP  #{self.class}#test_jump_to_definition " \
-           "(ruby-lsp returned no definition after 17 s — workspace still indexing?)"
-      return
+      skip "ruby-lsp returned no definition after 17 s — workspace still indexing?"
     end
 
     assert_eq File.expand_path(TARGET_FILE), definition[0],
