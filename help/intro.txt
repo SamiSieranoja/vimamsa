@@ -2,18 +2,28 @@
 A Vim-inspired text editor. This page is always in Help ▸ Introduction.
 
 ◼ Modes
-Command mode: keys move the cursor and edit. The badge at the bottom right shows the mode.
-Insert mode: keys type text. Enter it with {key:C:mode.insert}, leave it with {key:I:mode.prev}.
-Visual mode: select text, {key:C:mode.visual}.
-(ctrl! = press and release ctrl alone, with no other key)
+⦁COMMAND⦁: keys move the cursor and edit. The badge at the bottom right shows the mode.
+⦁INSERT⦁: keys type text. Enter it with {key:C:mode.insert}, leave it with {key:I:mode.prev}. Works somewhat like editing in notepad + some bash/emacslike bindings.
+⦁VISUAL⦁: select text, {key:C:mode.visual}.
+
+(⦁ctrl!⦁ = press and release ctrl alone, with no other key)
 
 ◼ The essentials
-Open a file      {key:file.open}
-Find a file      {key:file.finder}
-Save             {key:buf.save}
-Search           {key:search.buf}
-Undo             {key:undo.last}
-Command line     {key:mode.cmdline}
+
+⦁(In command mode:)⦁
+To insert mode        {key:C:mode.insert}
+To visual mode        {key:C:mode.visual}
+Back to command mode  {key:I:mode.prev}
+Open a file           {key:C:file.open}
+Save                  {key:C:buf.save}
+Search                {key:C:search.buf}
+Undo                  {key:C:undo.last}
+Moving ⦁← → ↑ ↓⦁        ⦁h l k j⦁
+Next/Prev word        ⦁w b⦁
+EasyJump              ⦁s⦁
+
+To edit something:
+⟦run:app.demo|Install and show a demo file⟧
 
 ◼ Coming from Vim?
 ⟦run:help.vim_intro|Vim differences⟧  the main differences, in one screen
