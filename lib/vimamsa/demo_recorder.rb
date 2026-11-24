@@ -1,5 +1,5 @@
 module Vimamsa
-# Records a demo like a macro (Help ▸ Demos ▸ Record demo, help.demo.record),
+# Records a demo like a macro (help.demo.record),
 # into the demo step format that DemoPlayer plays (doc/demo_recording_plan.md,
 # part 2). The keys are taken where every key comes in (the :key_input event
 # of KeyBindingTree#match_key_conf, where DemoPlayer also feeds them), so
@@ -10,7 +10,7 @@ module Vimamsa
 # steps (DemoRecorder.steps): delay, wait, keys, type, and target +
 # @JUMP_LABEL@ for easy jump labels (they depend on the window size). The
 # demo is saved in <user dir>/demos/<name>/ with a copy of the file as it was
-# at the start, and played from Help ▸ Demos (DemoPlayer.demos).
+# at the start, and played with DemoPlayer.toggle (DemoPlayer.demos).
 class DemoRecorder
   # One recorded key
   # read: read by something else than the key bindings (easy jump's label
@@ -55,7 +55,7 @@ class DemoRecorder
     @recording = true
     DemoRecorder.watch
     vma.gui.set_status_indicator(:demo_record, "● REC demo", css_class: "status-recording") rescue nil
-    message("Recording a demo from the top of the file. Help ▸ Demos ▸ Record demo again stops it.")
+    message("Recording a demo from the top of the file. Running help.demo.record again stops it.")
   end
 
   # Stops; asks for a name and saves (save: false only stops, for tests)
@@ -117,7 +117,7 @@ class DemoRecorder
     File.write(File.join(dir, file), @start_text)
     File.write(File.join(dir, "steps.txt"), steps_text(title: name, file: file))
     DemoRecorder.last_saved = DemoPlayer.user_demo_key(slug)
-    message("Demo saved: #{dir} (Help ▸ Demos ▸ Play the last recorded demo)")
+    message("Demo saved: #{dir} (play it: help.demo.recorded.last)")
     dir
   end
 
@@ -140,7 +140,7 @@ class DemoRecorder
   # easy jump at the end).
   def self.steps(keys, end_line: 0, end_col: 0, title: nil, file: nil)
     out = []
-    out << "# Recorded with Help ▸ Demos ▸ Record demo (#{Time.now.strftime("%Y-%m-%d")})."
+    out << "# Recorded with help.demo.record (#{Time.now.strftime("%Y-%m-%d")})."
     out << "# Edit freely; the format is in scripts/demo/demo_steps.txt."
     out << "title #{title}" if title
     out << "file #{file}" if file

@@ -7,11 +7,6 @@ Insert mode: keys type text. Enter it with {key:C:mode.insert}, leave it with {k
 Visual mode: select text, {key:C:mode.visual}.
 (ctrl! = press and release ctrl alone, with no other key)
 
-◼ Watch a demo
-Each demo plays in its own buffer. The key log on the right shows every key and
-what it did; the controls above it pause, change the speed or switch the demo.
-{demos}
-
 ◼ The essentials
 Open a file      {key:file.open}
 Find a file      {key:file.finder}

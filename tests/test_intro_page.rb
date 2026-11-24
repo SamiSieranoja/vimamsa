@@ -54,8 +54,10 @@ class TestIntroPage < VmaTest
     buf.handle_line_action
     assert_eq 0, $intro_test_runs
     assert !hpt_run_allowed?("app.quit")
-    assert hpt_run_allowed?("help.demo")
     assert hpt_run_allowed?("app.demo")
+    # demos play keys through the user's (maybe customized) bindings
+    %w[help.demo help.demo.easyjump help.demo.record help.demo.user.x].each { |a| assert !hpt_run_allowed?(a), a }
+    assert hpt_run_allowed?("help.demonstrate"), "only help.demo and help.demo.*"
   ensure
     vma.actions.unregister("help.zz_intro_test") rescue nil
     vma.actions.unregister("edit.zz_intro_test") rescue nil
@@ -78,7 +80,7 @@ class TestIntroPage < VmaTest
     assert b.read_only
     assert !b.include?("{"), "placeholder left: #{b.lines.grep(/\{/).first}"
     assert !b.include?("(no key for"), "unbound key: #{b.lines.grep(/no key for/).first}"
-    DemoPlayer::DEMOS.each_value { |d| assert b.include?("⟦run:#{d[:action]}|▶ #{d[:title]}⟧"), d[:title] }
+    assert !b.include?("⟦run:help.demo"), "a demo link on the page"
     assert b.include?("⦁ctrl!⦁ or ⦁i⦁"), "mode.insert keys: #{b.lines.grep(/Insert mode/).first}"
   ensure
     close_help_pages
@@ -163,7 +165,7 @@ class TestIntroPage < VmaTest
     vma.gui.cmd_line.execute("intro")
     assert_eq "intro", vma.buf.help_page
     assert_eq "Help ▸ Introduction", vma.gui.menu.path_for("help.intro")
-    assert_eq "Help ▸ Demos ▸ Easy jump", vma.gui.menu.path_for("help.demo.easyjump")
+    assert_eq nil, vma.gui.menu.path_for("help.demo.easyjump"), "demos in the menu"
   ensure
     close_help_pages
   end
@@ -176,7 +178,7 @@ class TestIntroPage < VmaTest
     drain_idle
     n = b.lines.count { |l| l.include?("⟦run:") }
     assert_eq n, b.help_buttons.size
-    assert_eq DemoPlayer::DEMOS.size + 4, n
+    assert_eq 4, n
     assert_eq b.size, b.view.buffer.char_count
   ensure
     close_help_pages
@@ -193,7 +195,7 @@ class TestIntroPage < VmaTest
     setup_counter
     b = show_help_page("intro")
     drain_idle
-    from = b.index("⟦run:help.demo|")
+    from = b.index("⟦run:help.vim_intro|")
     assert_eq HPT_BUTTON_SLOT, b[from - 1]
     assert !hidden?(b, from - 1), "the button's place hidden"
     assert hidden?(b, from), "link text shown"
@@ -218,7 +220,7 @@ class TestIntroPage < VmaTest
   def test_cursor_treats_button_as_one_char
     b = show_help_page("intro")
     drain_idle
-    at = b.index("#{HPT_BUTTON_SLOT}⟦run:help.demo|")
+    at = b.index("#{HPT_BUTTON_SLOT}⟦run:help.vim_intro|")
     to = b.index("⟧", at) + 1
     b.set_pos(at)
     hpt_skip_button(b)
@@ -282,25 +284,6 @@ class TestIntroPage < VmaTest
   ensure
     vma.actions.unregister("help.zz_intro_test") rescue nil
     vma.actions.unregister("edit.zz_intro_test") rescue nil
-  end
-
-  # A demo started from the page goes back to the page when it stops
-  def test_button_starts_demo_and_returns
-    intro = show_help_page("intro")
-    drain_idle
-    _, btn = intro.help_buttons.find { |a, _| a == "help.demo.easyjump" }
-    btn.signal_emit("clicked")
-    drain_idle
-    p = DemoPlayer.current
-    assert p.running?, "demo not started"
-    assert_eq :easyjump, p.name
-    assert !vma.buf.equal?(intro)
-    p.stop("Demo stopped")
-    drain_idle
-    assert vma.buf.equal?(intro), "not back on the intro page"
-  ensure
-    stop_demo
-    close_help_pages
   end
 
   # The demo list above the key log switches demos, keeping the speed

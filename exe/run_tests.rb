@@ -34,7 +34,7 @@ USAGE = <<~TXT
 
   Excluded from the default set (run them by name, one at a time for the
   binding schemes): test_random_edit, test_notepad_bindings,
-  test_vim_bindings, test_perf_startup.
+  test_vim_bindings, test_perf_startup, test_demo_replay.
 
   Env: VMA_USER_DIR (test config dir, default ~/.config/vimamsa-test),
   VMA_UPDATE_DOC=1 (regenerate generated docs), VMA_E2E_DICTATION=1,
@@ -160,7 +160,9 @@ if test_files.empty?
   # schemes, which would corrupt bindings for later test files in the
   # shared process.
   # test_perf_startup: starts the editor a dozen times (about a minute).
-  excluded = ["test_random_edit.rb", "test_notepad_bindings.rb", "test_vim_bindings.rb", "test_perf_startup.rb"]
+  # test_demo_replay: plays the demos against their records, an extra test.
+  excluded = ["test_random_edit.rb", "test_notepad_bindings.rb", "test_vim_bindings.rb", "test_perf_startup.rb",
+              "test_demo_replay.rb"]
   test_files.reject! { |f| excluded.include?(File.basename(f)) }
 end
 

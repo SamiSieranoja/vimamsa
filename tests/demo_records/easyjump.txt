@@ -1,0 +1,28 @@
+# Demo record: easyjump (demo_easyjump_steps.txt); see tests/test_demo_replay.rb
+# step | buffer mode line:col, then the lines the step changed (@line -old +new)
+#1 keys s | shapes.rb command 1:1
+#2 jump | shapes.rb command 11:1
+#3 keys s | shapes.rb command 11:1
+#4 jump | shapes.rb command 28:1
+#5 keys s | shapes.rb command 28:1
+#6 jump | shapes.rb command 2:1
+#7 keys s | shapes.rb command 2:1
+#8 jump | shapes.rb command 10:1
+#9 keys v | shapes.rb visual 10:1
+#10 keys s | shapes.rb visual 10:1
+#11 jump | shapes.rb visual 13:1
+#12 keys $ | shapes.rb visual 13:6
+#13 keys x | shapes.rb command 10:1
+  @10 -
+  @11 -  def to_s
+  @12 -    "#{@name}: #{area.round(2)}"
+  @13 -  end
+#14 keys s | shapes.rb command 10:1
+#15 jump | shapes.rb command 6:1
+#16 keys P | shapes.rb command 10:1
+  @7 +  def to_s
+  @8 +    "#{@name}: #{area.round(2)}"
+  @9 +  end
+  @10 +
+#17 keys g | shapes.rb command 10:1
+#18 keys g | shapes.rb command 1:1

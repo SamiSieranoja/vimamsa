@@ -1,13 +1,12 @@
 module Vimamsa
 # Help pages written as hyperplaintext templates in help/ (doc/intro_page_plan.md):
 #   intro      the introduction page: shown on the first start and from
-#              Help ▸ Introduction; buttons that start the demos
+#              Help ▸ Introduction
 #   vim_intro  a one-screen summary of how vimlike differs from Vim
 #
 # Placeholders in the templates, filled in when a page is opened:
 #   {key:ACTION} / {key:MODE:ACTION}  the keys bound to the action (up to two,
 #       Command mode first, or only MODE), as ⦁keys⦁; the menu path if unbound
-#   {demos}           one line per demo (DemoPlayer::DEMOS) with its button link
 #   {vim_key_table}   the table of VIM_INTRO_KEYS
 #
 # Links ⟦run:ACTION|LABEL⟧ run an action (enter on the link, the context menu,
@@ -35,9 +34,13 @@ VIM_INTRO_KEYS = [
 
 # Actions that ⟦run:…⟧ links may run
 HPT_RUN_ALLOWED = [/\Ahelp\./, /\Aapp\.demo\z/]
+# ... except these: a demo plays keys through the user's own bindings,
+# which custom.rb may have changed, so it could run anything
+HPT_RUN_DENIED = [/\Ahelp\.demo(\.|\z)/]
 
 def hpt_run_allowed?(action)
-  HPT_RUN_ALLOWED.any? { |re| re.match?(action.to_s) }
+  a = action.to_s
+  HPT_RUN_ALLOWED.any? { |re| re.match?(a) } && HPT_RUN_DENIED.none? { |re| re.match?(a) }
 end
 
 # Runs the action of a ⟦run:ACTION|LABEL⟧ link (spec = "ACTION|LABEL")
@@ -80,12 +83,6 @@ def help_key_text(spec, kbd = vma.kbd)
   path ? path : "(no key for #{action})"
 end
 
-def help_demo_lines
-  DemoPlayer::DEMOS.map { |name, d|
-    "⟦run:#{d[:action]}|▶ #{d[:title]}⟧ #{d[:desc]} (#{DemoPlayer.duration_text(name)})"
-  }.join("\n")
-end
-
 def help_vim_key_table
   rows = VIM_INTRO_KEYS.map { |mode, keys, vim, action|
     k = mode == "C" ? keys : "#{KEY_MODE_NAMES[mode]} #{keys}"
@@ -100,7 +97,6 @@ end
 # The text of help page name, with the placeholders filled in
 def help_page_text(name)
   File.read(File.join(HELP_DIR, "#{name}.txt"))
-      .gsub("{demos}") { help_demo_lines }
       .gsub("{vim_key_table}") { help_vim_key_table }
       .gsub(/\{key:([^}]+)\}/) { help_key_text($1) }
       .gsub(/⟦run:[^⟧\n]*⟧/) { "#{HPT_BUTTON_SLOT}#{$&}" } # the char a button takes

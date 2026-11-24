@@ -39,7 +39,9 @@ require_relative "scripts/lib/script_helpers"
 include ScriptHelpers
 
 # Tracked docs that tests regenerate in the guest with VMA_UPDATE_DOC=1
-GENERATED_DOCS = ["doc/vimlike_vim_conflicts.md"]
+GENERATED_DOCS = ["doc/vimlike_vim_conflicts.md",
+                  # test_demo_replay.rb
+                  *%w[basic easyjump files].map { |n| "tests/demo_records/#{n}.txt" }]
 
 # Left out of the copy sent to the guest (tar --exclude patterns)
 TAR_EXCLUDES = %w[
@@ -149,6 +151,7 @@ begin
       GENERATED_DOCS.each { |f|
         step "Copying regenerated #{f} from guest"
         if system(*gc, "copyfrom", *cred, "--target-directory=#{tmp}/", "#{guest_home}/vimamsa/#{f}")
+          FileUtils.mkdir_p(File.dirname(File.join(repo, f)))
           FileUtils.mv(File.join(tmp, File.basename(f)), File.join(repo, f), force: true)
         else
           warn "!! could not copy #{f} back"

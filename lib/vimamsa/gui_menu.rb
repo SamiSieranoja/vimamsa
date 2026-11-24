@@ -84,11 +84,6 @@ module Vimamsa
       add_to_menu "Help.KeyBindings", { :label => "Show key bindings", :action => "help.keys" }
       add_to_menu "Help.VimIntro", { :label => "Vimamsa for Vim users", :action => "help.vim_intro" }
       add_to_menu "Help.VimConflicts", { :label => "Vim keys that differ in vimlike", :action => "help.vim_conflicts" }
-      DemoPlayer.demos.each { |name, d|
-        add_to_menu "Help.Demos.#{name}", { :label => d[:title], :action => d[:action] }
-      }
-      add_to_menu "Help.Demos.Record", { :label => "Record demo (again: stop)", :action => "help.demo.record" }
-      add_to_menu "Help.Demos.PlayRecorded", { :label => "Play the last recorded demo", :action => "help.demo.recorded.last" }
       add_to_menu "Help.InstallDemo", { :action => "app.demo" }
 
       #TODO: "edit.indent.buf"

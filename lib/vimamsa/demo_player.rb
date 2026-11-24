@@ -101,7 +101,7 @@ class DemoPlayer
   # The player that is playing (or paused), else nil with a message
   def self.playing
     return @current if @current&.running?
-    message("No demo is playing (Help ▸ Play demo)")
+    message("No demo is playing")
     nil
   end
 
@@ -133,11 +133,14 @@ class DemoPlayer
   # name's (e.g. a steps file given to scripts/demo/record_demo.rb).
   # controls: false hides the pause / speed controls (in a recording).
   # on_finish: called with the stop message when the demo stops.
-  def initialize(name = :basic, speed: SPEED, loop: true, steps: nil, rate: 0.75, demo: nil, controls: true, on_finish: nil)
+  # on_step: called with a label ("keys x", "type c", "jump") after each key
+  # step has taken effect, a paste included (tests/test_demo_replay.rb).
+  def initialize(name = :basic, speed: SPEED, loop: true, steps: nil, rate: 0.75, demo: nil, controls: true, on_finish: nil, on_step: nil)
     @name = name
     @demo = demo || DemoPlayer.demos.fetch(name)
     @controls = controls
     @on_finish = on_finish
+    @on_step = on_step
     @steps_file = @demo[:steps]
     @speed = speed
     @loop = loop
@@ -322,7 +325,8 @@ class DemoPlayer
   def begin_round
     vma.gui.keylog_panel.clear
     vma.kbd.set_mode(:command)
-    @queue = [] # [delay in s, proc]
+    @queue = [] # [delay in s, proc, label of a key step]
+    @step_done = nil
     @delay = 0.4
     @target = nil
     @steps.each { |cmd, arg| plan(cmd, arg) }
@@ -373,13 +377,13 @@ class DemoPlayer
         if k == "@JUMP_LABEL@"
           # The label easy jump gave the target line: known only once the
           # labels are drawn, for this window size
-          @queue << [@delay, proc { type_jump_label }]
+          @queue << [@delay, proc { type_jump_label }, "jump"]
         else
-          @queue << [@delay, proc { press(k) }]
+          @queue << [@delay, proc { press(k) }, "keys #{k}"]
         end
       }
     when "type"
-      arg.each_char { |c| @queue << [@delay, proc { press(c == " " ? "space" : c) }] }
+      arg.each_char { |c| @queue << [@delay, proc { press(c == " " ? "space" : c) }, "type #{c}"] }
     end
   end
 
@@ -401,6 +405,11 @@ class DemoPlayer
       end
     end
     @paste_wait = nil
+    # The step before has taken effect (a paste too)
+    if @step_done
+      label, @step_done = @step_done, nil
+      @on_step&.call(label)
+    end
     if @queue.empty?
       @loop ? restart : stop("Demo finished")
       return
@@ -409,9 +418,10 @@ class DemoPlayer
     @timer = GLib::Timeout.add([(delay / (@speed * @rate) * 1000).round, 1].max) {
       @timer = nil
       if @running && !@paused
-        _delay, action = @queue.shift
+        _delay, action, label = @queue.shift
         begin
           action&.call
+          @step_done = label if label && @on_step
         rescue => e
           stop("Demo stopped: #{e.message}")
         end

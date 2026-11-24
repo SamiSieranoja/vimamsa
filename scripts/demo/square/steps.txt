@@ -144,8 +144,8 @@ wait 0.5
 # Move one line backward
 keys k
 wait 0.5
-# Join the next line to the current line, Move backward one character, Insert ,, Move to the beginning of the current line, Switch to INSERT mode
-keys J h
+# Join the next line to the current line (the cursor on the space between them), Insert ,, Move to the beginning of the current line, Switch to INSERT mode
+keys J
 wait 0.2
 keys space ,
 wait 0.2

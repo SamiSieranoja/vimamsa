@@ -1,5 +1,6 @@
 # Help ▸ Play demo: the README demo steps played inside the editor
-# (demo_player.rb, scripts/demo/demo_steps.txt)
+# (demo_player.rb, scripts/demo/demo_steps.txt). Playing the whole demos,
+# and checking each step against a record: tests/test_demo_replay.rb.
 class TestDemoPlayer < VmaTest
   SHAPES = File.join(DemoPlayer::DIR, "shapes.rb")
 
@@ -41,68 +42,6 @@ class TestDemoPlayer < VmaTest
     assert steps.any? { |c, a| c == "keys" && a.include?("@JUMP_LABEL@") }
     assert steps.any? { |c, _| c == "target" }, "no target line for the easy jump"
     assert steps.any? { |c, a| c == "type" && a.start_with?("puts ") }
-  end
-
-  # The basic demo (square/steps.txt), fast: it plays to the end and turns
-  # Circle into a Square class with a width (search and replace in a form,
-  # the action search, easy jumps), back in Command mode
-  # (Not faster: at 50x an easy jump can come before the view has scrolled
-  # to its target, which then has no label.)
-  def test_plays_whole_demo
-    # its action searches find the same action whatever else is registered
-    assert_eq "sel.convert.remove_empty_lines", vma.actions.search_actions_update_callback("sel.convert.remempty")[0][1]
-    assert_eq "sel.convert.eval", vma.actions.search_actions_update_callback("sel.convert.eval")[0][1]
-    p = DemoPlayer.new(speed: 3, loop: false)
-    p.start
-    wait_until_done(p, 300)
-    assert_eq "Demo finished", p.stop_message
-    t = p.buf.to_s
-    assert t.include?("class Square < Shape"), t
-    assert t.include?("@width**2"), t
-    # the action search ran the eval converter on the whole file
-    assert t.end_with?("[3.141592653589793, 1]\n\n") || t.include?("[3.141592653589793, 1]"), t
-    assert_mode :command
-  ensure
-    vma.buffers.close_buffer(p.buf.id) if p&.buf
-  end
-
-  # The easy jump demo moves Shape#to_s above area, with v + easy jump to
-  # select it, x and P
-  def test_easyjump_demo_moves_to_s
-    p = DemoPlayer.new(:easyjump, speed: 50, loop: false)
-    p.start
-    wait_until_done(p)
-    l = original.lines
-    want = l[0..4] + ["\n"] + l[10..12] + ["\n"] + l[6..8] + l[13..]
-    assert_eq want.join, p.buf.to_s
-    assert_mode :command
-  ensure
-    vma.buffers.close_buffer(p.buf.id) if p&.buf
-  end
-
-  # The file switching demo: tab, browse mode h / l and the file explorer
-  # visit every file and end on shapes.rb, unchanged, at the top
-  def test_files_demo_switches_files
-    p = DemoPlayer.new(:files, speed: 20, loop: false)
-    p.start
-    seen = []
-    t = Time.now
-    while p.running? && Time.now - t < 60
-      seen << File.basename(vma.buf.fname.to_s)
-      drain_idle
-      sleep 0.005
-    end
-    assert !p.running?, "demo still running"
-    order = seen.chunk_while { |a, b| a == b }.map(&:first)
-    assert_eq "Demo finished", p.stop_message, "#{p.stop_message}; buffers in order: #{order.inspect}, log: #{vma.gui.keylog_panel.entries.last(4).map { |e| e[:chord] || e[:text] }.inspect}"
-    # "": the file explorer's buffer
-    assert_eq ["", "notes.txt", "report.rb", "shapes.rb"], seen.uniq.sort
-    assert_eq "shapes.rb", File.basename(vma.buf.fname.to_s)
-    assert_eq File.read(SHAPES), vma.buf.to_s
-    assert_eq 0, vma.buf.pos
-    assert vma.buffers.list.none? { |b| b.module.is_a?(FileManager) rescue false }, "file explorer still open"
-  ensure
-    p&.bufs&.each { |b| vma.buffers.close_buffer(b.id) }
   end
 
   def test_easyjump_steps_parse

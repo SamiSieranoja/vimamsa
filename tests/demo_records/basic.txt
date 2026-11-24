@@ -1,0 +1,356 @@
+# Demo record: basic (steps.txt); see tests/test_demo_replay.rb
+# step | buffer mode line:col, then the lines the step changed (@line -old +new)
+#1 keys w | shapes.rb command 1:3
+#2 keys d | shapes.rb command 1:3
+#3 keys O | shapes.rb command 1:3
+  @1 -# Example file for the README demo
+  @1 +# 
+#4 keys ctrl | shapes.rb insert 1:3
+#5 type H | shapes.rb insert 1:4
+  @1 -# 
+  @1 +# H
+#6 type e | shapes.rb insert 1:5
+  @1 -# H
+  @1 +# He
+#7 type l | shapes.rb insert 1:6
+  @1 -# He
+  @1 +# Hel
+#8 type l | shapes.rb insert 1:7
+  @1 -# Hel
+  @1 +# Hell
+#9 type o | shapes.rb insert 1:8
+  @1 -# Hell
+  @1 +# Hello
+#10 type   | shapes.rb insert 1:9
+  @1 -# Hello
+  @1 +# Hello 
+#11 type W | shapes.rb insert 1:10
+  @1 -# Hello 
+  @1 +# Hello W
+#12 type o | shapes.rb insert 1:11
+  @1 -# Hello W
+  @1 +# Hello Wo
+#13 type r | shapes.rb insert 1:12
+  @1 -# Hello Wo
+  @1 +# Hello Wor
+#14 type l | shapes.rb insert 1:13
+  @1 -# Hello Wor
+  @1 +# Hello Worl
+#15 type d | shapes.rb insert 1:14
+  @1 -# Hello Worl
+  @1 +# Hello World
+#16 type ! | shapes.rb insert 1:15
+  @1 -# Hello World
+  @1 +# Hello World!
+#17 type ! | shapes.rb insert 1:16
+  @1 -# Hello World!
+  @1 +# Hello World!!
+#18 type ! | shapes.rb insert 1:17
+  @1 -# Hello World!!
+  @1 +# Hello World!!!
+#19 keys ctrl | shapes.rb command 1:17
+#20 keys 0 | shapes.rb command 1:1
+#21 keys j | shapes.rb command 2:1
+#22 keys v | shapes.rb visual 2:1
+#23 keys G | shapes.rb visual 29:1
+#24 keys , | shapes.rb visual 29:1
+#25 keys , | shapes.rb visual 29:1
+#26 keys s | shapes.rb form 29:1
+#27 type l | shapes.rb form 29:1
+#28 type i | shapes.rb form 29:1
+#29 type n | shapes.rb form 29:1
+#30 type e | shapes.rb form 29:1
+#31 type r | shapes.rb form 29:1
+#32 type e | shapes.rb form 29:1
+#33 type m | shapes.rb form 29:1
+#34 type p | shapes.rb form 29:1
+#35 type e | shapes.rb form 29:1
+#36 type m | shapes.rb form 29:1
+#37 type p | shapes.rb form 29:1
+#38 type t | shapes.rb form 29:1
+#39 type y | shapes.rb form 29:1
+#40 keys enter | shapes.rb command 24:1
+  @6 -
+  @7 -  def area
+  @8 -    0
+  @9 -  end
+  @10 -
+  @11 -  def to_s
+  @12 -    "#{@name}: #{area.round(2)}"
+  @13 -  end
+  @14 -end
+  @15 -
+  @16 -class Circle < Shape
+  @17 -  def initialize(radius)
+  @18 -    super("circle")
+  @19 -    @radius = radius
+  @20 -  end
+  @21 -
+  @22 -  def area
+  @23 -    Math::PI * @radius**2
+  @24 -  end
+  @25 -end
+  @26 -
+  @27 -shapes = [Circle.new(1), Circle.new(2.5)]
+  @28 -shapes.each { |s| puts s }
+  @29 -
+  @6 +  def area
+  @7 +    0
+  @8 +  end
+  @9 +  def to_s
+  @10 +    "#{@name}: #{area.round(2)}"
+  @11 +  end
+  @12 +end
+  @13 +class Circle < Shape
+  @14 +  def initialize(radius)
+  @15 +    super("circle")
+  @16 +    @radius = radius
+  @17 +  end
+  @18 +  def area
+  @19 +    Math::PI * @radius**2
+  @20 +  end
+  @21 +end
+  @22 +shapes = [Circle.new(1), Circle.new(2.5)]
+  @23 +shapes.each { |s| puts s }
+#41 keys k | shapes.rb command 23:1
+#42 keys G | shapes.rb command 23:27
+#43 keys X | shapes.rb command 24:1
+  @24 +
+#44 keys X | shapes.rb command 25:1
+  @25 +
+#45 keys X | shapes.rb command 26:1
+  @26 +
+#46 keys X | shapes.rb command 27:1
+  @27 +
+#47 keys s | shapes.rb command 27:1
+#48 jump | shapes.rb command 13:1
+#49 keys v | shapes.rb visual 13:1
+#50 keys s | shapes.rb visual 13:1
+#51 jump | shapes.rb visual 21:1
+#52 keys O | shapes.rb visual 21:4
+#53 keys y | shapes.rb command 21:4
+#54 keys h | shapes.rb command 21:3
+#55 keys y | shapes.rb command 21:3
+#56 keys X | shapes.rb command 21:3
+#57 keys X | shapes.rb command 22:1
+  @22 +
+#58 keys k | shapes.rb command 21:1
+#59 keys X | shapes.rb command 22:1
+  @23 +
+#60 keys p | shapes.rb command 31:1
+  @22 +class Circle < Shape
+  @23 +  def initialize(radius)
+  @24 +    super("circle")
+  @25 +    @radius = radius
+  @26 +  end
+  @27 +  def area
+  @28 +    Math::PI * @radius**2
+  @29 +  end
+  @30 +end
+#61 keys s | shapes.rb command 31:1
+#62 jump | shapes.rb command 22:7
+#63 keys d | shapes.rb command 22:7
+#64 keys e | shapes.rb command 22:7
+  @22 -class Circle < Shape
+  @22 +class  < Shape
+#65 keys i | shapes.rb insert 22:7
+#66 type S | shapes.rb insert 22:8
+  @22 -class  < Shape
+  @22 +class S < Shape
+#67 type q | shapes.rb insert 22:9
+  @22 -class S < Shape
+  @22 +class Sq < Shape
+#68 type u | shapes.rb insert 22:10
+  @22 -class Sq < Shape
+  @22 +class Squ < Shape
+#69 type a | shapes.rb insert 22:11
+  @22 -class Squ < Shape
+  @22 +class Squa < Shape
+#70 type r | shapes.rb insert 22:12
+  @22 -class Squa < Shape
+  @22 +class Squar < Shape
+#71 type e | shapes.rb insert 22:13
+  @22 -class Squar < Shape
+  @22 +class Square < Shape
+#72 keys esc | shapes.rb command 22:13
+#73 keys j | shapes.rb command 23:13
+#74 keys 0 | shapes.rb command 23:1
+#75 keys v | shapes.rb visual 23:1
+#76 keys s | shapes.rb visual 23:1
+#77 jump | shapes.rb visual 30:1
+#78 keys O | shapes.rb visual 30:4
+#79 keys h | shapes.rb visual 30:3
+#80 keys , | shapes.rb visual 30:3
+#81 keys , | shapes.rb visual 30:3
+#82 keys r | shapes.rb visual 30:3
+#83 keys , | shapes.rb visual 30:3
+#84 keys r | shapes.rb visual 30:3
+#85 keys r | shapes.rb form 30:3
+#86 type r | shapes.rb form 30:3
+#87 type a | shapes.rb form 30:3
+#88 type d | shapes.rb form 30:3
+#89 type i | shapes.rb form 30:3
+#90 type u | shapes.rb form 30:3
+#91 type s | shapes.rb form 30:3
+#92 keys tab | shapes.rb form 30:3
+#93 type w | shapes.rb form 30:3
+#94 type i | shapes.rb form 30:3
+#95 type d | shapes.rb form 30:3
+#96 type t | shapes.rb form 30:3
+#97 type h | shapes.rb form 30:3
+#98 keys enter | shapes.rb command 33:1
+  @23 -  def initialize(radius)
+  @24 -    super("circle")
+  @25 -    @radius = radius
+  @26 -  end
+  @27 -  def area
+  @28 -    Math::PI * @radius**2
+  @23 +  def initialize(width)
+  @24 +    super("circle")
+  @25 +    @width = width
+  @26 +  end
+  @27 +  def area
+  @28 +    Math::PI * @width**2
+#99 keys k | shapes.rb command 32:1
+#100 keys k | shapes.rb command 31:1
+#101 keys e | shapes.rb command 33:6
+#102 jump | shapes.rb command 28:5
+#103 keys d | shapes.rb command 28:5
+#104 keys f | shapes.rb command 28:5
+#105 keys * | shapes.rb command 28:5
+  @28 -    Math::PI * @width**2
+  @28 +     @width**2
+#106 keys x | shapes.rb command 28:5
+  @28 -     @width**2
+  @28 +    @width**2
+#107 keys j | shapes.rb command 29:5
+#108 keys j | shapes.rb command 30:4
+#109 keys j | shapes.rb command 31:1
+#110 keys j | shapes.rb command 32:1
+#111 keys j | shapes.rb command 33:1
+#112 keys z | shapes.rb browse 33:1
+#113 keys z | shapes.rb browse 33:1
+#114 keys w | shapes.rb browse 33:11
+#115 keys v | shapes.rb visual 33:11
+#116 keys l | shapes.rb visual 33:12
+#117 keys f | shapes.rb visual 33:12
+#118 keys , | shapes.rb visual 33:24
+#119 keys h | shapes.rb visual 33:23
+#120 keys y | shapes.rb command 33:23
+#121 keys j | shapes.rb command 34:23
+#122 keys X | shapes.rb command 35:1
+  @39 +
+#123 keys X | shapes.rb command 36:1
+  @40 +
+#124 keys p | shapes.rb command 36:14
+  @36 -
+  @36 +Circle.new(1)
+#125 keys 0 | shapes.rb command 36:1
+#126 keys y | shapes.rb command 36:1
+#127 keys y | shapes.rb command 36:1
+#128 keys esc | shapes.rb command 36:1
+#129 keys O | shapes.rb command 36:14
+#130 keys i | shapes.rb insert 36:14
+#131 type . | shapes.rb insert 36:15
+  @36 -Circle.new(1)
+  @36 +Circle.new(1).
+#132 type a | shapes.rb insert 36:16
+  @36 -Circle.new(1).
+  @36 +Circle.new(1).a
+#133 type r | shapes.rb insert 36:17
+  @36 -Circle.new(1).a
+  @36 +Circle.new(1).ar
+#134 type e | shapes.rb insert 36:18
+  @36 -Circle.new(1).ar
+  @36 +Circle.new(1).are
+#135 type a | shapes.rb insert 36:19
+  @36 -Circle.new(1).are
+  @36 +Circle.new(1).area
+#136 keys esc | shapes.rb command 36:19
+#137 keys 0 | shapes.rb command 36:1
+#138 keys y | shapes.rb command 36:1
+#139 keys y | shapes.rb command 36:1
+#140 keys p | shapes.rb command 37:1
+  @37 +Circle.new(1).area
+#141 keys d | shapes.rb command 37:1
+#142 keys e | shapes.rb command 37:1
+  @37 -Circle.new(1).area
+  @37 +.new(1).area
+#143 keys i | shapes.rb insert 37:1
+#144 type A | shapes.rb insert 37:2
+  @37 -.new(1).area
+  @37 +A.new(1).area
+#145 type S | shapes.rb insert 37:3
+  @37 -A.new(1).area
+  @37 +AS.new(1).area
+#146 keys backspace | shapes.rb insert 37:2
+  @37 -AS.new(1).area
+  @37 +A.new(1).area
+#147 keys backspace | shapes.rb insert 37:1
+  @37 -A.new(1).area
+  @37 +.new(1).area
+#148 type S | shapes.rb insert 37:2
+  @37 -.new(1).area
+  @37 +S.new(1).area
+#149 type q | shapes.rb insert 37:3
+  @37 -S.new(1).area
+  @37 +Sq.new(1).area
+#150 type u | shapes.rb insert 37:4
+  @37 -Sq.new(1).area
+  @37 +Squ.new(1).area
+#151 type a | shapes.rb insert 37:5
+  @37 -Squ.new(1).area
+  @37 +Squa.new(1).area
+#152 type r | shapes.rb insert 37:6
+  @37 -Squa.new(1).area
+  @37 +Squar.new(1).area
+#153 type e | shapes.rb insert 37:7
+  @37 -Squar.new(1).area
+  @37 +Square.new(1).area
+#154 keys esc | shapes.rb command 37:7
+#155 keys k | shapes.rb command 36:7
+#156 keys J | shapes.rb command 36:19
+  @36 -Circle.new(1).area
+  @37 -Square.new(1).area
+  @36 +Circle.new(1).area Square.new(1).area
+#157 keys space | shapes.rb command 36:19
+#158 keys , | shapes.rb command 36:20
+  @36 -Circle.new(1).area Square.new(1).area
+  @36 +Circle.new(1).area, Square.new(1).area
+#159 keys 0 | shapes.rb command 36:1
+#160 keys i | shapes.rb insert 36:1
+#161 type [ | shapes.rb insert 36:2
+  @36 -Circle.new(1).area, Square.new(1).area
+  @36 +[Circle.new(1).area, Square.new(1).area
+#162 keys ctrl-e | shapes.rb insert 36:40
+#163 type ] | shapes.rb insert 36:41
+  @36 -[Circle.new(1).area, Square.new(1).area
+  @36 +[Circle.new(1).area, Square.new(1).area]
+#164 keys ctrl-a | shapes.rb insert 36:1
+#165 keys esc | shapes.rb command 36:1
+#166 keys g | shapes.rb command 36:1
+#167 keys g | shapes.rb command 1:1
+#168 keys v | shapes.rb visual 1:1
+#169 keys G | shapes.rb visual 40:1
+#170 keys k | shapes.rb visual 39:1
+#171 keys k | shapes.rb visual 38:1
+#172 keys k | shapes.rb visual 37:1
+#173 keys , | shapes.rb visual 37:1
+#174 keys , | shapes.rb visual 37:1
+#175 keys s | shapes.rb form 37:1
+#176 type e | shapes.rb form 37:1
+#177 type v | shapes.rb form 37:1
+#178 type l | shapes.rb form 37:1
+#179 type a | shapes.rb form 37:1
+#180 type l | shapes.rb form 37:1
+#181 type c | shapes.rb form 37:1
+#182 type o | shapes.rb form 37:1
+#183 type n | shapes.rb form 37:1
+#184 type v | shapes.rb form 37:1
+#185 type e | shapes.rb form 37:1
+#186 type r | shapes.rb form 37:1
+#187 keys enter | shapes.rb command 37:1
+  @39 +[3.141592653589793, 1]
+  @40 +
+#188 keys j | shapes.rb command 38:1
+#189 keys j | shapes.rb command 39:1
