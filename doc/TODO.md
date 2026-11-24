@@ -613,6 +613,15 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
+- **Audio playback as a module, disabled by default** (2026-11-24, `86ef9be`): `audio.rb`,
+  the ⟦audio:…⟧ media controls, `hpt_scan_audio`, the `audio.*` / `mode.audio` actions and the
+  audio mode moved into `modules/audio/`; the old `cnf.audio.enabled` still enables it.
+  Tests in `tests/test_audio.rb`.
+
+- **Dictation review comments say their range; `, , k`** (2026-11-24, `48903f4`):
+  `# COMMENT (next 3 lines): …` (`cnf.dictation.review_range`); `C , , k` enters dictation
+  mode without listening.
+
 - **Dictation code review mode** (2026-11-24, `aa8ab67`): `C , ; r` / `dictation c`;
   while a selection is up the mic records, and when it ends the transcript goes above the
   selection as `# COMMENT: …` (indent kept, wrapped, one undo step; edited selections are
