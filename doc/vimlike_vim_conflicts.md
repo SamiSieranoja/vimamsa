@@ -12,7 +12,7 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | Added to vimlike from the shared table (`VIM_BINDINGS`, key_bindings_vim_core.rb) | 461 |
 | Missing from vimlike (no conflict, could be added) | 0 |
 | vim keymap only (left out of vimlike on purpose) | 0 |
-| Shared (same keys, same action) | 152 |
+| Shared (same keys, same action) | 146 |
 
 ## Conflicts
 
@@ -253,10 +253,4 @@ Left out of vimlike on purpose (`VIM_KEYMAP_ONLY`, key_bindings_vim_core.rb).
 | X | <code>left</code> | <code>move.char.prev</code> |
 | X | <code>right</code> | <code>move.char.next</code> |
 | X | <code>up</code> | <code>move.line.prev</code> |
-| audio | <code>esc</code> | <code>mode.prev</code> |
-| audio | <code>f</code> | <code>audio.forward</code> |
-| audio | <code>left</code> | <code>audio.backward</code> |
-| audio | <code>q</code> | <code>mode.prev</code> |
-| audio | <code>right</code> | <code>audio.forward</code> |
-| audio | <code>space</code> | <code>audio.stop</code> |
 | macro | <code>q</code> | <code>macro.record.stop</code> |

@@ -6,8 +6,8 @@ require "openssl"
 require "ripl/multi_line"
 
 module Vimamsa
-
 $ifuncon = false
+
 
 class Buffer < String
   attr_reader :pos, :lpos, :cpos, :deltas, :edit_history, :fname, :call_func, :pathname, :basename, :dirname, :update_highlight, :marks, :is_highlighted, :syntax_detect_failed, :id, :lang, :images, :last_save, :access_time, :selection_active, :lsp, :edit_version
@@ -27,7 +27,6 @@ class Buffer < String
     update_access_time
     @images = []
     @prefix = prefix
-    @audiofiles = []
     @lang = nil
     @id = @@num_buffers
     @@num_buffers += 1
@@ -240,60 +239,6 @@ class Buffer < String
   def view()
     # Get the VSourceView < GtkSource::View object corresponding to this buffer
     return vma.gui.buffers[@id]
-  end
-
-  # Replace char at pos with audio widget for
-  def add_audio(afpath, pos)
-    return if !is_legal_pos(pos)
-    afpath = File.expand_path(afpath)
-    return if !File.exist?(afpath)
-
-    vbuf = view.buffer
-    itr = vbuf.get_iter_at(:offset => pos)
-    itr2 = vbuf.get_iter_at(:offset => pos + 1)
-    vbuf.delete(itr, itr2)
-    anchor = vbuf.create_child_anchor(itr)
-
-    mf = Gtk::MediaFile.new(afpath)
-    mc = Gtk::MediaControls.new(mf)
-    # mc = Gtk::MediaControls.new(Gtk::MediaFile.new)
-    # Thread.new{mf.play;sleep 0.01; mf.pause}
-    @audiofiles << mc
-
-    view.add_child_at_anchor(mc, anchor)
-    mc.set_size_request(500, 20)
-    mc.set_margin_start(view.gutter_width + 10)
-
-    provider = Gtk::CssProvider.new
-    mc.add_css_class("medctr")
-
-    provider.load(data: ".medctr {   background-color:#{theme_color(:medctr_bg)}; }")
-    mc.style_context.add_provider(provider)
-
-    pp mf.set_prepared(true)
-    # pp mf.pause
-    pp mf.duration
-    pp mf.has_audio?
-
-    # >> Gtk::MediaControls.signals
-    # => ["direction-changed", "destroy", "show", "hide", "map", "unmap", "realize", "unrealize", "state-flags-changed", "mnemonic-activate", "move-focus", "keynav-failed", "query-tooltip", "notify"]
-
-    # If this is done too early, the gutter is not yet drawn which
-    # will result in wrong position
-    if @audiofiles.size == 1
-      run_as_idle proc { self.reset_audio_widget_positions }
-    end
-    $audiof = mf
-  end
-
-  #TODO: remove?
-  def reset_audio_widget_positions
-    debug "reset_audio_widget_positions", 2
-    for mc in @audiofiles
-      mc.set_size_request(500, 20)
-      mc.set_margin_start(view.gutter_width + 10)
-    end
-    return false
   end
 
   def scan_all_words

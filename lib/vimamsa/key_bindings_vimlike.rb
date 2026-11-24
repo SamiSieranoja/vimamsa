@@ -5,7 +5,6 @@ vma.kbd.add_mode("I", :insert, :insert)
 vma.kbd.add_mode("V", :visual, :visual)
 vma.kbd.add_mode("M", :minibuffer) #TODO: needed?
 vma.kbd.add_mode("R", :readchar)
-vma.kbd.add_minor_mode("audio", :audio, :command)
 vma.kbd.add_minor_mode("macro", :macro, :command)
 vma.kbd.add_mode("B", :browse, :browse, scope: :editor)
 vma.kbd.add_mode("X", :replace, :replace, name: "Replace")
@@ -411,7 +410,6 @@ add_keys "experimental", {
  "C ` k" => "lsp.debug",
  "C ` j" => "lsp.definition",
  "C ` r" => "lsp.restart",
- "C , u s" => "audio.stop",
 
   "C , t r" => "debug.tests",
   # "CV , R" => "restart_application", #TODO: does not work
@@ -429,16 +427,7 @@ add_keys "experimental", {
 #bindkey 'C , g', proc{invoke_grep_search}
 # bindkey "C , d", "buf.diff"
  "C , , d" => "debug.save",
- "C , m a" => "mode.audio",
- "audio s" => "audio.stop",
 }
-
-
-bindkey "audio f || audio right", ["audio.forward", proc { Audio.seek_forward }, "Seek forward in audio stream"]
-bindkey "audio left", ["audio.backward", proc { Audio.seek_forward(-5.0) }, "Seek backward in audio stream"]
-
-bindkey "audio space", "audio.stop"
-bindkey "audio q || audio esc", "mode.prev"
 
 
 bindkey "C , i p", "edit.insert.password", keywords: "cat:edit"

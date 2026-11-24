@@ -267,9 +267,8 @@ class Editor
     FileManager.init
     Autocomplete.init
 
-    if cnf.audio.enabled?
-      require "vimamsa/audio"
-    end
+    # Audio playback moved into the audio module: the old setting still enables it
+    cnf.modules.audio.enabled = true if cnf.audio.enabled?
 
     # LSP servers start when a file of their language is opened (LangSrv.get,
     # in the file's project), not here: a server started at startup ran in the

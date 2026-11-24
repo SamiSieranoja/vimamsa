@@ -27,8 +27,11 @@ def hpt_check_cur_word(w)
 
       if fn
         if m[2] == "audio"
-          # Thread.new { Audio.play(fn) }
-          Audio.play(fn) if cnf.audio.enabled?
+          if cnf.modules.audio.enabled? && defined?(Audio)
+            Audio.play(fn)
+          else
+            message "Audio playback needs the Audio Playback module (Settings ▸ Modules)"
+          end
         else
           if !file_is_text_file(fn)
             message "Not text file #{fn}"
@@ -73,35 +76,6 @@ def translate_path(fn, bf)
     outfn = File.expand_path(fn)
   end
   return outfn
-end
-
-# Scan audio files inserted with ⟦audio:filepath⟧ syntax
-#TODO: merge code with hpt_scan_images
-def hpt_scan_audio(bf = nil)
-  bf = buf() if bf.nil?
-  return if bf.nil?
-  return if !bf.fname
-  return if !bf.fname.match(/.*txt$/)
-  imgpos = scan_indexes(bf, /⟦audio:.+?⟧/)
-  imgtags = bf.scan(/(⟦audio:(.+?)⟧)/)
-  c = 0
-  imgpos.each.with_index { |x, i|
-    a = imgpos[i]
-    t = imgtags[i]
-    insert_pos = a + t[0].size + c
-    fn = t[1]
-    imgfn = translate_path(fn, bf)
-    next if !File.exist?(imgfn)
-    # Show as image in gui, handle as empty space in txt file
-
-    if bf[insert_pos..(insert_pos + 2)] != "\n \n"
-      bf.insert_txt_at("\n \n", insert_pos)
-      bf.view.handle_deltas
-      c += 3
-    end
-    bf.add_audio(imgfn, insert_pos + 1)
-  }
-  # vma.gui.delex.run #TODO:gtk4
 end
 
 # Scan images inserted with ⟦img:filepath⟧ syntax

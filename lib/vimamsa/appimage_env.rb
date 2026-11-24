@@ -15,7 +15,7 @@ def restore_host_env
   GdkPixbuf::Pixbuf.formats if defined?(GdkPixbuf::Pixbuf)
   Gio::SettingsSchemaSource.default
   Gio::Vfs.default
-  # GStreamer may only be loaded later (cnf.audio, the dictation module), but
+  # GStreamer may only be loaded later (the audio and dictation modules), but
   # finds the bundled plugins only through GST_* (the plugin registry is
   # cached in ~/.cache/vimamsa, so this is quick after the first start)
   require "gstreamer"

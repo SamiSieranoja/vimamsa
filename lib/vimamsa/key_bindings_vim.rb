@@ -23,7 +23,6 @@ vma.kbd.add_mode("I", :insert, :insert)
 vma.kbd.add_mode("V", :visual, :visual)
 vma.kbd.add_mode("M", :minibuffer)
 vma.kbd.add_mode("R", :readchar)
-vma.kbd.add_minor_mode("audio", :audio, :command)
 vma.kbd.add_minor_mode("macro", :macro, :command)
 vma.kbd.add_mode("B", :browse, :browse, scope: :editor)
 vma.kbd.add_mode("X", :replace, :replace, name: "Replace")
@@ -90,11 +89,5 @@ add_keys "vim misc cat:buffer", {
   "B w" => "jump.edit.next",
   "B m" => "macro.run.last",
 }
-
-# Audio minor mode (used by the audio module; unreachable without it)
-bindkey "audio f || audio right", ["audio.forward", proc { Audio.seek_forward }, "Seek forward in audio stream"]
-bindkey "audio left", ["audio.backward", proc { Audio.seek_forward(-5.0) }, "Seek backward in audio stream"]
-bindkey "audio space", "audio.stop"
-bindkey "audio q || audio esc", "mode.prev"
 
 end # module Vimamsa

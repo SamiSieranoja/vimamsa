@@ -223,7 +223,6 @@ reg_act("term.line.autoclose", proc { buf.execute_current_line_in_terminal(true)
 reg_act("style.images", proc { hpt_scan_images() }, "Show images inserted with ⟦img:file.png⟧ syntax")
 reg_act("file.delete", proc { bufs.delete_current_buffer() }, "Delete current file")
 
-reg_act("audio.stop", proc { Audio.stop }, "Stop audio playback")
 
 act_list = {
   # File handling
@@ -363,7 +362,6 @@ reg_act("mode.insert.line.end", proc { buf.jump(END_OF_LINE); vma.kbd.set_mode(:
 reg_act("mode.insert.line.below", proc { buf.jump(END_OF_LINE); buf.insert_txt("\n"); vma.kbd.set_mode(:insert) }, "Open a new line below and switch to INSERT mode")
 reg_act("mode.replace", proc { vma.kbd.set_mode(:replace) }, "Switch to REPLACE mode")
 reg_act("mode.visual.exit", proc { buf.end_visual_mode }, "Leave VISUAL mode")
-reg_act("mode.audio", proc { vma.kbd.set_mode(:audio) }, "Switch to audio playback mode")
 reg_act("mode.browse.center", proc { center_on_current_line(); call_action("mode.browse.exit") }, "Center on the cursor line and leave browse mode")
 
 reg_act("edit.insert.char", proc { |c| buf.insert_txt(c) }, "Insert <char>")

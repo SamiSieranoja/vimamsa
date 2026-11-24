@@ -142,7 +142,7 @@ class TestActionIds < VmaTest
 
   # Ids registered only by another keymap, an optional module or a minor mode
   # set up on first use; not loaded in the test setup
-  OPTIONAL_IDS = /\A(mode\.notepad|dictation|tts|ollama|terminal|calculator|color_highlight|fexp|bmgr|bmark|diffview)\./
+  OPTIONAL_IDS = /\A(mode\.notepad|audio|dictation|tts|ollama|terminal|calculator|color_highlight|fexp|bmgr|bmark|diffview)\./
 
   NAMESPACES = %w[app mode move jump search grep ack edit undo case sel buf file
                   panel view style macro mark lsp term help debug custom kbd op form]
