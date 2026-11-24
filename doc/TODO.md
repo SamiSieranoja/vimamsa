@@ -84,48 +84,6 @@ categories, the new page layout, descriptions; see its DONE). Left: step 4, a
 text-object table and readable rendering of `<char>` / `<num>` templates, so
 bindings like `[C] d i <char>` don't show as raw templates.
 
-### Function panel shows nothing on the key bindings help page
-
-The key bindings page (`show_key_bindings`) is a hyperplaintext buffer with `❙…❙` /
-`◼ …` headings, which the function panel can outline (`FuncPanel#hyperplaintext_outline_entries`).
-On this page it shows "(no file)" instead. Three causes (found 2026-11-19):
-
-1. **The `fname` guard runs first.** `FuncPanel#refresh` (`gui_func_panel.rb:50-53`)
-   returns "(no file)" for any buffer without a file name before it checks for
-   hyperplaintext. Generated buffers (`create_new_buffer`) have `fname = nil`.
-2. **The language is only set on the GTK side.** The report calls
-   `gui_set_file_lang(b.id, "hyperplaintext")` (`key_bindings_report.rb:15,70`), which
-   sets the GtkSource buffer's language but not `Buffer#lang`. So
-   `hyperplaintext_buffer?` (`buf.lang == "hyperplaintext" || fname.end_with?(".txt")`)
-   is false even without the guard. `Buffer#set_language` (`buffer.rb:195`) sets both.
-3. **Refresh runs too early.** `create_new_buffer` (`editor.rb:622-629`) makes the
-   buffer current, which triggers `func_panel_refresh` from `buffer_list.rb:133`,
-   *before* `set_content` and before the caller sets the language. Nothing refreshes
-   the panel afterwards (the only other triggers are a buffer switch and the manual
-   `:refresh_func_panel`).
-
-The same problem affects the other generated buffers that use `gui_set_file_lang`:
-- the free-bindings report (`key_bindings_report.rb:15`)
-- the vim-conflicts report (markdown, `:259`)
-- diff buffers (`diff_buffer.rb:110,184,210`)
-
-Fix:
-1. In `refresh`, check for hyperplaintext before the `fname` guard (it only needs the
-   text), and keep "(no file)" just for the LSP path.
-2. Make the report and other generated-buffer callers use `buf.set_language(...)`
-   instead of `gui_set_file_lang`. Or make `gui_set_file_lang` also update
-   `Buffer#lang`, which fixes every caller at once.
-3. Refresh the panel when a buffer's language changes (in `set_language`), and after
-   `create_new_buffer` has set the content. A debounced refresh on text change
-   (like `file_panel_marks_changed`) would also keep the outline current while editing
-   `.txt` files.
-4. Optional: outline markdown (`#` headings) the same way, so the vim-conflicts
-   report, README.md and the `doc/*.md` files get an outline without LSP. This fits
-   with the markdown highlighting item.
-5. Test (`tests/test_func_panel.rb`): with the panel shown, run `:show_key_bindings`
-   and assert that the panel's store has a row for the "Key bindings" title and the
-   `◼` sections, and does not show "(no file)".
-
 ### AppImage on non-Ubuntu distros
 
 The AppImage is built and released (`bc43676`, `1192898`; `doc/bundling_plan.md`).
@@ -545,6 +503,15 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
+- **Outline panel (was "function panel"); works on generated pages and Markdown**
+  (2026-11-25, `2721fc3`): renamed (`OutlinePanel`, `gui_outline_panel.rb`, actions
+  `panel.outline.toggle` / `.refresh`, View ▸ "Toggle outline panel"). Old ids
+  (`panel.funcs.*`, `toggle_func_panel`) are aliases, and saved layouts with `:func_panel`
+  are read as `:outline_panel`. Headings are outlined before the file-name check, so the key
+  bindings page, intro page and other generated buffers get an outline. Generated buffers use
+  `Buffer#set_language` (sets `Buffer#lang` too), which refreshes the panel. Markdown `#`
+  headings are outlined without LSP (not in code blocks). Not done: refresh while typing
+  (the outline updates on buffer switch or language change only).
 - **Piped input opens in a new buffer** (2026-11-24, `12b717c`): `ls | vimamsa` opens the
   text in a new unnamed buffer, in the running editor if there is one
   (`lib/vimamsa/stdin_input.rb`). Tests in `tests/test_stdin_input.rb`.

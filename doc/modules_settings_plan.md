@@ -345,11 +345,11 @@ verdict below.
 
 **D. lsp — Language Server (LSP)**
 - Code:
-  - `langservp.rb` (564 lines) and `gui_func_panel.rb` (172).
+  - `langservp.rb` (564 lines) and `gui_outline_panel.rb` (was `gui_func_panel.rb`, 172).
   - Startup in `editor.rb:222-227`.
   - LSP calls spread through `buffer.rb`, `gui_sourceview.rb` and
     `gui_sourceview_autocomplete.rb`.
-  - Menu entries `View.FuncPanel` / `Actions.LspRestart`.
+  - Menu entries `View.OutlinePanel` / `Actions.LspRestart`.
   - Setup through `cnf.lsp.server.*` in custom.rb (`custom_example.rb:89-99`).
 - Why: it's the biggest optional feature, already off by default, and needs external
   servers. Setup is also the hardest part for users today: they must find and uncomment
