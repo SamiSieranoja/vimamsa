@@ -10,16 +10,18 @@ PREFIX="${PREFIX:-/opt/gtk}"
 JOBS="$(nproc)"
 
 # name|url|sha256
+# GTK 4.22 with the glib and pango of its time (2.84, 1.56), not the newest:
+# a stack that has been in use longer (doc/appimage_old_base_plan.md)
 SOURCES='
 wayland|https://gitlab.freedesktop.org/wayland/wayland/-/releases/1.26.0/downloads/wayland-1.26.0.tar.xz|64176eaa46e4969903e286f8e5ef8331affc17fdf03ac9b58381d2b23162b7a3
 wayland-protocols|https://gitlab.freedesktop.org/wayland/wayland-protocols/-/releases/1.50/downloads/wayland-protocols-1.50.tar.xz|4460c20cfcf68b994a5ee206ed15fc19ad312f16c96075186e83b0e3f4aa48a5
-glib|https://download.gnome.org/sources/glib/2.90/glib-2.90.1.tar.xz|93c941aa17d5eb1d53fe838365f29a8b4e539c222a256d974ec8f30fc413e396
+glib|https://download.gnome.org/sources/glib/2.84/glib-2.84.4.tar.xz|8a9ea10943c36fc117e253f80c91e477b673525ae45762942858aef57631bb90
 gobject-introspection|https://download.gnome.org/sources/gobject-introspection/1.86/gobject-introspection-1.86.0.tar.xz|920d1a3fcedeadc32acff95c2e203b319039dd4b4a08dd1a2dfd283d19c0b9ae
 fontconfig|https://gitlab.freedesktop.org/api/v4/projects/890/packages/generic/fontconfig/2.17.1/fontconfig-2.17.1.tar.xz|9f5cae93f4fffc1fbc05ae99cdfc708cd60dfd6612ffc0512827025c026fa541
 harfbuzz|https://github.com/harfbuzz/harfbuzz/releases/download/12.3.2/harfbuzz-12.3.2.tar.xz|6f6db164359a2da5a84ef826615b448b33e6306067ad829d85d5b0bf936f1bb8
 cairo|https://cairographics.org/releases/cairo-1.18.6.tar.xz|1c767308174337a74694da0f3ec069c271452163a1ef4540964c50c301f157d4
-pango|https://download.gnome.org/sources/pango/1.58/pango-1.58.2.tar.xz|342385b6ca3b7c73455d7c80a13b7dbe4489e00bc3bd4c5bd6ed4dce421e374a
-gtk|https://download.gnome.org/sources/gtk/4.24/gtk-4.24.2.tar.xz|05561abc25d1b1400136bf79ab68830cb4b053d1922ae97e551b3f19755bf3cb
+pango|https://download.gnome.org/sources/pango/1.56/pango-1.56.4.tar.xz|17065e2fcc5f5a5bdbffc884c956bfc7c451a96e8c4fb2f8ad837c6413cb5a01
+gtk|https://download.gnome.org/sources/gtk/4.22/gtk-4.22.5.tar.xz|7fd725deb2cb3f8dc218ad862c5056ff8548f49d3b0e4081796e444c22d19686
 gtksourceview|https://download.gnome.org/sources/gtksourceview/5.18/gtksourceview-5.18.0.tar.xz|051a78fe38f793328047e5bcd6d855c6425c0b480c20d9432179e356742c6ac0
 vte|https://download.gnome.org/sources/vte/0.80/vte-0.80.5.tar.xz|58a4e00ab5d4a95b4be4dc57b48308deafd72d6839dbbd076648fa353321cc41
 '

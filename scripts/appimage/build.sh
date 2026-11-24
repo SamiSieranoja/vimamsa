@@ -7,7 +7,7 @@
 # appimagetool are cached in build/appimage/cache. See doc/bundling_plan.md.
 #
 # Optional, not the default: --gtk-new (or VMA_APPIMAGE_VARIANT=gtk-new) builds
-# on Ubuntu 22.04 with GTK 4.24 from source (Dockerfile.gtk-new; the bundle needs
+# on Ubuntu 22.04 with GTK 4.22 from source (Dockerfile.gtk-new; the bundle needs
 # glibc >= 2.35). Output and cache in build/appimage-gtk-new/ (a Ruby cached by
 # the default build needs glibc 2.39). See doc/appimage_old_base_plan.md.
 set -euo pipefail

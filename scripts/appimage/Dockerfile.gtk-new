@@ -1,12 +1,12 @@
 # Build environment for the OPTIONAL "gtk-new" Vimamsa AppImage
 # (scripts/appimage/build.sh --gtk-new, doc/appimage_old_base_plan.md).
-# Ubuntu 22.04, so the bundle needs glibc >= 2.35, with GTK 4.24 and the
+# Ubuntu 22.04, so the bundle needs glibc >= 2.35, with GTK 4.22 and the
 # libraries it needs built from source into /opt/gtk. The default AppImage is
 # built from ./Dockerfile (Ubuntu 24.04, its own GTK 4.14) and is unchanged.
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-# Libraries that stay from 22.04 (new enough for GTK 4.24), the Ruby build deps,
+# Libraries that stay from 22.04 (new enough for GTK 4.22), the Ruby build deps,
 # and the tools. Not 22.04's GTK, GtkSourceView, VTE, cairo, pango, harfbuzz,
 # fontconfig, wayland or gobject-introspection -dev packages: those come from
 # /opt/gtk. (Some -dev packages here pull in 22.04's libglib2.0-dev; /opt/gtk

@@ -626,6 +626,8 @@ Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines
   `scripts/appimage/build.sh --gtk-new`, needs glibc ≥ 2.35; the default build is
   unchanged. Also fixed on the way: a GTK 4.24 crash freeing closed views' gestures,
   restarting from an AppImage (now through AppRun). Plan: `doc/appimage_old_base_plan.md`.
+  Then switched to GTK 4.22.5 with glib 2.84 and pango 1.56 (a stack in use longer);
+  full VM suite on the AppImage: 605 passed, 0 failed.
 
 - **Leaving insert mode clears a shift-arrow selection** (2026-11-24, `2e162fd`).
 

@@ -1,4 +1,4 @@
-# Plan: AppImage with GTK 4.24 on an Ubuntu 22.04 base (optional build)
+# Plan: AppImage with GTK 4.22 on an Ubuntu 22.04 base (optional build)
 
 ## Goal
 
@@ -8,7 +8,9 @@ changed.** This plan adds a second, optional build next to it:
 
 - **Base: Ubuntu 22.04** → the AppImage needs glibc ≥ **2.35** (Ubuntu 22.04+,
   Debian 12+, Fedora 36+).
-- **GTK 4.24.2**, built from source with the libraries it needs into `/opt/gtk`.
+- **GTK 4.22.5**, built from source with the libraries it needs into `/opt/gtk`.
+  (First built with GTK 4.24.2, glib 2.90 and pango 1.58; switched to 4.22 with the
+  glib and pango of its time, a stack that has been in use longer. See below.)
 - **No GStreamer backend in GTK** (`-Dmedia-gstreamer=disabled`).
 
 glibc is backward compatible, so binaries built on 22.04 run on every newer system.
@@ -17,21 +19,22 @@ against glib 2.72, but run fine with the newer bundled glib (glib keeps its ABI)
 
 ## What gets built, and what stays from 22.04
 
-Minimum versions are from the projects' `meson.build` (checked 2026-11-24); the
-versions to build are the latest releases on that date.
+Minimum versions are from the projects' `meson.build` (checked 2026-11-24). glib,
+pango and GTK are the newest releases of GTK 4.22's time; the rest are the newest
+releases on that date.
 
 | Library | 22.04 has | Needed by | Minimum | Build |
 |---|---|---|---|---|
-| meson (pip) | 0.61.2 | GTK | ≥ 1.8.0 | latest |
+| meson (pip) | 0.61.2 | glib, GTK | ≥ 1.5 | latest 1.x |
 | wayland | 1.20.0 | GTK | ≥ 1.24.0 | 1.26.0 |
-| wayland-protocols | 1.25 | GTK | ≥ 1.48 | 1.50 |
-| glib | 2.72.4 | GTK | ≥ 2.89.3 | 2.90.1 |
-| gobject-introspection | 1.72.0 | GTK; glib 2.90 | ≥ 1.84 | 1.86.0 (needs glib ≥ 2.82) |
-| fontconfig | 2.13.1 | pango 1.58 | ≥ 2.17.0 | latest 2.17.x |
-| harfbuzz | 2.7.4 | pango 1.58 | ≥ 11.0.0 | 12.3.2 |
+| wayland-protocols | 1.25 | GTK | ≥ 1.44 | 1.50 |
+| glib | 2.72.4 | GTK | ≥ 2.84 | 2.84.4 |
+| gobject-introspection | 1.72.0 | GTK | ≥ 1.84 | 1.86.0 (needs glib ≥ 2.82) |
+| fontconfig | 2.13.1 | pango 1.56 | ≥ 2.15.0 | 2.17.1 |
+| harfbuzz | 2.7.4 | GTK, pango | ≥ 8.4.0 | 12.3.2 |
 | cairo | 1.16.0 | GTK | ≥ 1.18.2 | 1.18.6 |
-| pango | 1.50.6 | GTK | ≥ 1.58 | 1.58.2 |
-| **GTK** | 4.6 | — | — | **4.24.2** |
+| pango | 1.50.6 | GTK | ≥ 1.56 | 1.56.4 |
+| **GTK** | 4.6 | — | — | **4.22.5** |
 | GtkSourceView | 5.4 | — | needs GTK ≥ 4.17, glib ≥ 2.76 | 5.18.0 |
 | VTE (gtk4) | 0.68 | — | C++20 (g++ ≥ 10), GTK ≥ 4.14 | 0.80.5 (see below) |
 
@@ -66,7 +69,7 @@ the default is a later, separate decision, once it has passed the tests for a wh
    introspection (glib's typelibs need g-ir-scanner, which needs glib).
 4. fontconfig → harfbuzz (`-Dcairo=disabled`, against 22.04's freetype) → cairo →
    pango.
-5. GTK 4.24.2: `-Dmedia-gstreamer=disabled`, no demos/examples/tests, introspection
+5. GTK 4.22.5: `-Dmedia-gstreamer=disabled`, no demos/examples/tests, introspection
    enabled.
 6. GtkSourceView 5.18.0, then VTE 0.80.5 (`-Dgtk3=false -Dgtk4=true -Dvapi=false`,
    `CXX=g++-12`).
@@ -99,7 +102,7 @@ files or behind a setting that is off by default.
   - `EXCLUDE` (line 85): `libwayland-client/-cursor/-egl`, `libharfbuzz` and
     `libfontconfig` are taken off the list, so the rebuilt ones are bundled. A 22.04
     host's copies are too old for GTK/pango. freetype stays excluded.
-  - Output name `Vimamsa-<version>-gtk4.24-x86_64.AppImage`, so the two can't be
+  - Output name `Vimamsa-<version>-gtk4.22-x86_64.AppImage`, so the two can't be
     mixed up.
   - Check with `LD_DEBUG=libs` that no GTK-stack library is loaded from the host.
 - **`scripts/appimage/AppRun`**: for the libraries taken off `EXCLUDE`, use whichever
@@ -138,6 +141,20 @@ that points here, with the `build.sh --gtk-new` command.
   leaves with `exit!` after the other handlers ran. The default build (4.14) is
   unchanged.
 
+- **Crash freeing closed buffers' views (GTK 4.24)**: the editor removes GtkTextView's
+  own drag/click gestures and kept them only in the view's own array; GC could free
+  a gesture before its view, and `gtk_text_view_dispose` used it (segfault mid-suite).
+  Fixed in `6e1015b` (kept in the global `$removed_controllers`).
+- **A second editor started from the AppImage** (restart, tests) used the bundled ruby
+  with the host's environment back, so it found no typelibs. Fixed in `104905d`
+  (`vma_editor_command`: through AppRun).
+- **Result with GTK 4.24.2**: full suite in the VM (this tree on the AppImage's
+  runtime, Wayland): 605 passed, 0 failed, 17 skipped.
+- **Result with GTK 4.22.5 / glib 2.84.4 / pango 1.56.4** (the build now): 103 MB
+  AppImage (4.24: 111 MB). Smoke test on clean 22.04 and 24.04: 21 passed each. Full
+  suite in the VM with the image's own code (`--appimage`, Wayland): 605 passed,
+  0 failed, 17 skipped.
+
 ## Risks to check first
 
 1. **Ruby-GNOME with GTK 4.24 / glib 2.90**: the gemspec pins `gtk4 ~> 4.3.5`. The
@@ -154,7 +171,8 @@ that points here, with the `build.sh --gtk-new` command.
 4. **fontconfig 2.17 on the host's `/etc/fonts`**: it reads the host's config; if its
    cache format differs from the host's, the first start builds a separate cache
    (slow once). Check on 22.04 and 24.04.
-5. **Upkeep**: every new GTK raises the minimums again (4.24 already needs glib 2.89+).
+5. **Upkeep**: every new GTK raises the minimums again (4.24 needs glib 2.89+; that is
+   why this build stays on 4.22 with glib 2.84 for now).
    Update the stack deliberately, not on every GTK release.
 
 ## Order of work
