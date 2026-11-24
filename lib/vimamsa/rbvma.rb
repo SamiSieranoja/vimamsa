@@ -13,7 +13,17 @@ end
 require "date"
 require "fileutils"
 
-require "gtk4"
+# cairo (required by gtk4) requires the red-colors gem, which takes 0.5 s to
+# load; lazy/colors.rb loads it on first use instead. Without the gem's spec
+# (e.g. a bundle that doesn't have it) GTK loads it the normal way.
+$vma_red_colors_dir = (Gem::Specification.find_by_name("red-colors").full_gem_path rescue nil)
+lazy_dir = File.join(__dir__, "lazy")
+$LOAD_PATH.unshift(lazy_dir) if $vma_red_colors_dir
+begin
+  require "gtk4"
+ensure
+  $LOAD_PATH.delete(lazy_dir)
+end
 require "gtksourceview5"
 
 require "json"

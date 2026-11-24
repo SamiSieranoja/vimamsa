@@ -1,4 +1,8 @@
 #!/usr/bin/env ruby
+# No garbage collection while starting up: it only collects temporaries of
+# the loading, and costs about 0.25 s. Editor#start turns it back on in its
+# first idle (peak memory is about 80 MB higher until then).
+GC.disable
 # Registered first, so it runs last of the at_exit handlers (they run in
 # reverse order): with $vma_skip_exit_finalizers set (see the end of this
 # file), leave without Ruby's exit-time GC finalizers, after every other

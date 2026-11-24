@@ -380,6 +380,10 @@ class Editor
     # AppImage: from here on, started programs get the user's environment
     restore_host_env
 
+    # exe/vimamsa turned garbage collection off for the startup. Before the
+    # tests' idle below, so they run with it on.
+    GLib::Idle.add { GC.enable; false }
+
     if ARGV.include?("--test")
       test_files = ARGV.select { |a| a.end_with?(".rb") && File.file?(a) }
       run_as_idle proc {
