@@ -47,6 +47,9 @@ class TestDictation < VmaTest
     dictation_disable
     assert !vma.actions.include?("dictation.toggle"),       "action still registered after disable"
     assert !vma.gui.menu.module_action?("dictation.enter_mode"), "menu item still present after disable"
+    assert !vma.actions.include?("dictation.review_toggle"), "review action still registered after disable"
+    assert !vma.gui.menu.module_action?("dictation.review_enter"), "review menu item still present after disable"
+    assert !$vma_dict_review_hooks_on, "review listeners still active after disable"
   end
 
   def test_init_disable_cycle
@@ -290,5 +293,226 @@ class TestDictation < VmaTest
     assert_buf "abc\n\n", "Enter should insert a newline when not dictating"
   ensure
     dictation_disable
+  end
+
+  # --- code review mode ---
+
+  # Stands in for VmaDictationSession: no microphone, no worker. The test plays
+  # the final pass by calling sink.finish itself.
+  class FakeReviewSession
+    attr_reader :sink, :stopped
+    def initialize(sink:)
+      @sink = sink
+      @active = false
+      $fake_review_sessions << self
+    end
+
+    def start(_prompt)
+      @active = true
+      @sink.begin(self)
+      true
+    end
+
+    def active?; @active; end
+    def finalizing?; false; end
+
+    def stop(add_newline: true, restart: false, discard: false)
+      @active = false
+      @stopped = discard ? :discard : :final
+    end
+  end
+
+  def set_lang(id)
+    lang = GtkSource::LanguageManager.default.get_language(id)
+    vma.buf.instance_variable_set(:@lang_nfo, lang)
+    vma.buf.instance_variable_set(:@lang, id)
+  end
+
+  def set_text(t)
+    act("buf.insert_txt_at(#{t.inspect}, 0)")   # fresh buffer "\n"
+    act("buf.delete_range(buf.size - 1, buf.size - 1)") if t.end_with?("\n")
+  end
+
+  def with_review
+    ensure_disabled
+    load_dictation
+    dictation_init
+    $fake_review_sessions = []
+    $vma_dict_review_session_class = FakeReviewSession
+    yield
+  ensure
+    $vma_dict_review_session_class = nil
+    vma.buf.end_visual_mode if vma.kbd.get_mode == :visual
+    vma.kbd.set_mode(:command)
+    dictation_disable
+  end
+
+  def test_review_comment_ruby_keeps_indent
+    load_dictation
+    set_text("def foo\n  bar\nend\n")
+    set_lang("ruby")
+    dictation_insert_review_comment(vma.buf, 10, "check this")
+    assert_buf "def foo\n  # COMMENT: check this\n  bar\nend\n"
+  end
+
+  def test_review_comment_c
+    load_dictation
+    set_text("int x;\n")
+    set_lang("c")
+    dictation_insert_review_comment(vma.buf, 2, "why int")
+    assert_buf "// COMMENT: why int\nint x;\n"
+  end
+
+  def test_review_comment_html_block
+    load_dictation
+    set_text("<p>hi</p>\n")
+    set_lang("html")
+    dictation_insert_review_comment(vma.buf, 0, "use a heading")
+    assert_buf "<!-- COMMENT: use a heading -->\n<p>hi</p>\n"
+  end
+
+  def test_review_comment_wraps_and_aligns
+    load_dictation
+    lines = dictation_review_comment_lines("aaaa bbbb cccc dddd eeee ffff gggg hhhh",
+                                           indent: "  ", com: "#", wrap: 32)
+    assert_eq ["  # COMMENT: aaaa bbbb cccc dddd\n",
+               "  #          eeee ffff gggg hhhh\n"], lines
+    assert lines.all? { |l| l.chomp.size <= 32 }, "a line is wider than the wrap: #{lines.inspect}"
+  end
+
+  def test_review_comment_one_undo
+    load_dictation
+    set_text("def foo\n  bar\nend\n")
+    set_lang("ruby")
+    before = vma.buf.to_s
+    dictation_insert_review_comment(vma.buf, 10, "one two three " * 20)
+    assert vma.buf.to_s.lines.size > 5, "long comment should wrap onto several lines"
+    vma.buf.undo
+    assert_buf before, "one undo should remove the whole comment"
+  end
+
+  # The code moved while transcribing: the comment still goes above it.
+  def test_review_locate_moved_line
+    load_dictation
+    set_text("a\nb\ntarget\nc\n")
+    assert_eq 4, dictation_review_locate(vma.buf, 2, "target")
+    act("buf.insert_txt_at(\"x\\ny\\n\", 0)")
+    assert_eq 8, dictation_review_locate(vma.buf, 2, "target")
+    assert_eq nil, dictation_review_locate(vma.buf, 2, "gone")
+  end
+
+  def test_review_lifecycle_keyboard
+    with_review do
+      set_text("def foo\n  bar\nend\n")
+      set_lang("ruby")
+      act("buf.set_pos(10)")
+      vma.kbd.set_mode(:dictation)
+      keys("c")
+      assert dictation_review?, "c should turn review mode on"
+      keys("v")
+      assert_eq 1, $fake_review_sessions.size, "v should start a review recording"
+      s = $fake_review_sessions[0]
+      assert s.active?, "recording should be running while the selection is up"
+      keys("l l esc")
+      assert_mode :dictation
+      assert_eq :final, s.stopped, "esc should stop and transcribe"
+      assert_eq 10..12, s.sink.range
+      s.sink.finish("check this")
+      assert_buf "def foo\n  # COMMENT: check this\n  bar\nend\n"
+      assert_eq [], $vma_dict_review_sessions, "finished session should be dropped"
+    end
+  end
+
+  def test_review_edited_selection_discarded
+    with_review do
+      set_text("def foo\n  bar\nend\n")
+      set_lang("ruby")
+      act("buf.set_pos(10)")
+      vma.kbd.set_mode(:dictation)
+      dictation_review_on
+      keys("v l d")
+      s = $fake_review_sessions[0]
+      assert !s.nil?, "no recording started"
+      assert_eq :discard, s.stopped, "an edited selection should throw the recording away"
+      assert !vma.buf.to_s.include?("COMMENT"), "no comment should be added"
+    end
+  end
+
+  def test_review_yank_keeps_comment
+    with_review do
+      set_text("abc\n")
+      vma.kbd.set_mode(:dictation)
+      dictation_review_on
+      keys("v l y")
+      s = $fake_review_sessions[0]
+      assert_eq :final, s.stopped, "yank doesn't edit, the comment should still be added"
+    end
+  end
+
+  # Mouse selections go through the same visual mode path.
+  def test_review_lifecycle_mouse
+    with_review do
+      set_text("abc def\n")
+      vma.kbd.set_mode(:dictation)
+      dictation_review_on
+      b = vma.buf
+      b.set_pos(4)
+      b.start_selection
+      vma.kbd.set_mode(:visual)
+      b.set_pos(6)
+      b.end_visual_mode
+      s = $fake_review_sessions[0]
+      assert !s.nil?, "mouse selection should start a recording"
+      assert_eq :final, s.stopped
+      assert_eq 4..6, s.sink.range
+      assert_mode :dictation
+    end
+  end
+
+  def test_review_off_records_nothing
+    with_review do
+      set_text("abc\n")
+      vma.kbd.set_mode(:dictation)
+      keys("v l esc")
+      assert_eq 0, $fake_review_sessions.size, "review off: no recording"
+      keys("c c")
+      assert !dictation_review?, "c twice should leave review off"
+      keys("v l esc")
+      assert_eq 0, $fake_review_sessions.size, "review toggled off: no recording"
+    end
+  end
+
+  def test_review_exit_mode_turns_off
+    with_review do
+      act("dictation.review_enter")
+      assert_mode :dictation
+      assert dictation_review?, ", ; r should turn review on"
+      keys("esc")
+      assert_mode :command
+      assert !dictation_review?, "leaving dictation mode should turn review off"
+      keys("v l esc")
+      assert_eq 0, $fake_review_sessions.size, "command mode selection should not record"
+    end
+  end
+
+  # A comment landing while the next selection is up must not count as the user
+  # editing that selection, and the selection stays on its text.
+  def test_review_comment_during_next_selection
+    with_review do
+      set_text("aa\nbb\n")
+      vma.kbd.set_mode(:dictation)
+      dictation_review_on
+      act("buf.set_pos(0)")
+      keys("v l esc")
+      first = $fake_review_sessions[0]
+      act("buf.set_pos(3)")
+      keys("v l")
+      first.sink.finish("note")
+      assert_buf "# COMMENT: note\naa\nbb\n".sub("#", vma.buf.get_com_str)
+      keys("esc")
+      second = $fake_review_sessions[1]
+      assert_eq :final, second.stopped, "own comment insert should not discard the next one"
+      assert_eq "bb", second.sink.code
+    end
   end
 end

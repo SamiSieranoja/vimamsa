@@ -999,7 +999,9 @@ class Buffer < String
     return self[range]
   end
 
-  def get_com_str()
+  # Line comment marker for this buffer. `fallback` is returned when neither the
+  # user rules nor the language define one (nil lets the caller tell that apart).
+  def get_com_str(fallback = "//")
     com_str = nil
 
     # User config: rules matched against filename in order, first match wins.
@@ -1016,7 +1018,7 @@ class Buffer < String
       com_str = @lang_nfo.get_metadata("line-comment-start")
     end
 
-    com_str = "//" if com_str.nil?
+    com_str = fallback if com_str.nil?
 
     return com_str
   end
@@ -1784,6 +1786,13 @@ class Buffer < String
     # print(caller())
   end
 
+  # Keep an active selection on the same text after `amount` chars were
+  # inserted at `at` (e.g. a comment added above it by an async task).
+  def shift_selection_start(at, amount)
+    return if @selection_start.nil? || @selection_start < at
+    @selection_start += amount
+  end
+
   def start_selection()
     @selection_start = @pos
     @selection_active = true
@@ -1954,6 +1963,8 @@ class Buffer < String
       # TODO: should not happen
     end
     debug "End visual mode"
+    # Selection still up: listeners can read get_visual_mode_range (dictation review)
+    vma.hook.call(:visual_mode_ending, self)
     end_selection
     vma.kbd.to_previous_mode
     @visual_mode = false
