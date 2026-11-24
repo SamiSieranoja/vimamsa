@@ -17,6 +17,9 @@ CLI_USAGE = <<~TXT
                      (also --user-dir=DIR)
     --tmp-user-dir   a new, empty config and data dir in the temp dir,
                      deleted on quit (try the defaults, e.g. a first start)
+    --wait FILE      open FILE (in the running editor, or a new one) and
+                     return when its buffer is closed, e.g.
+                     git config --global core.editor "vimamsa --wait"
     --intro          show the introduction page (Help ▸ Introduction) at start
     -h, --help       this help, and the list of actions
 TXT

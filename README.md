@@ -90,6 +90,12 @@ Install packages for optional features:
 sudo apt install ack-grep clang-format
 ```
 
+To edit git commit messages in vimamsa, save and close the buffer when done
+(`vimamsa --wait` returns when the file's buffer is closed):
+```
+git config --global core.editor "vimamsa --wait"
+```
+
 For customization, edit ~/.config/vimamsa/custom.rb (Settings ▸ Customize).
 
 Vimamsa keeps the files you edit (custom.rb, settings.rb, styles, bookmarks,

@@ -244,6 +244,7 @@ class BufferList
     @h.delete(idx)
     gui_close_buffer(idx)
     vma.gui.file_panel_refresh
+    vma.hook.call(:buffer_closed, bu)
 
     if auto_open
       @current_buf = get_last_non_active_buffer

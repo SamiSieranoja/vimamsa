@@ -36,14 +36,38 @@ class Editor
 
   def open_file_listener(added)
     if !added.empty?
-      for fp in added
+      # each, not for: every Idle block below needs its own fpath/marker
+      # (a for loop shares one variable, so all blocks would see the last path)
+      added.each do |fp|
         sleep 0.1
-        x = IO.read(fp)
-        File.delete(fp)
-        for f in x.lines
-          f.gsub!("\n", "")
-          fpath = f.dup
-          if !File.exist?(fpath)
+        begin
+          x = IO.read(fp)
+          File.delete(fp)
+        rescue Errno::ENOENT
+          next # the launcher gave up waiting and took the request back
+        end
+        # A "#vma-wait MARKER" line: vimamsa --wait (wait_files.rb)
+        WaitFiles.parse_request(x).each do |fpath, marker|
+          if marker
+            # A program is blocked on this file: open it without asking, and
+            # never leave the marker behind if the file can't be opened
+            GLib::Idle.add do
+              begin
+                if !File.exist?(fpath)
+                  FileUtils.mkdir_p(File.dirname(fpath))
+                  IO.write(fpath, "")
+                end
+                open_new_file(fpath)
+                bid = vma.buffers.get_buffer_by_filename(File.expand_path(fpath))
+                b = bid.nil? ? nil : vma.buffers.get_buffer_by_id(bid)
+              rescue => e
+                message("Could not open #{fpath}: #{e}")
+                b = nil
+              end
+              b.nil? ? WaitFiles.release(marker) : WaitFiles.watch(b, marker)
+              false
+            end
+          elsif !File.exist?(fpath)
             GLib::Idle.add do
               Gui.confirm("File does not exist. Create new file?\r #{fpath}",
                           proc {
@@ -220,6 +244,7 @@ class Editor
       open_file_listener(added)
     end
     listener.start
+    WaitFiles.init
 
     custom_fn = get_dot_path("custom.rb")
     if !File.exist?(custom_fn)
@@ -279,6 +304,17 @@ class Editor
     else
       # fname = ppath("demo.txt")
     end
+    # Started by vimamsa --wait for a file that doesn't exist yet: create it,
+    # as a running editor does for a --wait request
+    if $vma_wait_marker && ARGV[0] && !File.exist?(File.expand_path(ARGV[0]))
+      begin
+        fn = File.expand_path(ARGV[0])
+        FileUtils.mkdir_p(File.dirname(fn))
+        IO.write(fn, "")
+      rescue SystemCallError => e
+        message("Could not create #{ARGV[0]}: #{e}")
+      end
+    end
     fname = ARGV[0] if ARGV.size >= 1 and File.file?(File.expand_path(ARGV[0])) and !ARGV.include?("--test")
     # vma.add_content_search_path(Dir.pwd)
     for fn in ARGV
@@ -292,9 +328,16 @@ class Editor
     argv_has_files = !ARGV.include?("--test") && ARGV.any? { |a| File.file?(File.expand_path(a)) }
 
     if fname
-      open_new_file(fname)
+      fbuf = open_new_file(fname)
+      # Started by vimamsa --wait (wait_files.rb): release the launcher when
+      # this buffer is closed. Not opened (e.g. not text): release it now.
+      if $vma_wait_marker
+        fbuf.is_a?(Buffer) ? WaitFiles.watch(fbuf, $vma_wait_marker) : WaitFiles.release($vma_wait_marker)
+      end
     else
       create_new_buffer(file_contents = "\n")
+      # nothing to wait on: let the launcher go
+      WaitFiles.release($vma_wait_marker) if $vma_wait_marker
     end
 
     gui.restore_view_layout

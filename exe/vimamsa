@@ -22,6 +22,7 @@ elsif (arg = ARGV.find { |a| a.start_with?("--user-dir=") })
   $vma_user_dir = File.expand_path(arg.split("=", 2)[1])
   ARGV.delete(arg)
 end
+user_dir_given = $vma_user_dir # passed on to an editor started by --wait
 $vma_user_dir ||= Vimamsa::UserDirs.default_config_dir
 
 # --intro: show the introduction page at start (intro_page.rb), whatever the
@@ -49,25 +50,85 @@ if $vma_tmp_user_dir
   at_exit { Vimamsa::TmpUserDir.delete($vma_tmp_user_dir) }
 end
 
-# If process is already running, open the parameter file in the running process and exit.
-listen_dir = File.join(Vimamsa::UserDirs.data_dir_for($vma_user_dir), "listen")
-if File.exist?(listen_dir) and !ARGV[0].nil? and !$vma_cli_help
+# --wait FILE: return only once FILE's buffer is closed (wait_files.rb), for
+# git's core.editor. --wait-marker MARKER: internal, the editor that --wait
+# starts when none is running.
+require File.join(scriptdir, "lib/vimamsa/wait_files")
+wait_requested = !ARGV.delete("--wait").nil?
+if (i = ARGV.index("--wait-marker"))
+  $vma_wait_marker = ARGV[i + 1]
+  ARGV.slice!(i, 2)
+end
+# A --tmp-user-dir editor is new and private: it is the one waited on anyway,
+# as this process lasts until it quits
+wait_requested = false if $vma_tmp_user_dir || $vma_cli_help
+
+data_dir = Vimamsa::UserDirs.data_dir_for($vma_user_dir)
+listen_dir = File.join(data_dir, "listen")
+
+# Hand text (file paths, one per line) to the running editor. True when it took
+# the request: it deletes the request file within the timeout.
+def vma_forward_to_running(listen_dir, text, timeout: 0.5)
   tmpf = Tempfile.new("vmarun", listen_dir)
   fp = tmpf.path
-  paramfn = File.expand_path(ARGV[0])
-  puts paramfn
-  tmpf.write(paramfn)
+  tmpf.write(text)
   tmpf.close
   tstart = Time.new
-  timeout = false
   while File.exist?(fp)
     sleep 0.001
-    if Time.new - tstart > 0.5
-      timeout = true
-      break
+    if Time.new - tstart > timeout
+      # Take the request back, so an editor that answers late doesn't open the
+      # file as well as the one about to be started
+      File.delete(fp) rescue nil
+      return false
     end
   end
-  exit(0) if !timeout
+  true
+end
+#!/usr/bin/env ruby
+# TODO: comment char auto detection It does not work for this file. (gets //)
+# COMMENT: Describe with one line what the code does
+# COMMENT: This should be a separate function
+
+if wait_requested
+  if ARGV[0].nil?
+    warn "vimamsa: --wait needs a file"
+    exit(2)
+  end
+  paramfn = File.expand_path(ARGV[0])
+  marker = Vimamsa::WaitFiles.create_marker(data_dir)
+  at_exit { Vimamsa::WaitFiles.release(marker) }
+  taken = File.exist?(listen_dir) &&
+          vma_forward_to_running(listen_dir, Vimamsa::WaitFiles.request_text([paramfn], marker))
+  if !taken
+    # No editor running: start one in the background (it outlives this
+    # process, and its output doesn't go to the caller's terminal)
+    args = [RbConfig.ruby, File.expand_path(selfpath)]
+    args += ["--user-dir", user_dir_given] if user_dir_given
+    args += ["--wait-marker", marker, paramfn]
+    # git's own variables (GIT_DIR, GIT_INDEX_FILE, ...) are for this commit,
+    # not for an editor that keeps running
+    env = ENV.keys.select { |k| k.start_with?("GIT_") }.to_h { |k| [k, nil] }
+    pid = Process.spawn(env, *args, pgroup: true, in: File::NULL, out: File::NULL, err: File::NULL)
+    Process.detach(pid)
+    File.write(marker, pid.to_s) # until the editor writes its own pid
+  end
+  if Vimamsa::WaitFiles.wait_for_release(marker)
+    exit(0)
+  else
+    warn "vimamsa: the editor quit before #{paramfn} was closed"
+    exit(1)
+  end
+end
+
+# If process is already running, open the parameter file in the running process and exit.
+# Not for an editor started by --wait: it is the one the file is for (and
+# forwarding to a slow running editor would end this process, which the
+# launcher takes as the editor quitting)
+if File.exist?(listen_dir) and !ARGV[0].nil? and !$vma_cli_help and !$vma_wait_marker
+  paramfn = File.expand_path(ARGV[0])
+  puts paramfn
+  exit(0) if vma_forward_to_running(listen_dir, paramfn)
 end
 
 # Relative to this script, not the current directory: started from elsewhere
