@@ -613,6 +613,13 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
+- **LSP servers per project, started in the background** (2026-11-24, `23c0c14`): a server that
+  can't start in one project (`bundle exec ruby-lsp` without a Gemfile) no longer disables the
+  language everywhere; opening files (session restore) doesn't wait for a server to start.
+
+- **Mode badge follows mode changes without a key** (2026-11-24, `5553d40`): a popup closed with
+  the mouse left "F" on the badge until the next key.
+
 - **Audio playback as a module, disabled by default** (2026-11-24, `86ef9be`): `audio.rb`,
   the ⟦audio:…⟧ media controls, `hpt_scan_audio`, the `audio.*` / `mode.audio` actions and the
   audio mode moved into `modules/audio/`; the old `cnf.audio.enabled` still enables it.
