@@ -47,14 +47,14 @@ class TestLspClangd < VmaTest
   def with_clangd
     skip "clangd not on PATH" if self.class.clangd_bin.nil?
     configure_clangd
-    @@reset ||= %w[c cpp].each { |l| LangSrv.class_variable_get(:@@languages).delete(l) }
+    @@reset ||= LangSrv.forget("c", "cpp")
     Dir.mktmpdir("vma_clangd") do |dir|
       File.write(File.join(dir, "compile_flags.txt"), "-std=c++17\n")
       path = File.join(dir, "main.cpp")
       File.write(path, SRC)
       b = open_new_file(path)
       begin
-        drain_idle
+        wait_for_lsp(b)
         assert b.lsp, "LSP did not start for #{File.basename(path)} (lang #{b.lang.inspect}): " \
                       "clangd failed to start or did not answer 'initialize' within 5 s"
         yield b, b.lsp, path, dir
@@ -166,7 +166,7 @@ class TestLspClangd < VmaTest
         File.write(hpath, "#pragma once\nstruct Pt { int x; };\ninline int twice(int v) { return 2 * v; }\n")
         hb = open_new_file(hpath)
         begin
-          drain_idle
+          wait_for_lsp(hb)
           assert hb.lsp, "no LSP for #{name} (lang #{hb.lang.inspect})"
           assert hb.lsp.equal?(lsp), "#{name} started a separate server instead of sharing main.cpp's"
           funcs = retry_until { hb.lsp.document_functions(hpath) }
@@ -217,7 +217,7 @@ class TestLspClangd < VmaTest
       begin
         assert_eq nil, nb.lsp
         nb.save_as_callback(File.join(dir, "new.cpp"))
-        drain_idle
+        wait_for_lsp(nb)
         assert nb.lsp.equal?(lsp), "no LSP after Save As .cpp"
         nb.view.show_context_menu(5, 5)
         drain_idle
@@ -246,7 +246,7 @@ class TestLspClangd < VmaTest
       File.write(File.join(dir, "compile_flags.txt"), "") # no -Iinc yet
       cb = open_new_file(cpath)
       begin
-        drain_idle
+        wait_for_lsp(cb)
         old = cb.lsp
         assert old, "no LSP for prog.c"
         call = [27, "int main() { CODEBOOK c; ".size]
@@ -256,6 +256,7 @@ class TestLspClangd < VmaTest
         File.write(File.join(dir, "compile_flags.txt"), "-Iinc\n")
         old_pid = old.pid
         act "lsp.restart"
+        wait_for_lsp(cb)
         assert cb.lsp && !cb.lsp.equal?(old), "buffer not reattached to a new server"
         d = retry_until { cb.lsp.get_definition(cpath, *call) }
         assert d, "no definition after restart"

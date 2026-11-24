@@ -29,11 +29,11 @@ class TestLspJumpToDefinition < VmaTest
     }
 
     # Reset any cached LSP instance so it re-initialises with the config above.
-    LangSrv.class_variable_get(:@@languages).delete("ruby")
+    LangSrv.forget("ruby")
 
     # Open the caller file — this triggers LSP initialisation for "ruby".
     open_new_file(CALLER_FILE)
-    drain_idle
+    wait_for_lsp(vma.buf)
 
     unless vma.buf.lsp
       puts "  SKIP  #{self.class}#test_jump_to_definition " \

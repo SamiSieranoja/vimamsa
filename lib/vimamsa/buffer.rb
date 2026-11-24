@@ -146,21 +146,24 @@ class Buffer < String
     end
   end
 
+  # Attach this buffer to its language server, once the server is ready (it
+  # starts in the background: opening files, e.g. a session restore, doesn't
+  # wait for it). @lsp stays nil until then.
   def init_lsp()
-    if cnf.lsp.enabled?
-      # LangSrv is loaded lazily here: buffers (e.g. the minibuffer) can be
-      # created during startup before editor.rb requires langservp, so require
-      # it on demand. require is idempotent, so this is cheap after first load.
-      require "vimamsa/langservp"
-      @lsp = LangSrv.get(@lang, @fname)
-
-      if @lang == "php"
-        # Ripl.start :binding => binding
-      end
-    end
-
-    if !@lsp.nil?
-      @lsp.open_file(@fname, self.to_s)
+    return unless cnf.lsp.enabled?
+    # LangSrv is loaded lazily here: buffers (e.g. the minibuffer) can be
+    # created during startup before editor.rb requires langservp, so require
+    # it on demand. require is idempotent, so this is cheap after first load.
+    require "vimamsa/langservp"
+    @lsp = nil
+    fname = @fname
+    lang = @lang
+    LangSrv.when_ready(@lang, @fname) do |srv|
+      # Still the same file and language, and the buffer still open
+      next if @fname != fname || @lang != lang || @lsp.equal?(srv)
+      next unless vma.buffers.list.any? { |b| b.equal?(self) }
+      @lsp = srv
+      srv.open_file(@fname, self.to_s)
     end
   end
 

@@ -4,12 +4,16 @@ module Vimamsa
 LSP = LanguageServer::Protocol
 
 class LangSrv
+  # [lang, project root] => server. One per project: a server runs in its
+  # project's folder, and one that can't start there (e.g. `bundle exec
+  # ruby-lsp` in a project without a Gemfile) must not take the language's
+  # other projects down with it.
   @@languages = {}
-  # Languages whose server failed to start: not retried for every buffer (each
-  # try blocks the GTK thread, so a session of N files stalled N times) until
-  # LangSrv.restart
+  # [lang, project root] of servers that failed to start: not retried for
+  # every buffer (each try blocks the GTK thread, so a session of N files
+  # stalled N times) until LangSrv.restart
   @@failed = {}
-  attr_accessor :error
+  attr_accessor :error, :key
   attr_reader :completion_supported, :position_encoding
 
   # LSP CompletionItemKind (1..25) => short tag for the popup
@@ -31,30 +35,74 @@ class LangSrv
   # open, e.g. a new compile_flags.txt for clangd. Returns the new server or nil.
   def self.restart(lang)
     lang = LSP_LANG.fetch(lang, lang)
-    @@languages.delete(lang)&.shutdown
-    @@failed.delete(lang)
+    @@languages.select { |k, _| k[0] == lang }.each { |k, srv| @@languages.delete(k); srv.shutdown }
+    @@failed.delete_if { |k, _| k[0] == lang }
     vma.buffers.list.each do |b|
       next if b.fname.nil? || b.lang.nil?
       next unless LSP_LANG.fetch(b.lang, b.lang) == lang
       b.init_lsp
     end
-    @@languages[lang]
+    # Started again (the buffers attach once it is ready)
+    @@languages.find { |k, _| k[0] == lang }&.last
   end
 
-  # The server for lang, started if needed. fname: the file it is wanted
-  # for; a new server runs in that file's project (project_root).
+  # Forget the servers of these languages without shutting them down (tests)
+  def self.forget(*langs)
+    @@languages.delete_if { |k, _| langs.include?(k[0]) }
+    @@failed.delete_if { |k, _| langs.include?(k[0]) }
+  end
+
+  # The server for lang in fname's project (project_root) if it is ready,
+  # else nil. Starts one in the background if there is none.
   def self.get(lang, fname = nil)
+    srv = start(lang, fname)
+    srv&.ready? ? srv : nil
+  end
+
+  # Call blk with the server for lang in fname's project once it is ready
+  # (right away if it already is), on the main loop. Never called if the
+  # server can't start. The start doesn't block: the server's initialize
+  # reply is awaited in a background thread, so e.g. a session restore
+  # doesn't wait for every project's server in turn.
+  def self.when_ready(lang, fname = nil, &blk)
+    start(lang, fname)&.on_ready(&blk)
+  end
+
+  # The server for lang in fname's project, starting or ready; nil if none
+  # is configured or it failed to start there.
+  def self.start(lang, fname)
     lang = LSP_LANG.fetch(lang, lang)
-    if @@languages[lang].nil? && !@@failed[lang]
-      srv = LangSrv.new(lang, root: project_root(fname))
-      if srv.error
-        # Only a configured server that did not start counts as failed
-        @@failed[lang] = true if srv.configured?
-      else
-        @@languages[lang] = srv
-      end
+    key = [lang, project_root(fname)]
+    return nil if @@failed[key]
+    srv = @@languages[key]
+    return srv if srv
+    srv = LangSrv.new(lang, root: key[1], key: key)
+    if !srv.starting?
+      # Only a configured server that did not start counts as failed
+      @@failed[key] = true if srv.configured?
+      return nil
     end
-    return @@languages[lang]
+    @@languages[key] = srv
+  end
+
+  # The server answered initialize and takes requests
+  def ready?
+    @ready == true
+  end
+
+  # Waiting for the server's initialize reply
+  def starting?
+    @starting == true
+  end
+
+  # blk(self) on the main loop once ready (now, if it is)
+  def on_ready(&blk)
+    if ready?
+      blk.call(self)
+    elsif starting?
+      @ready_callbacks << blk
+    end
+    self
   end
 
   # Files and dirs that mark a project's top folder
@@ -86,10 +134,15 @@ class LangSrv
     return @id += 1
   end
 
-  # root: the project folder to run the server in (project_root)
-  def initialize(lang, root: nil)
+  # root: the project folder to run the server in (project_root).
+  # key: its LangSrv table key ([lang, root]).
+  def initialize(lang, root: nil, key: nil)
     @error = true
     @root = root
+    @key = key
+    @ready = false
+    @starting = false
+    @ready_callbacks = []
 
     # Use LSP server specified by user if available
     @lang = lang
@@ -183,12 +236,29 @@ class LangSrv
     }
 
     # LSP spec: wait for initialize result, then send initialized notification.
-    # Servers such as ruby-lsp will not respond to any request until this is done.
-    init_result = wait_for_response(init_id)
+    # Servers such as ruby-lsp will not respond to any request until this is
+    # done. Waited for off the main loop (up to 5 s, or longer for a server
+    # that is slow to index), then finished there.
+    @starting = true
+    Thread.new do
+      init_result = wait_for_response(init_id)
+      shutdown if init_result.nil? # not on the main loop: it waits too
+      GLib::Idle.add { _finish_start(init_result, lspconf); false }
+    end
+  end
+
+  # (main loop) The initialize reply arrived (init_result), or didn't (nil)
+  def _finish_start(init_result, lspconf)
+    @starting = false
+    callbacks = @ready_callbacks
+    @ready_callbacks = []
     if init_result.nil?
-      message("LSP server #{lspconf[:name]} did not start (command: #{lspconf[:command]})")
-      shutdown
+      message("LSP server #{lspconf[:name]} did not start (command: #{lspconf[:command]}#{@root ? ", in #{@root}" : ""})")
       @error = true
+      if @key
+        @@languages.delete(@key) if @@languages[@key].equal?(self)
+        @@failed[@key] = true
+      end
       return
     end
     caps = init_result.dig(:result, :capabilities) || {}
@@ -202,6 +272,10 @@ class LangSrv
     end
     @writer.write(method: "initialized", params: {})
     @error = false
+    @ready = true
+    callbacks.each do |cb|
+      run_dialog_callback("LSP ready") { cb.call(self) }
+    end
   end
 
   def handle_delta(delta, fpath, version)

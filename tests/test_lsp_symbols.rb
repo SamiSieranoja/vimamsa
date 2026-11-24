@@ -25,7 +25,7 @@ class TestLspSymbols < VmaTest
   def test_document_functions_lists_methods
     configure_ruby_lsp
     open_new_file(SYMBOL_FILE)
-    drain_idle
+    wait_for_lsp(vma.buf)
 
     lsp = vma.buf.lsp
     unless lsp

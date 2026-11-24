@@ -129,6 +129,17 @@ class VmaTest
   def drain_idle
     20.times { GLib::MainContext.default.iteration(false) }
   end
+
+  # Run the main loop until buf has its language server (servers start in
+  # the background), or timeout seconds pass. Returns buf.lsp.
+  def wait_for_lsp(buf, timeout = 15)
+    t = Time.now
+    until buf.lsp || Time.now - t > timeout
+      drain_idle
+      sleep 0.02
+    end
+    buf.lsp
+  end
 end
 
 # ── Runner ───────────────────────────────────────────────────────────────────
