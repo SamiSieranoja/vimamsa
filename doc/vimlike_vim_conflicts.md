@@ -12,7 +12,7 @@ Bindings that modules and `custom.rb` add at startup are not included.
 | Added to vimlike from the shared table (`VIM_BINDINGS`, key_bindings_vim_core.rb) | 461 |
 | Missing from vimlike (no conflict, could be added) | 0 |
 | vim keymap only (left out of vimlike on purpose) | 0 |
-| Shared (same keys, same action) | 146 |
+| Shared (same keys, same action) | 145 |
 
 ## Conflicts
 
@@ -206,7 +206,6 @@ Left out of vimlike on purpose (`VIM_KEYMAP_ONLY`, key_bindings_vim_core.rb).
 | I | <code>tab</code> | <code>edit.tab</code> |
 | I | <code>tab(vma.buf.view.autocp_active)</code> | <code>edit.complete.next</code> |
 | I | <code>up</code> | <code>move.line.prev.unselect</code> |
-| R | <code>&lt;char&gt;</code> | <code>readchar_new_char(&lt;char&gt;)</code> |
 | V | <code>' &lt;char&gt;</code> | <code>mark.jump</code> |
 | V | <code>*</code> | <code>search.word.next</code> |
 | V | <code>/</code> | <code>search.buf</code> |

@@ -9,7 +9,6 @@ module Vimamsa
 # doc/vimlike_vim_conflicts.md.
 
 # ── composite actions for vim commands not covered by a single action ────────
-#TODO: file should be renamed to sort close to  key_actions.rb
 
 
 def reg_vim_actions
@@ -171,7 +170,6 @@ VIM_BINDINGS = {
     "C O" => "edit.line.above",
   },
 
-#TODO: should replace all eval actions like "buf.move ... with actual registered actions.
   "vim edit" => {
     # Delete
     "C x" => "edit.delete.char.inline",
@@ -283,9 +281,6 @@ VIM_BINDINGS = {
     "macro q" => "macro.record.stop",
     "C @ @" => "macro.run.last",
     "C @ <char>" => "macro.run",
-
-    # READCHAR mode (argument input for f/F, r, m, ', q, @)
-    "R <char>" => "readchar_new_char(<char>)",
   },
 }
 

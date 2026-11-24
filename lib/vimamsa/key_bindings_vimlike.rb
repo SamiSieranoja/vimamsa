@@ -4,7 +4,6 @@ vma.kbd.add_mode("C", :command)
 vma.kbd.add_mode("I", :insert, :insert)
 vma.kbd.add_mode("V", :visual, :visual)
 vma.kbd.add_mode("M", :minibuffer) #TODO: needed?
-vma.kbd.add_mode("R", :readchar)
 vma.kbd.add_minor_mode("macro", :macro, :command)
 vma.kbd.add_mode("B", :browse, :browse, scope: :editor)
 vma.kbd.add_mode("X", :replace, :replace, name: "Replace")
@@ -303,7 +302,7 @@ add_keys "core cat:macro", {
 add_keys "core cat:file", {
   "C , , f" => "file.finder",
   "C , , u" => "file.finder.reindex",
-  "C , , c b" => "file.path.copy", #TODO: better binding or remove?,
+  "C , y p" => "file.path.copy",
   "C , f" => "file.finder",
   "C , h" => "file.history",
   "C , z" => "file.finder",
@@ -333,8 +332,7 @@ add_keys "core cat:buffer", {
   "B e" => "move.page.prev.quarter",
   "B c" => "buf.close",
   "C , s a" => "buf.save.as",
-  "C , , e" => "buf.encrypt", #TODO: better binding,
-  "C , ; u" => "buf.encrypt.off", #TODO: better binding,
+  "C , , e" => "buf.encrypt",
   "C , c b" => "buf.close",
 }
 
@@ -374,11 +372,10 @@ add_keys "core cat:app", {
 
 add_keys "core cat:help", {
   "C , m h" => "help.messages",
-  "C , ; s k" => "help.keys", #TODO: better binding,
+  "C , ; s k" => "help.keys",
 }
 
 add_keys "core cat:internal", {
-  "R <char>" => "readchar_new_char(<char>)",
 }
 
 add_keys "hyperplaintext", {

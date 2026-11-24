@@ -119,12 +119,10 @@ class TestKeyCategories < VmaTest
   # doc/action_names_plan.md step 6: every binding of every keymap runs a
   # named action with a description, not Ruby code. A new Ruby-string
   # binding fails here: register an action (reg_act) and bind its id.
-  # Readchar mode ("R <char>") is internal and not named.
   def test_every_binding_has_a_description
     [["vimlike"], ["vim"], ["vimlike", "notepad"]].each { |scheme|
       kbd = load_scheme_kbd(scheme)
       bad = kbd.bindings.reject { |b|
-        next true if b[:mode] == "R"
         act = b[:action]
         next false if act.class == Proc
         r = [kbd.actions, vma.actions].map { |l| l[act] }.find { |x| x && !x.opt&.[](:code) }
