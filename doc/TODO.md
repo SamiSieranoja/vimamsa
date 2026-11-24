@@ -635,6 +635,10 @@ Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines
 
 - **Leaving insert mode clears a shift-arrow selection** (2026-11-24, `2e162fd`).
 
+- **Parallel test runs: Docker containers plus the VM** (2026-11-24, `ed293fc`, `c69c011`):
+  `run_tests_parallel.rb` runs `needs_desktop` files in the VM, the rest in Docker containers
+  (`run_tests_docker.rb`), about 55-75 s instead of 200-230 s. clangd/stree tests now run.
+
 - **Startup 22% faster; faster slow tests** (2026-11-24, `325ec97`, `e8a5b4d`): red-colors loaded on first
   use and no GC while starting (startup_speed_plan.md items 1-2; 3.53 s -> 2.74 s in the VM);
   window layout tests wait for the window instead of fixed sleeps; real-vim comparisons in parallel.
