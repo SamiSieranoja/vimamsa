@@ -159,9 +159,12 @@ class Buffer < String
     fname = @fname
     lang = @lang
     LangSrv.when_ready(@lang, @fname) do |srv|
-      # Still the same file and language, and the buffer still open
+      # Still the same file and language, and the buffer still open. (Not
+      # "in the buffer list": with a server that is already ready this runs
+      # right away, from Buffer#initialize, before the buffer is listed. A
+      # closed buffer has no view.)
       next if @fname != fname || @lang != lang || @lsp.equal?(srv)
-      next unless vma.buffers.list.any? { |b| b.equal?(self) }
+      next if view.nil?
       @lsp = srv
       srv.open_file(@fname, self.to_s)
     end

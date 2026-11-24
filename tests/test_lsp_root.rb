@@ -96,4 +96,49 @@ class TestLspRoot < VmaTest
       LangSrv.forget("vma_test_slow")
     end
   end
+
+  # A minimal LSP server: answers initialize, and null to other requests
+  FAKE_SERVER = <<~'RUBY'
+    require "json"
+    $stdout.sync = true
+    reply = ->(id, result) {
+      b = JSON.generate(jsonrpc: "2.0", id: id, result: result)
+      $stdout.write("Content-Length: #{b.bytesize}\r\n\r\n#{b}")
+    }
+    while (h = $stdin.gets("\r\n\r\n"))
+      m = JSON.parse($stdin.read(h[/Content-Length: (\d+)/, 1].to_i))
+      if m["method"] == "initialize"
+        reply.(m["id"], { capabilities: { definitionProvider: true } })
+      elsif m["id"]
+        reply.(m["id"], nil)
+      end
+    end
+  RUBY
+
+  # Bug: with the project's server already running, a newly opened file was
+  # attached from inside Buffer#initialize, before the buffer was listed, and
+  # the "still open?" check dropped it: only the first file of a project got
+  # LSP.
+  def test_second_file_of_project_attaches
+    setup_lsp
+    prev = cnf.lsp.enabled?
+    Dir.mktmpdir do |d|
+      File.write("#{d}/Gemfile", "")
+      File.write("#{d}/server.rb", FAKE_SERVER)
+      %w[a b].each { |n| File.write("#{d}/#{n}.lua", "print(1)\n") }
+      cnf.lsp.server.vma_test_fake_ok = { name: "fake-ok", type: "stdio", command: "#{RbConfig.ruby} #{d}/server.rb" }
+      cnf.lsp.server.vma_test_fake_ok.languages = ["lua"]
+      cnf.lsp.enabled = true
+      ba = open_new_file("#{d}/a.lua")
+      assert_eq "lua", ba.lang
+      assert wait_for_lsp(ba, 10), "first file of the project got no LSP"
+      bb = open_new_file("#{d}/b.lua")
+      drain_idle
+      assert bb.lsp.equal?(ba.lsp), "second file of the project got no LSP"
+    ensure
+      cnf.lsp.enabled = prev
+      ba&.lsp&.shutdown
+      LangSrv.forget("lua")
+    end
+  end
 end
