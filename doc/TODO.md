@@ -534,6 +534,13 @@ and shown only on request ("Show markup"). The buffer holds only the visible tex
 the formatting is a separate span model mirrored to GtkTextView tags, and the hpt
 markers are the file format. Plan: `doc/wysiwyg_plan.md`.
 
+### Dictation code review: follow-ups
+
+Open questions from `doc/dictation_code_review_plan.md`: reviewer name/date in the
+comment (`# COMMENT(2026-11-24): …`), comment above vs. at the end of the selection,
+and a view that lists all `COMMENT:` lines in the project (grep) to go through later.
+Track the comment target with a line mark instead of re-finding the line by its text.
+
 ### Changesets as the change format
 
 Replace the `[pos, op, len, text]` delta arrays with OT-style changesets (`retain` /
@@ -605,6 +612,12 @@ Constraints:
 ## DONE
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
+
+- **Dictation code review mode** (2026-11-24, `aa8ab67`): `C , ; r` / `dictation c`;
+  while a selection is up the mic records, and when it ends the transcript goes above the
+  selection as `# COMMENT: …` (indent kept, wrapped, one undo step; edited selections are
+  discarded). Session split into inline/review sinks. Plan: `doc/dictation_code_review_plan.md`;
+  tests in `tests/test_dictation.rb`.
 
 - **`J` joins lines as in Vim** (2026-11-23, `c3cb510`): next line's indent removed, no
   space for an empty/blank next line, a current line ending in whitespace, or a next line
