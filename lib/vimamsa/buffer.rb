@@ -310,10 +310,6 @@ class Buffer < String
     message("Set buffer encrypted")
   end
 
-  def set_unencrypted()
-    @crypt = nil
-  end
-
   def unindent
     debug("unindent", 2)
     if visual_mode?

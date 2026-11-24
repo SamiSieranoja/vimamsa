@@ -65,9 +65,8 @@ reg_act("help.vim_conflicts", proc { show_vim_binding_conflicts }, "Show which v
 reg_act("file.path.copy", proc { buf.put_file_path_to_clipboard }, "Put file path of current file to clipboard")
 reg_act("file.ref.copy", proc { buf.put_file_ref_to_clipboard }, "Put file ref of current file to clipboard")
 
-# reg_act("buf.encrypt", proc{buf.set_encrypted},"Set current file to encrypt on save")
 reg_act("buf.encrypt", proc { encrypt_cur_buffer }, "Set current file to encrypt on save")
-reg_act("buf.encrypt.off", proc { buf.set_unencrypted }, "Set current file to save unencrypted")
+
 reg_act("file.executable", proc { buf.set_executable }, "Set current file permissions to executable")
 # reg_act("buf.close.all", proc { bufs.close_all_buffers() }, "Close all buffers")
 reg_act("buf.close", proc { bufs.close_current_buffer(true) }, "Close current buffer")

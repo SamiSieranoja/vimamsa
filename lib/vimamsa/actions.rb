@@ -165,7 +165,6 @@ ACTION_ALIASES = {
   history_switch_forwards: "buf.history.next",
   select_buffer_language: "buf.language",
   encrypt_file: "buf.encrypt",
-  set_unencrypted: "buf.encrypt.off",
   git_diff_buffer: "buf.diff.git",
   diff_buffer: "buf.diff",
   diff_buffer_jump_to_source: "diffview.source",
