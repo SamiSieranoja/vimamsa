@@ -261,6 +261,22 @@ class TestDictation < VmaTest
     dictation_disable
   end
 
+  # `, , k` enters dictation mode without starting a recording.
+  def test_enter_mode_idle
+    ensure_disabled
+    load_dictation
+    dictation_init
+    vma.kbd.set_mode(:command)
+    keys(", , k")
+    assert_mode :dictation
+    assert !dictation_session.active?, ", , k should not start listening"
+    keys("esc")
+    assert_mode :command
+  ensure
+    vma.kbd.set_mode(:command)
+    dictation_disable
+  end
+
   # The mode is a minor mode that inherits command mode, and exiting returns to
   # the previous mode. Drive the mode machinery directly so no recorder starts.
   def test_mode_enter_inherits_and_exit
@@ -418,9 +434,36 @@ class TestDictation < VmaTest
       assert_eq :final, s.stopped, "esc should stop and transcribe"
       assert_eq 10..12, s.sink.range
       s.sink.finish("check this")
-      assert_buf "def foo\n  # COMMENT: check this\n  bar\nend\n"
+      assert_buf "def foo\n  # COMMENT (next line): check this\n  bar\nend\n"
       assert_eq [], $vma_dict_review_sessions, "finished session should be dropped"
     end
+  end
+
+  # The comment says how many lines it is about.
+  def test_review_comment_says_range
+    with_review do
+      set_text("def foo\n  bar\nend\n")
+      set_lang("ruby")
+      act("buf.set_pos(0)")
+      vma.kbd.set_mode(:dictation)
+      dictation_review_on
+      keys("v j j esc")
+      s = $fake_review_sessions[0]
+      s.sink.finish("whole method")
+      assert_buf "# COMMENT (next 3 lines): whole method\ndef foo\n  bar\nend\n"
+    end
+  end
+
+  def test_review_prefix
+    load_dictation
+    assert_eq "COMMENT (next line):", dictation_review_prefix(1)
+    assert_eq "COMMENT (next 4 lines):", dictation_review_prefix(4)
+    assert_eq "COMMENT:", dictation_review_prefix(nil)
+    prev = cnf.dictation.review_range!
+    cnf.dictation.review_range = false
+    assert_eq "COMMENT:", dictation_review_prefix(4), "review_range = false: no range"
+  ensure
+    cnf.dictation.review_range = prev
   end
 
   def test_review_edited_selection_discarded
@@ -508,7 +551,7 @@ class TestDictation < VmaTest
       act("buf.set_pos(3)")
       keys("v l")
       first.sink.finish("note")
-      assert_buf "# COMMENT: note\naa\nbb\n".sub("#", vma.buf.get_com_str)
+      assert_buf "# COMMENT (next line): note\naa\nbb\n".sub("#", vma.buf.get_com_str)
       keys("esc")
       second = $fake_review_sessions[1]
       assert_eq :final, second.stopped, "own comment insert should not discard the next one"

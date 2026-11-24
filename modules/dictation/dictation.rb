@@ -11,6 +11,7 @@ require "json"
 # Real-time (hybrid) flow:
 #   C , k    -> start fast (no dialog), reusing the last-used initial prompt.
 #   C , ; k  -> start with the prompt-selection dialog.
+#   C , , k  -> enter dictation mode without listening (Space starts it).
 #   (either, while recording) -> stop.
 # While you speak, a *preliminary* transcript is inserted incrementally (every few
 # seconds, only the new audio is transcribed, so it scales to long dictations). On
@@ -26,7 +27,8 @@ require "json"
 #   dictation c    -> review mode on/off inside dictation mode
 # In review mode the mic is on only while a selection (v … or a mouse drag) is up.
 # Talk about the selected code; when the selection ends (esc, or a click) the
-# transcript is added above it as e.g. `# COMMENT: …`, with the code's indent.
+# transcript is added above it as e.g. `# COMMENT (next 3 lines): …`, with the
+# code's indent.
 # Preliminary text goes to the minibuffer, not the buffer. If the selection was
 # edited (d, x, a drag-and-drop move…) the recording is thrown away.
 #
@@ -50,6 +52,9 @@ require "json"
 #   cnf.dictation.source         GStreamer mic source     (default "autoaudiosrc")
 #   cnf.dictation.review_prefix  review comment prefix    (default "COMMENT:")
 #   cnf.dictation.review_wrap    review comment width     (default 80)
+#   cnf.dictation.review_range   say how many lines the    (default true)
+#                                comment is about:
+#                                "COMMENT (next 3 lines):"
 #   cnf.dictation.review_code_prompt  add the selected     (default true)
 #                                code to the final-pass
 #                                prompt (spells names right)
@@ -811,6 +816,8 @@ class VmaReviewSink
     @line_no = buf[0...ls].count("\n")
     le = buf.index("\n", ls) || buf.size
     @line_text = buf[ls...le]
+    # Lines the selection spans (ending on a line's "\n" is still that line)
+    @nlines = buf[@range.begin...@range.end].to_s.count("\n") + 1
     @code = buf[@range.begin..[@range.end, buf.size - 1].min].to_s
   end
 
@@ -873,7 +880,7 @@ class VmaReviewSink
       pos = @buf.get_line_start([@range.begin, @buf.size - 1].min)
       warn = " (the code moved; check where it went)"
     end
-    dictation_insert_review_comment(@buf, pos, text)
+    dictation_insert_review_comment(@buf, pos, text, @nlines || 1)
     message("Dictation review: comment added#{warn}")
   end
 
@@ -931,9 +938,19 @@ def dictation_review_comment_lines(text, indent:, com:, block: nil, prefix: "COM
   end
 end
 
+# Comment prefix saying how many of the following lines the comment is about:
+# "COMMENT (next 3 lines):". Relative, so it stays right when code above is edited.
+def dictation_review_prefix(nlines)
+  prefix = cnf.dictation.review_prefix! || "COMMENT:"
+  return prefix if nlines.nil? || cnf.dictation.review_range! == false
+  span = nlines == 1 ? "next line" : "next #{nlines} lines"
+  "#{prefix.sub(/:\z/, "")} (#{span}):"
+end
+
 # (main thread) Add `text` as a review comment above the line holding `pos`,
-# with that line's indentation, as one undo step. Returns the inserted string.
-def dictation_insert_review_comment(buf, pos, text)
+# with that line's indentation, as one undo step. `nlines`: how many lines the
+# comment is about (nil: don't say). Returns the inserted string.
+def dictation_insert_review_comment(buf, pos, text, nlines = nil)
   ls = buf.get_line_start(pos)
   indent = buf[ls..][/\A[ \t]*/].to_s
   com = buf.get_com_str(nil)
@@ -944,7 +961,7 @@ def dictation_insert_review_comment(buf, pos, text)
     com = "//"
   end
   lines = dictation_review_comment_lines(text, indent: indent, com: com, block: block,
-                                               prefix: cnf.dictation.review_prefix! || "COMMENT:",
+                                               prefix: dictation_review_prefix(nlines),
                                                wrap: cnf.dictation.review_wrap! || 80)
   str = lines.join
   old_pos = buf.pos
@@ -1321,6 +1338,13 @@ def dictation_enter_mode
   s.start(dictation_last_prompt) unless s.active?
 end
 
+# `, , k`: into dictation mode without listening (Space starts it, `c` turns
+# on review mode).
+def dictation_enter_mode_idle
+  vma.kbd.set_mode(:dictation) if vma.kbd.get_mode != :dictation
+  message("Dictation mode: space starts listening, c turns on code review")
+end
+
 # Dictation mode Space: toggle listening on/off without leaving the mode and
 # without ending the line (so a pause doesn't insert a newline).
 def dictation_toggle_stay
@@ -1397,6 +1421,8 @@ def dictation_init
           "Voice dictation: unload model to free VRAM")
   reg_act("dictation.enter_mode", proc { dictation_enter_mode },
           "Voice dictation: start + enter dictation mode (exit if in it)")
+  reg_act("dictation.enter_mode_idle", proc { dictation_enter_mode_idle },
+          "Voice dictation: enter dictation mode without listening")
   reg_act("dictation.toggle_stay", proc { dictation_toggle_stay },
           "Dictation mode: toggle listening (stay in mode)")
   reg_act("dictation.newline", proc { dictation_newline },
@@ -1423,6 +1449,7 @@ def dictation_init
   vma.kbd.add_minor_mode("dictation", :dictation, :command)
   add_keys "dictation", {
     "C , k" => "dictation.enter_mode",        # start + enter dictation mode
+    "C , , k" => "dictation.enter_mode_idle", # enter dictation mode, not listening
     "C , ; k" => "dictation.toggle_dialog",   # plain toggle (choose prompt), no mode
     "dictation space" => "dictation.toggle_stay",
     "dictation enter || dictation return" => "dictation.newline",
@@ -1453,6 +1480,7 @@ def dictation_disable
   unreg_act("dictation.toggle_dialog")
   unreg_act("dictation.release_vram")
   unreg_act("dictation.enter_mode")
+  unreg_act("dictation.enter_mode_idle")
   unreg_act("dictation.toggle_stay")
   unreg_act("dictation.newline")
   unreg_act("dictation.exit_mode")
@@ -1462,6 +1490,7 @@ def dictation_disable
   unbindkey "C , k"
   unbindkey "C , ; k"
   unbindkey "C , ; r"
+  unbindkey "C , , k"
   unbindkey "dictation", include_child_nodes: true
   vma.gui.menu.remove_module_action("dictation.enter_mode")
   vma.gui.menu.remove_module_action("dictation.toggle_dialog")
