@@ -89,6 +89,32 @@ class TestKeySequences < VmaTest
     assert_buf "hello\n"
     assert_mode :command
   end
+
+  # Insert mode: shift-down selects, leaving insert mode clears the selection
+  # (in the buffer and in the view)
+  def test_insert_selection_cleared_on_leaving_insert
+    act 'buf.insert_txt("one\ntwo\nthree")'
+    act "move.buf.start"
+    keys "i shift-down"
+    redraw_view
+    assert_mode :insert
+    assert vma.buf.selection_active?, "shift-down should select"
+    assert vma.buf.view.buffer.has_selection?, "view should show the selection"
+    keys "esc"
+    redraw_view
+    assert_mode :command
+    assert !vma.buf.selection_active?, "selection still active after leaving insert mode"
+    assert !vma.buf.visual_mode?, "still in visual state after leaving insert mode"
+    assert !vma.buf.view.buffer.has_selection?, "view still shows the selection"
+  end
+
+  # What a real key press does after the key bindings (handle_key_event in
+  # gui_sourceview.rb), which keys() skips
+  def redraw_view
+    vma.buf.view.handle_deltas
+    vma.buf.view.draw_cursor
+    drain_idle
+  end
 end
 
 class TestDeleteFindChar < VmaTest

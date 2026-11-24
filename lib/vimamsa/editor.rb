@@ -126,10 +126,16 @@ class Editor
       b.new_undo_group if b && !b.instance_variable_get(:@macro_group_active)
     }
     @kbd.on(:mode_changed) { |label|
+      prev_label, @last_mode_label = @last_mode_label, label
       if label != :insert
         # Dismiss the autocomplete popup when leaving insert mode
         v = (vma.buf&.view rescue nil)
         v.hide_completions if v.respond_to?(:hide_completions)
+      end
+      # A selection made in insert mode (shift-arrows) ends with insert mode
+      # (esc, ctrl!, or any other way out), unless it goes on in visual mode
+      if prev_label == :insert && label != :insert && label != :visual && vma.buf&.selection_active?
+        vma.buf.end_selection
       end
       if @kbd.get_scope != :editor and !vma.buf.nil?
         vma.buf.mode_stack = @kbd.default_mode_stack.clone
