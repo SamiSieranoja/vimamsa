@@ -226,4 +226,9 @@ cnf.color_adjustments.enabled = true
 cnf.color_contrast = 1.0
 cnf.color_brightness = 0.0
 cnf.theme.cyberpunk_glow = true
+# Strength of the cyberpunk theme's glows (blurred shadows): multiplies their
+# opacity. 1.0 = as designed, 0.5 = half, 2.0 = double, 0 = no glow. The same
+# value looks the same on every GTK (gui_theme.rb glow_scale corrects for
+# GTK 4.16+ drawing them weaker).
+cnf.theme.glow_strength = 1.0
 

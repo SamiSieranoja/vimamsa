@@ -137,7 +137,14 @@ def base_chrome_css
 
     headerbar > windowhandle > box .start { border-spacing: 6px; }
 
-    headerbar windowcontrols button { min-height: 15px; min-width: 15px; }
+    /* Window controls the same size on every GTK: from 4.16 GTK's theme makes
+       their icon at least 30px and the buttons as tall as the header (about
+       44px with 4.22), with a -6px right margin. These values keep 4.14's
+       look (28px buttons) and change nothing there. */
+    headerbar windowcontrols button { min-height: 28px; min-width: 28px; padding: 0; margin: 8px 2px; }
+    headerbar windowcontrols button > image { min-height: 16px; min-width: 16px; padding: 0; }
+    headerbar windowcontrols.end { margin-right: 0; }
+    headerbar windowcontrols.end > button:last-child { padding-right: 0; }
 
     popover background > contents { padding: 8px; border-radius: 20px; }
 
@@ -194,6 +201,37 @@ def cyber_rgba(hex, alpha)
   "rgba(#{hex[1, 2].to_i(16)}, #{hex[3, 2].to_i(16)}, #{hex[5, 2].to_i(16)}, #{alpha})"
 end
 
+# How much stronger the glows (blurred shadows) are drawn: the user's
+# cnf.theme.glow_strength (conf.rb) times a correction for the GTK version.
+# From GTK 4.16 the
+# renderer draws blurred shadows correctly smooth and blends them taking color
+# states into account (GTK NEWS 4.15.4/4.15.5: "Improve shadow rendering",
+# "Take colorstate into account when compositing"); the same CSS then glows
+# about 2.5 times weaker than with 4.14, which the colors were made for
+# (measured on the header buttons, 2026-11-24). 1.0 on 4.14: unchanged.
+def glow_scale
+  strength = (cnf.theme.glow_strength! || 1.0).to_f
+  strength = 0.0 if strength < 0
+  strength * gtk_glow_correction
+end
+
+def gtk_glow_correction
+  return 1.0 unless defined?(Gtk::Version) && Gtk::Version.respond_to?(:or_later?)
+  Gtk::Version.or_later?(4, 16) ? 2.5 : 1.0
+end
+
+# Multiply the opacity of every blurred shadow in css (box-shadow,
+# text-shadow, -gtk-icon-shadow: "<dx> <dy> <blur>px rgba(r, g, b, a)", blur
+# > 0) by f, capped at 1. Shadows without blur (inset 1px edge lines) are left
+# as they are: those look the same on every GTK.
+def scale_glows(css, f)
+  return css if f == 1.0
+  css.gsub(/(-?[\d.]+(?:px)?\s+-?[\d.]+(?:px)?\s+([\d.]+)px\s+rgba\(\s*\d+,\s*\d+,\s*\d+,\s*)([\d.]+)\)/) {
+    pre, blur, a = $1, $2.to_f, $3.to_f
+    blur > 0 ? "#{pre}#{[a * f, 1.0].min.round(3)})" : $&
+  }
+end
+
 def cyberpunk_css
   c = Hash.new { |_h, k| cyber_color(k) }
   base = c[:base]
@@ -217,7 +255,7 @@ def cyberpunk_css
       RULE
     }.join("\n  ")
 
-  <<~CSS
+  scale_glows(<<~CSS, glow_scale)
   window {
     background: linear-gradient(180deg, #{c[:bg_start]} 0%, #{c[:bg_mid]} 55%, #{c[:bg_end]} 100%);
     color: #{c[:window_fg]};
