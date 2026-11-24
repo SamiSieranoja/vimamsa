@@ -631,6 +631,10 @@ Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines
 
 - **Leaving insert mode clears a shift-arrow selection** (2026-11-24, `2e162fd`).
 
+- **LSP attaches every file of a project; ruby-lsp tests really run** (2026-11-24, `88af52f`, `c53dfc4`):
+  only the first file opened in a project got LSP (bug from the background start). The jump
+  test asked for a definition ruby-lsp can't resolve and had been skipping since March.
+
 - **Faster VM test runs** (2026-11-24, `d50e6ae`, `f469e1a`): one run at a time per VM (lock), a
   23 MB copy instead of 191 MB, the gem build reused while the extension is unchanged, the guest
   password off the command line; per-test times and a slowest-tests summary.
