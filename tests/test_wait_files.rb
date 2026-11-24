@@ -100,7 +100,7 @@ class TestWaitFiles < VmaTest
     Dir.mktmpdir("vma-wait") { |d|
       fn = File.join(d, "COMMIT_EDITMSG")
       File.write(fn, "first line\n")
-      pid = Process.spawn(RbConfig.ruby, EXE, "--user-dir", $vma_user_dir, "--wait", fn,
+      pid = Process.spawn(*vma_editor_command(EXE), "--user-dir", $vma_user_dir, "--wait", fn,
                           out: File::NULL, err: File::NULL)
       begin
         assert wait_until(15) { vma.buf.fname == fn }, "file not opened in the running editor"
@@ -122,7 +122,7 @@ class TestWaitFiles < VmaTest
     skip "needs a display" unless ENV["DISPLAY"] || ENV["WAYLAND_DISPLAY"]
     Dir.mktmpdir("vma-wait-ud") { |ud|
       fn = File.join(ud, "new", "msg.txt")
-      pid = Process.spawn(RbConfig.ruby, EXE, "--user-dir", ud, "--wait", fn,
+      pid = Process.spawn(*vma_editor_command(EXE), "--user-dir", ud, "--wait", fn,
                           out: File::NULL, err: File::NULL)
       editor = nil
       begin

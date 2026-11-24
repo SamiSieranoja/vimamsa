@@ -66,6 +66,10 @@ class TestCustomTwoPhase < VmaTest
       args << "--headless" if backend.include?("Wayland")
 
       env = { "VMA_USER_DIR" => dir, "VMA_TEST_CHILD" => "1" }
+      # From the AppImage: the child runner starts the editor through AppRun
+      # (vma_editor_command; this ruby alone doesn't find the typelibs then)
+      cmd = vma_editor_command
+      env["VMA_TEST_APP"] = cmd[0] if cmd.size == 1
       out_r, out_w = IO.pipe
       pid = begin
         Process.spawn(env, RbConfig.ruby, *args, chdir: vma_root,

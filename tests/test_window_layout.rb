@@ -158,7 +158,7 @@ class TestWindowLayout < VmaTest
   # it to quit on its own (its custom.rb calls vma.shutdown).
   def run_editor(ud)
     exe = File.expand_path("../exe/vimamsa", __dir__)
-    pid = Process.spawn(RbConfig.ruby, exe, "--user-dir", ud, out: File::NULL, err: "#{ud}/log.txt")
+    pid = Process.spawn(*vma_editor_command(exe), "--user-dir", ud, out: File::NULL, err: "#{ud}/log.txt")
     t = Time.now
     while Process.waitpid(pid, Process::WNOHANG).nil?
       if Time.now - t > 60

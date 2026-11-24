@@ -32,4 +32,16 @@ def restore_host_env
   debug "Restored the host environment for child processes: #{names}"
 end
 
+# The command that starts another editor (restart_editor, tests that start
+# one): from the AppImage its AppRun, which sets up the bundle's environment
+# again (the editor has put the host's back, see restore_host_env, and the
+# bundled ruby alone doesn't find the typelibs then). AppRun runs the image's
+# vimamsa, or $VMA_SOURCE's exe/vimamsa when that is set (still set here).
+# Otherwise the ruby running this editor with script.
+def vma_editor_command(script = File.expand_path("../../exe/vimamsa", __dir__))
+  apprun = ENV["APPDIR"] && File.join(ENV["APPDIR"], "AppRun")
+  return [apprun] if apprun && File.executable?(apprun)
+  [RbConfig.ruby, script]
+end
+
 end # module Vimamsa

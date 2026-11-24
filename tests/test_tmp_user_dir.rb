@@ -32,7 +32,7 @@ class TestTmpUserDir < VmaTest
     skip "needs a display" unless ENV["DISPLAY"] || ENV["WAYLAND_DISPLAY"]
     out = +""
     dir = nil
-    Open3.popen2e(RbConfig.ruby, EXE, "--tmp-user-dir") { |_in, oe, th|
+    Open3.popen2e(*vma_editor_command(EXE), "--tmp-user-dir") { |_in, oe, th|
       reader = Thread.new { oe.each_line { |l| out << l } rescue nil }
       t = Time.now
       until (dir = out[/Temporary user dir \(deleted on quit\): (\S+)/, 1]) || Time.now - t > 30

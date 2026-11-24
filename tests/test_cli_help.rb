@@ -11,7 +11,7 @@ class TestCliHelp < VmaTest
     Dir.mktmpdir("vma-help") { |ud|
       # a running editor's listen dir: --help must not be sent to it as a file
       FileUtils.mkdir_p(File.join(ud, "listen"))
-      out, st = Open3.capture2e(RbConfig.ruby, EXE, "--user-dir", ud, *args)
+      out, st = Open3.capture2e(*vma_editor_command(EXE), "--user-dir", ud, *args)
       [out, st, Dir.children(File.join(ud, "listen"))]
     }
   end

@@ -396,7 +396,7 @@ class TestIntroPage < VmaTest
         }
       end
     RUBY
-    pid = Process.spawn(RbConfig.ruby, File.join(REPO, "exe/vimamsa"), "--user-dir", ud, *args,
+    pid = Process.spawn(*vma_editor_command(File.join(REPO, "exe/vimamsa")), "--user-dir", ud, *args,
                         out: File::NULL, err: File.join(ud, "log.txt"))
     t = Time.now
     until File.exist?(out) && File.size(out) > 0

@@ -958,8 +958,6 @@ def restart_editor
   vma.save_session
   vma.gui.save_window_layout
   vma.hook.call(:shutdown)
-  ruby = RbConfig.ruby
-  script = $PROGRAM_NAME
   message("Restarting...")
   # Signal the new instance to restore the session without prompting.
   env = { "VIMAMSA_RESTORE_SESSION" => "1" }
@@ -971,7 +969,8 @@ def restart_editor
   elsif !UserDirs.default_config_dir?(vma_user_dir)
     args = ["--user-dir", vma_user_dir]
   end
-  exec(env, ruby, script, *args)
+  # From the AppImage through its AppRun (vma_editor_command)
+  exec(env, *vma_editor_command($PROGRAM_NAME), *args)
 rescue => ex
   message("Restart failed: #{ex}")
 end
