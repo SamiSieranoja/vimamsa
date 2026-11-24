@@ -37,6 +37,16 @@ class TestAudio < VmaTest
     end
   end
 
+  # GTK without a media backend makes a GtkNoMediaFile (the optional gtk-new
+  # AppImage); add_audio then leaves the text as it is
+  def test_playback_available_check
+    load_audio
+    fake = Class.new { def self.gtype = Struct.new(:name).new("GtkNoMediaFile") }.new
+    assert_eq false, audio_playback_available?(fake)
+    real = Gtk::MediaFile.new
+    assert_eq real.class.gtype.name != "GtkNoMediaFile", audio_playback_available?(real)
+  end
+
   def test_audio_mode_keys
     ensure_disabled
     load_audio

@@ -167,6 +167,14 @@ notice could come later.
   review), and Ubuntu-centric.
 - **Docker**: not a desktop app.
 
+## Optional: newer GTK, older glibc
+
+`scripts/appimage/build.sh --gtk-new` builds a second, optional AppImage on Ubuntu
+22.04 with GTK 4.24 built from source (`Dockerfile.gtk-new`, `build_gtk_stack.sh`):
+`build/appimage-gtk-new/Vimamsa-<version>-gtk4.24-x86_64.AppImage`, needs glibc
+≥ 2.35. The default build above is unchanged. Details, versions and what was found
+while building: `doc/appimage_old_base_plan.md`.
+
 ## GTK version differences
 
 The AppImage carries its own GTK, so users always run the **build host's** GTK version,

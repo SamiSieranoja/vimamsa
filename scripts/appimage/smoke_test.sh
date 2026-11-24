@@ -3,19 +3,25 @@
 # Docker, with only the libraries any desktop provides (the ones the bundle
 # leaves to the host), and run a few test files with it.
 #   scripts/appimage/smoke_test.sh build/appimage/Vimamsa-0.1.27-x86_64.AppImage
+# SMOKE_BASE=ubuntu:22.04 tests on 22.04 instead (for the optional gtk-new
+# AppImage, which needs glibc >= 2.35; doc/appimage_old_base_plan.md).
 set -euo pipefail
 APPIMAGE="$(realpath "$1")"
 REPO="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 TESTS="${SMOKE_TESTS:-tests/test_basic_editing.rb tests/test_bundling.rb}"
+BASE="${SMOKE_BASE:-ubuntu:24.04}"
+# 24.04 renamed the ALSA library package (64-bit time_t)
+ALSA=libasound2t64
+[ "$BASE" = ubuntu:22.04 ] && ALSA=libasound2
 
 docker run --rm -v "$APPIMAGE:/app/Vimamsa.AppImage:ro" -v "$REPO/tests:/src/tests:ro" \
-  -v "$REPO/exe:/src/exe:ro" -v "$REPO/lib:/src/lib:ro" -e TESTS="$TESTS" ubuntu:24.04 bash -c '
+  -v "$REPO/exe:/src/exe:ro" -v "$REPO/lib:/src/lib:ro" -e TESTS="$TESTS" -e ALSA="$ALSA" "$BASE" bash -c '
 set -e
 apt-get update -qq >/dev/null
 DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
   xvfb xauth fonts-dejavu-core libfontconfig1 libfreetype6 libharfbuzz0b libgl1 libegl1 \
   libgles2 libx11-6 libx11-xcb1 libxcb1 libwayland-client0 libwayland-cursor0 \
-  libwayland-egl1 libasound2t64 libpulse0 >/dev/null
+  libwayland-egl1 $ALSA libpulse0 >/dev/null
 if ls /usr/lib/x86_64-linux-gnu/libgtk-4* >/dev/null 2>&1 || command -v ruby >/dev/null; then
   echo "!! test box is not clean (GTK or Ruby installed)"; exit 1
 fi

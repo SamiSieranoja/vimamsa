@@ -13,6 +13,11 @@ def restore_host_env
   return if names.nil?
   # Read on first use, so use them before the bundle paths go away
   GdkPixbuf::Pixbuf.formats if defined?(GdkPixbuf::Pixbuf)
+  # GLib reads XDG_DATA_DIRS once, on first use: make that now, so the MIME
+  # database (content type guessing) is the bundle's. gdk-pixbuf 2.42.8 (the
+  # gtk-new build) recognizes image files through it, and a host without
+  # shared-mime-info has none.
+  Gio::ContentType.guess("x.png", nil)
   Gio::SettingsSchemaSource.default
   Gio::Vfs.default
   # GStreamer may only be loaded later (the audio and dictation modules), but

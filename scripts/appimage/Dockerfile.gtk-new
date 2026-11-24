@@ -1,0 +1,46 @@
+# Build environment for the OPTIONAL "gtk-new" Vimamsa AppImage
+# (scripts/appimage/build.sh --gtk-new, doc/appimage_old_base_plan.md).
+# Ubuntu 22.04, so the bundle needs glibc >= 2.35, with GTK 4.24 and the
+# libraries it needs built from source into /opt/gtk. The default AppImage is
+# built from ./Dockerfile (Ubuntu 24.04, its own GTK 4.14) and is unchanged.
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+# Libraries that stay from 22.04 (new enough for GTK 4.24), the Ruby build deps,
+# and the tools. Not 22.04's GTK, GtkSourceView, VTE, cairo, pango, harfbuzz,
+# fontconfig, wayland or gobject-introspection -dev packages: those come from
+# /opt/gtk. (Some -dev packages here pull in 22.04's libglib2.0-dev; /opt/gtk
+# comes first on PKG_CONFIG_PATH, so the new glib is used.)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential g++-12 git pkg-config wget ca-certificates file patchelf binutils xz-utils \
+      python3 python3-pip python3-dev flex bison gperf \
+      autoconf libssl-dev libyaml-dev zlib1g-dev libffi-dev libreadline-dev libgdbm-dev libgmp-dev \
+      libexpat1-dev libxml2-dev libmount-dev libpcre2-dev liblz4-dev \
+      libfreetype-dev libpng-dev libjpeg-dev libtiff-dev libpixman-1-dev libfribidi-dev \
+      libx11-dev libxext-dev libxrender-dev libxrandr-dev libxi-dev libxcursor-dev libxdamage-dev \
+      libxfixes-dev libxinerama-dev libxkbcommon-dev libxcb1-dev libxcb-render0-dev libxcb-shm0-dev \
+      libepoxy-dev libgraphene-1.0-dev libgdk-pixbuf-2.0-dev libegl-dev libgl-dev libdrm-dev \
+      libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gir1.2-gstreamer-1.0 \
+      gir1.2-graphene-1.0 gir1.2-gdkpixbuf-2.0 \
+      gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+      adwaita-icon-theme hicolor-icon-theme librsvg2-common shared-mime-info \
+      dconf-gsettings-backend gsettings-desktop-schemas \
+      xvfb xauth
+# (apt lists kept: Ruby-GNOME gems apt-get a -dev package they find missing)
+RUN pip3 install --no-cache-dir "meson>=1.8,<2" ninja packaging
+RUN git config --system --add safe.directory '*'
+
+ENV PATH=/opt/gtk/bin:$PATH \
+    PKG_CONFIG_PATH=/opt/gtk/lib/pkgconfig:/opt/gtk/share/pkgconfig \
+    LD_LIBRARY_PATH=/opt/gtk/lib \
+    XDG_DATA_DIRS=/opt/gtk/share:/usr/local/share:/usr/share \
+    GI_TYPELIB_PATH=/opt/gtk/lib/girepository-1.0:/usr/lib/x86_64-linux-gnu/girepository-1.0 \
+    VMA_GTK_PREFIX=/opt/gtk
+
+COPY build_gtk_stack.sh /usr/local/bin/build_gtk_stack.sh
+# One layer per step, so a failed or changed step doesn't rebuild the ones before
+RUN build_gtk_stack.sh wayland wayland-protocols
+RUN build_gtk_stack.sh glib-bootstrap gobject-introspection glib
+RUN build_gtk_stack.sh fontconfig harfbuzz cairo pango
+RUN build_gtk_stack.sh gtk
+RUN build_gtk_stack.sh gtksourceview vte

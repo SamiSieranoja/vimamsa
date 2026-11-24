@@ -47,6 +47,37 @@ if [ -f "$pixdir/loaders.cache.in" ]; then
     export GDK_PIXBUF_MODULE_FILE="$pixcache"
 fi
 
+# Only in the optional gtk-new build (doc/appimage_old_base_plan.md): it bundles
+# libraries that are usually the host's (libwayland, harfbuzz, fontconfig),
+# because a 22.04 host's are too old. Where the host's copy is newer, use it
+# (its Mesa may need it): link it into a dir of its own, which goes first on
+# LD_LIBRARY_PATH. Only those links are in that dir, so no other host library
+# comes before the bundled ones.
+hob="$ARCH_LIB/vimamsa-host-or-bundled.txt"
+ldc="$(command -v ldconfig 2>/dev/null || echo /sbin/ldconfig)"
+if [ -f "$hob" ] && [ -x "$ldc" ]; then
+  hostlibs="${XDG_RUNTIME_DIR:-/tmp}/vimamsa-hostlibs-$(id -u)"
+  mkdir -p "$hostlibs" 2>/dev/null
+  n_host=0
+  while read -r name ver; do
+    [ -n "$name" ] || continue
+    rm -f "$hostlibs/$name"
+    hp="$("$ldc" -p 2>/dev/null | awk -v n="$name" '$1 == n && /x86-64/ { print $NF; exit }')"
+    { [ -n "$hp" ] && [ -e "$hp" ]; } || continue
+    real="$(readlink -f "$hp")"
+    hver="${real##*.so.}"
+    # Host newer: by version order, the larger of the two is the host's
+    if [ "$hver" != "$ver" ] && [ "$(printf '%s\n%s\n' "$ver" "$hver" | sort -V | tail -1)" = "$hver" ]; then
+      ln -sf "$real" "$hostlibs/$name" && n_host=$((n_host + 1))
+    fi
+  done < "$hob"
+  if [ "$n_host" -gt 0 ]; then
+    if [ -n "${LD_LIBRARY_PATH+x}" ]; then export VMA_HOST_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"; fi
+    VMA_APPIMAGE_ENV="$VMA_APPIMAGE_ENV LD_LIBRARY_PATH"
+    export LD_LIBRARY_PATH="$hostlibs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+  fi
+fi
+
 # ruby-lsp and rufo from the bundle (cnf.lsp.server command "ruby-lsp"),
 # without putting the bundled ruby itself first on PATH.
 export PATH="$U/lib/vimamsa/bin:$PATH"

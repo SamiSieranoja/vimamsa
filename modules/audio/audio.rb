@@ -87,6 +87,14 @@ class Audio
   end
 end
 
+# False when GTK has no media backend: Gtk::MediaFile.new then makes a
+# GtkNoMediaFile
+def audio_playback_available?(mf)
+  mf.class.gtype.name != "GtkNoMediaFile"
+rescue StandardError
+  true
+end
+
 # Inline media controls for ⟦audio:…⟧ links (hpt_scan_audio)
 class Buffer < String
   # Replace char at pos with audio widget for
@@ -95,13 +103,23 @@ class Buffer < String
     afpath = File.expand_path(afpath)
     return if !File.exist?(afpath)
 
+    # GTK built without a media backend (the optional gtk-new AppImage,
+    # doc/appimage_old_base_plan.md) gives a GtkNoMediaFile, which plays nothing
+    mf = Gtk::MediaFile.new(afpath)
+    if !audio_playback_available?(mf)
+      if !$vma_audio_no_backend_told
+        message("Audio playback isn't available in this build (GTK has no media backend)")
+        $vma_audio_no_backend_told = true
+      end
+      return
+    end
+
     vbuf = view.buffer
     itr = vbuf.get_iter_at(:offset => pos)
     itr2 = vbuf.get_iter_at(:offset => pos + 1)
     vbuf.delete(itr, itr2)
     anchor = vbuf.create_child_anchor(itr)
 
-    mf = Gtk::MediaFile.new(afpath)
     mc = Gtk::MediaControls.new(mf)
     # mc = Gtk::MediaControls.new(Gtk::MediaFile.new)
     # Thread.new{mf.play;sleep 0.01; mf.pause}

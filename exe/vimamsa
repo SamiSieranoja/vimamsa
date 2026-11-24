@@ -1,4 +1,16 @@
 #!/usr/bin/env ruby
+# Registered first, so it runs last of the at_exit handlers (they run in
+# reverse order): with $vma_skip_exit_finalizers set (see the end of this
+# file), leave without Ruby's exit-time GC finalizers, after every other
+# at_exit handler has run. Their only job left is freeing memory.
+at_exit {
+  if $vma_skip_exit_finalizers
+    $stdout.flush
+    $stderr.flush
+    code = $!.is_a?(SystemExit) ? $!.status : ($! ? 1 : 0)
+    exit!(code)
+  end
+}
 require "ripl/multi_line"
 require "tempfile"
 # Ripl.config[:multi_line_prompt] = ' > '
@@ -85,7 +97,6 @@ def vma_forward_to_running(listen_dir, text, timeout: 0.5)
   end
   true
 end
-#!/usr/bin/env ruby
 # TODO: comment char auto detection It does not work for this file. (gets //)
 # COMMENT: Describe with one line what the code does
 # COMMENT: This should be a separate function
@@ -161,3 +172,8 @@ Vimamsa::CrashHandler.setup
 # r rbvma -e "puts VMA.new.run"
 $vmag = Vimamsa::VMAgui.new()
 $vmag.run
+# Newer GTK than 4.14 (seen with 4.24, the optional gtk-new AppImage,
+# doc/appimage_old_base_plan.md): finalizing the widgets Ruby still holds,
+# after GTK has shut down, crashes in gtk_text_view_dispose. The editor has
+# quit by now (session saved), so skip the finalizers (see the top of this file).
+$vma_skip_exit_finalizers = Gtk::Version.or_later?(4, 15)

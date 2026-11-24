@@ -6,11 +6,18 @@
 #   VMA_REF       git ref to build (default HEAD), or WORKTREE for HEAD plus uncommitted
 #                 changes and new files under lib/ modules/ exe/ tests/
 #   RUBY_VERSION  Ruby to bundle (default 3.4.9; the build is cached in /build/cache)
+#   VMA_GTK_PREFIX  set only by Dockerfile.gtk-new (the optional build, see
+#                 doc/appimage_old_base_plan.md): the GTK stack built from source
+#                 there. Unset (the default build), nothing below changes.
 set -euo pipefail
 
 RUBY_VERSION="${RUBY_VERSION:-3.4.9}"
 VMA_REF="${VMA_REF:-HEAD}"
 SYSLIB=/usr/lib/x86_64-linux-gnu
+GP="${VMA_GTK_PREFIX:-}"
+# gtk-new: libraries a host may have in an older version than the bundle needs.
+# They are bundled, and AppRun uses the host's copy instead when it is newer.
+HOST_OR_BUNDLED="libwayland-client.so.0 libwayland-cursor.so.0 libwayland-egl.so.1 libharfbuzz.so.0 libfontconfig.so.1"
 B=/build
 CACHE=$B/cache
 APPDIR=$B/AppDir
@@ -60,6 +67,8 @@ GEMDIR=$(ruby -e 'print Gem.default_dir')
 step "Typelibs"
 mkdir -p "$U/lib/girepository-1.0"
 cp "$SYSLIB"/girepository-1.0/*.typelib "$U/lib/girepository-1.0/"
+# gtk-new: the rebuilt stack's typelibs replace the system's
+[ -n "$GP" ] && cp "$GP"/lib/girepository-1.0/*.typelib "$U/lib/girepository-1.0/"
 
 # ── 4. Runtime modules loaded with dlopen ──
 step "GStreamer plugins, gdk-pixbuf loaders, GIO modules"
@@ -83,6 +92,13 @@ gio-querymodules "$U/lib/gio/modules"
 # runtime, GL/Vulkan/DRM drivers, X11/xcb/Wayland client libs, fontconfig/
 # freetype/harfbuzz (tied to the host's font setup), and the sound servers.
 EXCLUDE='^(ld-linux.*|libc|libm|libmvec|libdl|libpthread|librt|libresolv|libutil|libanl|libnss_.*|libthread_db|libBrokenLocale|libstdc\+\+|libgcc_s|libGL|libGLX|libGLdispatch|libOpenGL|libEGL|libGLESv2|libgbm|libdrm|libvulkan|libX11|libX11-xcb|libxcb|libxcb-dri2|libxcb-dri3|libxcb-glx|libxcb-present|libxcb-sync|libxcb-xfixes|libICE|libSM|libwayland-client|libwayland-cursor|libwayland-egl|libwayland-server|libfontconfig|libfreetype|libharfbuzz|libasound|libjack|libpipewire-0\.3|libpulse|libpulse-simple|libpulsecommon-.*|libz|libexpat|libuuid|libcom_err|libgpg-error|libusb-1\.0)\.so'
+if [ -n "$GP" ]; then
+  # gtk-new: a 22.04 host's copies are too old for the rebuilt GTK and pango,
+  # so these are bundled (HOST_OR_BUNDLED above)
+  EXCLUDE=${EXCLUDE//libwayland-client|libwayland-cursor|libwayland-egl|/}
+  EXCLUDE=${EXCLUDE//libfontconfig|/}
+  EXCLUDE=${EXCLUDE//libharfbuzz|/}
+fi
 step "Collecting shared libraries"
 declare -A seen
 queue=()
@@ -93,7 +109,8 @@ while IFS= read -r f; do add "$f"; done < <(find "$GEMDIR" "$U/lib/ruby" "$U/lib
 # Libraries only reached through typelibs (dlopen by soname)
 for t in "$U"/lib/girepository-1.0/*.typelib; do
   for so in $(strings "$t" | grep -E '^lib.*\.so' | tr ',' ' '); do
-    if [ -e "$SYSLIB/$so" ]; then add "$SYSLIB/$so"; fi
+    if [ -n "$GP" ] && [ -e "$GP/lib/$so" ]; then add "$GP/lib/$so"
+    elif [ -e "$SYSLIB/$so" ]; then add "$SYSLIB/$so"; fi
   done
 done
 i=0
@@ -124,11 +141,29 @@ missing=$(find "$U/lib" "$U/bin" -type f \( -name '*.so*' -o -name gst-plugin-sc
   -exec sh -c 'ldd "$1" 2>/dev/null | grep "not found" | sed "s|^|$1: |"' _ {} \; | sort -u)
 if [ -n "$missing" ]; then echo "!! unresolved libraries:"; echo "$missing"; exit 1; fi
 
+if [ -n "$GP" ]; then
+  # For AppRun: each library's version (from the real file name, e.g.
+  # libwayland-client.so.0.26.0), to compare with the host's
+  : > "$U/lib/vimamsa-host-or-bundled.txt"
+  for n in $HOST_OR_BUNDLED; do
+    [ -e "$U/lib/$n" ] || continue
+    src=$(readlink -f "$GP/lib/$n" 2>/dev/null || readlink -f "$SYSLIB/$n")
+    echo "$n ${src##*.so.}" >> "$U/lib/vimamsa-host-or-bundled.txt"
+  done
+  cat "$U/lib/vimamsa-host-or-bundled.txt"
+fi
+
 # ── 6. Data files ──
 step "Data: GtkSourceView, schemas, icons, MIME database"
 mkdir -p "$U/share/glib-2.0/schemas" "$U/share/icons"
-cp -r /usr/share/gtksourceview-5 "$U/share/"
-cp /usr/share/glib-2.0/schemas/*.xml "$U/share/glib-2.0/schemas/"
+if [ -n "$GP" ]; then
+  cp -r "$GP/share/gtksourceview-5" "$U/share/"
+  # 22.04's schemas (GSettings desktop schemas) plus the rebuilt GTK's
+  cp /usr/share/glib-2.0/schemas/*.xml "$GP"/share/glib-2.0/schemas/*.xml "$U/share/glib-2.0/schemas/"
+else
+  cp -r /usr/share/gtksourceview-5 "$U/share/"
+  cp /usr/share/glib-2.0/schemas/*.xml "$U/share/glib-2.0/schemas/"
+fi
 glib-compile-schemas "$U/share/glib-2.0/schemas"
 cp -r /usr/share/icons/Adwaita /usr/share/icons/hicolor "$U/share/icons/"
 # MIME database: GIO's content type guessing, which gdk-pixbuf (image format
@@ -176,6 +211,13 @@ step "Smoke test: load the editor's libraries from the AppDir"
 xvfb-run -a sh -c 'exec env -i HOME=/tmp PATH=/usr/bin:/bin DISPLAY="$DISPLAY" XAUTHORITY="$XAUTHORITY" \
   GI_TYPELIB_PATH="$0/usr/lib/girepository-1.0" "$0/usr/bin/ruby" \
   -e "%w[gtk4 gtksourceview5 vte4 gstreamer].each { |g| require g }; Gst.init; puts %q(gems load OK)"' "$APPDIR"
+if [ -n "$GP" ]; then
+  # gtk-new: the bundled GTK is the rebuilt one, not 22.04's
+  xvfb-run -a sh -c 'exec env -i HOME=/tmp PATH=/usr/bin:/bin DISPLAY="$DISPLAY" XAUTHORITY="$XAUTHORITY" \
+    GI_TYPELIB_PATH="$0/usr/lib/girepository-1.0" "$0/usr/bin/ruby" \
+    -e "require %q(gtk4); v = Gtk::Version::STRING; puts %q(GTK ) + v; exit(v == %q($1) ? 0 : 1)"' \
+    "$APPDIR" "$(pkg-config --modversion gtk4)"
+fi
 
 step "Packing"
 # Pinned versions, checked against their SHA-256 (not the moving "continuous"
@@ -194,7 +236,10 @@ fetch https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimaget
 fetch https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-x86_64 \
   2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d "$runtime"
 chmod +x "$tool"
-out="$B/Vimamsa-$VERSION-x86_64.AppImage"
+# gtk-new: the GTK version in the name, so the two builds can't be mixed up
+suffix=""
+[ -n "$GP" ] && suffix="-gtk$(pkg-config --modversion gtk4 | cut -d. -f1,2)"
+out="$B/Vimamsa-$VERSION$suffix-x86_64.AppImage"
 # Pack to a temporary name and rename: the previous AppImage may be running
 ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "$tool" --no-appstream --runtime-file "$runtime" "$APPDIR" "$out.tmp"
 mv -f "$out.tmp" "$out"
