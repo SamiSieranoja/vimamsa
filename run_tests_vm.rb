@@ -29,12 +29,16 @@
 #   VMA_UPDATE_DOC  set to 1 to copy regenerated docs back (GENERATED_DOCS)
 #   VMA_E2E_INTERACTIVE  passed on to the guest (run_e2e_vm.sh sets it)
 #
+# One run at a time per VM: a second run waits for the first (they would share
+# the guest's source dir and desktop and break each other).
+#
 # Exit codes: the suite's 0 / 1; 2 required variable not set; 4 Guest
 # Additions not answering; 5 the guest never reached the test phase; 6 packing
 # the working tree failed.
 require "tempfile"
 require "tmpdir"
 require "fileutils"
+require "shellwords"
 require_relative "scripts/lib/script_helpers"
 include ScriptHelpers
 
@@ -43,11 +47,43 @@ GENERATED_DOCS = ["doc/vimlike_vim_conflicts.md",
                   # test_demo_replay.rb
                   *%w[basic easyjump files].map { |n| "tests/demo_records/#{n}.txt" }]
 
-# Left out of the copy sent to the guest (tar --exclude patterns)
-TAR_EXCLUDES = %w[
-  ./.git/hooks *_vma_autosave .*_vma_autosave *.gem *.o *.so *.tar.xz
-  __pycache__ *.log claude-log.* dot_git_old ./build 2del_* bug*.txt *.mp3 *.wav
+# What is sent to the guest: the tracked files, plus untracked (not ignored)
+# files under these dirs, e.g. a new test or lib file. The rest of the working
+# tree's untracked files (scratch files, perf data, AppImages) stay out.
+SOURCE_DIRS = %w[lib exe ext tests modules lang styles help scripts doc]
+# Top-level dirs left out even when tracked: nothing in the tests reads them
+# (the README's media)
+SKIP_DIRS = %w[]  # (img: gem build needs every tracked file)
+# History in the guest's .git (perf_startup ref=HEAD~N needs N < this)
+CLONE_DEPTH = 50
+# Left out even when tracked or under SOURCE_DIRS (File.fnmatch on the
+# basename)
+COPY_EXCLUDES = %w[
+  *_vma_autosave .*_vma_autosave *.gem *.o *.so *.tar.xz *.log claude-log.*
+  bug*.txt *.mp3 *.wav *.bak
 ]
+# Untracked files bigger than this are left out (with a note)
+MAX_UNTRACKED_BYTES = 2_000_000
+
+# Paths (relative to repo) to send to the guest
+def files_to_copy(repo)
+  git = ->(*a) { Open3.capture2("git", "-C", repo, *a).first.split("\0") }
+  tracked = git.("ls-files", "-z", "--cached")
+  untracked = git.("ls-files", "-z", "--others", "--exclude-standard")
+    .select { |f| SOURCE_DIRS.include?(f.split("/").first) }
+  skipped = []
+  untracked.reject! { |f|
+    big = File.size?(File.join(repo, f)).to_i > MAX_UNTRACKED_BYTES
+    skipped << f if big
+    big
+  }
+  warn "   (left out, untracked and over #{MAX_UNTRACKED_BYTES / 1_000_000} MB: #{skipped.join(", ")})" if skipped.any?
+  (tracked + untracked).uniq.select { |f|
+    b = File.basename(f)
+    File.file?(File.join(repo, f)) && !SKIP_DIRS.include?(f.split("/").first) &&
+      COPY_EXCLUDES.none? { |pat| File.fnmatch(pat, b) }
+  }
+end
 
 # --appimage FILE / --appimage-dev FILE: test an AppImage instead of a build of
 # this tree. The tests are this tree's; with --appimage-dev the code is too,
@@ -77,8 +113,20 @@ guest_home = "/home/#{user}"
 repo, ok = Open3.capture2("git", "-C", __dir__, "rev-parse", "--show-toplevel")
 repo = ok.success? ? repo.strip : __dir__
 
+# One run at a time per VM. The lock is released when this process exits.
+lock = File.open(File.join(Dir.tmpdir, "vimamsa_vm_#{vm}.lock"), File::RDWR | File::CREAT, 0o600)
+if !lock.flock(File::LOCK_EX | File::LOCK_NB)
+  other = (File.read(lock.path).strip rescue "")
+  step "Waiting for another test run in #{vm} to finish#{other.empty? ? "" : " (#{other})"}"
+  lock.flock(File::LOCK_EX)
+end
+lock.truncate(0)
+lock.write("pid #{Process.pid}, #{ARGV.empty? ? "full suite" : ARGV.join(" ")}")
+lock.flush
+
 # The password goes to VBoxManage in a chmod-600 file, so it isn't visible in
-# `ps` (the guest script gets it as SUDO_PASS through --putenv, as before).
+# `ps`. The guest script gets it the same way (a file it deletes), never on
+# a command line.
 pwfile = Tempfile.new("vma_vm_pw")
 tarball = Tempfile.new(["vimamsa_src", ".tgz"])
 begin
@@ -104,17 +152,37 @@ begin
   }
   fail!("Guest Additions not responding after 2 min. Is the guest booted and logged in?", 4) if !answered
 
-  # 2. Tarball the working tree (with .git, for `gem build`; without heavy
-  # junk). tar exits with 1 for "file changed as we read it" (e.g. .git
-  # churning during the read): only a fatal error (2 and up) aborts.
+  # 2. Tarball the working tree's source (files_to_copy) and a .git for
+  # `gem build` (git ls-files) and the tests that use history: a fresh clone
+  # of the last CLONE_DEPTH commits (packed; the repo's own .git can hold tens
+  # of MB of loose objects) with the working tree's index. tar exits with 1 for "file changed
+  # as we read it": only a fatal error (2 and up) aborts.
   step "Packing working tree"
-  system("tar", "czf", tarball.path, "-C", repo, "--warning=no-file-changed",
-         *TAR_EXCLUDES.map { |e| "--exclude=#{e}" }, ".")
-  fail!("tar failed (exit #{$?.exitstatus})", 6) if $?.exitstatus.to_i > 1
+  Dir.mktmpdir("vma_vm_pack") { |tmp|
+    list = File.join(tmp, "files")
+    File.write(list, files_to_copy(repo).join("\0"))
+    clone = File.join(tmp, "clone")
+    run!("git", "clone", "--quiet", "--no-checkout", "--depth=#{CLONE_DEPTH}", "file://#{repo}", clone,
+         label: "git clone")
+    FileUtils.cp(File.join(repo, ".git", "index"), File.join(clone, ".git", "index"))
+    tar = File.join(tmp, "src.tar")
+    system("tar", "cf", tar, "-C", repo, "--warning=no-file-changed", "--null", "-T", list)
+    fail!("tar failed (exit #{$?.exitstatus})", 6) if $?.exitstatus.to_i > 1
+    system("tar", "rf", tar, "-C", clone, ".git")
+    fail!("tar failed (exit #{$?.exitstatus})", 6) if $?.exitstatus.to_i > 1
+    system("gzip -1 -c #{tar.shellescape} > #{tarball.path.shellescape}")
+    fail!("gzip failed", 6) if !$?.success?
+  }
+  step "  #{(File.size(tarball.path) / 1e6).round(1)} MB"
 
   # 3. Copy the tarball and the guest runner into the VM (copyto overwrites).
   step "Copying source + runner into guest"
   run!(*gc, "copyto", *cred, tarball.path, "#{guest_home}/vimamsa_src.tgz", label: "VBoxManage copyto")
+  # The sudo password, in a private dir; the guest script reads and deletes it
+  # (the guest's mkdir: guestcontrol mkdir --mode doesn't give 0700)
+  run!(*gc, "run", *cred, "--exe=/bin/sh", "--", "-c",
+       "rm -rf #{guest_home}/.vma_run && mkdir -m 700 #{guest_home}/.vma_run", label: "VBoxManage run mkdir")
+  run!(*gc, "copyto", *cred, pwfile.path, "#{guest_home}/.vma_run/sudo_pass", label: "VBoxManage copyto")
   run!(*gc, "copyto", *cred, File.join(repo, "vm_guest_run.sh"), "#{guest_home}/vm_guest_run.sh",
        label: "VBoxManage copyto")
   guest_appimage = "#{guest_home}/vimamsa.AppImage"
@@ -128,7 +196,7 @@ begin
   # the guest prints, not from VBoxManage's own exit status.
   step "Running test suite in guest (DISPLAY #{display})"
   putenv = {
-    "SUDO_PASS" => ENV["VM_PASS"], "VMA_DISPLAY" => display, "VMA_TEST_ARGS" => ARGV.join(" "),
+    "SUDO_PASS_FILE" => "#{guest_home}/.vma_run/sudo_pass", "VMA_DISPLAY" => display, "VMA_TEST_ARGS" => ARGV.join(" "),
     "FORCE_PROVISION" => ENV["FORCE_PROVISION"].to_s, "VMA_E2E_INTERACTIVE" => ENV["VMA_E2E_INTERACTIVE"].to_s,
     "VMA_UPDATE_DOC" => ENV["VMA_UPDATE_DOC"].to_s,
     "VMA_APPIMAGE" => appimage ? guest_appimage : "", "VMA_APPIMAGE_DEV" => appimage_dev ? "1" : "",

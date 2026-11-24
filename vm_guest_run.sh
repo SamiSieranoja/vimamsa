@@ -5,7 +5,8 @@
 # desktop (DISPLAY :0) so the GTK window actually appears in the VM.
 #
 # Env (passed via `guestcontrol run --putenv`):
-#   SUDO_PASS       guest sudo password (used with `sudo -S`; never written to disk)
+#   SUDO_PASS_FILE  file holding the guest sudo password (used with `sudo -S`);
+#                   read and deleted at the start. (SUDO_PASS still works.)
 #   VMA_DISPLAY     X display of the logged-in desktop session (default :0)
 #   VMA_TEST_ARGS   optional args forwarded to exe/run_tests.rb (test filters)
 #   FORCE_PROVISION set to 1 to re-run apt/gem provisioning even if the marker exists
@@ -16,7 +17,13 @@ set -euo pipefail
 SRC_TGZ="$HOME/vimamsa_src.tgz"
 DEST="$HOME/vimamsa"
 MARKER="$HOME/.vimamsa_vm_provisioned"
+# Last build of the native extension, reused while its sources are unchanged
+BUILD_CACHE="$HOME/.vma_build_cache"
 
+if [ -n "${SUDO_PASS_FILE:-}" ] && [ -f "$SUDO_PASS_FILE" ]; then
+  SUDO_PASS="$(cat "$SUDO_PASS_FILE")"
+  rm -f "$SUDO_PASS_FILE"
+fi
 sudo_do() { echo "${SUDO_PASS:-}" | sudo -S -p '' "$@"; }
 
 # 1. Unpack the synced working tree fresh each run.
@@ -101,6 +108,19 @@ else
   # 3. Build + install the gem. Compiles ext/vmaext and (first run) installs the
   #    ruby-gnome gems and the external StrIdx C++ gem. Copy the built .so back into
   #    the tree so `require "vmaext"` resolves when running from source.
+  #    Skipped while the extension's sources, the gemspec and the Gemfile are
+  #    the same as at the last build: the tests run from source, so only the
+  #    compiled .so (and the resolved bundle) come from the build.
+  build_key="$( (ruby -v; cat vimamsa.gemspec Gemfile; git ls-files -z ext/vmaext | sort -z | xargs -0 cat) | sha256sum | cut -d' ' -f1)"
+  if [ "${FORCE_PROVISION:-}" != "1" ] && [ -f "$MARKER" ] \
+     && [ "$(cat "$BUILD_CACHE/key" 2>/dev/null)" = "$build_key" ] \
+     && [ -f "$BUILD_CACHE/vmaext.so" ]; then
+    echo ">> Extension unchanged since the last build: reusing it (rm -rf $BUILD_CACHE to rebuild)"
+    cp "$BUILD_CACHE/vmaext.so" lib/
+    # The guest's resolved bundle (the synced Gemfile.lock is the host's)
+    rm -f Gemfile.lock
+    if [ -f "$BUILD_CACHE/Gemfile.lock" ]; then cp "$BUILD_CACHE/Gemfile.lock" Gemfile.lock; fi
+  else
   echo ">> Building and installing the vimamsa gem"
   rm -f vimamsa-0.1.*.gem
   gem build vimamsa.gemspec
@@ -125,6 +145,12 @@ else
   # installing only what's missing (e.g. the development dependencies).
   rm -f Gemfile.lock
   bundle check >/dev/null 2>&1 || sudo_do bundle install
+  mkdir -p "$BUILD_CACHE"
+  cp lib/vmaext.so "$BUILD_CACHE/"
+  rm -f "$BUILD_CACHE/Gemfile.lock"
+  if [ -f Gemfile.lock ]; then cp Gemfile.lock "$BUILD_CACHE/"; fi
+  echo "$build_key" > "$BUILD_CACHE/key"
+  fi
 fi
 
 # 4. Run the suite on the real desktop (no --headless: the window shows on-screen).
