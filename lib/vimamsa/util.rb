@@ -11,6 +11,18 @@ def draw_cursor_bug_workaround()
   end
 end
 
+def running_wayland?
+  sess = ENV["DESKTOP_SESSION"]
+  sess ||= ENV["XDG_SESSION_DESKTOP"]
+  sess ||= ENV["GDMSESSION"]
+  sess ||= ""
+  if sess.match(/wayland/)
+    return true
+  else
+    return false
+  end
+end
+
 # True when the editor was started by exe/run_tests.rb (--test). Used to skip
 # dialogs the user did not ask for (session restore, autosave found, reload
 # from disk): a modal popup grabs the keyboard, so it would swallow the keys an
@@ -129,6 +141,24 @@ def exec_cmd(bin_name, arg1 = nil, arg2 = nil, arg3 = nil, arg4 = nil, arg5 = ni
 
   ret_str = p[1].read
   return ret_str
+end
+
+def pipe_to_external(program, text)
+  # Open a pipe to the external program
+  IO.popen(program, "r+") do |pipe|
+    # Send the text to the program
+    pipe.write(text)
+    pipe.close_write # Close the write end to signal EOF to the program
+    # Read and return the output from the program
+    output = pipe.read
+    return output
+  end
+rescue Errno::ENOENT
+  puts "Error: The program '#{program}' was not found."
+  nil
+rescue => e
+  puts "An error occurred: #{e.message}"
+  nil
 end
 
 def mkdir_if_not_exists(_dirpath)

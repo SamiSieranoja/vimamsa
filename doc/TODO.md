@@ -18,15 +18,6 @@ Filter: get numbers, To LaTeX itemize and Delete selection. Those actions exist:
 `sel.latex_itemize`, `sel.delete`. Consider adding some of them (and "Execute in
 terminal" for the selected text, which it also had).
 
-### Bug: Cut in the context menu doesn't cut a mouse selection
-
-Select text with the mouse, right-click, choose Cut: the text stays in the buffer
-(reported 2026-11-24). The menu item runs `sel.cut` (`CONTEXT_MENU_ITEMS_SELECTION`
-in `gui_sourceview.rb`), which is `buf.delete(SELECTION)` (`key_actions.rb`). Add a
-test that makes a mouse selection (as the drag handler in `gui_sourceview.rb` does:
-`start_selection` + visual mode), runs the context menu action, and checks that the
-text is gone and on the clipboard.
-
 ### Record demos; form input through the key bindings
 
 Record a demo like a macro, into the demo step format, by capturing keys in

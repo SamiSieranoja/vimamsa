@@ -126,6 +126,7 @@ def cnf_set(key, val)
 end
 
 cnf.indent_based_on_last_line = true
+cnf.extensions_to_open = [".txt", ".h", ".c", ".cpp", ".hpp", ".rb", ".inc", ".php", ".sh", ".m", ".gd", ".js", ".py"]
 cnf.default_search_extensions = ["txt", "rb"]
 
 cnf.log.verbose = 1

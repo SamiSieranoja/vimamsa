@@ -73,6 +73,10 @@ class FileFinder
     }
   end
 
+  def updating?
+    @@idx_updating
+  end
+
   def update_search_idx
     FileFinder.update_search_idx
   end
