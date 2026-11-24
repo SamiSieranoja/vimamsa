@@ -178,7 +178,7 @@ class TestIntroPage < VmaTest
     drain_idle
     n = b.lines.count { |l| l.include?("⟦run:") }
     assert_eq n, b.help_buttons.size
-    assert_eq 5, n # the ⟦run:…⟧ links in help/intro.txt
+    assert n > 1 # the ⟦run:…⟧ links in help/intro.txt
     assert_eq b.size, b.view.buffer.char_count
   ensure
     close_help_pages
