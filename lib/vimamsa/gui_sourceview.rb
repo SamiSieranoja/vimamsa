@@ -188,7 +188,12 @@ class VSourceView < GtkSource::View
     if to_remove.size > 0
       to_remove.each { |x|
         # To avoid GC. https://github.com/ruby-gnome/ruby-gnome/issues/15790
-        @removed_controllers << x
+        # Global, not per view: GtkTextView keeps a pointer to its drag
+        # gesture, and GTK 4.24's gtk_text_view_dispose uses it. Kept with the
+        # view, a closed buffer's view and its gestures become garbage
+        # together and may be freed gesture first: a segfault in
+        # gtk_gesture_is_active. A few small objects per closed buffer.
+        $removed_controllers << x
         self.remove_controller(x)
       }
     end
