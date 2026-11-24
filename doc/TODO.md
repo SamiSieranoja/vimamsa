@@ -619,7 +619,7 @@ Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines
   discarded). Session split into inline/review sinks. Plan: `doc/dictation_code_review_plan.md`;
   tests in `tests/test_dictation.rb`.
 
-- **`vimamsa --wait FILE` for git's core.editor** (2026-11-24): opens FILE in
+- **`vimamsa --wait FILE` for git's core.editor** (2026-11-24, `936e8fe`): opens FILE in
   the running editor (or starts one in the background) and returns when its buffer is
   closed or the editor quits (`lib/vimamsa/wait_files.rb`). Tests in `tests/test_wait_files.rb`.
 
