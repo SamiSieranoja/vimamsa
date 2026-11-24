@@ -613,6 +613,9 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
+- **Function panel click keeps the editor focus** (2026-11-24, `4f65838`): clicking a function or
+  heading moved the cursor but left the focus in the panel, so the cursor wasn't drawn.
+
 - **LSP servers per project, started in the background** (2026-11-24, `23c0c14`): a server that
   can't start in one project (`bundle exec ruby-lsp` without a Gemfile) no longer disables the
   language everywhere; opening files (session restore) doesn't wait for a server to start.
