@@ -107,7 +107,10 @@ their new places at the first start.
 
 ## Demo
 
-https://github.com/user-attachments/assets/701f7dad-2b56-47b7-aad7-c57f8647419a6
+
+https://github.com/user-attachments/assets/fd904082-c0ea-4426-b002-1e26072ea5f8
+
+
 
 Moving with `h j k l` and `w e b`, `y y p`, `d d`, undo `u` / redo `ctrl-r`,
 typing in Insert mode and back to Command mode with `ctrl` (press and release
