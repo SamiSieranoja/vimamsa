@@ -129,7 +129,7 @@ class BufferList
     reset_navigation if update_history
     vma.gui.set_current_buffer(idx)
     vma.gui.file_panel_refresh
-    vma.gui.func_panel_refresh
+    vma.gui.outline_panel_refresh
 
     vma.buf.refresh_title
 

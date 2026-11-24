@@ -182,7 +182,7 @@ end
 
 class VMAgui
   attr_accessor :buffers, :sw1, :sw2, :view, :buf1, :window, :delex, :statnfo, :overlay, :sws, :two_c, :scheme_is_light, :cyber_css_provider, :chrome_css_provider, :minibuf_css_provider, :orig_icon_theme
-  attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel, :func_panel, :keylog_panel, :keytrail, :cmd_line
+  attr_reader :two_column, :windows, :subtitle, :app, :active_window, :action_trail_label, :file_panel, :outline_panel, :keylog_panel, :keytrail, :cmd_line
 
   def initialize()
     @two_column = false
@@ -705,7 +705,7 @@ class VMAgui
 
       init_header_bar
       file_panel_init
-      func_panel_init
+      outline_panel_init
       keylog_panel_init
 
       # Size the window before it is first shown (see apply_startup_window_size)
@@ -874,8 +874,8 @@ class VMAgui
     @pane.set_start_child(nil)
     @pane.set_end_child(nil)
 
-    if @func_panel_shown
-      @func_panel_pane.set_end_child(w1[:overlay])
+    if @outline_panel_shown
+      @outline_panel_pane.set_end_child(w1[:overlay])
     elsif @file_panel_shown
       @file_panel_pane.set_end_child(w1[:overlay])
     else
@@ -926,11 +926,11 @@ class VMAgui
     # Remove overlay from its current parent and add the Gtk::Paned instead
     @pane = Gtk::Paned.new(:horizontal)
     @pane.set_position(@column_split) if @column_split.to_i > 0
-    if @func_panel_shown
-      @func_panel_pane.set_end_child(nil)
+    if @outline_panel_shown
+      @outline_panel_pane.set_end_child(nil)
       @pane.set_start_child(w2[:overlay])
       @pane.set_end_child(w1[:overlay])
-      @func_panel_pane.set_end_child(@pane)
+      @outline_panel_pane.set_end_child(@pane)
     elsif @file_panel_shown
       @file_panel_pane.set_end_child(nil)
       @pane.set_start_child(w2[:overlay])
@@ -1145,9 +1145,9 @@ class VMAgui
 
   def show_file_panel
     return if @file_panel_shown
-    # If func panel is shown it sits in minibuf_vpane; wrap it too
-    inner = if @func_panel_shown
-      @func_panel_pane
+    # If the outline panel is shown it sits in minibuf_vpane; wrap it too
+    inner = if @outline_panel_shown
+      @outline_panel_pane
     elsif @two_column
       @pane
     else
@@ -1177,18 +1177,18 @@ class VMAgui
     save_window_layout
   end
 
-  def func_panel_init
-    @func_panel = FuncPanel.new
-    @func_panel_shown = false
+  def outline_panel_init
+    @outline_panel = OutlinePanel.new
+    @outline_panel_shown = false
   end
 
-  def func_panel_refresh
-    return unless @func_panel_shown
-    @func_panel.refresh
+  def outline_panel_refresh
+    return unless @outline_panel_shown
+    @outline_panel.refresh
   end
 
-  def show_func_panel
-    return if @func_panel_shown
+  def show_outline_panel
+    return if @outline_panel_shown
     if @file_panel_shown
       inner = @file_panel_pane.end_child
       @file_panel_pane.set_end_child(nil)
@@ -1199,32 +1199,32 @@ class VMAgui
       inner = @windows[1][:overlay]
       @minibuf_vpane.set_start_child(nil)
     end
-    @func_panel_pane = make_side_pane(@func_panel.widget, inner, @func_panel_width || PANEL_DEFAULT_WIDTH[:func_panel])
+    @outline_panel_pane = make_side_pane(@outline_panel.widget, inner, @outline_panel_width || PANEL_DEFAULT_WIDTH[:outline_panel])
     if @file_panel_shown
-      @file_panel_pane.set_end_child(@func_panel_pane)
+      @file_panel_pane.set_end_child(@outline_panel_pane)
     else
-      set_editor_area(@func_panel_pane)
+      set_editor_area(@outline_panel_pane)
     end
-    @func_panel_shown = true
-    @func_panel.refresh
+    @outline_panel_shown = true
+    @outline_panel.refresh
   end
 
-  def hide_func_panel
-    return unless @func_panel_shown
-    @func_panel_width = @func_panel_pane.position
-    inner = @func_panel_pane.end_child
-    @func_panel_pane.set_start_child(nil)
-    @func_panel_pane.set_end_child(nil)
+  def hide_outline_panel
+    return unless @outline_panel_shown
+    @outline_panel_width = @outline_panel_pane.position
+    inner = @outline_panel_pane.end_child
+    @outline_panel_pane.set_start_child(nil)
+    @outline_panel_pane.set_end_child(nil)
     if @file_panel_shown
       @file_panel_pane.set_end_child(inner)
     else
       set_editor_area(inner)
     end
-    @func_panel_shown = false
+    @outline_panel_shown = false
   end
 
-  def toggle_func_panel
-    @func_panel_shown ? hide_func_panel : show_func_panel
+  def toggle_outline_panel
+    @outline_panel_shown ? hide_outline_panel : show_outline_panel
     save_window_layout
   end
 
@@ -1234,7 +1234,7 @@ class VMAgui
   end
 
   # The key log wraps @minibuf_vpane at the grid level (right side), so it is
-  # independent of the file/func panel and two-column nesting, which only
+  # independent of the file/outline panel and two-column nesting, which only
   # touch @minibuf_vpane's start child.
   def show_keylog_panel
     return if @keylog_shown
@@ -1286,8 +1286,8 @@ class VMAgui
   EDITOR_MIN_WIDTH = 300
   WINDOW_MIN_SIZE = 600
   DEFAULT_WINDOW_SIZE = [1000, 800]
-  PANEL_DEFAULT_WIDTH = { :file_panel => 180, :func_panel => 160, :keylog => 320 }
-  SIDE_PANELS = [:file_panel, :func_panel, :keylog]
+  PANEL_DEFAULT_WIDTH = { :file_panel => 180, :outline_panel => 160, :keylog => 320 }
+  SIDE_PANELS = [:file_panel, :outline_panel, :keylog]
 
   def layout_enabled?
     !vma_test_mode? && cnf.restore_layout? != false
@@ -1318,8 +1318,8 @@ class VMAgui
     @file_panel_shown ? @file_panel_pane.position : @file_panel_width
   end
 
-  def func_panel_width
-    @func_panel_shown ? @func_panel_pane.position : @func_panel_width
+  def outline_panel_width
+    @outline_panel_shown ? @outline_panel_pane.position : @outline_panel_width
   end
 
   def keylog_width
@@ -1358,7 +1358,7 @@ class VMAgui
     {
       :width => width, :height => height, :maximized => max, :win_width => win_w,
       :file_panel => part.(@file_panel_shown, file_panel_width),
-      :func_panel => part.(@func_panel_shown, func_panel_width),
+      :outline_panel => part.(@outline_panel_shown, outline_panel_width),
       :keylog => part.(@keylog_shown, keylog_width),
       :two_column => part.(@two_column, @two_column ? @pane.position : @column_split),
       :column2_file => (w2.respond_to?(:bufo) ? w2.bufo.fname : nil),
@@ -1369,7 +1369,12 @@ class VMAgui
   def load_layouts
     f = get_data_path(LAYOUT_FILE)
     h = File.exist?(f) ? Marshal.load(File.binread(f)) : {}
-    h.class == Hash ? h : {}
+    return {} if h.class != Hash
+    # Saved before the function panel was renamed outline panel (2026-11-25)
+    h.each_value { |l|
+      l[:outline_panel] ||= l.delete(:func_panel) if l.class == Hash && l.key?(:func_panel)
+    }
+    h
   rescue => ex
     debug "load_layouts failed: #{ex}"
     {}
@@ -1439,7 +1444,7 @@ class VMAgui
     side = ->() {
       SIDE_PANELS.sum { |k| l[k][:shown] ? (l[k][:width] || PANEL_DEFAULT_WIDTH[k]) : 0 }
     }
-    [:keylog, :func_panel, :file_panel].each { |k|
+    [:keylog, :outline_panel, :file_panel].each { |k|
       break if eff - side.() >= EDITOR_MIN_WIDTH
       l[k][:shown] = false
     }
@@ -1522,23 +1527,23 @@ class VMAgui
 
   # Show the columns and panels of layout l (from window_layout or
   # fit_view_layout) with their widths. Columns go first: show_file_panel /
-  # show_func_panel wrap whatever is in the editor area.
+  # show_outline_panel wrap whatever is in the editor area.
   def apply_view_layout(l)
     got = ->(k) { l[k] || {} }
     @column_split = got.(:two_column)[:width] || @column_split
     @file_panel_width = got.(:file_panel)[:width] || @file_panel_width
-    @func_panel_width = got.(:func_panel)[:width] || @func_panel_width
+    @outline_panel_width = got.(:outline_panel)[:width] || @outline_panel_width
     @keylog_width = got.(:keylog)[:width] || @keylog_width
     @minibuf_history_height = l[:minibuf_history_height] if l[:minibuf_history_height]
 
     got.(:two_column)[:shown] ? set_two_column : set_one_column
-    got.(:func_panel)[:shown] ? show_func_panel : hide_func_panel
+    got.(:outline_panel)[:shown] ? show_outline_panel : hide_outline_panel
     got.(:file_panel)[:shown] ? show_file_panel : hide_file_panel
     got.(:keylog)[:shown] ? show_keylog_panel : hide_keylog_panel
     # Already shown panels keep their old widths otherwise
     @pane.set_position(@column_split) if @two_column && @column_split.to_i > 0
     @file_panel_pane.set_position(@file_panel_width) if @file_panel_shown && @file_panel_width.to_i > 0
-    @func_panel_pane.set_position(@func_panel_width) if @func_panel_shown && @func_panel_width.to_i > 0
+    @outline_panel_pane.set_position(@outline_panel_width) if @outline_panel_shown && @outline_panel_width.to_i > 0
     set_keylog_width(@keylog_width) if @keylog_shown && @keylog_width.to_i > 0
     @column2_file = l[:column2_file]
     restore_column2_buffer

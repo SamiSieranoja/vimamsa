@@ -8,7 +8,7 @@ class TestWindowLayout < VmaTest
   needs_desktop "a window manager (maximize, unmaximize)"
 
   OFF = { :shown => false }
-  PLAIN = { :two_column => OFF, :file_panel => OFF, :func_panel => OFF, :keylog => OFF }
+  PLAIN = { :two_column => OFF, :file_panel => OFF, :outline_panel => OFF, :keylog => OFF }
 
   def gui
     vma.gui
@@ -28,11 +28,11 @@ class TestWindowLayout < VmaTest
   end
 
   def view_parts(l)
-    [:two_column, :file_panel, :func_panel].map { |k| [l[k][:shown], l[k][:width]] }
+    [:two_column, :file_panel, :outline_panel].map { |k| [l[k][:shown], l[k][:width]] }
   end
 
   def test_round_trip_columns_and_panels
-    l = PLAIN.merge(:two_column => shown(300), :file_panel => shown(150), :func_panel => shown(140))
+    l = PLAIN.merge(:two_column => shown(300), :file_panel => shown(150), :outline_panel => shown(140))
     with_layout(l) {
       got = gui.window_layout
       assert_eq [[true, 300], [true, 150], [true, 140]], view_parts(got)
@@ -97,7 +97,7 @@ class TestWindowLayout < VmaTest
 
   SAVED = { :width => 1800, :height => 1100, :maximized => true, :win_width => 1920,
             :file_panel => { :shown => true, :width => 480, :frac => 0.25 },
-            :func_panel => { :shown => true, :width => 192, :frac => 0.1 },
+            :outline_panel => { :shown => true, :width => 192, :frac => 0.1 },
             :keylog => { :shown => false },
             :two_column => { :shown => true, :width => 600, :frac => 0.3125 } }
 
@@ -116,11 +116,11 @@ class TestWindowLayout < VmaTest
 
   def test_editor_keeps_minimum_width
     narrow = SAVED.merge(:file_panel => { :shown => true, :width => 480, :frac => 0.5 },
-                         :func_panel => { :shown => true, :width => 300, :frac => 0.3 })
+                         :outline_panel => { :shown => true, :width => 300, :frac => 0.3 })
     l = gui.fit_view_layout(narrow, 1000, 700, false)       # window 900 wide
     assert_eq 900, l[:width]
     assert_eq [true, 450], [l[:file_panel][:shown], l[:file_panel][:width]]
-    assert_eq false, l[:func_panel][:shown], "func panel should be hidden, not squeeze the editor"
+    assert_eq false, l[:outline_panel][:shown], "outline panel should be hidden, not squeeze the editor"
     assert 900 - 450 >= VMAgui::EDITOR_MIN_WIDTH
   end
 

@@ -240,6 +240,8 @@ class Buffer < String
   def set_language(lang_id)
     @lang = lang_id
     gui_set_file_lang(@id, @lang)
+    # The outline depends on the language (headings vs. LSP functions)
+    vma.gui.outline_panel_refresh if vma.buf.equal?(self)
   end
 
   def view()
@@ -2094,7 +2096,7 @@ class Buffer < String
       apath = autosave_path
       diff_str = run_cmd("diff -u #{Shellwords.escape(@fname)} #{Shellwords.escape(apath)}")
       create_new_file(nil, diff_str.empty? ? "(no differences)\n" : diff_str)
-      gui_set_file_lang(vma.buf.id, "diff") unless diff_str.empty?
+      vma.buf.set_language("diff") unless diff_str.empty?
       check_autosave_load
     elsif x["delete_btn"] == "submit"
       delete_autosave_file

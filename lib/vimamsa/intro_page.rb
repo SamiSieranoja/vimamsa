@@ -117,7 +117,7 @@ def show_help_page(name)
   b = create_new_buffer(help_page_text(name), name)
   b.help_page = name
   b.read_only = true
-  gui_set_file_lang(b.id, "hyperplaintext")
+  b.set_language("hyperplaintext")
   b.set_pos(0)
   help_add_run_buttons(b)
   hpt_hide_marks(b)

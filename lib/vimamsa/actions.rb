@@ -184,9 +184,12 @@ ACTION_ALIASES = {
   extract_file_links: "file.links",
   # panel namespace (2026-11-20)
   toggle_file_panel: "panel.files.toggle",
-  toggle_func_panel: "panel.funcs.toggle",
+  toggle_func_panel: "panel.outline.toggle",
   toggle_keylog_panel: "panel.keylog.toggle",
-  refresh_func_panel: "panel.funcs.refresh",
+  refresh_func_panel: "panel.outline.refresh",
+  # function panel renamed outline panel (2026-11-25)
+  "panel.funcs.toggle": "panel.outline.toggle",
+  "panel.funcs.refresh": "panel.outline.refresh",
   file_panel_next_file: "panel.files.next",
   file_panel_prev_file: "panel.files.prev",
   file_panel_easy_jump: "panel.files.jump",

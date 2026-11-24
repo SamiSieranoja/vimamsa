@@ -1,8 +1,9 @@
 
 module Vimamsa
-# Left-side panel that displays LSP-provided functions/methods for the current buffer,
-# grouped by the class or module they belong to.
-class FuncPanel
+# Side panel with the outline of the current buffer: headings of hyperplaintext
+# (❙title❙, ◼ heading) and Markdown (# heading) text, else the functions/methods
+# the LSP server reports, grouped by the class or module they belong to.
+class OutlinePanel
   COL_NAME = 0  # Tree column index: display name (class name or function name)
   COL_LINE = 1  # Tree column index: 1-based line number to jump to; 0 = not a jump target
 
@@ -34,7 +35,7 @@ class FuncPanel
     @tree.focusable = false
     sw.vexpand = true
 
-    header = Gtk::Label.new("<span weight='ultrabold'>Functions</span> (click to jump)")
+    header = Gtk::Label.new("<span weight='ultrabold'>Outline</span> (click to jump)")
     header.use_markup = true
 
     header.xalign = 0.0
@@ -55,23 +56,29 @@ class FuncPanel
     @box
   end
 
-  # Asynchronously fetch functions from the LSP server and repopulate @store.
-  # The LSP call runs in a background thread; the GTK update is marshalled back
-  # to the main thread via GLib::Idle.add to avoid threading issues.
+  # Repopulate @store. Headings come from the text itself, so they work for
+  # generated buffers without a file too (the key bindings page). Functions
+  # are fetched from the LSP server in a background thread; the GTK update is
+  # marshalled back to the main thread via GLib::Idle.add.
   def refresh
     buf = vma.buf
-    unless buf&.fname
-      set_placeholder("(no file)")
-      return
-    end
-    if hyperplaintext_buffer?(buf)
-      entries = hyperplaintext_outline_entries(buf)
+    return set_placeholder("(no file)") if buf.nil?
+    entries = if hyperplaintext_buffer?(buf)
+        hyperplaintext_outline_entries(buf)
+      elsif markdown_buffer?(buf)
+        markdown_outline_entries(buf)
+      end
+    if entries
       @store.clear
       if entries.empty?
         set_placeholder("(no headings)")
       else
-        populate_hyperplaintext(entries)
+        populate_headings(entries)
       end
+      return
+    end
+    unless buf.fname
+      set_placeholder("(no file)")
       return
     end
     # LangSrv is only defined when LSP is enabled (require guarded in
@@ -132,13 +139,12 @@ class FuncPanel
     @tree.expand_all  # show all classes expanded by default
   end
 
-  def populate_hyperplaintext(entries)
+  # A heading goes under the nearest heading above it of a lower level
+  # ("#" then "###": the "###" goes under the "#")
+  def populate_headings(entries)
     parents = {}
     entries.each do |entry|
-      parent = nil
-      if entry[:level] > 0
-        parent = parents[entry[:level] - 1]
-      end
+      parent = parents.select { |level, _iter| level < entry[:level] }.max_by(&:first)&.last
       row = @store.append(parent)
       row[COL_NAME] = entry[:name]
       row[COL_LINE] = entry[:line]
@@ -150,6 +156,34 @@ class FuncPanel
 
   def hyperplaintext_buffer?(buf)
     buf.lang == "hyperplaintext" || buf.fname&.end_with?(".txt")
+  end
+
+  def markdown_buffer?(buf)
+    buf.lang == "markdown" || !!buf.fname&.match?(/\.(md|markdown)\z/i)
+  end
+
+  # ATX headings (# … ######), not inside ``` / ~~~ code blocks
+  def markdown_outline_entries(buf)
+    entries = []
+    fence = nil
+    buf.to_s.each_line.with_index(1) do |line, line_no|
+      line = line.chomp
+      if (m = line.match(/\A {0,3}(`{3,}|~{3,})/))
+        if fence.nil?
+          fence = m[1][0]
+        elsif m[1][0] == fence
+          fence = nil
+        end
+        next
+      end
+      next if fence
+      m = line.match(/\A {0,3}(\#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*\z/)
+      next unless m
+      name = m[2].strip
+      next if name.empty?
+      entries << { name: name, line: line_no, level: m[1].length - 1 }
+    end
+    entries
   end
 
   def hyperplaintext_outline_entries(buf)

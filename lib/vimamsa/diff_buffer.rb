@@ -107,7 +107,7 @@ def diff_buffer()
   infile.close; infile.unlink
   origfile.close; origfile.unlink
   create_new_buffer(bufstr, "diff-unsaved-#{File.basename(orig_path.to_s)}")
-  gui_set_file_lang(vma.buf.id, "diff")
+  vma.buf.set_language("diff")
   vma.kbd.set_mode(:diffview)
 end
 
@@ -181,7 +181,7 @@ def git_diff_w()
 
   create_new_buffer(bufstr, "gitdiff-#{File.basename(git_root)}")
   vma.buf.git_root = git_root
-  gui_set_file_lang(vma.buf.id, "diff")
+  vma.buf.set_language("diff")
   vma.kbd.set_mode(:diffview)
 end
 
@@ -207,7 +207,7 @@ def git_diff_buffer()
   end
   create_new_buffer(bufstr, "gitdiff-#{File.basename(fname)}")
   vma.buf.git_root = git_root
-  gui_set_file_lang(vma.buf.id, "diff")
+  vma.buf.set_language("diff")
   vma.kbd.set_mode(:diffview)
 end
 

@@ -12,7 +12,7 @@ def show_free_key_bindings()
   kbd_s << vma.kbd.get_free_bindings
   kbd_s << "\n"
   b = create_new_buffer(kbd_s, "free-key-bindings")
-  gui_set_file_lang(b.id, "hyperplaintext")
+  b.set_language("hyperplaintext")
 end
 
 # Categories of the key bindings page, in page order: [id, heading]
@@ -260,7 +260,7 @@ end
 
 def show_key_bindings()
   b = create_new_buffer(key_bindings_page, "key-bindings")
-  gui_set_file_lang(b.id, "hyperplaintext")
+  b.set_language("hyperplaintext")
 end
 
 # ── Vim keymap vs vimlike keymap ─────────────────────────────────────────────
@@ -479,6 +479,6 @@ end
 def show_vim_binding_conflicts
   live = (cnf.keybindings.scheme! || "vimlike") == "vimlike"
   b = create_new_buffer(vim_binding_conflicts_report(vim_binding_conflicts(live ? vma.kbd : nil)), "vim-binding-conflicts")
-  gui_set_file_lang(b.id, "markdown")
+  b.set_language("markdown")
 end
 end # module Vimamsa

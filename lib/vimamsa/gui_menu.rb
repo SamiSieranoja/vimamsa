@@ -74,7 +74,7 @@ module Vimamsa
       add_to_menu "View.SelectLanguage", { :label => "Set buffer language...", :action => "buf.language" }
       add_to_menu "View.TwoColumn", { :label => "Toggle two column mode", :action => "view.columns.toggle" }
       add_to_menu "View.FilePanel", { :label => "Toggle file panel", :action => "panel.files.toggle" }
-      add_to_menu "View.FuncPanel", { :label => "Toggle function panel (LSP)", :action => "panel.funcs.toggle" }
+      add_to_menu "View.OutlinePanel", { :label => "Toggle outline panel", :action => "panel.outline.toggle" }
       add_to_menu "View.KeyLog", { :label => "Toggle key log panel", :action => "panel.keylog.toggle" }
       add_to_menu "View.MsgHistory", { :label => "Message history", :action => "help.messages" }
 
