@@ -8,6 +8,16 @@ the git ref(s), as a short commit hash or a range.
 
 ## Open
 
+### Context menu: more items for a selection
+
+With a selection, the right-click menu has only Copy and Cut
+(`CONTEXT_MENU_ITEMS_SELECTION`, `gui_sourceview.rb`). The removed, never-called
+`Buffer#context_menu_items` (unused-code Tier A, 2026-11-24) also had Join lines, Sort,
+Filter: get numbers, To LaTeX itemize and Delete selection. Those actions exist:
+`sel.join`, `sel.convert.sortlines`, `sel.convert.getnums_on_lines`,
+`sel.latex_itemize`, `sel.delete`. Consider adding some of them (and "Execute in
+terminal" for the selected text, which it also had).
+
 ### Bug: Cut in the context menu doesn't cut a mouse selection
 
 Select text with the mouse, right-click, choose Cut: the text stays in the buffer
@@ -27,9 +37,9 @@ Plan: `doc/demo_recording_plan.md`.
 
 ### Faster startup
 
-About 0.9 s of a 2.6–3.0 s startup can be saved. The biggest item: the red-colors gem,
-which cairo requires, builds every colormap when loaded (0.6–0.8 s); it can be loaded
-only when it is used. Plan: `doc/startup_speed_plan.md`.
+Items 1 and 2 of `doc/startup_speed_plan.md` are done (red-colors loaded on first use,
+no GC while starting: 3.53 s → 2.74 s in the test VM, see DONE). Left: items 3-7,
+starting with loading openssl only when it is needed. They save about 0.15 s together.
 
 ### Easy jump: line-start labels in the gutter
 
@@ -48,81 +58,40 @@ they're shown, the code under them can't be read: `AA` covers `# E`, `DD` covers
 ### Descriptive names for key bindings that lack one
 
 Mostly done: every binding now runs a named action (the dotted action ids, see
-"Consistent, hierarchical action names"), and the key bindings page, key log and
+"Consistent, hierarchical action names" in DONE), and the key bindings page, key log and
 toolbar show its description. Left: seven actions are registered with an empty
 description, so they show as bare ids: `bmark.select`, `bmark.delete`, `bmgr.select`,
 `bmgr.close`, `fexp.select`, `buf.history.prev` and `buf.diff`
 (`grep -rn 'reg_act(.*, "")' lib modules`).
 
-### More Vim bindings: counts after operators, missing operator + motion combinations
+### More Vim bindings: missing motions and Visual modes
 
-The full design is step 1 of `doc/vim_compatibility_plan.md` (a generic operator +
-motion layer). The gap list is in `doc/missing_vim_bindings.md`. This item tracks the
-concrete bindings, ordered by usefulness and cost.
+The operator + motion layer (`2f4a6bc`, `vim_operators.rb`; step 1 of
+`doc/vim_compatibility_plan.md`) did the counts after operators (`d 3 w`) and the
+operator + motion combinations, with the motions `W` `B` `E` `t` `T` and marks.
+Named registers (`" <char>`) exist too. The gap list is in
+`doc/missing_vim_bindings.md`. Left:
 
-State (2026-11-19):
-- A count *before* the command (`3dw`) works, because the key tree repeats the action
-  (`key_binding_tree.rb:888`).
-- A count *after* the operator works only where a `<num>` binding was written out.
-  The only one is `"C d <num> e"` (`key_bindings_vimlike.rb:229`, handled by
-  `KeyBindingTree#match_num_key`).
-
-1. **Counts after the operator for bindings that already exist** (quick win, can come
-   before the operator layer):
-   - `d <num> w`, `d <num> d` (= `3dd`), `d <num> f x`, `d <num> F x`
-   - `y <num> w`, `y <num> e`, `y <num> y`
-   - `g U <num> w`, `g u <num> w`, `g ~ <num> w`
-   - vim scheme: `c <num> w`, `c <num> e`, `c <num> c`
-   - text objects: `d 2 i (` (today only `2 d i (` works)
-
-   Rather than writing every `<num>` binding by hand, let `match_num_key` accept digits
-   after any registered operator prefix (`C d`, `C y`, `C c`, `C g U`, `C g u`,
-   `C g ~`), so current and future operator bindings all get counts. Caveat: `c …`
-   must not just repeat its action (three insert-mode entries), so the change bindings
-   need actions that apply the count themselves (`method_handles_repeat`). Check
-   `delete_line` / `copy_cur_line` the same way.
-2. **Missing operator + motion combinations** (both schemes unless noted):
-   - `d b`, `c b`, `y b`
-   - `d t x`, `c t x`, `d T x`, `y t x`
-   - `d j`, `d k`: missing in both; in vimlike they're commented-out TODOs at
-     `key_bindings_vimlike.rb:222-223`
-   - `d G`, `d g g`; `d }`, `d {`, `y }`; `d %`; `d ^`, `y ^`
-   - vimlike now has `c w`, `c e`, `c c`, `c $`, `S` from the shared vim table
-     (2026-11-20); `C` and `s` stay vimlike's own. See `doc/vimlike_vim_conflicts.md`.
-3. **Missing motions** (they then also work after operators):
-   - `W` / `E` / `ge` (`B` is commented out in vimlike)
-   - `T x`, and `,` (`;` exists)
-   - `%`, `{` / `}`, `(` / `)`
-   - `H` / `L` (`M` is taken in vimlike), `#`
-4. **Doubled operators / other count commands**:
-   - `>>` / `<<` with counts (Visual `>` / `<` are now in vimlike too)
-   - `ctrl-x` (`ctrl-a` is now in vimlike, from the shared vim table)
+1. **Missing motions** (added to the motion key set, they work after operators too):
+   `ge`, `,` (`;` exists), `%`, `{` / `}`, `(` / `)`, `H` / `L` (`M` is taken in
+   vimlike), `#`.
+2. **Doubled operators / other count commands**:
+   - `>>` / `<<` with counts (Visual `>` / `<` are in vimlike)
+   - `ctrl-x` (`ctrl-a` is in vimlike; vimlike uses `C ctrl-x` for uncommenting)
    - check that `3 r x`, `3 p` and `J` / `gJ` with counts apply the count correctly
-5. **Larger, already planned**: line-wise `V`, block `ctrl-v`, `o` / `gv` in Visual
-   mode, named registers (`"a`). See plan steps 4–5.
+3. **Larger, already planned**: line-wise `V`, block `ctrl-v`, `o` / `gv` in Visual
+   mode. See plan steps 4–5.
 
-Groups 2–3 should be done through the operator layer (plan step 1), not as about 100
-hand-written bindings. Where there's a choice, new vimlike bindings avoid alt-/ctrl-
-chords. Each group needs tests (`keys("d 3 w")` + `assert_buf`), and the real-Vim differential
-check where available.
+Where there's a choice, new vimlike bindings avoid alt-/ctrl- chords. Each needs
+tests (`keys(...)` + `assert_buf`), checked against real Vim where possible
+(`tests/test_vim_operators.rb`).
 
 ### Organize the "Show key bindings" page
 
-Bindings like `[C] d i <char> : buf.text_object_op(:delete, <char>, :i)` land in
-**Others**. With the vim or notepad scheme almost everything does, because the report's
-sections are hardcoded to vimlike keywords. Plan: `doc/key_bindings_report_plan.md`.
-It covers:
-- structured binding records
-- a fixed category list via `cat:` keywords, plus automatic categories for minor
-  modes and modules
-- splitting vimlike's 205-binding `core` block
-- grouping by mode in definition order
-- a text-object table
-- readable conditions
-- a test that fails on uncategorized bindings
-
-Depends on the "Descriptive names for key bindings" item above for the description
-column.
+Steps 1-3 and 5 of `doc/key_bindings_report_plan.md` are done (binding records,
+categories, the new page layout, descriptions; see its DONE). Left: step 4, a
+text-object table and readable rendering of `<char>` / `<num>` templates, so
+bindings like `[C] d i <char>` don't show as raw templates.
 
 ### Function panel shows nothing on the key bindings help page
 
@@ -166,32 +135,13 @@ Fix:
    and assert that the panel's store has a row for the "Key bindings" title and the
    `◼` sections, and does not show "(no file)".
 
-### Single downloadable app (AppImage, later Flatpak)
+### AppImage on non-Ubuntu distros
 
-Plan: `doc/bundling_plan.md`. AppImage is recommended: one file, and no sandbox, so
-external tools keep working. It has to bundle relocatable Ruby, the gems, the GI
-typelibs and the GTK/GStreamer/VTE libs, built on Ubuntu 24.04 (to match the tested GTK 4.14; see "GTK version differences"). Code fixes needed
-first:
-- `exe/vimamsa` puts CWD-relative `lib`/`ext` on the load path
-- the dead `ext/stridx` path
-- `Exec=` in `desktop_install.rb` has to point at `$APPIMAGE`
-- `ruby-lsp` stays bundled for now; AppRun exposes a `ruby-lsp` binstub on `PATH`
-Before the AppImage helps non-Ubuntu users (see "Running on non-Ubuntu distros" in the plan):
-- a `cnf.terminal.command` setting with auto-detection, to replace the hardcoded `gnome-terminal`
+The AppImage is built and released (`bc43676`, `1192898`; `doc/bundling_plan.md`).
+Before it helps non-Ubuntu users (see "Running on non-Ubuntu distros" in the plan):
+- a `cnf.terminal.command` setting with auto-detection, to replace the hardcoded
+  `gnome-terminal` (`terminal.rb`)
 - modules page install commands per distro (read from `/etc/os-release`)
-
-### Resettable test VM: occasional fresh-install runs
-
-The test VM (`$VM_NAME`) isn't blank any more. It was provisioned once and has collected state from
-every run since, so a fresh install is never tested. Plan:
-`doc/vm_snapshots_plan.md`.
-- two VirtualBox snapshots: `clean` (fresh 24.04 + Guest Additions) and
-  `provisioned`
-- `run_tests_vm.rb` restores `provisioned` before every run
-- it automatically does a fresh run from `clean` when install inputs change or
-  weekly, and then retakes `provisioned`
-
-The `clean` baseline needs a newly installed VM (one-time, manual).
 
 ### Start in insert mode (command stays the base), new buffers inherit the mode, esc toggle
 
@@ -381,18 +331,6 @@ Depends on / ties in with:
 
 See `doc/modules_settings_plan.md`.
 
-### Consistent, hierarchical action names
-
-Action ids are ad hoc. They mix verb-first and noun-first names, use implementation
-prefixes (`gui_`, `vim_`, `e_`, `V_`), contain duplicates (`undo` / `edit_undo`,
-`move_next_line` / `forward_line`, …) and use inconsistent words (forward / next,
-buf / buffer). Plan: `doc/action_names_plan.md`.
-- dotted ids, from general to specific: `move.word.next`, `buf.close`, `sel.copy`
-- an `a` proxy like `cnf`: `bindkey "C w", a.move.word.next`, and `a.buf.save!` runs an action
-- namespaces map onto the key bindings report categories
-- `ACTION_ALIASES` keep the old ids working in `custom.rb` and in saved macros
-- `Action#path` replaces the unused `:group` option
-
 ### Tab completes file names on the command line
 
 `:!cat /proc/cpu<tab>` should complete to `:!cat /proc/cpuinfo`. Today the command
@@ -560,16 +498,11 @@ Plan: `doc/delta_syntax_plan.md`.
 
 ### Performance: line ends and UTF-8 indexing in large files
 
-Measured 2026-11-21 in plain Ruby 3.4, ~55-character lines. Fixed already:
-`scan_indexes` (O(n^2) on non-ASCII text: 13 s → about 0.1 s for 5.5 MB) and
-`get_line_end` (`select` → `bsearch`). See DONE.
-
-Still open:
-- **`update_line_ends` shifted every later line end on each edit.** Done: `@line_ends`
-  is now a treap of lines (`LineTree`, see DONE and `doc/line_tree_plan.md`).
-  Follow-up: loops over all lines (`fold.rb`'s fold search) call `[i]` per line,
-  which is now O(log n) each. Walk the tree in order there if it shows up in
-  profiles.
+Measured 2026-11-21 in plain Ruby 3.4, ~55-character lines (`scan_indexes`,
+`get_line_end` and the line ends are fixed, see DONE). Still open:
+- Line ends are a treap now (`LineTree`, see DONE). Follow-up: loops over all lines
+  (`fold.rb`'s fold search) call `[i]` per line, which is O(log n) each. Walk the
+  tree in order there if it shows up in profiles.
 - **UTF-8 character indexing.** Ruby strings have no character index. Once a buffer
   contains one non-ASCII character, every `self[pos]`, `insert` and `slice!` scans from
   the start. That's 0.5 ms each at 5.5 MB, versus 0.002 ms for ASCII-only text. Motions
@@ -590,7 +523,6 @@ retries and many steps. Port them to Ruby. Ruby is already the project language,
 so testing and sharing helpers between scripts gets easier.
 
 Candidates (lines as of 2026-11-20):
-- ~~`run_tests_vm.sh` (130): host side~~: done, now `run_tests_vm.rb` (see DONE).
 - `vm_guest_run.sh` (120): guest side; provisioning, gem build, test run
 - `scripts/appimage/build_in_container.sh` (192): the AppImage build
 
@@ -634,6 +566,11 @@ Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines
   full VM suite on the AppImage: 605 passed, 0 failed.
 
 - **Leaving insert mode clears a shift-arrow selection** (2026-11-24, `2e162fd`).
+
+- **Consistent, hierarchical action names** (2026-11-20, `7115ff8`..`2882944`): dotted ids
+  (`move.word.next`, `buf.close`), the `a.` proxy, `ACTION_ALIASES` for the old ids, namespaces
+  in Search for Actions and command-line completion. Left: drop the aliases after two releases.
+  Plan: `doc/action_names_plan.md`.
 
 - **Parallel test runs: Docker containers plus the VM** (2026-11-24, `ed293fc`, `c69c011`):
   `run_tests_parallel.rb` runs `needs_desktop` files in the VM, the rest in Docker containers
