@@ -38,6 +38,7 @@ module Vimamsa
       add_to_menu "Edit.Redo", { :label => "Redo edit", :action => "undo.redo" }
       add_to_menu "Edit.SearchReplace", { :label => "Search and replace", :action => "search.replace" }
       add_to_menu "Edit.Find", { :label => "Find", :action => "search.buf" }
+      add_to_menu "Edit.AutoFormat", { :label => "Auto format buffer", :action => "edit.indent.buf" }
       add_to_menu "Edit.ToggleAutocomplete", { :label => "Toggle autocomplete", :action => "edit.complete.toggle" }
 
       # add_to_menu "Edit.StartCompletion", { :label => "StartCompletion", :action => :start_autocomplete }
@@ -85,8 +86,6 @@ module Vimamsa
       add_to_menu "Help.VimIntro", { :label => "Vimamsa for Vim users", :action => "help.vim_intro" }
       add_to_menu "Help.VimConflicts", { :label => "Vim keys that differ in vimlike", :action => "help.vim_conflicts" }
       add_to_menu "Help.InstallDemo", { :action => "app.demo" }
-
-      #TODO: "edit.indent.buf"
 
       # add_to_menu "Actions.Ack", { :label => "source code search (Ack)", :action => "ack.search" }
 
