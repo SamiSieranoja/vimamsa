@@ -622,6 +622,10 @@ Constraints:
 
 Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines on what was changed.`
 
+- **Piped input opens in a new buffer** (2026-11-24, `12b717c`): `ls | vimamsa` opens the
+  text in a new unnamed buffer, in the running editor if there is one
+  (`lib/vimamsa/stdin_input.rb`). Tests in `tests/test_stdin_input.rb`.
+
 - **Optional AppImage with GTK 4.24 on Ubuntu 22.04** (2026-11-24, `6e1015b`..`b9c0999`):
   `scripts/appimage/build.sh --gtk-new`, needs glibc ≥ 2.35; the default build is
   unchanged. Also fixed on the way: a GTK 4.24 crash freeing closed views' gestures,
