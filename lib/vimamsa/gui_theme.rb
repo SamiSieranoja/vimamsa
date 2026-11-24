@@ -143,6 +143,11 @@ def base_chrome_css
        look (28px buttons) and change nothing there. */
     headerbar windowcontrols button { min-height: 28px; min-width: 28px; padding: 0; margin: 8px 2px; }
     headerbar windowcontrols button > image { min-height: 16px; min-width: 16px; padding: 0; }
+    /* GTK 4.16+'s theme draws a round background on the icon of a hovered or
+       pressed window control; the button's own hover color is enough */
+    headerbar windowcontrols button > image, headerbar windowcontrols button:hover > image,
+    headerbar windowcontrols button:active > image, headerbar windowcontrols button:checked > image {
+      background: none; box-shadow: none; }
     headerbar windowcontrols.end { margin-right: 0; }
     headerbar windowcontrols.end > button:last-child { padding-right: 0; }
 
