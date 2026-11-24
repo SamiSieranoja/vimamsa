@@ -331,6 +331,8 @@ def intro_on_startup?(argv: ARGV, forced: $vma_show_intro, test_mode: vma_test_m
   # doesn't exist)
   return false if cnf.startup_file? && File.exist?(File.expand_path(cnf.startup_file!))
   return false if argv.any? { |a| File.exist?(File.expand_path(a)) }
+  # piped input (`ls | vimamsa`, stdin_input.rb) is what was asked for, too
+  return false if $vma_stdin_file
   return false if (session || session_files_to_restore).any?
   true
 end

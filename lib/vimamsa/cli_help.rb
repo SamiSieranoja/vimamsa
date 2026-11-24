@@ -9,7 +9,7 @@ CLI_USAGE = <<~TXT
 
   Opens the files in the editor window (if an editor is already running, the
   file is opened there). A directory is added to the file and content search
-  paths.
+  paths. Piped input opens in a new buffer:  ls -ltrh | tail -n 3 | vimamsa
 
   Options:
     --user-dir DIR   config and data dir instead of ~/.config/vimamsa

@@ -136,6 +136,19 @@ if wait_requested
   end
 end
 
+# Piped input (`ls | vimamsa`): a new buffer with it, in the running editor if
+# there is one (stdin_input.rb). Not for test runs or an editor started by --wait.
+require File.join(scriptdir, "lib/vimamsa/stdin_input")
+if !$vma_cli_help && !$vma_wait_marker && !ARGV.include?("--test")
+  $vma_stdin_file = Vimamsa::StdinInput.capture(data_dir)
+  if $vma_stdin_file && File.exist?(listen_dir) &&
+     vma_forward_to_running(listen_dir, Vimamsa::StdinInput.request_text($vma_stdin_file))
+    # The running editor took it; a file argument goes there too (below)
+    exit(0) if ARGV[0].nil?
+    $vma_stdin_file = nil
+  end
+end
+
 # If process is already running, open the parameter file in the running process and exit.
 # Not for an editor started by --wait: it is the one the file is for (and
 # forwarding to a slow running editor would end this process, which the

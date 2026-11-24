@@ -50,6 +50,7 @@ require "vimamsa/cli_help"
 require_relative "tmp_user_dir" # also loaded by exe/vimamsa, before the rest
 require_relative "user_dirs" # also loaded by exe/vimamsa, before the rest
 require_relative "wait_files" # also loaded by exe/vimamsa, before the rest
+require_relative "stdin_input" # also loaded by exe/vimamsa, before the rest
 require "vimamsa/clipboard"
 # exit!
 require "vimamsa/main"

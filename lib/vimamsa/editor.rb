@@ -46,6 +46,9 @@ class Editor
         rescue Errno::ENOENT
           next # the launcher gave up waiting and took the request back
         end
+        # "#vma-stdin FILE" lines: piped input, each in a new buffer (stdin_input.rb)
+        stdin_files, x = StdinInput.split_request(x)
+        stdin_files.each { |f| GLib::Idle.add { StdinInput.open_buffer(f); false } }
         # A "#vma-wait MARKER" line: vimamsa --wait (wait_files.rb)
         WaitFiles.parse_request(x).each do |fpath, marker|
           if marker
@@ -331,6 +334,9 @@ class Editor
     end
 
     argv_has_files = !ARGV.include?("--test") && ARGV.any? { |a| File.file?(File.expand_path(a)) }
+    # Piped input (`ls | vimamsa`, stdin_input.rb) is what was asked for, too:
+    # no session restore prompt
+    argv_has_files ||= !$vma_stdin_file.nil?
 
     if fname
       fbuf = open_new_file(fname)
@@ -340,10 +346,13 @@ class Editor
         fbuf.is_a?(Buffer) ? WaitFiles.watch(fbuf, $vma_wait_marker) : WaitFiles.release($vma_wait_marker)
       end
     else
-      create_new_buffer(file_contents = "\n")
+      # Piped input instead of an empty buffer
+      create_new_buffer(file_contents = "\n") unless $vma_stdin_file && StdinInput.open_buffer($vma_stdin_file)
       # nothing to wait on: let the launcher go
       WaitFiles.release($vma_wait_marker) if $vma_wait_marker
     end
+    # A file and piped input: the piped input's buffer after the file
+    StdinInput.open_buffer($vma_stdin_file) if fname && $vma_stdin_file
 
     gui.restore_view_layout
 
