@@ -8,11 +8,14 @@
 class TestLspJumpToDefinition < VmaTest
   REPO_ROOT = File.expand_path("../../", __FILE__)
 
-  # We jump from the `< VmaTest` reference in test_basic_editing.rb
-  # to the `class VmaTest` definition in test_framework.rb.
-  # Using a constant/class reference that ruby-lsp can resolve statically.
-  CALLER_FILE = File.join(REPO_ROOT, "tests/test_basic_editing.rb")
-  TARGET_FILE = File.join(REPO_ROOT, "lib/vimamsa/test_framework.rb")
+  # We jump from the `LangSrv` reference in buffer.rb to `class LangSrv` in
+  # langservp.rb. The reference is inside `module Vimamsa`, so ruby-lsp can
+  # resolve it statically. (A top-level reference such as `< VmaTest` in a
+  # test file can't be: VmaTest is Vimamsa::VmaTest, reachable only because
+  # Vimamsa is mixed into Object at runtime. ruby-lsp answers [] for it.)
+  CALLER_FILE = File.join(REPO_ROOT, "lib/vimamsa/buffer.rb")
+  CALLER_LINE = /LangSrv\.when_ready/
+  TOKEN = "LangSrv"
 
   def test_jump_to_definition
     # langservp.rb is only loaded at startup when cnf.lsp.enabled — this
@@ -34,44 +37,26 @@ class TestLspJumpToDefinition < VmaTest
     # Open the caller file — this triggers LSP initialisation for "ruby".
     open_new_file(CALLER_FILE)
     wait_for_lsp(vma.buf)
+    skip "ruby-lsp unavailable — is 'bundle exec ruby-lsp' installed?" unless vma.buf.lsp
 
-    unless vma.buf.lsp
-      skip "ruby-lsp unavailable — is 'bundle exec ruby-lsp' installed?"
-    end
-
-    # Locate `class TestBasicEditing < VmaTest` and position cursor on `VmaTest`.
     caller_lines = File.readlines(CALLER_FILE)
-    caller_lnum  = caller_lines.index { |l| l =~ /class\s+\w+\s*<\s*VmaTest\b/ }
-    assert !caller_lnum.nil?,
-           "Could not locate a '< VmaTest' class definition in #{File.basename(CALLER_FILE)}"
+    caller_lnum = caller_lines.index { |l| l =~ CALLER_LINE }
+    assert !caller_lnum.nil?, "no #{CALLER_LINE.inspect} line in #{File.basename(CALLER_FILE)}"
+    caller_col = caller_lines[caller_lnum].index(TOKEN)
 
-    caller_col = caller_lines[caller_lnum].index("VmaTest")
-    assert !caller_col.nil?, "Could not locate 'VmaTest' token in the class definition line"
-
-    abs_pos = caller_lines[0...caller_lnum].sum(&:bytesize) + caller_col
-    act "buf.set_pos(#{abs_pos})"
-
-    # Find expected destination: `class VmaTest` in test_framework.rb.
-    target_lines  = File.readlines(TARGET_FILE)
-    expected_lpos = target_lines.index { |l| l =~ /^class VmaTest\b/ }
-    assert !expected_lpos.nil?,
-           "Could not locate 'class VmaTest' in #{File.basename(TARGET_FILE)}"
-
-    # Retry until ruby-lsp has a result (workspace indexing happens in the
-    # background after didOpen)
-    definition = poll_until(timeout: 17) {
+    # Retry until ruby-lsp has indexed the workspace (in the background
+    # after initialize; it answers [] until then, a few seconds)
+    definition = poll_until(timeout: 20) {
       vma.buf.lsp.get_definition(CALLER_FILE, caller_lnum, caller_col)
     }
+    assert !definition.nil?, "ruby-lsp found no definition for #{TOKEN} within 20 s"
 
-    if definition.nil?
-      skip "ruby-lsp returned no definition after 17 s — workspace still indexing?"
-    end
-
-    assert_eq File.expand_path(TARGET_FILE), definition[0],
-              "Expected definition in #{File.basename(TARGET_FILE)}, " \
-              "got #{File.basename(definition[0].to_s)}"
-
-    assert_eq expected_lpos, definition[1] - 1,
-              "Expected line #{expected_lpos} (0-based), got #{definition[1] - 1}"
+    # The file and line it points at define the class. (Not one fixed path:
+    # another copy of the sources in the workspace, e.g. under build/, may
+    # be listed first.)
+    path, line = definition
+    assert_eq "langservp.rb", File.basename(path.to_s), "definition in #{path}"
+    text = File.readlines(path)[line - 1].to_s
+    assert text =~ /^\s*class LangSrv\b/, "definition line #{line} of #{path} is #{text.inspect}"
   end
 end

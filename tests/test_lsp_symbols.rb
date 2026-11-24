@@ -37,9 +37,7 @@ class TestLspSymbols < VmaTest
     # documentSymbol is per-file: retry until ruby-lsp has processed didOpen
     funcs = poll_until(timeout: 16) { lsp.document_functions(SYMBOL_FILE) }
 
-    if funcs.nil? || funcs.empty?
-      skip "ruby-lsp returned no symbols — still indexing?"
-    end
+    assert !(funcs.nil? || funcs.empty?), "ruby-lsp returned no symbols within 16 s"
 
     # Shape: [{ name:, line: }, ...] with 1-based lines.
     assert(funcs.all? { |f| f.key?(:name) && f.key?(:line) },
