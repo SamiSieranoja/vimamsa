@@ -105,12 +105,14 @@ class TestVimOperators < VmaTest
 
   def test_cases_match_real_vim
     skip "vim not installed" unless system("command -v vim >/dev/null 2>&1")
-    fails = CASES.reject { |text, keys, want, want_pos|
-      next true if keys.include?("O") # vimlike-only motion
-      got, got_pos = vim_result(text, keys)
+    # A fresh vim per case (no registers, marks or repeat carried over), run
+    # in parallel
+    cases = CASES.reject { |_t, keys, _w, _p| keys.include?("O") } # vimlike-only motion
+    results = cases.map { |text, keys, _w, _p| Thread.new { vim_result(text, keys) } }.map(&:value)
+    fails = cases.zip(results).reject { |(_t, keys, want, want_pos), (got, got_pos)|
       got == want && (inserts?(keys) || got_pos == want_pos)
     }
     assert fails.empty?, "expected values out of date for this vim: " +
-                         fails.map { |c| [c[0], c[1], vim_result(c[0], c[1])] }.inspect
+                         fails.map { |(t, k, _w, _p), r| [t, k, r] }.inspect
   end
 end

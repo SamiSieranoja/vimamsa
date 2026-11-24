@@ -155,9 +155,12 @@ class TestTextObjects < VmaTest
 
   def test_cases_match_real_vim
     skip "vim not installed" unless system("command -v vim >/dev/null 2>&1")
-    fails = CASES.reject { |text, keys, want, want_pos|
-      vim_result(text, keys) == [want, want_pos]
-    }
+    # A fresh vim per case (no registers, marks or repeat carried over), run
+    # in parallel
+    got = CASES.map { |text, keys, _w, _p| Thread.new { vim_result(text, keys) } }.map(&:value)
+    fails = CASES.each_with_index.reject { |(_t, _k, want, want_pos), i|
+      got[i] == [want, want_pos]
+    }.map(&:first)
     assert fails.empty?, "expected values out of date for this vim: #{fails.map { |c| c[0, 2] }.inspect}"
   end
 end

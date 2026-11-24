@@ -154,6 +154,16 @@ class TestWindowLayout < VmaTest
 
   # ── Real startups ──
 
+  # custom.rb code: run code (Ruby, as a string) once the window is shown and
+  # sized, plus settle_ms for the window manager (e.g. to apply a restored
+  # maximize), instead of a fixed wait of several seconds
+  def when_shown(code, settle_ms = 700)
+    "vma_when_shown = lambda { |&blk| t0 = Time.now\n" \
+    "  GLib::Timeout.add(100) { w = vma.gui.window\n" \
+    "    if (w.mapped? && w.width > 0) || Time.now - t0 > 10 then GLib::Timeout.add(#{settle_ms}) { blk.call; false }; false else true end } }\n" \
+    "vma_when_shown.call {\n#{code}\n}\n"
+  end
+
   # Start the real editor (not in test mode) with config dir ud and wait for
   # it to quit on its own (its custom.rb calls vma.shutdown).
   def run_editor(ud)
@@ -181,7 +191,7 @@ class TestWindowLayout < VmaTest
       Dir.mkdir(ud)
       File.write("#{ud}/custom.rb", <<~RUBY)
         def hook_custom_after_init
-          GLib::Timeout.add(3000) {
+          #{when_shown(<<~CODE.strip)}
             n = File.exist?(#{"#{dir}/run1".inspect}) ? 2 : 1
             File.binwrite(#{dir.inspect} + "/run\#{n}", Marshal.dump(vma.gui.window_layout))
             if n == 1
@@ -191,9 +201,9 @@ class TestWindowLayout < VmaTest
               # Like dragging the divider: once the new pane is laid out
               GLib::Timeout.add(800) { vma.gui.instance_variable_get(:@file_panel_pane).set_position(222); false }
             end
-            GLib::Timeout.add(2000) { vma.shutdown; false }
-            false
-          }
+            # The first run waits for the divider set above to be saved
+            GLib::Timeout.add(n == 1 ? 2000 : 300) { vma.shutdown; false }
+          CODE
         end
       RUBY
       mw, mh = gui.monitor_size(gui.layout_monitor)
@@ -218,15 +228,15 @@ class TestWindowLayout < VmaTest
     }
   end
 
-  # custom.rb for a real startup: after 3 s, run the Ruby code in steps (a
-  # list of [delay ms, code] run one after another), then write the window
-  # layout to dir/name and quit
+  # custom.rb for a real startup: once the window is shown, run the Ruby code
+  # in steps (a list of [delay ms, code] run one after another), then write
+  # the window layout to dir/name and quit
   def layout_custom_rb(dir, name, steps = [])
     chain = steps.reverse.inject("File.binwrite(#{"#{dir}/#{name}".inspect}, Marshal.dump(vma.gui.window_layout))\n" \
-                                 "GLib::Timeout.add(1000) { vma.shutdown; false }") { |inner, (ms, code)|
+                                 "GLib::Timeout.add(300) { vma.shutdown; false }") { |inner, (ms, code)|
       "#{code}\nGLib::Timeout.add(#{ms}) {\n#{inner}\nfalse }"
     }
-    "def hook_custom_after_init\n  GLib::Timeout.add(3000) {\n#{chain}\nfalse }\nend\n"
+    "def hook_custom_after_init\n#{when_shown(chain)}end\n"
   end
 
   # Maximize (full display), then make the window somewhat narrower, keeping
@@ -251,7 +261,7 @@ class TestWindowLayout < VmaTest
             t0 = Time.now
             GLib::Timeout.add(100) { (cond.() || Time.now - t0 > 8) ? (done.(); false) : true }
           }
-          GLib::Timeout.add(3000) {
+          #{when_shown(<<~CODE.strip)}
             win.maximize
             wait.(-> { win.maximized? }, -> {
               GLib::Timeout.add(500) { # let the maximized size settle
@@ -260,17 +270,20 @@ class TestWindowLayout < VmaTest
                 win.unmaximize
                 wait.(-> { !win.maximized? }, -> {
                   win.set_default_size((w * 0.85).to_i, h)
-                  GLib::Timeout.add(1500) {
-                    save.("run1")
-                    GLib::Timeout.add(1000) { vma.shutdown; false }
-                    false
-                  }
+                  # until the window manager has applied the new size
+                  want = (w * 0.85).to_i
+                  wait.(-> { (win.width - want).abs <= 50 }, -> {
+                    GLib::Timeout.add(300) {
+                      save.("run1")
+                      GLib::Timeout.add(300) { vma.shutdown; false }
+                      false
+                    }
+                  })
                 })
                 false
               }
             })
-            false
-          }
+          CODE
         end
       RUBY
       run_editor(ud)
