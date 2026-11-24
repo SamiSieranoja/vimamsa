@@ -30,7 +30,8 @@ sudo_do() { echo "${SUDO_PASS:-}" | sudo -S -p '' "$@"; }
 echo ">> Unpacking source into $DEST"
 rm -rf "$DEST"
 mkdir -p "$DEST"
-tar xzf "$SRC_TGZ" -C "$DEST"
+# (no-timestamp: the guest clock can lag the host a few seconds)
+tar xzf "$SRC_TGZ" -C "$DEST" --warning=no-timestamp
 cd "$DEST"
 
 # GNOME locks the screen after 5 min idle; a locked session draws no frames,
