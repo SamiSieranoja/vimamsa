@@ -629,6 +629,10 @@ Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines
 
 - **Leaving insert mode clears a shift-arrow selection** (2026-11-24, `2e162fd`).
 
+- **Faster VM test runs** (2026-11-24, `d50e6ae`, `f469e1a`): one run at a time per VM (lock), a
+  23 MB copy instead of 191 MB, the gem build reused while the extension is unchanged, the guest
+  password off the command line; per-test times and a slowest-tests summary.
+
 - **Function panel click keeps the editor focus** (2026-11-24, `4f65838`): clicking a function or
   heading moved the cursor but left the focus in the panel, so the cursor wasn't drawn.
 
