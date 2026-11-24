@@ -18,7 +18,20 @@ class FuncPanel
       line = iter[COL_LINE]
       next if line <= 0
       vma.buf.jump_to_line(line)
+      # Back to the editor, once GTK is done with the click: a text view
+      # draws its cursor only while it has the focus
+      GLib::Idle.add do
+        v = vma.buf.view
+        if v
+          v.grab_focus
+          v.draw_cursor
+        end
+        false
+      end
     end
+    # Clicking a row must not take the focus from the editor (the panel is
+    # used with the mouse), else the editor's cursor isn't drawn
+    @tree.focusable = false
     sw.vexpand = true
 
     header = Gtk::Label.new("<span weight='ultrabold'>Functions</span> (click to jump)")

@@ -65,4 +65,32 @@ class TestFuncPanel < VmaTest
   ensure
     cnf.lsp.enabled = prev
   end
+
+  # Clicking a heading jumps there and leaves the focus in the editor, so its
+  # cursor is drawn (it wasn't until a mode change, e.g. ctrl twice)
+  def test_click_heading_keeps_editor_focus
+    prev = cnf.lsp.enabled?
+    cnf.lsp.enabled = false
+    vma.buf.set_content("❙ Project Notes ❙\nBody\n◼ Alpha\nText\n◼◼ Beta\n")
+    vma.buf.instance_variable_set(:@fname, "/tmp/func_panel_test.txt")
+    vma.buf.set_filename(vma.buf.fname)
+    act "panel.funcs.toggle"
+    drain_idle
+    fp = vma.gui.func_panel
+    fp.refresh
+    drain_idle
+    tree = fp.instance_variable_get(:@tree)
+    store = fp.instance_variable_get(:@store)
+    path = nil
+    store.each { |_m, pth, iter| path = pth.dup if iter[Vimamsa::FuncPanel::COL_NAME] == "Beta" }
+    assert !path.nil?, "no Beta row"
+    assert !tree.focusable?, "panel tree should not take the focus"
+    tree.signal_emit("row-activated", path, tree.get_column(0))
+    drain_idle
+    assert_eq 4, vma.buf.lpos, "did not jump to the heading's line"
+    assert vma.gui.window.focus_widget.equal?(vma.buf.view), "editor view lost the focus"
+  ensure
+    act "panel.funcs.toggle" if vma.gui.instance_variable_get(:@func_panel_shown)
+    cnf.lsp.enabled = prev
+  end
 end
