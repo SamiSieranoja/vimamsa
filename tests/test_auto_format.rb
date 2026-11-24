@@ -8,7 +8,7 @@ class TestAutoFormat < VmaTest
   # ── Ruby (rufo) ──────────────────────────────────────────────────────────────
 
   def test_ruby_formats_spacing
-    return puts "  SKIP  rufo not found" unless if_cmd_exists("rufo")
+    skip "rufo not found" unless if_cmd_exists("rufo")
     set_lang("ruby")
     act 'buf.set_content("x=1+2\n")'
     act "buf.auto_format"
@@ -16,7 +16,7 @@ class TestAutoFormat < VmaTest
   end
 
   def test_ruby_idempotent
-    return puts "  SKIP  rufo not found" unless if_cmd_exists("rufo")
+    skip "rufo not found" unless if_cmd_exists("rufo")
     set_lang("ruby")
     content = "def foo(a, b)\n  a + b\nend\n"
     act "buf.set_content(#{content.inspect})"
@@ -25,7 +25,7 @@ class TestAutoFormat < VmaTest
   end
 
   def test_ruby_cursor_preserved
-    return puts "  SKIP  rufo not found" unless if_cmd_exists("rufo")
+    skip "rufo not found" unless if_cmd_exists("rufo")
     set_lang("ruby")
     # Put cursor somewhere in the middle of the content
     act 'buf.set_content("x=1\ny=2\nz=3\n")'
@@ -38,7 +38,7 @@ class TestAutoFormat < VmaTest
   end
 
   def test_ruby_cursor_clamped_when_buffer_shrinks
-    return puts "  SKIP  rufo not found" unless if_cmd_exists("rufo")
+    skip "rufo not found" unless if_cmd_exists("rufo")
     set_lang("ruby")
     # Lots of extra whitespace that rufo will remove — content shrinks
     act 'buf.set_content("x   =   1\ny   =   2\n")'
@@ -68,7 +68,7 @@ class TestAutoFormat < VmaTest
   end
 
   def test_formatter_failure_does_not_wipe_buffer
-    return puts "  SKIP  clang-format not found" unless if_cmd_exists("clang-format")
+    skip "clang-format not found" unless if_cmd_exists("clang-format")
     set_lang("c")
     content = "int x = 1;\n"
     act "buf.set_content(#{content.inspect})"
@@ -86,7 +86,7 @@ class TestAutoFormat < VmaTest
   # ── C/C++ (clang-format) ─────────────────────────────────────────────────────
 
   def test_c_formats_spacing
-    return puts "  SKIP  clang-format not found" unless if_cmd_exists("clang-format")
+    skip "clang-format not found" unless if_cmd_exists("clang-format")
     set_lang("c")
     act 'buf.set_content("int x=1+2;\n")'
     act "buf.auto_format"
@@ -94,7 +94,7 @@ class TestAutoFormat < VmaTest
   end
 
   def test_cpp_formats_spacing
-    return puts "  SKIP  clang-format not found" unless if_cmd_exists("clang-format")
+    skip "clang-format not found" unless if_cmd_exists("clang-format")
     set_lang("cpp")
     act 'buf.set_content("int x=1+2;\n")'
     act "buf.auto_format"
@@ -103,7 +103,7 @@ class TestAutoFormat < VmaTest
   
   # ── Ruby (syntax_tree) ───────────────────────────────────────────────────────
   def test_config_override_syntax_tree
-    return puts "  SKIP  stree not found" unless if_cmd_exists("stree")
+    skip "stree not found" unless if_cmd_exists("stree")
     set_lang("ruby")
 
     original = cnf.auto_format.formatters!["ruby"]

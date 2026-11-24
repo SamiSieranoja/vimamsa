@@ -342,10 +342,7 @@ class TestVimBindings < VmaTest
       vma.macro.instance_variable_set(:@running_macro, false)
     end
     expected = vim_oracle(initial, seq)
-    if expected.nil?
-      puts "  SKIP oracle (no nvim/vim in PATH)"
-      return
-    end
+    skip "no nvim/vim in PATH for the oracle" if expected.nil?
     assert_eq expected, vma.buf.to_s,
               "vim mismatch for #{seq.inspect} on #{initial.inspect}\n" \
               "  vim:     #{expected.inspect}\n  vimamsa: #{vma.buf.to_s.inspect}"

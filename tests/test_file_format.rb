@@ -6,18 +6,21 @@ class TestFileFormat < VmaTest
   LATIN1_CRLF = "/* caf\xE9 */\r\nint x;\r\n".b
 
   def with_file(bytes, name = "f.c")
-    Dir.mktmpdir do |dir|
-      path = File.join(dir, name)
-      File.binwrite(path, bytes)
-      b = nil
-      begin
-        b = open_new_file(path)
-        drain_idle
-        yield b, path
-      ensure
-        PopupFormGenerator.reset_popup_queue
-        vma.buffers.close_buffer(b.id) if b
-      end
+    dir = Dir.mktmpdir
+    path = File.join(dir, name)
+    File.binwrite(path, bytes)
+    b = nil
+    begin
+      b = open_new_file(path)
+      drain_idle
+      yield b, path
+    ensure
+      PopupFormGenerator.reset_popup_queue
+      vma.buffers.close_buffer(b.id) if b
+      drain_idle
+      # Saves are written in the background, and one may still be writing
+      # into dir (Dir.mktmpdir's own cleanup then fails with ENOTEMPTY)
+      FileUtils.rm_rf(dir)
     end
   end
 
