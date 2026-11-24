@@ -389,10 +389,6 @@ class VMAgui
 
   # ── editor-area helpers (delegates to @minibuf_vpane start child) ─────────
 
-  def editor_area
-    @minibuf_vpane.start_child
-  end
-
   def set_editor_area(w)
     @minibuf_vpane.set_start_child(w)
   end
@@ -589,22 +585,6 @@ class VMAgui
       debug "key released #{keyval} #{keycode} name:#{name} str:#{keystr} unicode:#{uki}"
       buf.view.handle_key_event(keyval, keystr, :key_release)
       true # = handled, do not propagate further
-    end
-  end
-
-  def remove_extra_controllers
-    clist = vma.gui.window.observe_controllers
-    to_remove = []
-    (0..(clist.n_items - 1)).each { |x|
-      ctr = clist.get_item(x)
-      if ctr.class == Gtk::EventControllerKey and ctr != @press
-        to_remove << ctr
-      end
-    }
-    if to_remove.size > 0
-      # puts "Removing controllers:"
-      # pp to_remove
-      to_remove.each { |x| vma.gui.window.remove_controller(x) }
     end
   end
 
@@ -974,11 +954,6 @@ class VMAgui
       bf = create_new_buffer "\n\n", "buff", false
       set_buffer_to_window(bf.id, 2)
     end
-  end
-
-  def is_buffer_open(bufid)
-    openbufids = @windows.keys.collect { |x| @windows[x][:sw].child.bufo.id }
-    return openbufids.include?(bufid)
   end
 
   def toggle_active_window()

@@ -733,7 +733,6 @@ class Buffer < String
     @lpos = 0 # Number of current line
     @edit_version = 0 # +1 for every buffer modification
     @larger_cpos = 0 # Store @cpos when move up/down to shorter line than @cpos
-    @need_redraw = 1
     @call_func = nil
     @deltas = []
     @edit_history = []   # Array of groups: [[delta, ...], ...]
@@ -776,14 +775,6 @@ class Buffer < String
 
     detect_file_language
     gui_set_window_title(@title, @subtitle)
-  end
-
-  def get_short_path()
-    fpath = self.fname
-    if fpath.size > 50
-      fpath = fpath[-50..-1]
-    end
-    return fpath
   end
 
   def add_hl_update(startpos, endpos)
@@ -1097,33 +1088,6 @@ class Buffer < String
     Gui.flash_range(self, range)
   end
 
-  def recalc_line_ends()
-    t1 = Time.now
-    leo = @line_ends.to_a
-    @line_ends = LineTree.from_string(self)
-    if @line_ends.to_a == leo
-      debug "No change to line ends"
-    else
-      debug "CHANGES to line ends"
-    end
-
-    debug "Scan line_end time: #{Time.now - t1}"
-    #debug @line_ends
-  end
-
-  def sanity_check_line_ends()
-    leo = @line_ends.to_a
-    @line_ends = LineTree.from_string(self)
-    if @line_ends.to_a == leo
-      debug "No change to line ends"
-    else
-      debug "CHANGES to line ends"
-      debug leo.inspect
-      debug @line_ends.to_a.inspect
-      crash("CHANGES to line ends")
-    end
-  end
-
   def update_bufpos_on_change(positions, xpos, changeamount)
     # debug "xpos=#{xpos} changeamount=#{changeamount}"
     positions.collect { |x|
@@ -1383,44 +1347,6 @@ class Buffer < String
     end
   end
 
-  def context_menu_items()
-    m = []
-    if @visual_mode
-      seltxt = get_current_selection
-      m << ["Copy", self.method("copy_active_selection"), nil]
-      m << ["Join lines", self.method("convert_selected_text"), :joinlines]
-      # m << ["Sort", self.method("convert_selected_text"), :sortlines]
-      m << ["Sort", method("call"), :sortlines]
-      m << ["Filter: get numbers", method("call"), :getnums_on_lines]
-      m << ["To LaTeX itemize", method("call"), :latex_itemize]
-      m << ["Delete selection", method("call"), "sel.delete"]
-
-      # m << ["Search in dictionary", self.method("handle_word"), nil]
-      # m << ["Search in google", self.method("handle_word"), nil]
-      m << ["Execute in terminal", method("exec_in_terminal"), seltxt]
-    else
-      (word, wtype) = get_cur_nonwhitespace_word()
-      if wtype == :url
-        m << ["Open url", self.method("open_url"), word]
-      elsif wtype == :linepointer
-        m << ["Jump to line", self.method("handle_word"), [word, wtype]]
-      elsif wtype == :textfile
-        m << ["Open text file", self.method("handle_word"), [word, wtype]]
-      elsif wtype == :file
-        m << ["Open file (xdg-open)", self.method("handle_word"), [word, wtype]]
-      elsif wtype == :hpt_link
-        m << ["Jump to file", self.method("handle_word"), [word, wtype]]
-      elsif wtype == :run
-        m << ["Run: #{word.split("|", 2)[1] || word}", self.method("handle_word"), [word, wtype]]
-      elsif wtype == :help
-        m << ["Open help page", self.method("handle_word"), [word, wtype]]
-      else
-        m << ["Paste", method("call"), :paste_after]
-      end
-    end
-    return m
-  end
-
   # Activated when enter/return pressed
   def handle_line_action()
     # Enter on a fold-start ({{{) or a closed-fold placeholder toggles the fold.
@@ -1663,7 +1589,6 @@ class Buffer < String
     #debug("encoding: #{c.encoding}")
     #debug "c.size: #{c.size}"
     calculate_line_and_column_pos
-    #need_redraw!
     #@pos += c.size
     # end_profiler
 
@@ -1703,18 +1628,6 @@ class Buffer < String
     for d in deltas
       add_delta(d, true, true)
     end
-  end
-
-  def need_redraw!
-    @need_redraw = true
-  end
-
-  def need_redraw?
-    return @need_redraw
-  end
-
-  def set_redrawed
-    @need_redraw = false
   end
 
   def selection_active?
@@ -1956,12 +1869,6 @@ class Buffer < String
     end
     gui_file_saveas(savepath)
     # calls back to file_saveas
-  end
-
-  def save_as_check_callback(vals)
-    if vals["yes_btn"] == "submit"
-      save_as_callback(@unconfirmed_path, true)
-    end
   end
 
   def save_as_callback(fpath, confirmed = false)

@@ -86,63 +86,6 @@ def savedebug(message, e)
 end
 
 
-def run_test(test_id)
-  target_results = read_file("", "tests/test_#{test_id}_output.txt")
-  old_buffer = vma.buf
-  vma.buf = Buffer.new("", "")
-  load "tests/test_#{test_id}.rb"
-  test_ok = vma.buf.to_s.strip == target_results.strip
-  puts "##################"
-  puts target_results
-  puts "##################"
-  puts vma.buf.to_s
-  puts "##################"
-  puts "TEST OK" if test_ok
-  puts "TEST FAILED" if !test_ok
-  puts "##################"
-  vma.buf = old_buffer
-end
-
-def gui_sleep(t2)
-  t1 = Time.now()
-  while Time.now < t1 + t2
-    sleep(0.02)
-  end
-end
-
-def run_random_jump_test__tmpl(test_time = 60 * 60 * 10)
-  open_new_file("TODO"); gui_sleep(0.1)
-
-  ttstart = Time.now
-  Kernel.srand(1231)
-  step = 0
-  while Time.now < ttstart + test_time
-    debug "step=#{step}"
-    buf.jump_to_random_pos
-    buf.insert_txt("Z") if rand() > 0.25
-    buf.reset_highlight() if rand() > 0.1
-    gui_trigger_event
-
-    # puts "========line:========="
-    # puts buf.current_line()
-    # puts "======================"
-
-    render_buffer(vma.buf)
-
-    gui_sleep(rand() / 2)
-    if rand() < (1 / 40.0)
-      buf.revert
-    end
-
-    gui_trigger_event
-    buf.insert_txt("X") if rand() > 0.25
-    render_buffer(vma.buf)
-
-    vma.buffers.set_current_buffer(rand(vma.buffers.size)) if rand > 0.25
-    step += 1
-  end
-end
-
 def start_ripl
   Ripl.start :binding => binding
 end

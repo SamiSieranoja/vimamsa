@@ -106,25 +106,9 @@ class Buffer < String
     !entry.nil? && entry.linewise && entry.text == text
   end
 
-  # Workaround for https://github.com/ruby-gnome/ruby-gnome/issues/1609
-  def paste_start_xclip(at, register)
-    @clipboard_paste_running = true
-    ipos = @pos                # capture insertion point before the async read
-    entry = vma.registers['"']
-    Thread.new {
-      text = `xclip -selection c -o`
-      GLib::Idle.add { paste_finish(text, at, register, ipos: ipos, paste_lines: register_linewise?(text, entry)); false }
-    }
-    return nil
-  end
-
   # Start asynchronous read of system clipboard
   def paste_start(at, register, overwrite: false)
     @clipboard_paste_running = true
-
-    # if true or running_wayland? and !GLib::Version::or_later?(2, 79, 0)
-      # return paste_start_xclip(at, register)
-    # end
 
     # Capture the insertion point now: read_text_async returns immediately and
     # the callback fires on a later main-loop turn, by which time the cursor
@@ -322,7 +306,6 @@ class Buffer < String
     set_pos(@pos)
     #recalc_line_ends
     calculate_line_and_column_pos
-    #need_redraw!
 
     if vma.kbd&.get_mode == :insert
       v = (self.view rescue nil)

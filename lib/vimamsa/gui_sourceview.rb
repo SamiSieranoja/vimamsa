@@ -154,14 +154,6 @@ class VSourceView < GtkSource::View
     gutter_width = winwidth - view_width
   end
 
-  def show_controllers
-    clist = self.observe_controllers
-    (0..(clist.n_items - 1)).each { |x|
-      ctr = clist.get_item(x)
-      pp ctr
-    }
-  end
-
   def check_controllers
     clist = self.observe_controllers
     to_remove = []
@@ -678,10 +670,6 @@ class VSourceView < GtkSource::View
     return [x, y]
   end
 
-  def cur_pos_xy
-    return pos_to_coord(buffer.cursor_position)
-  end
-
   # scroll: false places the cursor without scrolling to it (the caller
   # positions the view itself, e.g. Buffer#revert_by_diff).
   def handle_deltas(scroll: true)
@@ -710,21 +698,6 @@ class VSourceView < GtkSource::View
       $hook&.call(:view_text_changed, self)
     end
 
-  end
-
-  def sanity_check()
-    a = buffer.text
-    b = buf.to_s
-    # debug "===================="
-    # debug a.lines[0..10].join()
-    # debug "===================="
-    # debug b.lines[0..10].join()
-    # debug "===================="
-    if a == b
-      debug "Buffers match"
-    else
-      debug "ERROR: Buffer's don't match."
-    end
   end
 
   def set_cursor_pos(pos, scroll: true)

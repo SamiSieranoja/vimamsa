@@ -14,22 +14,6 @@ def run_tests()
   run_edit_tests
 end
 
-def run_tests_0()
-  tests = ["test_write_0"]
-  stats = []
-  for t in tests
-    r = eval(t)
-    if r == true
-      stats << "test #{t} OK"
-    else
-      stats << "test #{t} FAILED"
-    end
-  end
-  debug "TEST RESULTS:", 2
-  puts stats.join("\n")
-  puts "===================="
-end
-
 def run_edit_tests()
   edt = EditorTests.new
   tests = edt.methods.select { |x| x.match(/test_.*/) }.collect { |x| { :method => edt.method(x), :name => x } }

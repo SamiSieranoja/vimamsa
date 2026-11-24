@@ -480,10 +480,6 @@ class Editor
     return nil
   end
 
-  def plug()
-    return @_plugins
-  end
-
   def shutdown()
     save_session
     @hook.call(:shutdown)
@@ -613,14 +609,6 @@ class Editor
     r = r.map{|x|File.expand_path(x)}
 
     return r
-  end
-
-  def can_open_extension?(filepath)
-    exts = cnf.extensions_to_open!
-    extname = Pathname.new(filepath).extname.downcase
-    can_open = exts.include?(extname)
-    debug "CAN OPEN?: #{can_open}"
-    return can_open
   end
 
   def error(message)
@@ -758,18 +746,6 @@ def create_new_buffer(file_contents = "\n", prefix = "buf", setcurrent = true)
   buffer.set_content(file_contents)
 
   return buffer
-end
-
-def filter_buffer(buf)
-  i = 0
-  while i < buf.size
-    if buf[i].ord == 160
-      buf[i] = " "
-      #TODO: hack. fix properly
-    end
-    i += 1
-  end
-  return buf
 end
 
 def load_buffer(fname)

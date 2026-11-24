@@ -204,9 +204,6 @@ class KeyBindingTree
     mode.major_modes << major_mode_label
   end
 
-  def clear_modifiers()
-  end
-
   def find_state(key_name, eval_rule)
     @cur_state.children.each { |s|
       if s.key_name == key_name and s.eval_rule == eval_rule
@@ -298,10 +295,6 @@ class KeyBindingTree
 
   def get_scope
     @mode_root_state.scope
-  end
-
-  def cur_mode_str()
-    return @mode_root_state.key_name
   end
 
   def get_cursor_type

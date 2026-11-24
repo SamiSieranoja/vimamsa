@@ -223,12 +223,6 @@ class Macro
     return run_actions(acts)
   end
 
-  def dump_last_macro()
-    puts "======MACRO START======="
-    puts @recorded_macros[@last_macro].inspect
-    puts "======MACRO END========="
-  end
-
   def save_macro(name)
     m = @recorded_macros[name]
     return if !(m.kind_of?(Array) and m.any?)

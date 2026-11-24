@@ -357,23 +357,6 @@ class LangSrv
     return @resp[id]
   end
 
-  def add_workspaces() # TODO
-    # https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_workspaceFolders
-    debug "Add workspaces", 2
-    a = [LSP::Interface::WorkspaceFolder.new(uri: "file:///...", name: "vimamsa")]
-    id = new_id
-    # @writer.write(id: id, params: a, method: "textDocument/definition")
-    # @writer.write(id: id, params: a, method: "workspace/workspaceFolders")
-    @writer.write(id: id, params: a, method: "workspace/didChangeWorkspaceFolders")
-    r = wait_for_response(id)
-    pp r
-  end
-
-  def handle_responses()
-    #TODO
-    # r = @resp.delete_at(0)
-  end
-
   def get_definition(fpath_or_uri, lpos, cpos)
     fpuri = fpath_or_uri.start_with?("file://") ? fpath_or_uri : file_uri(fpath_or_uri)
     a = LSP::Interface::DefinitionParams.new(

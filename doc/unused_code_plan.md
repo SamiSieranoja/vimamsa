@@ -21,6 +21,15 @@ commented-out-code sweep (tier D). Verify each tier with
 
 ## Tier A — dead methods, pure deletion (~350 lines)
 
+**Done (2026-11-24)**, about 330 lines. Checked against the code first; not deleted:
+`paste_register` (used since, by `buffer_changetext.rb`), `start_profiler` /
+`end_profiler` (dev tools, maybe used from the `:` command line) and `hpt_scan_audio`
+(the audio module's only entry to its `⟦audio:…⟧` widgets; decide together with the
+module). Also deleted: `gui_sleep` (its only user was `run_random_jump_test__tmpl`),
+the `cnf.extensions_to_open` default and the commented `need_redraw!` / xclip
+fallback lines. `delete_active_selection`, `gui_set_cursor_pos` and
+`handle_image_resize` were removed earlier the same day (TODO cleanup, `e7167e1`).
+
 Verified individually; body sizes in parens. Delete, including any
 now-orphaned ivars/config noted inline.
 
