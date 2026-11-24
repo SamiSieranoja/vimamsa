@@ -631,6 +631,10 @@ Format: `- **Item title** (2026-MM-DD, `abc1234`[..`def5678`]): one or two lines
 
 - **Leaving insert mode clears a shift-arrow selection** (2026-11-24, `2e162fd`).
 
+- **Startup 22% faster; faster slow tests** (2026-11-24, `325ec97`, `e8a5b4d`): red-colors loaded on first
+  use and no GC while starting (startup_speed_plan.md items 1-2; 3.53 s -> 2.74 s in the VM);
+  window layout tests wait for the window instead of fixed sleeps; real-vim comparisons in parallel.
+
 - **LSP attaches every file of a project; ruby-lsp tests really run** (2026-11-24, `88af52f`, `c53dfc4`):
   only the first file opened in a project got LSP (bug from the background start). The jump
   test asked for a definition ruby-lsp can't resolve and had been skipping since March.
