@@ -12,6 +12,8 @@ require_relative "support/virtual_mic"
 #
 # The first run also downloads the tiny Whisper model (~75 MB); allow time.
 class TestE2eDictation < VmaTest
+  needs_desktop "a microphone (virtual mic on the desktop)"
+
   PHRASE = "the quick brown fox jumps over the lazy dog"
   # Any one of these words appearing in the transcript proves ASR worked. Kept
   # loose on purpose — Whisper output is not deterministic word-for-word.

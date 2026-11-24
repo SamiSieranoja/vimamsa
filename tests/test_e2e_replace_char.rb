@@ -12,6 +12,8 @@ require_relative "support/virtual_keyboard"
 # Skips when /dev/uinput is not writable, xmodmap is missing, the editor window
 # is not the focused window, or the active layout has no "ä" key.
 class TestE2eReplaceChar < VmaTest
+  needs_desktop "real key events on the Wayland seat (uinput)"
+
   include VkbTest
 
   CHAR = "ä" # AltGr-q on us(altgr-intl); typed by keysym, so layout-independent

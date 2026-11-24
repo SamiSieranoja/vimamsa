@@ -5,6 +5,8 @@ require "tmpdir"
 # Test runs never read or write the saved layout, so most of these call the
 # pieces directly; test_restored_after_restart starts the real editor.
 class TestWindowLayout < VmaTest
+  needs_desktop "a window manager (maximize, unmaximize)"
+
   OFF = { :shown => false }
   PLAIN = { :two_column => OFF, :file_panel => OFF, :func_panel => OFF, :keylog => OFF }
 

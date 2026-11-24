@@ -8,6 +8,8 @@ require_relative "support/virtual_keyboard"
 # Skips when /dev/uinput is not writable, xmodmap is missing, or the editor
 # window is not the focused window (never type into someone else's window).
 class TestE2eCmdline < VmaTest
+  needs_desktop "real key events on the Wayland seat (uinput)"
+
   def test_colon_focuses_cmdline_and_executes_shell_command
     with_vkb do |kb|
       assert_mode :command

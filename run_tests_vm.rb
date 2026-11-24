@@ -38,8 +38,8 @@
 require "tempfile"
 require "tmpdir"
 require "fileutils"
-require "shellwords"
 require_relative "scripts/lib/script_helpers"
+require_relative "scripts/lib/source_pack"
 include ScriptHelpers
 
 # Tracked docs that tests regenerate in the guest with VMA_UPDATE_DOC=1
@@ -47,43 +47,6 @@ GENERATED_DOCS = ["doc/vimlike_vim_conflicts.md",
                   # test_demo_replay.rb
                   *%w[basic easyjump files].map { |n| "tests/demo_records/#{n}.txt" }]
 
-# What is sent to the guest: the tracked files, plus untracked (not ignored)
-# files under these dirs, e.g. a new test or lib file. The rest of the working
-# tree's untracked files (scratch files, perf data, AppImages) stay out.
-SOURCE_DIRS = %w[lib exe ext tests modules lang styles help scripts doc]
-# Top-level dirs left out even when tracked: nothing in the tests reads them
-# (the README's media)
-SKIP_DIRS = %w[]  # (img: gem build needs every tracked file)
-# History in the guest's .git (perf_startup ref=HEAD~N needs N < this)
-CLONE_DEPTH = 50
-# Left out even when tracked or under SOURCE_DIRS (File.fnmatch on the
-# basename)
-COPY_EXCLUDES = %w[
-  *_vma_autosave .*_vma_autosave *.gem *.o *.so *.tar.xz *.log claude-log.*
-  bug*.txt *.mp3 *.wav *.bak
-]
-# Untracked files bigger than this are left out (with a note)
-MAX_UNTRACKED_BYTES = 2_000_000
-
-# Paths (relative to repo) to send to the guest
-def files_to_copy(repo)
-  git = ->(*a) { Open3.capture2("git", "-C", repo, *a).first.split("\0") }
-  tracked = git.("ls-files", "-z", "--cached")
-  untracked = git.("ls-files", "-z", "--others", "--exclude-standard")
-    .select { |f| SOURCE_DIRS.include?(f.split("/").first) }
-  skipped = []
-  untracked.reject! { |f|
-    big = File.size?(File.join(repo, f)).to_i > MAX_UNTRACKED_BYTES
-    skipped << f if big
-    big
-  }
-  warn "   (left out, untracked and over #{MAX_UNTRACKED_BYTES / 1_000_000} MB: #{skipped.join(", ")})" if skipped.any?
-  (tracked + untracked).uniq.select { |f|
-    b = File.basename(f)
-    File.file?(File.join(repo, f)) && !SKIP_DIRS.include?(f.split("/").first) &&
-      COPY_EXCLUDES.none? { |pat| File.fnmatch(pat, b) }
-  }
-end
 
 # --appimage FILE / --appimage-dev FILE: test an AppImage instead of a build of
 # this tree. The tests are this tree's; with --appimage-dev the code is too,
@@ -152,27 +115,9 @@ begin
   }
   fail!("Guest Additions not responding after 2 min. Is the guest booted and logged in?", 4) if !answered
 
-  # 2. Tarball the working tree's source (files_to_copy) and a .git for
-  # `gem build` (git ls-files) and the tests that use history: a fresh clone
-  # of the last CLONE_DEPTH commits (packed; the repo's own .git can hold tens
-  # of MB of loose objects) with the working tree's index. tar exits with 1 for "file changed
-  # as we read it": only a fatal error (2 and up) aborts.
+  # 2. Tarball the working tree's source (scripts/lib/source_pack.rb)
   step "Packing working tree"
-  Dir.mktmpdir("vma_vm_pack") { |tmp|
-    list = File.join(tmp, "files")
-    File.write(list, files_to_copy(repo).join("\0"))
-    clone = File.join(tmp, "clone")
-    run!("git", "clone", "--quiet", "--no-checkout", "--depth=#{CLONE_DEPTH}", "file://#{repo}", clone,
-         label: "git clone")
-    FileUtils.cp(File.join(repo, ".git", "index"), File.join(clone, ".git", "index"))
-    tar = File.join(tmp, "src.tar")
-    system("tar", "cf", tar, "-C", repo, "--warning=no-file-changed", "--null", "-T", list)
-    fail!("tar failed (exit #{$?.exitstatus})", 6) if $?.exitstatus.to_i > 1
-    system("tar", "rf", tar, "-C", clone, ".git")
-    fail!("tar failed (exit #{$?.exitstatus})", 6) if $?.exitstatus.to_i > 1
-    system("gzip -1 -c #{tar.shellescape} > #{tarball.path.shellescape}")
-    fail!("gzip failed", 6) if !$?.success?
-  }
+  SourcePack.pack(repo, tarball.path)
   step "  #{(File.size(tarball.path) / 1e6).round(1)} MB"
 
   # 3. Copy the tarball and the guest runner into the VM (copyto overwrites).

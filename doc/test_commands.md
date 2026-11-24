@@ -20,6 +20,46 @@ the guest, so every command below that uses `exe/run_tests.rb` also works
 as `./run_tests_vm.rb <args>`. Run tests in the VM rather than locally where
 you can.
 
+## Faster: containers and the VM at once
+
+```sh
+./run_tests_parallel.rb          # default set, about 55 s (VM alone: about 200 s)
+./run_tests_parallel.rb -j 8     # 8 containers
+```
+
+The tests that need the real desktop run in the VM; all the others run in
+Docker containers on invisible displays (xvfb), several at once, at the same
+time. A test class that needs the desktop says so at the top of its body:
+
+```ruby
+class TestWindowLayout < VmaTest
+  needs_desktop "a window manager (maximize, unmaximize)"
+```
+
+Mark a class like this when it needs a window manager, focus on a real
+desktop, the real keyboard (uinput) or the desktop's clipboard, or otherwise
+fails or skips only under xvfb. The marker is per file: the whole file goes to
+the VM. Check with `./run_tests_docker.rb --all`, which runs every file in
+containers, marked or not.
+
+The container side on its own (needs only Docker, not the VM):
+
+```sh
+./run_tests_docker.rb            # default set without the needs_desktop files
+./run_tests_docker.rb undo,fold  # these files
+./run_tests_docker.rb --all      # every file, needs_desktop too
+```
+
+The image (`scripts/test_docker/Dockerfile`: the VM's packages and gems, plus
+clangd and stree) is built on the first run, which takes about 10 min; it is
+rebuilt when the Dockerfile or the gem dependencies change. The working tree
+(incl. uncommitted changes) is unpacked into each container. Files are split
+between the containers by their times in earlier runs
+(`build/test_docker/times.json`); logs: `build/test_docker/shard-N.log`,
+`build/test_parallel/{vm,docker}.log`. `run_tests_parallel.rb` reads the VM
+settings from the environment like `run_tests_vm.rb` (in a non-interactive
+shell: `bash -ic ./run_tests_parallel.rb`).
+
 ### Argument forms (`exe/run_tests.rb`)
 
 | Argument | Meaning |

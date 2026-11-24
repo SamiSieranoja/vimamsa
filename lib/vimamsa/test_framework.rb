@@ -25,6 +25,16 @@ class VmaTest
   # Tests slower than this (seconds) show their time on the result line
   SHOW_TIME_OVER = 0.5
 
+  # Marks a test class that needs the real desktop (window manager, focus,
+  # the real keyboard or the desktop's clipboard): run_tests_parallel.rb runs
+  # its file in the VM, not in a headless container. Write it at the top of
+  # the class body, on its own line (the runners find it with grep).
+  def self.needs_desktop(reason = nil)
+    @needs_desktop = reason || true
+  end
+
+  def self.needs_desktop? = !!@needs_desktop
+
   # Subclasses define test_* methods.
   # Each receives a fresh buffer and the kbd in :command mode.
   def run_all
@@ -193,6 +203,19 @@ def run_vma_tests(*classes)
     times.merge!(t.times || {})
   end
   total_time = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t_start
+
+  # VMA_TIMES_OUT: seconds per test file, as JSON (run_tests_docker.rb uses
+  # them to split the files evenly between containers)
+  if !ENV["VMA_TIMES_OUT"].to_s.empty?
+    per_file = Hash.new(0.0)
+    classes.each { |klass|
+      m = klass.instance_methods(false).find { |x| x.to_s.start_with?("test_") } or next
+      file = klass.instance_method(m).source_location&.first or next
+      file = File.join("tests", File.basename(file))
+      per_file[file] += class_times[klass.name].to_f
+    }
+    File.write(ENV["VMA_TIMES_OUT"], JSON.generate(per_file)) rescue nil
+  end
 
   # Where the time went, to see what to speed up
   if classes.size > 1
